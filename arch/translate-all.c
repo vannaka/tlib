@@ -60,7 +60,7 @@ static inline void gen_block_header(TranslationBlock *tb)
     // which is replaced at gen_block_footer near the end of
     // the block
     TCGv_i32 instruction_count = tcg_const_i32(88888);
-    gen_helper_update_insn_count(instruction_count);
+    gen_helper_prepare_block_for_execution(instruction_count);
     tcg_temp_free_i32(instruction_count);
 
     flag = tcg_temp_local_new_i32();

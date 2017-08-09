@@ -83,13 +83,22 @@ void tlib_dispose()
   tcg_dispose();
 }
 
+// this function returns number of instructions executed by a single call of `tlib_execute`;
+// there is `cpu->instructions_count_total_value` that contains the cumulative value
+int32_t tlib_get_executed_instructions()
+{
+  return cpu->instructions_count_value;
+}
+
 void tlib_reset()
 {
   cpu_reset(cpu);
 }
 
-int32_t tlib_execute()
+int32_t tlib_execute(int32_t max_insns)
 {
+  cpu->instructions_count_value = 0;
+  cpu->instructions_count_threshold = max_insns;
   return cpu_exec(cpu);
 }
 

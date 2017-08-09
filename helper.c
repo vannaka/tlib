@@ -3,9 +3,31 @@
 #include "callbacks.h"
 #include "debug.h"
 
-void HELPER(update_insn_count)(int inst_count)
+// verify if there are instructions left to execute, update instructions count
+// and trim the block and exit to the main loop if necessary
+void HELPER(prepare_block_for_execution)(int current_block_size)
 {
-  tlib_update_instruction_counter(inst_count);
+  uint32_t instructions_left = cpu->instructions_count_threshold - cpu->instructions_count_value;
+
+  if(instructions_left == 0)
+  {
+    // setting `tb_restart_request` to 1 will stop executing this block at the end of the header
+    cpu->tb_restart_request = 1;
+    return;
+  }
+
+  if(current_block_size > instructions_left)
+  {
+    size_of_next_block_to_translate = instructions_left;
+
+    // invalidate this block and jump back to the main loop
+    tb_phys_invalidate(cpu->current_tb, -1);
+    cpu->tb_restart_request = 1;
+    return;
+  }
+
+  // update instructions count and execute the block
+  cpu->instructions_count_value += current_block_size;
 }
 
 void HELPER(block_begin_event)(uint32_t address, uint32_t size)

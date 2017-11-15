@@ -1030,14 +1030,14 @@ void cpu_single_step(CPUState *env, int enabled)
 }
 
 /* mask must never be zero, except for A20 change call */
-static void tcg_handle_interrupt(CPUState *env, int mask)
+static void handle_interrupt(CPUState *env, int mask)
 {
     env->interrupt_request |= mask;
 
     env->exit_request = 1;
 }
 
-CPUInterruptHandler cpu_interrupt_handler = tcg_handle_interrupt;
+CPUInterruptHandler cpu_interrupt_handler = handle_interrupt;
 
 void cpu_reset_interrupt(CPUState *env, int mask)
 {

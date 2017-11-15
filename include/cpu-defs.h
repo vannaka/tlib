@@ -124,6 +124,7 @@ typedef struct CPUBreakpoint {
        number of instructions */                                        \
     int32_t instructions_count_threshold;                               \
     int32_t instructions_count_value;                                   \
+    int32_t instructions_count_total_value;                             \
     /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                  \
     struct TranslationBlock *current_tb; /* currently executing TB  */  \
     /* soft mmu support */                                              \

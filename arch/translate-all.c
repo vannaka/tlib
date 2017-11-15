@@ -173,6 +173,7 @@ int cpu_restore_state(CPUState *env,
       k--;
     }
     cpu->instructions_count_value -= (tb->icount - instructions_executed_so_far);
+    cpu->instructions_count_total_value -= (tb->icount - instructions_executed_so_far);
 
     restore_state_to_opc(env, tb, j);
 

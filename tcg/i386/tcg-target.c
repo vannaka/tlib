@@ -1775,10 +1775,12 @@ static const TCGTargetOpDef x86_op_defs[] = {
 
     { INDEX_op_deposit_i32, { "Q", "0", "Q" } },
 
-#if TCG_TARGET_REG_BITS == 32
     { INDEX_op_mulu2_i32, { "a", "d", "a", "r" } },
+    { INDEX_op_muls2_i32, { "a", "d", "a", "r" } },
     { INDEX_op_add2_i32, { "r", "r", "0", "1", "ri", "ri" } },
     { INDEX_op_sub2_i32, { "r", "r", "0", "1", "ri", "ri" } },
+
+#if TCG_TARGET_REG_BITS == 32
     { INDEX_op_brcond2_i32, { "r", "r", "ri", "ri" } },
     { INDEX_op_setcond2_i32, { "r", "r", "r", "ri", "ri" } },
 #else
@@ -1828,6 +1830,9 @@ static const TCGTargetOpDef x86_op_defs[] = {
     { INDEX_op_ext32u_i64, { "r", "r" } },
 
     { INDEX_op_deposit_i64, { "Q", "0", "Q" } },
+
+    { INDEX_op_mulu2_i64, { "a", "d", "a", "r" } },
+    { INDEX_op_muls2_i64, { "a", "d", "a", "r" } },
 #endif
 
 #if TCG_TARGET_REG_BITS == 64

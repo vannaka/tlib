@@ -119,6 +119,10 @@ typedef uint64_t TCGRegSet;
 #define TCG_TARGET_HAS_nand_i64         0
 #define TCG_TARGET_HAS_nor_i64          0
 #define TCG_TARGET_HAS_deposit_i64      0
+#define TCG_TARGET_HAS_mulu2_i64        0
+#define TCG_TARGET_HAS_muls2_i64        0
+/* Turn some undef macros into true macros.  */
+#define TCG_TARGET_HAS_mulu2_i32        1
 #endif
 
 #ifndef TCG_TARGET_deposit_i32_valid
@@ -588,6 +592,13 @@ TCGv_i32 tcg_const_i32(int32_t val);
 TCGv_i64 tcg_const_i64(int64_t val);
 TCGv_i32 tcg_const_local_i32(int32_t val);
 TCGv_i64 tcg_const_local_i64(int64_t val);
+
+/* Test for whether to terminate the TB for using too many opcodes.  */
+static inline bool tcg_op_buf_full(void)
+{
+    //dummy implementation
+    return 0;
+}
 
 /* TCG targets may use a different definition of tcg_tb_exec. */
 #if !defined(tcg_tb_exec)

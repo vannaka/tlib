@@ -119,7 +119,8 @@ enum {
     float_round_nearest_even = 0,
     float_round_down         = 1,
     float_round_up           = 2,
-    float_round_to_zero      = 3
+    float_round_to_zero      = 3,
+    float_round_ties_away    = 4
 };
 
 /*----------------------------------------------------------------------------
@@ -262,6 +263,8 @@ int float32_compare( float32, float32 STATUS_PARAM );
 int float32_compare_quiet( float32, float32 STATUS_PARAM );
 float32 float32_min(float32, float32 STATUS_PARAM);
 float32 float32_max(float32, float32 STATUS_PARAM);
+float32 float32_minnum(float32, float32 STATUS_PARAM);
+float32 float32_maxnum(float32, float32 STATUS_PARAM);
 int float32_is_quiet_nan( float32 );
 int float32_is_signaling_nan( float32 );
 float32 float32_maybe_silence_nan( float32 );
@@ -366,6 +369,8 @@ int float64_lt_quiet( float64, float64 STATUS_PARAM );
 int float64_unordered_quiet( float64, float64 STATUS_PARAM );
 int float64_compare( float64, float64 STATUS_PARAM );
 int float64_compare_quiet( float64, float64 STATUS_PARAM );
+float64 float64_minnum(float64, float64 STATUS_PARAM);
+float64 float64_maxnum(float64, float64 STATUS_PARAM);
 int float64_is_quiet_nan( float64 a );
 int float64_is_signaling_nan( float64 );
 float64 float64_maybe_silence_nan( float64 );

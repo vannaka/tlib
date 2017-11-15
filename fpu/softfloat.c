@@ -120,7 +120,7 @@ static int32 roundAndPackInt32( flag zSign, uint64_t absZ STATUS_PARAM)
     roundingMode = STATUS(float_rounding_mode);
     roundNearestEven = ( roundingMode == float_round_nearest_even );
     roundIncrement = 0x40;
-    if ( ! roundNearestEven ) {
+    if ( ! roundNearestEven && (roundingMode != float_round_ties_away)) {
         if ( roundingMode == float_round_to_zero ) {
             roundIncrement = 0;
         }
@@ -169,7 +169,7 @@ static int64 roundAndPackInt64( flag zSign, uint64_t absZ0, uint64_t absZ1 STATU
     roundingMode = STATUS(float_rounding_mode);
     roundNearestEven = ( roundingMode == float_round_nearest_even );
     increment = ( (int64_t) absZ1 < 0 );
-    if ( ! roundNearestEven ) {
+    if ( ! roundNearestEven && (roundingMode != float_round_ties_away)) {
         if ( roundingMode == float_round_to_zero ) {
             increment = 0;
         }
@@ -6722,6 +6722,28 @@ float ## s float ## s ## _min(float ## s a, float ## s b STATUS_PARAM)  \
 float ## s float ## s ## _max(float ## s a, float ## s b STATUS_PARAM)  \
 {                                                                       \
     return float ## s ## _minmax(a, b, 0 STATUS_VAR);                   \
+}                                                                       \
+                                                                        \
+float ## s float ## s ## _maxnum(float ## s a, float ## s b STATUS_PARAM)  \
+{                                                                       \
+    if(float ## s ## _is_quiet_nan(a) && !float ## s ## _is_any_nan(b)) { \
+        return b;                                                       \
+    } else if(!float ## s ## _is_any_nan(a) && float ## s ## _is_quiet_nan(b)) { \
+        return a;                                                       \
+    } else {                                                            \
+        return float ## s ## _max(a, b STATUS_VAR);                     \
+    }                                                                   \
+}                                                                       \
+                                                                        \
+float ## s float ## s ## _minnum(float ## s a, float ## s b STATUS_PARAM)  \
+{                                                                       \
+    if(float ## s ## _is_quiet_nan(a) && !float ## s ## _is_any_nan(b)) { \
+        return b;                                                       \
+    } else if(!float ## s ## _is_any_nan(a) && float ## s ## _is_quiet_nan(b)) { \
+        return a;                                                       \
+    } else {                                                            \
+        return float ## s ## _min(a, b STATUS_VAR);                     \
+    }                                                                   \
 }
 
 MINMAX(32, 0xff)

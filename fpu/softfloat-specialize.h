@@ -49,7 +49,7 @@ const float16 float16_default_nan = const_float16(0xFE00);
 *----------------------------------------------------------------------------*/
 #if defined(TARGET_SPARC)
 const float32 float32_default_nan = const_float32(0x7FFFFFFF);
-#elif defined(TARGET_PPC) || defined(TARGET_ARM)
+#elif defined(TARGET_PPC) || defined(TARGET_ARM) || defined(TARGET_RISCV)
 const float32 float32_default_nan = const_float32(0x7FC00000);
 #else
 const float32 float32_default_nan = const_float32(0xFFC00000);
@@ -60,7 +60,7 @@ const float32 float32_default_nan = const_float32(0xFFC00000);
 *----------------------------------------------------------------------------*/
 #if defined(TARGET_SPARC)
 const float64 float64_default_nan = const_float64(LIT64( 0x7FFFFFFFFFFFFFFF ));
-#elif defined(TARGET_PPC) || defined(TARGET_ARM)
+#elif defined(TARGET_PPC) || defined(TARGET_ARM) || defined(TARGET_RISCV)
 const float64 float64_default_nan = const_float64(LIT64( 0x7FF8000000000000 ));
 #else
 const float64 float64_default_nan = const_float64(LIT64( 0xFFF8000000000000 ));

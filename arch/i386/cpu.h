@@ -604,6 +604,8 @@ typedef struct {
 
 #define NB_MMU_MODES 2
 
+#define CPU_PC(x) x->eip
+
 // +---------------------------------------+
 // | ALL FIELDS WHICH STATE MUST BE STORED |
 // | DURING SERIALIZATION SHOULD BE PLACED |

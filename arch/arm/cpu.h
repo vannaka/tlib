@@ -70,6 +70,8 @@ typedef uint32_t ARMReadCPFunc(void *opaque, int cp_info,
    s<2n+1> maps to the most significant half of d<n>
  */
 
+#define CPU_PC(x) x->regs[15]
+
 // +---------------------------------------+
 // | ALL FIELDS WHICH STATE MUST BE STORED |
 // | DURING SERIALIZATION SHOULD BE PLACED |

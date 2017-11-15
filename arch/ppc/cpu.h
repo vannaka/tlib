@@ -808,6 +808,8 @@ struct ppc_def_t {
     int  (*check_pow)(CPUState *env);
 };
 
+#define CPU_PC(x) x->nip
+
 // +---------------------------------------+
 // | ALL FIELDS WHICH STATE MUST BE STORED |
 // | DURING SERIALIZATION SHOULD BE PLACED |

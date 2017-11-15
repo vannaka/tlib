@@ -535,10 +535,13 @@ typedef struct TCGTargetOpDef {
     const char *args_ct_str[TCG_MAX_OP_ARGS];
 } TCGTargetOpDef;
 
+void tlib_abort(char *msg);
+
 #define tcg_abort() \
 do {\
-    fprintf(stderr, "%s:%d: tcg fatal error\n", __FILE__, __LINE__);\
-    abort();\
+    char msg[1024];\
+    sprintf(msg, "%s:%d: tcg fatal error", __FILE__, __LINE__);\
+    tlib_abort(msg); \
 } while (0)
 
 void tcg_add_target_add_op_defs(const TCGTargetOpDef *tdefs);

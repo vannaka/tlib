@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "infrastructure.h"
 
 #ifdef _WIN32
@@ -28,7 +27,6 @@
 #endif
 #include "cpu.h"
 #include "tcg.h"
-
 #include "osdep.h"
 
 #define SMC_BITMAP_USE_THRESHOLD 10

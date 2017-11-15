@@ -103,7 +103,8 @@ file (GLOB SOURCES
     "fpu/*.c"
     "arch/*.c"
     "external/*.c"
-    "arch/${TARGET_ACTUAL_ARCH}/*.c")
+    "arch/${TARGET_ACTUAL_ARCH}/*.c"
+    )
 
 add_library (tlib SHARED ${SOURCES})
 

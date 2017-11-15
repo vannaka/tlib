@@ -23,7 +23,6 @@
  */
 
 /// INSTEAD OF QEMU-COMMON
-
 #ifndef TARGET_PAGE_BITS
 extern int TARGET_PAGE_BITS;
 #endif

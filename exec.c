@@ -1224,7 +1224,7 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
        address comparisons below.  */
     if ((unsigned long)get_ram_ptr(end - 1) - start1
             != (end - 1) - start) {
-        abort();
+        tlib_abort("cpu_physical_memory_reset_dirty");
     }
 
     int mmu_idx;

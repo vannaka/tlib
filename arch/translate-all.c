@@ -95,6 +95,17 @@ static inline void gen_block_footer(TranslationBlock *tb)
     *gen_opc_ptr = INDEX_op_end;
 }
 
+static int get_max_instruction_count(CPUState *env, TranslationBlock *tb)
+{
+    int instructions_count = size_of_next_block_to_translate > 0
+        ? size_of_next_block_to_translate
+        : maximum_block_size;
+
+    return instructions_count > env->instructions_count_threshold
+        ? env->instructions_count_threshold
+        : instructions_count;
+}
+
 /* '*gen_code_size_ptr' contains the size of the generated code (host
    code).
 */
@@ -109,8 +120,9 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
     tb->icount = 0;
     tb->size = 0;
     tb->search_pc = 0;
+
     gen_block_header(tb);
-    gen_intermediate_code(env, tb);
+    gen_intermediate_code(env, tb, get_max_instruction_count(env, tb));
     gen_block_footer(tb);
 
     /* generate machine code */
@@ -141,8 +153,9 @@ int cpu_restore_state(CPUState *env,
     tb->icount = 0;
     tb->size = 0;
     tb->search_pc = 1;
+
     gen_block_header(tb);
-    gen_intermediate_code(env, tb);
+    gen_intermediate_code(env, tb, get_max_instruction_count(env, tb));
     gen_block_footer(tb);
 
     /* find opc index corresponding to search_pc */

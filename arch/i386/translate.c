@@ -7704,18 +7704,12 @@ int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
    basic block 'tb'. If search_pc is TRUE, also generate PC
    information for each intermediate instruction. */
 void gen_intermediate_code(CPUState *env,
-                           TranslationBlock *tb)
+                           TranslationBlock *tb, int max_insns)
 {
     DisasContext dc;
     CPUBreakpoint *bp;
-    int max_insns;
 
     create_disas_context(&dc, env, tb);
-
-    max_insns = tb->cflags & CF_COUNT_MASK;
-    if (max_insns == 0)
-        max_insns = maximum_block_size;
-
     tcg_clear_temp_count();
 
     while (1) {

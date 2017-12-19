@@ -72,7 +72,6 @@ static void free_phys_dirty()
   }
 }
 
-
 void tlib_dispose()
 {
   tlib_arch_dispose();

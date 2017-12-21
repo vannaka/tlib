@@ -1543,6 +1543,7 @@ static void gen_system(DisasContext *ctx, uint32_t opc,
             tlib_abort("DRET unimplemented");
             break;
         case 0x105: /* WFI */
+            tcg_gen_movi_tl(cpu_pc, ctx->next_pc);
             gen_helper_wfi(cpu_env);
             break;
         case 0x104: /* SFENCE.VM */

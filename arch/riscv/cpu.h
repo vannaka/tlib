@@ -26,6 +26,8 @@
 #error "Target arch can be only 32-bit or 64-bit."
 #endif
 
+#define RV(x) (1L << (x - 'A'))
+
 /* RISCV Exception Codes */
 #define EXCP_NONE                       -1 /* not a real RISCV exception code */
 #define RISCV_EXCP_INST_ADDR_MIS           0x0
@@ -77,7 +79,7 @@ struct CPUState {
     target_ulong priv;
 
     target_ulong misa;
-    target_ulong max_isa;
+    target_ulong misa_mask;
     target_ulong mstatus;
 
     target_ulong mip;
@@ -215,16 +217,19 @@ static inline void cpu_pc_from_tb(CPUState *cs, TranslationBlock *tb)
 }
 
 enum riscv_features {
-    RISCV_FEATURE_RVM = (1 << 1),
-    RISCV_FEATURE_RVA = (1 << 2),
-    RISCV_FEATURE_RVF = (1 << 3),
-    RISCV_FEATURE_RVD = (1 << 4),
-    RISCV_FEATURE_RVC = (1 << 5),
+    RISCV_FEATURE_RVI = RV('I'),
+    RISCV_FEATURE_RVM = RV('M'),
+    RISCV_FEATURE_RVA = RV('A'),
+    RISCV_FEATURE_RVF = RV('F'),
+    RISCV_FEATURE_RVD = RV('D'),
+    RISCV_FEATURE_RVC = RV('C'),
+    RISCV_FEATURE_RVS = RV('S'),
+    RISCV_FEATURE_RVU = RV('U'),
 };
 
 static inline int riscv_feature(CPUState *env, int feature)
 {
-    return (env->cpu_model->features & feature) != 0;
+    return (env->misa & feature) != 0;
 }
 
 #endif /* !defined (__RISCV_CPU_H__) */

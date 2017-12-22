@@ -2176,6 +2176,7 @@ void cpu_state_reset(CPUState *env)
     env->pc = RISCV_START_PC; // STARTING PC VALUE def'd in cpu.h
     env->exception_index = EXCP_NONE;
     env->priv = PRV_M;
+    env->misa = env->misa_mask;
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

@@ -229,18 +229,20 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         env->mbadaddr = val_to_write;
         break;
     case CSR_MISA: {
-        if (!(val_to_write & (1L << ('F' - 'A')))) {
-            val_to_write &= ~(1L << ('D' - 'A'));
+        if (!(val_to_write & RISCV_FEATURE_RVF)) {
+            val_to_write &= ~RISCV_FEATURE_RVD;
         }
 
-        // allow MAFDC bits in MISA to be modified
+        // allow MAFDCSU bits in MISA to be modified
         target_ulong mask = 0;
-        mask |= 1L << ('M' - 'A');
-        mask |= 1L << ('A' - 'A');
-        mask |= 1L << ('F' - 'A');
-        mask |= 1L << ('D' - 'A');
-        mask |= 1L << ('C' - 'A');
-        mask &= env->max_isa;
+        mask |= RISCV_FEATURE_RVM;
+        mask |= RISCV_FEATURE_RVA;
+        mask |= RISCV_FEATURE_RVF;
+        mask |= RISCV_FEATURE_RVD;
+        mask |= RISCV_FEATURE_RVC;
+        mask |= RISCV_FEATURE_RVS;
+        mask |= RISCV_FEATURE_RVU;
+        mask &= env->misa_mask;
 
         env->misa = (val_to_write & mask) | (env->misa & ~mask);
         break;

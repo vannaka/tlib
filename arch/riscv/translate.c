@@ -2152,23 +2152,6 @@ void translate_init(void)
                              "load_res");
 }
 
-const riscv_def_t *cpu_riscv_find_by_name(const char *name);
-
-int cpu_init(const char *cpu_model)
-{
-    const riscv_def_t *def;
-
-    def = cpu_riscv_find_by_name(cpu_model);
-    if (!def)
-        return -1;
-
-    cpu->cpu_model = def;
-
-    cpu_reset(cpu);
-
-    return 0;
-}
-
 void cpu_state_reset(CPUState *env)
 {
     memset(env, 0, offsetof(CPUState, breakpoints));

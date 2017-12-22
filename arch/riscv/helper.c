@@ -31,6 +31,13 @@
 #define MMU_DATA_STORE 1
 #define MMU_INST_FETCH 2
 
+// This is used as a part of MISA register, indicating the architecture width.
+#if defined(TARGET_RISCV32)
+#define RVXLEN  ((target_ulong)1 << (TARGET_LONG_BITS - 2))
+#elif defined(TARGET_RISCV64)
+#define RVXLEN  ((target_ulong)2 << (TARGET_LONG_BITS - 2))
+#endif
+
 /* get_physical_address - get the physical address for this virtual address
  *
  * Do a page table walk to obtain the physical address corresponding to a
@@ -335,4 +342,13 @@ void do_interrupt(CPUState *env)
 
 void tlib_arch_dispose()
 {
+}
+
+int cpu_init(const char *cpu_model)
+{
+    cpu->misa_mask = cpu->misa = RVXLEN;
+
+    cpu_reset(cpu);
+
+    return 0;
 }

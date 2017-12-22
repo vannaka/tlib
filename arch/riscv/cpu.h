@@ -55,12 +55,6 @@
 
 #define assert(x) {if (!(x)) tlib_abortf("Assert not met in %s:%d: %s", __FILE__, __LINE__, #x);}while(0)
 
-typedef struct riscv_def_t {
-    const char *name;
-    uint64_t init_misa_reg;
-    uint32_t features;
-} riscv_def_t;
-
 typedef struct CPUState CPUState;
 struct CPUState {
     target_ulong gpr[32];
@@ -115,11 +109,6 @@ struct CPUState {
     bool privilege_mode_1_10;
 
     CPU_COMMON
-
-    /* Fields from here on are preserved across CPU reset. */
-    const riscv_def_t *cpu_model;
-    size_t memsize;
-    void *irq[8];
 };
 
 #define CPU_PC(x) x->pc

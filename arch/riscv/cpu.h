@@ -111,6 +111,9 @@ struct CPUState {
 
     float_status fp_status;
 
+    /* if privilege mode v1.10 is not set, we assume 1.09 */
+    bool privilege_mode_1_10;
+
     CPU_COMMON
 
     /* Fields from here on are preserved across CPU reset. */

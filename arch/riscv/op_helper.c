@@ -83,6 +83,16 @@ void helper_wfi(CPUState *env)
 
 void helper_tlb_flush(CPUState *env);
 
+static inline uint64_t get_minstret_current(CPUState *env)
+{
+    return cpu_riscv_read_instret(env) - env->minstret_snapshot + env->minstret_snapshot_offset;
+}
+
+static inline uint64_t get_mcycles_current(CPUState *env)
+{
+    return cpu_riscv_read_instret(env) - env->mcycle_snapshot + env->mcycle_snapshot_offset;
+}
+
 /*
  * Handle writes to CSRs and any resulting special behavior
  *
@@ -257,6 +267,34 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     case CSR_DCSR:
         tlib_abort("CSR_DCSR write not implemented");
         break;
+    case CSR_MCYCLE:
+#if defined(TARGET_RISCV32)
+        env->mcycle_snapshot_offset = (get_mcycles_current(env) & 0xFFFFFFFF00000000) | val_to_write;
+#else
+        env->mcycle_snapshot_offset = get_mcycles_current(env)
+#endif
+        env->mcycle_snapshot = cpu_riscv_read_instret(env);
+        break;
+    case CSR_MCYCLEH:
+#if defined(TARGET_RISCV32)
+        env->mcycle_snapshot_offset = (get_mcycles_current(env) & 0x00000000FFFFFFFF) | ((uint64_t)val_to_write << 32);
+        env->mcycle_snapshot = cpu_riscv_read_instret(env);
+#endif
+        break;
+    case CSR_MINSTRET:
+#if defined(TARGET_RISCV32)
+        env->minstret_snapshot_offset = (get_minstret_current(env) & 0xFFFFFFFF00000000) | val_to_write;
+#else
+        env->minstret_snapshot_offset = get_minstret_current(env)
+#endif
+        env->minstret_snapshot = cpu_riscv_read_instret(env);
+        break;
+    case CSR_MINSTRETH:
+#if defined(TARGET_RISCV32)
+        env->minstret_snapshot_offset = (get_minstret_current(env) & 0x00000000FFFFFFFF) | ((uint64_t)val_to_write << 32);
+        env->minstret_snapshot = cpu_riscv_read_instret(env);
+#endif
+        break;
     default:
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
@@ -312,12 +350,17 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         }
         break;
     case CSR_MINSTRET:
+        return get_minstret_current(env);
     case CSR_MCYCLE:
-        return cpu_riscv_read_instret(env);
+        return get_mcycles_current(env);
     case CSR_MINSTRETH:
+#if defined(TARGET_RISCV32)
+        return get_minstret_current(env) >> 32;
+#endif
+        break;
     case CSR_MCYCLEH:
 #if defined(TARGET_RISCV32)
-        return cpu_riscv_read_instret(env) >> 32;
+        return get_mcycles_current(env) >> 32;
 #endif
         break;
     case CSR_MUCOUNTEREN:

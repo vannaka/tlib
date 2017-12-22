@@ -60,6 +60,12 @@ typedef struct riscv_def_t {
 } riscv_def_t;
 
 typedef struct CPUState CPUState;
+
+// +---------------------------------------+
+// | ALL FIELDS WHICH STATE MUST BE STORED |
+// | DURING SERIALIZATION SHOULD BE PLACED |
+// | BEFORE >CPU_COMMON< SECTION.          |
+// +---------------------------------------+
 struct CPUState {
     target_ulong gpr[32];
     uint64_t fpr[32]; /* assume both F and D extensions */
@@ -108,6 +114,12 @@ struct CPUState {
     uint64_t timecmp;
 
     float_status fp_status;
+
+    uint64_t mcycle_snapshot_offset;
+    uint64_t mcycle_snapshot;
+
+    uint64_t minstret_snapshot_offset;
+    uint64_t minstret_snapshot;
 
     CPU_COMMON
 

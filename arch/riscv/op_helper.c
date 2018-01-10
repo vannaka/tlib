@@ -20,15 +20,37 @@
 #include "cpu.h"
 #include "arch_callbacks.h"
 
-
-int validate_priv(target_ulong priv)
+#if defined (TARGET_RISCV32)
+static const char valid_vm_1_09[16] =
 {
-    return priv == PRV_U || priv == PRV_S || priv == PRV_M;
-}
-
-static int validate_vm(target_ulong vm)
+    [VM_1_09_MBARE] = 1,
+    [VM_1_09_SV32] = 1,
+};
+static const char valid_vm_1_10[16] =
 {
-    return vm == VM_SV32 || vm == VM_SV39 || vm == VM_SV48 || vm == VM_MBARE;
+    [VM_1_10_MBARE] = 1,
+    [VM_1_10_SV32] = 1
+};
+#elif defined (TARGET_RISCV64)
+static const char valid_vm_1_09[16] =
+{
+    [VM_1_09_MBARE] = 1,
+    [VM_1_09_SV39] = 1,
+    [VM_1_09_SV48] = 1,
+};
+static const char valid_vm_1_10[16] =
+{
+    [VM_1_10_MBARE] = 1,
+    [VM_1_10_SV39] = 1,
+    [VM_1_10_SV48] = 1,
+    [VM_1_10_SV57] = 1
+};
+#endif
+
+static int validate_vm(CPUState *env, target_ulong vm)
+{
+    return (env->privilege_mode_1_10) ?
+        valid_vm_1_10[vm & 0xf] : valid_vm_1_09[vm & 0xf];
 }
 
 void __attribute__ ((__noreturn__)) cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc)
@@ -91,7 +113,7 @@ void helper_tlb_flush(CPUState *env);
 inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         target_ulong csrno)
 {
-    uint64_t delegable_ints = MIP_SSIP | MIP_STIP | MIP_SEIP | (1 << IRQ_COP);
+    uint64_t delegable_ints = MIP_SSIP | MIP_STIP | MIP_SEIP | (1 << IRQ_X_COP);
     uint64_t all_ints = delegable_ints | MIP_MSIP | MIP_MTIP | MIP_MEIP;
 
     switch (csrno) {
@@ -110,21 +132,28 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         break;
     case CSR_MSTATUS: {
         target_ulong mstatus = env->mstatus;
-        if ((val_to_write ^ mstatus) &
-            (MSTATUS_VM | MSTATUS_MPP | MSTATUS_MPRV | MSTATUS_PUM |
-             MSTATUS_MXR)) {
-            helper_tlb_flush(env);
+        target_ulong mask = 0;
+        if (!env->privilege_mode_1_10) {
+            if ((val_to_write ^ mstatus) &
+                (MSTATUS_MXR | MSTATUS_MPP | MSTATUS_MPRV | MSTATUS_SUM |
+                 MSTATUS_VM)) {
+                helper_tlb_flush(env);
+            }
+            mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE |
+                MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV | MSTATUS_SUM |
+                MSTATUS_MPP | MSTATUS_MXR |
+                (validate_vm(env, get_field(val_to_write, MSTATUS_VM)) ?
+                    MSTATUS_VM : 0);
         }
-
-        /* no extension support */
-        target_ulong mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE
-            | MSTATUS_MPIE | MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV
-            | MSTATUS_PUM | MSTATUS_MPP | MSTATUS_MXR;
-
-        if (validate_vm(get_field(val_to_write, MSTATUS_VM))) {
-            mask |= MSTATUS_VM;
+        if (env->privilege_mode_1_10) {
+           if ((val_to_write ^ mstatus) &
+                (MSTATUS_MXR | MSTATUS_MPP | MSTATUS_MPRV | MSTATUS_SUM)) {
+                helper_tlb_flush(env);
+            }
+            mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE |
+                MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV | MSTATUS_SUM |
+                MSTATUS_MPP | MSTATUS_MXR;
         }
-
         mstatus = (mstatus & ~mask) | (val_to_write & mask);
 
         int dirty = (mstatus & MSTATUS_FS) == MSTATUS_FS;
@@ -161,6 +190,9 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         mask |= 1ULL << (RISCV_EXCP_S_ECALL);
         mask |= 1ULL << (RISCV_EXCP_H_ECALL);
         mask |= 1ULL << (RISCV_EXCP_M_ECALL);
+        mask |= 1ULL << (RISCV_EXCP_INST_PAGE_FAULT);
+        mask |= 1ULL << (RISCV_EXCP_LOAD_PAGE_FAULT);
+        mask |= 1ULL << (RISCV_EXCP_STORE_PAGE_FAULT);
         env->medeleg = (env->medeleg & ~mask)
                                 | (val_to_write & mask);
         break;
@@ -173,8 +205,9 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         break;
     case CSR_SSTATUS: {
         target_ulong ms = env->mstatus;
-        target_ulong mask = SSTATUS_SIE | SSTATUS_SPIE | SSTATUS_SPP
-                            | SSTATUS_FS | SSTATUS_XS | SSTATUS_PUM;
+        target_ulong mask = SSTATUS_SIE | SSTATUS_SPIE | SSTATUS_UIE
+            | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_FS | SSTATUS_XS
+            | SSTATUS_SUM | SSTATUS_MXR | SSTATUS_SD;
         ms = (ms & ~mask) | (val_to_write & mask);
         csr_write_helper(env, ms, CSR_MSTATUS);
         break;
@@ -193,16 +226,33 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         csr_write_helper(env, next_mie, CSR_MIE);
         break;
     }
-    case CSR_SPTBR: {
-        env->sptbr = val_to_write & (((target_ulong)1 <<
-                              (TARGET_PHYS_ADDR_SPACE_BITS - PGSHIFT)) - 1);
+    case CSR_SATP: /* CSR_SPTBR */ {
+        if (!env->privilege_mode_1_10 && (val_to_write ^ env->sptbr))
+        {
+            helper_tlb_flush(env);
+            env->sptbr = val_to_write & (((target_ulong)
+                1 << (TARGET_PHYS_ADDR_SPACE_BITS - PGSHIFT)) - 1);
+        }
+        if (env->privilege_mode_1_10 &&
+            validate_vm(env, get_field(val_to_write, SATP_MODE)) &&
+            ((val_to_write ^ env->satp) & (SATP_MODE | SATP_ASID | SATP_PPN )))
+        {
+            helper_tlb_flush(env);
+            env->satp = val_to_write;
+        }
         break;
     }
     case CSR_SEPC:
         env->sepc = val_to_write;
         break;
     case CSR_STVEC:
+        if(val_to_write & 1) {
+            tlib_abort("not handling vectored interrupts yet");
+        }
         env->stvec = val_to_write >> 2 << 2;
+        break;
+    case CSR_SCOUNTEREN:
+        env->scounteren = val_to_write;
         break;
     case CSR_SSCRATCH:
         env->sscratch = val_to_write;
@@ -217,7 +267,13 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         env->mepc = val_to_write;
         break;
     case CSR_MTVEC:
+        if(val_to_write & 1) {
+            tlib_abort("not handling vectored interrupts yet");
+        }
         env->mtvec = val_to_write >> 2 << 2;
+        break;
+    case CSR_MCOUNTEREN:
+        env->mcounteren = val_to_write;
         break;
     case CSR_MSCRATCH:
         env->mscratch = val_to_write;
@@ -327,14 +383,13 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     case CSR_MSCOUNTEREN:
         return env->mscounteren;
     case CSR_SSTATUS: {
-        target_ulong mask = SSTATUS_SIE | SSTATUS_SPIE | SSTATUS_SPP
-                            | SSTATUS_FS | SSTATUS_XS | SSTATUS_PUM;
-        target_ulong sstatus = env->mstatus & mask;
-        if ((sstatus & SSTATUS_FS) == SSTATUS_FS ||
-                (sstatus & SSTATUS_XS) == SSTATUS_XS) {
-            sstatus |= SSTATUS64_SD;
+        target_ulong mask = SSTATUS_SIE | SSTATUS_SPIE | SSTATUS_UIE
+            | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_FS | SSTATUS_XS
+            | SSTATUS_SUM |  SSTATUS_SD;
+        if (env->privilege_mode_1_10) {
+            mask |= SSTATUS_MXR;
         }
-        return sstatus;
+        return env->mstatus & mask;
     }
     case CSR_SIP:
         return env->mip & env->mideleg;
@@ -346,10 +401,16 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         return env->sbadaddr;
     case CSR_STVEC:
         return env->stvec;
+    case CSR_SCOUNTEREN:
+        return env->scounteren;
     case CSR_SCAUSE:
         return env->scause;
-    case CSR_SPTBR:
-        return env->sptbr;
+    case CSR_SATP: /* CSR_SPTBR */
+        if (env->privilege_mode_1_10) {
+            return env->satp;
+        } else {
+            return env->sptbr;
+        }
     case CSR_SSCRATCH:
         return env->sscratch;
     case CSR_MSTATUS:
@@ -375,9 +436,11 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     case CSR_MVENDORID:
         return 0; /* as spike does */
     case CSR_MHARTID:
-        return 0;
+        return env->mhartid;
     case CSR_MTVEC:
         return env->mtvec;
+    case CSR_MCOUNTEREN:
+        return env->mcounteren;
     case CSR_MEDELEG:
         return env->medeleg;
     case CSR_MIDELEG:

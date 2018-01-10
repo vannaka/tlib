@@ -44,6 +44,10 @@
 #define RISCV_EXCP_S_ECALL                 0x9
 #define RISCV_EXCP_H_ECALL                 0xa
 #define RISCV_EXCP_M_ECALL                 0xb
+#define RISCV_EXCP_INST_PAGE_FAULT         0xc /* since: priv-1.10.0 */
+#define RISCV_EXCP_LOAD_PAGE_FAULT         0xd /* since: priv-1.10.0 */
+#define RISCV_EXCP_STORE_PAGE_FAULT        0xf /* since: priv-1.10.0 */
+
 
 #define TRANSLATE_FAIL 1
 #define TRANSLATE_SUCCESS 0
@@ -76,11 +80,14 @@ struct CPUState {
     target_ulong misa_mask;
     target_ulong mstatus;
 
+    target_ulong mhartid;
+
     target_ulong mip;
     target_ulong mie;
     target_ulong mideleg;
 
-    target_ulong sptbr;
+    target_ulong sptbr;  /* until: priv-1.9.1 */
+    target_ulong satp;   /* since: priv-1.10.0 */
     target_ulong sbadaddr;
     target_ulong mbadaddr;
     target_ulong medeleg;
@@ -92,8 +99,11 @@ struct CPUState {
     target_ulong mtvec;
     target_ulong mepc;
     target_ulong mcause;
+    target_ulong mtval;  /* since: priv-1.10.0 */
 
     uint32_t mscounteren;
+    target_ulong scounteren; /* since: priv-1.10.0 */
+    target_ulong mcounteren; /* since: priv-1.10.0 */
 
     target_ulong sscratch;
     target_ulong mscratch;
@@ -123,8 +133,14 @@ static inline int cpu_mmu_index(CPUState *env)
     if (get_field(env->mstatus, MSTATUS_MPRV)) {
         mode = get_field(env->mstatus, MSTATUS_MPP);
     }
-    if (get_field(env->mstatus, MSTATUS_VM) == VM_MBARE) {
-        mode = PRV_M;
+    if (env->privilege_mode_1_10) {
+        if (get_field(env->satp, SATP_MODE) == VM_1_10_MBARE) {
+            mode = PRV_M;
+        }
+    } else {
+        if (get_field(env->mstatus, MSTATUS_VM) == VM_1_09_MBARE) {
+            mode = PRV_M;
+        }
     }
     return mode;
 }

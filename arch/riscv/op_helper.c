@@ -315,6 +315,30 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     case CSR_DCSR:
         tlib_abort("CSR_DCSR write not implemented");
         break;
+    case CSR_PMPCFG0:
+    case CSR_PMPCFG1:
+    case CSR_PMPCFG2:
+    case CSR_PMPCFG3:
+       pmpcfg_csr_write(env, csrno - CSR_PMPCFG0, val_to_write);
+       break;
+    case CSR_PMPADDR0:
+    case CSR_PMPADDR1:
+    case CSR_PMPADDR2:
+    case CSR_PMPADDR3:
+    case CSR_PMPADDR4:
+    case CSR_PMPADDR5:
+    case CSR_PMPADDR6:
+    case CSR_PMPADDR7:
+    case CSR_PMPADDR8:
+    case CSR_PMPADDR9:
+    case CSR_PMPADDR10:
+    case CSR_PMPADDR11:
+    case CSR_PMPADDR12:
+    case CSR_PMPADDR13:
+    case CSR_PMPADDR14:
+    case CSR_PMPADDR15:
+       pmpaddr_csr_write(env, csrno - CSR_PMPADDR0, val_to_write);
+       break;
     default:
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
@@ -462,6 +486,28 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     case CSR_DCSR:
         tlib_abort("CSR_DCSR read not implemented");
         break;
+    case CSR_PMPCFG0:
+    case CSR_PMPCFG1:
+    case CSR_PMPCFG2:
+    case CSR_PMPCFG3:
+       return pmpcfg_csr_read(env, csrno - CSR_PMPCFG0);
+    case CSR_PMPADDR0:
+    case CSR_PMPADDR1:
+    case CSR_PMPADDR2:
+    case CSR_PMPADDR3:
+    case CSR_PMPADDR4:
+    case CSR_PMPADDR5:
+    case CSR_PMPADDR6:
+    case CSR_PMPADDR7:
+    case CSR_PMPADDR8:
+    case CSR_PMPADDR9:
+    case CSR_PMPADDR10:
+    case CSR_PMPADDR11:
+    case CSR_PMPADDR12:
+    case CSR_PMPADDR13:
+    case CSR_PMPADDR14:
+    case CSR_PMPADDR15:
+       return pmpaddr_csr_read(env, csrno - CSR_PMPADDR0);
     }
     /* used by e.g. MTIME read */
     helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);

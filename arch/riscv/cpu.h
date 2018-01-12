@@ -7,7 +7,6 @@
 
 #include "cpu-defs.h"
 #include "softfloat.h"
-#include "cpu_bits.h"
 #include "host-utils.h"
 
 #include "cpu-common.h"
@@ -25,6 +24,8 @@
 #else
 #error "Target arch can be only 32-bit or 64-bit."
 #endif
+
+#include "cpu_bits.h"
 
 #define RV(x) (1L << (x - 'A'))
 
@@ -53,6 +54,7 @@
 #define TRANSLATE_SUCCESS 0
 #define NB_MMU_MODES 4
 
+#define MAX_RISCV_PMPS (16)
 
 #define get_field(reg, mask) (((reg) & (target_ulong)(mask)) / ((mask) & ~((mask) << 1)))
 #define set_field(reg, mask, val) (((reg) & ~(target_ulong)(mask)) | (((target_ulong)(val) * ((mask) & ~((mask) << 1))) & (target_ulong)(mask)))
@@ -60,6 +62,9 @@
 #define assert(x) {if (!(x)) tlib_abortf("Assert not met in %s:%d: %s", __FILE__, __LINE__, #x);}while(0)
 
 typedef struct CPUState CPUState;
+
+#include "pmp.h"
+
 struct CPUState {
     target_ulong gpr[32];
     uint64_t fpr[32]; /* assume both F and D extensions */
@@ -112,6 +117,9 @@ struct CPUState {
     uint64_t mfromhost;
     uint64_t mtohost;
     uint64_t timecmp;
+
+    /* physical memory protection */
+    pmp_table_t pmp_state;
 
     float_status fp_status;
 

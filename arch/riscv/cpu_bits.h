@@ -71,23 +71,46 @@
 #define CSR_SSTATUS 0x100
 #define CSR_SIE 0x104
 #define CSR_STVEC 0x105
+#define CSR_SCOUNTEREN 0x106
 #define CSR_SSCRATCH 0x140
 #define CSR_SEPC 0x141
 #define CSR_SCAUSE 0x142
 #define CSR_SBADADDR 0x143
 #define CSR_SIP 0x144
 #define CSR_SPTBR 0x180
+#define CSR_SATP 0x180
 #define CSR_MSTATUS 0x300
 #define CSR_MISA 0x301
 #define CSR_MEDELEG 0x302
 #define CSR_MIDELEG 0x303
 #define CSR_MIE 0x304
 #define CSR_MTVEC 0x305
+#define CSR_MCOUNTEREN 0x306
 #define CSR_MSCRATCH 0x340
 #define CSR_MEPC 0x341
 #define CSR_MCAUSE 0x342
 #define CSR_MBADADDR 0x343
 #define CSR_MIP 0x344
+#define CSR_PMPCFG0 0x3a0
+#define CSR_PMPCFG1 0x3a1
+#define CSR_PMPCFG2 0x3a2
+#define CSR_PMPCFG3 0x3a3
+#define CSR_PMPADDR0 0x3b0
+#define CSR_PMPADDR1 0x3b1
+#define CSR_PMPADDR2 0x3b2
+#define CSR_PMPADDR3 0x3b3
+#define CSR_PMPADDR4 0x3b4
+#define CSR_PMPADDR5 0x3b5
+#define CSR_PMPADDR6 0x3b6
+#define CSR_PMPADDR7 0x3b7
+#define CSR_PMPADDR8 0x3b8
+#define CSR_PMPADDR9 0x3b9
+#define CSR_PMPADDR10 0x3ba
+#define CSR_PMPADDR11 0x3bb
+#define CSR_PMPADDR12 0x3bc
+#define CSR_PMPADDR13 0x3bd
+#define CSR_PMPADDR14 0x3be
+#define CSR_PMPADDR15 0x3bf
 #define CSR_TSELECT 0x7a0
 #define CSR_TDATA1 0x7a1
 #define CSR_TDATA2 0x7a2
@@ -274,6 +297,12 @@
 
 #define SSTATUS32_SD        0x80000000
 #define SSTATUS64_SD        0x8000000000000000
+
+#if defined (TARGET_RISCV32)
+#define SSTATUS_SD SSTATUS32_SD
+#elif defined (TARGET_RISCV64)
+#define SSTATUS_SD SSTATUS64_SD
+#endif
 
 #define MIP_SSIP            (1 << IRQ_S_SOFT)
 #define MIP_HSIP            (1 << IRQ_H_SOFT)

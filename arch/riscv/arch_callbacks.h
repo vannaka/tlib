@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-void tlib_set_mip(uint32_t);
+void tlib_mip_changed(uint32_t);
 
 #endif

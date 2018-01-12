@@ -19,4 +19,4 @@
 #include "callbacks.h"
 #include "arch_callbacks.h"
 
-DEFAULT_VOID_HANDLER1(void tlib_set_mip, uint32_t value)
+DEFAULT_VOID_HANDLER1(void tlib_mip_changed, uint32_t value)

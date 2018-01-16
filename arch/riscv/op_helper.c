@@ -96,13 +96,6 @@ void helper_raise_exception_mbadaddr(CPUState *env, uint32_t exception,
     do_raise_exception_err(env, exception, 0);
 }
 
-void helper_wfi(CPUState *env)
-{
-    env->exception_index = EXCP_WFI;
-    env->wfi = 1;
-    cpu_loop_exit(env);
-}
-
 void helper_tlb_flush(CPUState *env);
 
 /*
@@ -614,6 +607,12 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
     return retpc;
 }
 
+void helper_wfi(CPUState *env)
+{
+    env->wfi = 1;
+    env->exception_index = EXCP_WFI;
+    cpu_loop_exit(env);
+}
 
 void helper_fence_i(CPUState *env)
 {

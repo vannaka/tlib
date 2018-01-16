@@ -26,28 +26,7 @@
 
 #include "cpu_bits.h"
 
-#define RV(x) (1L << (x - 'A'))
-
-/* RISCV Exception Codes */
-#define EXCP_NONE                       -1 /* not a real RISCV exception code */
-#define RISCV_EXCP_INST_ADDR_MIS           0x0
-#define RISCV_EXCP_INST_ACCESS_FAULT       0x1
-#define RISCV_EXCP_ILLEGAL_INST            0x2
-#define RISCV_EXCP_BREAKPOINT              0x3
-#define RISCV_EXCP_LOAD_ADDR_MIS           0x4
-#define RISCV_EXCP_LOAD_ACCESS_FAULT       0x5
-#define RISCV_EXCP_STORE_AMO_ADDR_MIS      0x6
-#define RISCV_EXCP_STORE_AMO_ACCESS_FAULT  0x7
-#define RISCV_EXCP_U_ECALL                 0x8 /* for convenience, report all
-                                                  ECALLs as this, handler
-                                                  fixes */
-#define RISCV_EXCP_S_ECALL                 0x9
-#define RISCV_EXCP_H_ECALL                 0xa
-#define RISCV_EXCP_M_ECALL                 0xb
-#define RISCV_EXCP_INST_PAGE_FAULT         0xc /* since: priv-1.10.0 */
-#define RISCV_EXCP_LOAD_PAGE_FAULT         0xd /* since: priv-1.10.0 */
-#define RISCV_EXCP_STORE_PAGE_FAULT        0xf /* since: priv-1.10.0 */
-
+#define RV(x) ((target_ulong)1 << (x - 'A'))
 
 #define TRANSLATE_FAIL 1
 #define TRANSLATE_SUCCESS 0
@@ -130,64 +109,12 @@ struct CPUState {
 
 #define CPU_PC(x) x->pc
 
-/*
- * Compute mmu index
- * Adapted from Spike's mmu_t::translate
- */
-static inline int cpu_mmu_index(CPUState *env)
-{
-    target_ulong mode = env->priv;
-    if (get_field(env->mstatus, MSTATUS_MPRV)) {
-        mode = get_field(env->mstatus, MSTATUS_MPP);
-    }
-    if (env->privilege_mode_1_10) {
-        if (get_field(env->satp, SATP_MODE) == VM_1_10_MBARE) {
-            mode = PRV_M;
-        }
-    } else {
-        if (get_field(env->mstatus, MSTATUS_VM) == VM_1_09_MBARE) {
-            mode = PRV_M;
-        }
-    }
-    return mode;
-}
-
-#include "cpu-all.h"
-#include "exec-all.h"
-
-/*
- * Return RISC-V IRQ number if an interrupt should be taken, else -1.
- * Used in cpu-exec.c
- *
- * Adapted from Spike's processor_t::take_interrupt()
- */
-static inline int cpu_riscv_hw_interrupts_pending(CPUState *env)
-{
-    target_ulong pending_interrupts = env->mip & env->mie;
-
-    target_ulong mie = get_field(env->mstatus, MSTATUS_MIE);
-    target_ulong m_enabled = env->priv < PRV_M || (env->priv == PRV_M && mie);
-    target_ulong enabled_interrupts = pending_interrupts &
-                                      ~env->mideleg & -m_enabled;
-
-    target_ulong sie = get_field(env->mstatus, MSTATUS_SIE);
-    target_ulong s_enabled = env->priv < PRV_S || (env->priv == PRV_S && sie);
-    enabled_interrupts |= pending_interrupts & env->mideleg &
-                          -s_enabled;
-
-    if (enabled_interrupts) {
-        return ctz64(enabled_interrupts); /* since non-zero */
-    } else {
-        return EXCP_NONE; /* indicates no pending interrupt */
-    }
-}
-
 int cpu_exec(CPUState *s);
 int cpu_init(const char *cpu_model);
 
 void cpu_state_reset(CPUState *s);
 
-void set_privilege(CPUState *env, target_ulong newpriv);
+void riscv_set_mode(CPUState *env, target_ulong newpriv);
 
 /* RISC-V timer unimplemented functions */
 uint64_t cpu_riscv_get_cycle (CPUState *env);
@@ -206,7 +133,14 @@ void helper_raise_exception(CPUState *env, uint32_t exception);
 
 int cpu_riscv_handle_mmu_fault(CPUState *cpu, target_ulong address, int rw,
                               int mmu_idx);
+int riscv_cpu_mmu_index(CPUState *env);
+int riscv_cpu_hw_interrupts_pending(CPUState *env);
+
 #define cpu_handle_mmu_fault cpu_riscv_handle_mmu_fault
+#define cpu_mmu_index riscv_cpu_mmu_index
+
+#include "cpu-all.h"
+#include "exec-all.h"
 
 static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc,
                                         target_ulong *cs_base, int *flags)
@@ -219,6 +153,11 @@ static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc,
 static inline bool cpu_has_work(CPUState *env)
 {
     return env->interrupt_request & CPU_INTERRUPT_HARD;
+}
+
+static inline int riscv_mstatus_fs(CPUState *env)
+{
+    return env->mstatus & MSTATUS_FS;
 }
 
 void csr_write_helper(CPUState *env, target_ulong val_to_write,
@@ -242,9 +181,9 @@ enum riscv_features {
     RISCV_FEATURE_RVU = RV('U'),
 };
 
-static inline int riscv_feature(CPUState *env, int feature)
+static inline int riscv_has_ext(CPUState *env, target_ulong ext)
 {
-    return (env->misa & feature) != 0;
+    return (env->misa & ext) != 0;
 }
 
 #endif /* !defined (__RISCV_CPU_H__) */

@@ -20,26 +20,22 @@
 #include "cpu.h"
 #include "arch_callbacks.h"
 
-#if defined (TARGET_RISCV32)
-static const char valid_vm_1_09[16] =
-{
+#if defined(TARGET_RISCV32)
+static const char valid_vm_1_09[16] = {
     [VM_1_09_MBARE] = 1,
     [VM_1_09_SV32] = 1,
 };
-static const char valid_vm_1_10[16] =
-{
+static const char valid_vm_1_10[16] = {
     [VM_1_10_MBARE] = 1,
     [VM_1_10_SV32] = 1
 };
-#elif defined (TARGET_RISCV64)
-static const char valid_vm_1_09[16] =
-{
+#elif defined(TARGET_RISCV64)
+static const char valid_vm_1_09[16] = {
     [VM_1_09_MBARE] = 1,
     [VM_1_09_SV39] = 1,
     [VM_1_09_SV48] = 1,
 };
-static const char valid_vm_1_10[16] =
-{
+static const char valid_vm_1_10[16] = {
     [VM_1_10_MBARE] = 1,
     [VM_1_10_SV39] = 1,
     [VM_1_10_SV48] = 1,
@@ -111,25 +107,33 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
 
     switch (csrno) {
     case CSR_FFLAGS:
-        env->mstatus |= MSTATUS_FS | MSTATUS64_SD;
-        env->fflags = val_to_write & (FSR_AEXC >> FSR_AEXC_SHIFT);
+        if (riscv_mstatus_fs(env)) {
+            env->fflags = val_to_write & (FSR_AEXC >> FSR_AEXC_SHIFT);
+        } else {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        }
         break;
     case CSR_FRM:
-        env->mstatus |= MSTATUS_FS | MSTATUS64_SD;
-        env->frm = val_to_write & (FSR_RD >> FSR_RD_SHIFT);
+        if (riscv_mstatus_fs(env)) {
+            env->frm = val_to_write & (FSR_RD >> FSR_RD_SHIFT);
+        } else {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        }
         break;
     case CSR_FCSR:
-        env->mstatus |= MSTATUS_FS | MSTATUS64_SD;
-        env->fflags = (val_to_write & FSR_AEXC) >> FSR_AEXC_SHIFT;
-        env->frm = (val_to_write & FSR_RD) >> FSR_RD_SHIFT;
+        if (riscv_mstatus_fs(env)) {
+            env->fflags = (val_to_write & FSR_AEXC) >> FSR_AEXC_SHIFT;
+            env->frm = (val_to_write & FSR_RD) >> FSR_RD_SHIFT;
+        } else {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        }
         break;
     case CSR_MSTATUS: {
         target_ulong mstatus = env->mstatus;
         target_ulong mask = 0;
         if (!env->privilege_mode_1_10) {
-            if ((val_to_write ^ mstatus) &
-                (MSTATUS_MXR | MSTATUS_MPP | MSTATUS_MPRV | MSTATUS_SUM |
-                 MSTATUS_VM)) {
+            if ((val_to_write ^ mstatus) & (MSTATUS_MXR | MSTATUS_MPP |
+                    MSTATUS_MPRV | MSTATUS_SUM | MSTATUS_VM)) {
                 helper_tlb_flush(env);
             }
             mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE |
@@ -139,8 +143,8 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
                     MSTATUS_VM : 0);
         }
         if (env->privilege_mode_1_10) {
-           if ((val_to_write ^ mstatus) &
-                (MSTATUS_MXR | MSTATUS_MPP | MSTATUS_MPRV | MSTATUS_SUM)) {
+           if ((val_to_write ^ mstatus) & (MSTATUS_MXR | MSTATUS_MPP |
+                   MSTATUS_MPRV | MSTATUS_SUM)) {
                 helper_tlb_flush(env);
             }
             mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE |
@@ -151,12 +155,12 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
 
         int dirty = (mstatus & MSTATUS_FS) == MSTATUS_FS;
         dirty |= (mstatus & MSTATUS_XS) == MSTATUS_XS;
-        mstatus = set_field(mstatus, MSTATUS64_SD, dirty);
+        mstatus = set_field(mstatus, MSTATUS_SD, dirty);
         env->mstatus = mstatus;
         break;
     }
     case CSR_MIP: {
-        target_ulong mask = MIP_SSIP | MIP_STIP;
+        target_ulong mask = MIP_SSIP | MIP_STIP | MIP_SEIP;
         tlib_set_mip((env->mip & ~mask) | (val_to_write & mask));
         break;
     }
@@ -228,7 +232,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         }
         if (env->privilege_mode_1_10 &&
             validate_vm(env, get_field(val_to_write, SATP_MODE)) &&
-            ((val_to_write ^ env->satp) & (SATP_MODE | SATP_ASID | SATP_PPN )))
+            ((val_to_write ^ env->satp) & (SATP_MODE | SATP_ASID | SATP_PPN)))
         {
             helper_tlb_flush(env);
             env->satp = val_to_write;
@@ -372,14 +376,26 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
 
     switch (csrno) {
     case CSR_FFLAGS:
-        return env->fflags;
+        if (riscv_mstatus_fs(env)) {
+            return env->fflags;
+        } else {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
     case CSR_FRM:
-        return env->frm;
+        if (riscv_mstatus_fs(env)) {
+            return env->frm;
+        } else {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
     case CSR_FCSR:
-        return env->fflags << FSR_AEXC_SHIFT |
-               env->frm << FSR_RD_SHIFT;
-        /* TODO fix TIME, INSTRET, CYCLE in user mode */
-        /* 32-bit TIMEH, CYCLEH, INSTRETH, other H stuff */
+        if (riscv_mstatus_fs(env)) {
+            return env->fflags << FSR_AEXC_SHIFT | env->frm << FSR_RD_SHIFT;
+        } else {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
     case CSR_INSTRET:
     case CSR_CYCLE:
         if (ctr_ok) {
@@ -462,23 +478,6 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         return env->medeleg;
     case CSR_MIDELEG:
         return env->mideleg;
-    case CSR_TSELECT:
-        // indicate only usable in debug mode (which we don't have)
-        // i.e. software can't use it
-        // see: https://dev.sifive.com/documentation/risc-v-external-debug-support-0-11/
-        return (1L << (TARGET_LONG_BITS - 5));
-    case CSR_TDATA1:
-        tlib_abort("CSR_TDATA1 read not implemented");
-        break;
-    case CSR_TDATA2:
-        tlib_abort("CSR_TDATA2 read not implemented");
-        break;
-    case CSR_TDATA3:
-        tlib_abort("CSR_TDATA3 read not implemented");
-        break;
-    case CSR_DCSR:
-        tlib_abort("CSR_DCSR read not implemented");
-        break;
     case CSR_PMPCFG0:
     case CSR_PMPCFG1:
     case CSR_PMPCFG2:
@@ -553,10 +552,10 @@ target_ulong helper_csrrc(CPUState *env, target_ulong src,
 }
 
 
-void set_privilege(CPUState *env, target_ulong newpriv)
+void riscv_set_mode(CPUState *env, target_ulong newpriv)
 {
-    if (!(newpriv <= PRV_M)) {
-        tlib_abort("INVALID PRIV SET");
+    if (newpriv > PRV_M) {
+        tlib_abort("invalid privilege level");
     }
     if (newpriv == PRV_H) {
         newpriv = PRV_U;
@@ -582,7 +581,7 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
                         get_field(mstatus, MSTATUS_SPIE));
     mstatus = set_field(mstatus, MSTATUS_SPIE, 0);
     mstatus = set_field(mstatus, MSTATUS_SPP, PRV_U);
-    set_privilege(env, prev_priv);
+    riscv_set_mode(env, prev_priv);
     csr_write_helper(env, mstatus, CSR_MSTATUS);
 
     return retpc;
@@ -601,7 +600,7 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
                         get_field(mstatus, MSTATUS_MPIE));
     mstatus = set_field(mstatus, MSTATUS_MPIE, 0);
     mstatus = set_field(mstatus, MSTATUS_MPP, PRV_U);
-    set_privilege(env, prev_priv);
+    riscv_set_mode(env, prev_priv);
     csr_write_helper(env, mstatus, CSR_MSTATUS);
 
     return retpc;
@@ -616,7 +615,7 @@ void helper_wfi(CPUState *env)
 
 void helper_fence_i(CPUState *env)
 {
-    /* Flush QEMU's TLB */
+    /* Flush TLB */
     tlb_flush(env, 1);
     /* ARM port seems to not know if this is okay inside a TB
        But we need to do it */

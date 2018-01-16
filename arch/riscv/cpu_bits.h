@@ -10,12 +10,6 @@
 
 #define PGSHIFT 12
 
-#define FP_RD_NE  0
-#define FP_RD_0   1
-#define FP_RD_DN  2
-#define FP_RD_UP  3
-#define FP_RD_NMM 4
-
 #define FSR_RD_SHIFT 5
 #define FSR_RD   (0x7 << FSR_RD_SHIFT)
 
@@ -33,6 +27,7 @@
 #define FSR_NXA  (FPEXC_NX << FSR_AEXC_SHIFT)
 #define FSR_AEXC (FSR_NVA | FSR_OFA | FSR_UFA | FSR_DZA | FSR_NXA)
 
+/* CSR numbers */
 #define CSR_FFLAGS 0x1
 #define CSR_FRM 0x2
 #define CSR_FCSR 0x3
@@ -248,8 +243,7 @@
 #define CSR_MHPMCOUNTER30H 0xb9e
 #define CSR_MHPMCOUNTER31H 0xb9f
 
-#define IS_RV_INTERRUPT(ival) (ival & (0x1 << 31))
-
+/* mstatus bits */
 #define MSTATUS_UIE         0x00000001
 #define MSTATUS_SIE         0x00000002
 #define MSTATUS_HIE         0x00000004
@@ -272,18 +266,19 @@
 #define MSTATUS_TW          0x20000000 /* since: priv-1.10 */
 #define MSTATUS_TSR         0x40000000 /* since: priv-1.10 */
 
-#define MSTATUS64_UXL       0x0000000300000000
-#define MSTATUS64_SXL       0x0000000C00000000
+#define MSTATUS64_UXL       0x0000000300000000ULL
+#define MSTATUS64_SXL       0x0000000C00000000ULL
 
 #define MSTATUS32_SD        0x80000000
-#define MSTATUS64_SD        0x8000000000000000
+#define MSTATUS64_SD        0x8000000000000000ULL
 
-#if defined (TARGET_RISCV32)
+#if defined(TARGET_RISCV32)
 #define MSTATUS_SD MSTATUS32_SD
-#elif defined (TARGET_RISCV64)
+#elif defined(TARGET_RISCV64)
 #define MSTATUS_SD MSTATUS64_SD
 #endif
 
+/* sstatus bits */
 #define SSTATUS_UIE         0x00000001
 #define SSTATUS_SIE         0x00000002
 #define SSTATUS_UPIE        0x00000010
@@ -296,14 +291,15 @@
 #define SSTATUS_MXR         0x00080000
 
 #define SSTATUS32_SD        0x80000000
-#define SSTATUS64_SD        0x8000000000000000
+#define SSTATUS64_SD        0x8000000000000000ULL
 
-#if defined (TARGET_RISCV32)
+#if defined(TARGET_RISCV32)
 #define SSTATUS_SD SSTATUS32_SD
-#elif defined (TARGET_RISCV64)
+#elif defined(TARGET_RISCV64)
 #define SSTATUS_SD SSTATUS64_SD
 #endif
 
+/* irqs */
 #define MIP_SSIP            (1 << IRQ_S_SOFT)
 #define MIP_HSIP            (1 << IRQ_H_SOFT)
 #define MIP_MSIP            (1 << IRQ_M_SOFT)
@@ -314,9 +310,9 @@
 #define MIP_HEIP            (1 << IRQ_H_EXT)
 #define MIP_MEIP            (1 << IRQ_M_EXT)
 
-#define SIP_SSIP MIP_SSIP
-#define SIP_STIP MIP_STIP
-#define SIP_SEIP MIP_SEIP
+#define SIP_SSIP            MIP_SSIP
+#define SIP_STIP            MIP_STIP
+#define SIP_SEIP            MIP_SEIP
 
 #define PRV_U 0
 #define PRV_S 1
@@ -324,20 +320,20 @@
 #define PRV_M 3
 
 /* privileged ISA 1.9.1 VM modes (mstatus.vm) */
-#define VM_1_09_MBARE 0  /* until: priv-1.9.1 */
-#define VM_1_09_MBB   1  /* until: priv-1.9.1 */
-#define VM_1_09_MBBID 2  /* until: priv-1.9.1 */
-#define VM_1_09_SV32  8  /* until: priv-1.9.1 */
-#define VM_1_09_SV39  9  /* until: priv-1.9.1 */
-#define VM_1_09_SV48  10 /* until: priv-1.9.1 */
+#define VM_1_09_MBARE 0
+#define VM_1_09_MBB   1
+#define VM_1_09_MBBID 2
+#define VM_1_09_SV32  8
+#define VM_1_09_SV39  9
+#define VM_1_09_SV48  10
 
 /* privileged ISA 1.10.0 VM modes (satp.mode) */
-#define VM_1_10_MBARE 0  /* since: priv-1.10 */
-#define VM_1_10_SV32  1  /* since: priv-1.10 */
-#define VM_1_10_SV39  8  /* since: priv-1.10 */
-#define VM_1_10_SV48  9  /* since: priv-1.10 */
-#define VM_1_10_SV57  10 /* since: priv-1.10 */
-#define VM_1_10_SV64  11 /* since: priv-1.10 */
+#define VM_1_10_MBARE 0
+#define VM_1_10_SV32  1
+#define VM_1_10_SV39  8
+#define VM_1_10_SV48  9
+#define VM_1_10_SV57  10
+#define VM_1_10_SV64  11
 
 /* privileged ISA interrupt causes */
 #define IRQ_U_SOFT      0  /* since: priv-1.10 */
@@ -369,9 +365,9 @@
 #define SATP32_PPN  0x003fffff
 
 /* RV64 satp field masks */
-#define SATP64_MODE 0xF000000000000000
-#define SATP64_ASID 0x0FFFF00000000000
-#define SATP64_PPN  0x00000FFFFFFFFFFF
+#define SATP64_MODE 0xF000000000000000ULL
+#define SATP64_ASID 0x0FFFF00000000000ULL
+#define SATP64_PPN  0x00000FFFFFFFFFFFULL
 
 #if defined(TARGET_RISCV32)
 #define SATP_MODE SATP32_MODE
@@ -384,17 +380,28 @@
 #define SATP_PPN  SATP64_PPN
 #endif
 
-/* breakpoint control fields */
-#define BPCONTROL_X           0x00000001
-#define BPCONTROL_W           0x00000002
-#define BPCONTROL_R           0x00000004
-#define BPCONTROL_U           0x00000008
-#define BPCONTROL_S           0x00000010
-#define BPCONTROL_H           0x00000020
-#define BPCONTROL_M           0x00000040
-#define BPCONTROL_BPMATCH     0x00000780
-#define BPCONTROL_BPAMASKMAX 0x0F80000000000000
-#define BPCONTROL_TDRTYPE    0xF000000000000000
+/* RISCV Exception Codes */
+#define EXCP_NONE                       -1 /* not a real RISCV exception code */
+#define RISCV_EXCP_INST_ADDR_MIS           0x0
+#define RISCV_EXCP_INST_ACCESS_FAULT       0x1
+#define RISCV_EXCP_ILLEGAL_INST            0x2
+#define RISCV_EXCP_BREAKPOINT              0x3
+#define RISCV_EXCP_LOAD_ADDR_MIS           0x4
+#define RISCV_EXCP_LOAD_ACCESS_FAULT       0x5
+#define RISCV_EXCP_STORE_AMO_ADDR_MIS      0x6
+#define RISCV_EXCP_STORE_AMO_ACCESS_FAULT  0x7
+#define RISCV_EXCP_U_ECALL                 0x8 /* for convenience, report all
+                                                  ECALLs as this, handler
+                                                  fixes */
+#define RISCV_EXCP_S_ECALL                 0x9
+#define RISCV_EXCP_H_ECALL                 0xa
+#define RISCV_EXCP_M_ECALL                 0xb
+#define RISCV_EXCP_INST_PAGE_FAULT         0xc /* since: priv-1.10.0 */
+#define RISCV_EXCP_LOAD_PAGE_FAULT         0xd /* since: priv-1.10.0 */
+#define RISCV_EXCP_STORE_PAGE_FAULT        0xf /* since: priv-1.10.0 */
+
+#define RISCV_EXCP_INT_FLAG                0x80000000
+#define RISCV_EXCP_INT_MASK                0x7fffffff
 
 /* page table entry (PTE) fields */
 #define PTE_V     0x001 /* Valid */
@@ -410,4 +417,3 @@
 #define PTE_PPN_SHIFT 10
 
 #define PTE_TABLE(PTE) (((PTE) & (PTE_V | PTE_R | PTE_W | PTE_X)) == PTE_V)
-/* end Spike decode.h, encoding.h section */

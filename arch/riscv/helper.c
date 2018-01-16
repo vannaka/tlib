@@ -38,6 +38,17 @@
 #define RVXLEN  ((target_ulong)2 << (TARGET_LONG_BITS - 2))
 #endif
 
+void cpu_reset(CPUState *env)
+{
+    tlb_flush(env, 1);
+    cpu_state_reset(env);
+    env->priv = PRV_M;
+    env->mtvec = DEFAULT_MTVEC;
+    env->pc = DEFAULT_RSTVEC;
+    env->exception_index = EXCP_NONE;
+    set_default_nan_mode(1, &env->fp_status);
+}
+
 /* get_physical_address - get the physical address for this virtual address
  *
  * Do a page table walk to obtain the physical address corresponding to a

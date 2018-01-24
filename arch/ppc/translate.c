@@ -8114,6 +8114,14 @@ void gen_intermediate_code(CPUState *env,
             tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.pc);
         }
 
+        if (!tb->search_pc)
+        {
+            // it looks like `search_pc` is set to 1 only when restoring the state;
+            // the intention here is to set `original_size` value only during the first block generation
+            // so it can be used later when restoring the block
+            tb->original_size = tb->size;
+        }
+
         /* Check trace mode exceptions */
         if (unlikely(dc.singlestep_enabled & CPU_SINGLE_STEP &&
                      (dc.pc <= 0x100 || dc.pc > 0xF00) &&
@@ -8133,6 +8141,12 @@ void gen_intermediate_code(CPUState *env,
             break;
         }
         if (dc.exception != POWERPC_EXCP_NONE) {
+            break;
+        }
+        if (tb->search_pc && tb->size == tb->original_size)
+        {
+            // `search_pc` is set to 1 only when restoring the block;
+            // this is to ensure that the size of restored block is not bigger than the size of the original one
             break;
         }
     }

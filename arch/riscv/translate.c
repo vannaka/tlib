@@ -2069,6 +2069,14 @@ void gen_intermediate_code(CPUState *env,
         tb->size += disas_insn(env, &ctx);
         tb->icount++;
 
+        if (!tb->search_pc)
+        {
+            // it looks like `search_pc` is set to 1 only when restoring the state;
+            // the intention here is to set `original_size` value only during the first block generation
+            // so it can be used later when restoring the block
+            tb->original_size = tb->size;
+        }
+
     	generate_log(ctx.pc, "<--- tcg: we are done executing %s", msg);
 
         if (tcg_check_temp_count()) {
@@ -2089,6 +2097,12 @@ void gen_intermediate_code(CPUState *env,
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
                 break;
+        }
+        if (tb->search_pc && tb->size == tb->original_size)
+        {
+            // `search_pc` is set to 1 only when restoring the block;
+            // this is to ensure that the size of restored block is not bigger than the size of the original one
+            break;
         }
     }
     if (env->singlestep_enabled && ctx.bstate != BS_BRANCH) {

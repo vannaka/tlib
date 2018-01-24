@@ -2793,6 +2793,14 @@ void gen_intermediate_code(CPUState *env,
         tb->size += disas_insn(env, &dc);
         tb->icount++;
 
+        if (!tb->search_pc)
+        {
+            // it looks like `search_pc` is set to 1 only when restoring the state;
+            // the intention here is to set `original_size` value only during the first block generation
+            // so it can be used later when restoring the block
+            tb->original_size = tb->size;
+        }
+
         if (tcg_check_temp_count()) {
             tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.pc);
         }
@@ -2820,6 +2828,12 @@ void gen_intermediate_code(CPUState *env,
             break;
         }
         if (tb->size >= (TARGET_PAGE_SIZE - 32)) {
+            break;
+        }
+        if (tb->search_pc && tb->size == tb->original_size)
+        {
+            // `search_pc` is set to 1 only when restoring the block;
+            // this is to ensure that the size of restored block is not bigger than the size of the original one
             break;
         }
     }

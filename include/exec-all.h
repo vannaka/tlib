@@ -108,6 +108,9 @@ struct TranslationBlock {
     struct TranslationBlock *jmp_first;
     uint32_t icount;
     int search_pc;
+    // this field is necessary when restoring the state of tb (using cpu_restore_state) in order to limit the size of retranslated block not to be bigger than original one;
+    // SIGSEGVs have been observed otherwise
+    uint16_t original_size;
 };
 
 static inline unsigned int tb_jmp_cache_hash_page(target_ulong pc)

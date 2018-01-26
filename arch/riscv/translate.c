@@ -2169,10 +2169,10 @@ void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
 
 int process_interrupt(int interrupt_request, CPUState *env)
 {
-    if (interrupt_request & CPU_INTERRUPT_HARD || 1) {
+    if (interrupt_request & CPU_INTERRUPT_HARD) {
         uint32_t pending_interrupt = cpu_riscv_hw_interrupts_pending(env);
 	if (pending_interrupt != 0xFFFFFFFF) {
-             env->exception_index = 0x80000000 | pending_interrupt;
+             env->exception_index = 0x70000000U | pending_interrupt;
              do_interrupt(env);
 	     return 1;
 	}

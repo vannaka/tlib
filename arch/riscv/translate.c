@@ -2001,6 +2001,7 @@ static int disas_insn(CPUState *env, DisasContext *ctx)
     /* check for compressed insn */
     if (extract32(ctx->opcode, 0, 2) != 3) {
         if (!riscv_has_ext(env, RISCV_FEATURE_RVC)) {
+            tlib_log(LOG_LEVEL_ERROR, "RISC-V C instruction set is not enabled for this CPU!");
             kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
 	    return 0;
         } else {

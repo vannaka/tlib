@@ -116,19 +116,6 @@ void cpu_state_reset(CPUState *s);
 
 void riscv_set_mode(CPUState *env, target_ulong newpriv);
 
-/* RISC-V timer unimplemented functions */
-uint64_t cpu_riscv_get_cycle (CPUState *env);
-uint32_t cpu_riscv_get_random (CPUState *env);
-void cpu_riscv_store_compare (CPUState *env, uint64_t value);
-void cpu_riscv_start_count(CPUState *env);
-
-void cpu_riscv_store_timew(CPUState *env, uint64_t val_to_write);
-uint64_t cpu_riscv_read_mtime(CPUState *env);
-uint64_t cpu_riscv_read_stime(CPUState *env);
-uint64_t cpu_riscv_read_time(CPUState *env);
-
-void cpu_riscv_store_instret(CPUState *env, uint64_t val_to_write);
-
 void helper_raise_exception(CPUState *env, uint32_t exception);
 
 int cpu_riscv_handle_mmu_fault(CPUState *cpu, target_ulong address, int rw,

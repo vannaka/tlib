@@ -1,5 +1,5 @@
 /*
- * RISC-V emulation for qemu: Instruction decode helpers
+ * Instruction decode helpers
  *
  * Author: Sagar Karandikar, sagark@eecs.berkeley.edu
  *
@@ -307,18 +307,18 @@ enum {
     OPC_RISC_FMV_D_X   = OPC_RISC_FP_ARITH | (0x79 << 25),
 };
 
-#define GET_B_IMM(inst) (extract32(inst, 8, 4) << 1)    \
-                        | (extract32(inst, 25, 6) << 5) \
-                        | (extract32(inst, 7, 1) << 11) \
-                        | (sextract64(inst, 31, 1) << 12)
+#define GET_B_IMM(inst) ((extract32(inst, 8, 4) << 1) \
+                         | (extract32(inst, 25, 6) << 5) \
+                         | (extract32(inst, 7, 1) << 11) \
+                         | (sextract64(inst, 31, 1) << 12))
 
-#define GET_STORE_IMM(inst) (extract32(inst, 7, 5))        \
-                            | (sextract64(inst, 25, 7) << 5)
+#define GET_STORE_IMM(inst) ((extract32(inst, 7, 5))  \
+                             | (sextract64(inst, 25, 7) << 5))
 
-#define GET_JAL_IMM(inst) (extract32(inst, 21, 10) << 1)   \
-                          | (extract32(inst, 20, 1) << 11) \
-                          | (extract32(inst, 12, 8) << 12) \
-                          | (sextract64(inst, 31, 1) << 20)
+#define GET_JAL_IMM(inst) ((extract32(inst, 21, 10) << 1) \
+                           | (extract32(inst, 20, 1) << 11) \
+                           | (extract32(inst, 12, 8) << 12) \
+                           | (sextract64(inst, 31, 1) << 20))
 
 #define GET_RM(inst)   extract32(inst, 12, 3)
 #define GET_RS3(inst)  extract32(inst, 27, 5)

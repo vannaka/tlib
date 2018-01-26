@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
-#include <unistd.h>
 #include "infrastructure.h"
 
 #include "cpu.h"
@@ -531,7 +530,7 @@ static void gen_jal(CPUState *env, DisasContext *ctx, int rd,
 
     /* check misaligned: */
     next_pc = ctx->pc + imm;
-    if (!riscv_feature(env, RISCV_FEATURE_RVC)) {
+    if (!riscv_has_ext(env, RISCV_FEATURE_RVC)) {
         if ((next_pc & 0x3) != 0) {
             generate_exception_mbadaddr(ctx, RISCV_EXCP_INST_ADDR_MIS);
         }
@@ -559,7 +558,7 @@ static void gen_jalr(CPUState *env, DisasContext *ctx, uint32_t opc, int rd, int
         tcg_gen_addi_tl(cpu_pc, cpu_pc, imm);
         tcg_gen_andi_tl(cpu_pc, cpu_pc, (target_ulong)-2);
 
-        if (!riscv_feature(env, RISCV_FEATURE_RVC)) {
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVC)) {
             tcg_gen_andi_tl(t0, cpu_pc, 0x2);
             tcg_gen_brcondi_tl(TCG_COND_NE, t0, 0x0, misaligned);
         }
@@ -617,7 +616,7 @@ static void gen_branch(CPUState *env, DisasContext *ctx, uint32_t opc, int rs1, 
 
     gen_goto_tb(ctx, 1, ctx->next_pc);
     gen_set_label(l); /* branch taken */
-    if (!riscv_feature(env, RISCV_FEATURE_RVC) && ((ctx->pc + bimm) & 0x3)) {
+    if (!riscv_has_ext(env, RISCV_FEATURE_RVC) && ((ctx->pc + bimm) & 0x3)) {
         /* misaligned */
         generate_exception_mbadaddr(ctx, RISCV_EXCP_INST_ADDR_MIS);
         tcg_gen_exit_tb(0);
@@ -1524,7 +1523,7 @@ static void gen_system(DisasContext *ctx, uint32_t opc,
             ctx->bstate = BS_BRANCH;
             break;
         case 0x002: /* URET */
-            tlib_abort("URET unimplemented");
+            kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
             break;
         case 0x102: /* SRET */
             gen_helper_sret(cpu_pc, cpu_env, cpu_pc);
@@ -1532,7 +1531,7 @@ static void gen_system(DisasContext *ctx, uint32_t opc,
             ctx->bstate = BS_BRANCH;
             break;
         case 0x202: /* HRET */
-            tlib_abort("HRET unimplemented");
+            kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
             break;
         case 0x302: /* MRET */
             gen_helper_mret(cpu_pc, cpu_env, cpu_pc);
@@ -1540,12 +1539,17 @@ static void gen_system(DisasContext *ctx, uint32_t opc,
             ctx->bstate = BS_BRANCH;
             break;
         case 0x7b2: /* DRET */
-            tlib_abort("DRET unimplemented");
+            kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
             break;
         case 0x105: /* WFI */
+            tcg_gen_movi_tl(cpu_pc, ctx->next_pc);
             gen_helper_wfi(cpu_env);
             break;
         case 0x104: /* SFENCE.VM */
+            gen_helper_tlb_flush(cpu_env);
+            break;
+        case 0x120: /* SFENCE.VMA */
+            /* TODO: handle ASID specific fences */
             gen_helper_tlb_flush(cpu_env);
             break;
         default:
@@ -1996,7 +2000,8 @@ static int disas_insn(CPUState *env, DisasContext *ctx)
 {
     /* check for compressed insn */
     if (extract32(ctx->opcode, 0, 2) != 3) {
-        if (!riscv_feature(env, RISCV_FEATURE_RVC)) {
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVC)) {
+            tlib_log(LOG_LEVEL_ERROR, "RISC-V C instruction set is not enabled for this CPU!");
             kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
 	    return 0;
         } else {
@@ -2127,7 +2132,7 @@ void translate_init(void)
 
     cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
 
-    /* WARNING: cpu_gpr[0] is not allocated ON PURPOSE. Do not use it. */
+    /* cpu_gpr[0] is a placeholder for the zero register. Do not use it. */
     /* Use the gen_set_gpr and gen_get_gpr helper functions when accessing */
     /* registers, unless you specifically block reads/writes to reg 0 */
     TCGV_UNUSED(cpu_gpr[0]);
@@ -2147,23 +2152,6 @@ void translate_init(void)
                              "load_res");
 }
 
-const riscv_def_t *cpu_riscv_find_by_name(const char *name);
-
-int cpu_init(const char *cpu_model)
-{
-    const riscv_def_t *def;
-
-    def = cpu_riscv_find_by_name(cpu_model);
-    if (!def)
-        return -1;
-
-    cpu->cpu_model = def;
-
-    cpu_reset(cpu);
-
-    return 0;
-}
-
 void cpu_state_reset(CPUState *env)
 {
     memset(env, 0, offsetof(CPUState, breakpoints));
@@ -2171,6 +2159,7 @@ void cpu_state_reset(CPUState *env)
     env->pc = RISCV_START_PC; // STARTING PC VALUE def'd in cpu.h
     env->exception_index = EXCP_NONE;
     env->priv = PRV_M;
+    env->misa = env->misa_mask;
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
@@ -2180,10 +2169,10 @@ void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
 
 int process_interrupt(int interrupt_request, CPUState *env)
 {
-    if (interrupt_request & CPU_INTERRUPT_HARD || 1) {
-        uint32_t pending_interrupt = cpu_riscv_hw_interrupts_pending(env);
-	if (pending_interrupt != 0xFFFFFFFF) {
-             env->exception_index = 0x80000000 | pending_interrupt;
+    if (interrupt_request & CPU_INTERRUPT_HARD) {
+        int interruptno = riscv_cpu_hw_interrupts_pending(env);
+	    if (interruptno + 1) {
+             env->exception_index = RISCV_EXCP_INT_FLAG | interruptno;
              do_interrupt(env);
 	     return 1;
 	}

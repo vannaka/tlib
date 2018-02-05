@@ -20,8 +20,7 @@ typedef enum {
     LR_32 = 14,
     R_15_32 = 15,
     PC_32 = 15,
-    CPSR_32 = 16,
-    SPSR_32 = 17,
+    CPSR_32 = 25,
 #ifdef TARGET_PROTO_ARM_M
     Control_32 = 18,
     BasePri_32 = 19,

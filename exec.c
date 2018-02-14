@@ -991,6 +991,11 @@ int cpu_breakpoint_remove(CPUState *env, target_ulong pc, int flags)
     QTAILQ_FOREACH(bp, &env->breakpoints, entry) {
         if (bp->pc == pc && bp->flags == flags) {
             cpu_breakpoint_remove_by_ref(env, bp);
+            // FIXME:
+            // this should not be necessary, but is
+            // it seems that for some unknown reason the TB containing this breakpoint is not invalidated properly and we cannot move on after hitting it for the first time
+            // flushing the *whole* TB cache helps, but... well it's not an elegant or effective approach
+            tb_flush(env);
             return 0;
         }
     }

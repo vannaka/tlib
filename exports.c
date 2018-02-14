@@ -305,3 +305,9 @@ int32_t tlib_get_state_size()
   // to store during serialization.
   return (ssize_t)(&((CPUState *) 0)->current_tb);
 }
+
+// this function is used to exit C code and jump back to C# after finishing execution of the current TB
+void tlib_request_exit()
+{
+  cpu->interrupt_request = CPU_INTERRUPT_DEBUG;
+}

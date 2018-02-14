@@ -7704,18 +7704,12 @@ int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
    basic block 'tb'. If search_pc is TRUE, also generate PC
    information for each intermediate instruction. */
 void gen_intermediate_code(CPUState *env,
-                           TranslationBlock *tb)
+                           TranslationBlock *tb, int max_insns)
 {
     DisasContext dc;
     CPUBreakpoint *bp;
-    int max_insns;
 
     create_disas_context(&dc, env, tb);
-
-    max_insns = tb->cflags & CF_COUNT_MASK;
-    if (max_insns == 0)
-        max_insns = maximum_block_size;
-
     tcg_clear_temp_count();
 
     while (1) {
@@ -7733,6 +7727,14 @@ void gen_intermediate_code(CPUState *env,
 
         tb->size += disas_insn(env, &dc);
         tb->icount++;
+
+        if (!tb->search_pc)
+        {
+            // it looks like `search_pc` is set to 1 only when restoring the state;
+            // the intention here is to set `original_size` value only during the first block generation
+            // so it can be used later when restoring the block
+            tb->original_size = tb->size;
+        }
 
         if (tcg_check_temp_count()) {
             tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.pc);
@@ -7754,6 +7756,12 @@ void gen_intermediate_code(CPUState *env,
             break;
         }
         if (dc.is_jmp) {
+            break;
+        }
+        if (tb->search_pc && tb->size == tb->original_size)
+        {
+            // `search_pc` is set to 1 only when restoring the block;
+            // this is to ensure that the size of restored block is not bigger than the size of the original one
             break;
         }
     }

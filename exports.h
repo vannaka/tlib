@@ -7,11 +7,12 @@ int32_t tlib_init(char *cpu_name);
 void tlib_dispose(void);
 void tlib_reset(void);
 
-int32_t tlib_execute(void);
+int32_t tlib_execute(int32_t max_insns);
 void tlib_restart_translation_block(void);
 void tlib_set_paused(void);
 void tlib_clear_paused(void);
 int32_t tlib_is_wfi(void);
+int32_t tlib_get_executed_instructions(void);
 void tlib_set_single_step(int32_t enabled);
 
 uint32_t tlib_get_page_size(void);

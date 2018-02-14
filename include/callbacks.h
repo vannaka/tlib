@@ -47,7 +47,6 @@ void *tlib_guest_offset_to_host_ptr(uint32_t offset);
 int32_t tlib_is_io_accessed(uint32_t address);
 uint32_t tlib_host_ptr_to_guest_offset(void *ptr);
 void tlib_invalidate_tb_in_other_cpus(unsigned long start, unsigned long end);
-uint32_t tlib_is_instruction_count_enabled(void);
 void tlib_update_instruction_counter(int32_t value);
 int32_t tlib_get_cpu_index(void);
 

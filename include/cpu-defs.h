@@ -165,7 +165,7 @@ typedef struct CPUBreakpoint {
         uint##width##_t* ptr = get_reg_pointer_##width(reg_number);         \
         if(ptr == NULL)                                                     \
         {                                                                   \
-            tlib_abort("Read from undefined CPU register detected");  \
+            tlib_abortf("Read from undefined CPU register number %d detected", reg_number);  \
         }                                                                   \
                                                                             \
         return *ptr;                                                        \
@@ -177,7 +177,7 @@ typedef struct CPUBreakpoint {
         uint##width##_t* ptr = get_reg_pointer_##width(reg_number);             \
         if(ptr == NULL)                                                         \
         {                                                                       \
-            tlib_abort("Write to undefined CPU register detected");       \
+            tlib_abortf("Write to undefined CPU register number %d detected", reg_number);       \
         }                                                                       \
                                                                                 \
         *ptr = value;                                                           \

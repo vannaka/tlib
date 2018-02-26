@@ -732,10 +732,10 @@ static void gen_fp_load(DisasContext *ctx, uint32_t opc, int rd,
 
     switch (opc) {
     case OPC_RISC_FLW:
-        tcg_gen_ld_i64(cpu_fpr[rd], t0, ctx->mem_idx);
+        tcg_gen_qemu_ld32u(cpu_fpr[rd], t0, ctx->mem_idx);
         break;
     case OPC_RISC_FLD:
-        tcg_gen_ld_i64(cpu_fpr[rd], t0, ctx->mem_idx);
+        tcg_gen_qemu_ld64(cpu_fpr[rd], t0, ctx->mem_idx);
         break;
     default:
         kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
@@ -768,10 +768,10 @@ static void gen_fp_store(DisasContext *ctx, uint32_t opc, int rs1,
 
     switch (opc) {
     case OPC_RISC_FSW:
-        tcg_gen_st_i64(cpu_fpr[rs2], t0, ctx->mem_idx);
+        tcg_gen_qemu_st32(cpu_fpr[rs2], t0, ctx->mem_idx);
         break;
     case OPC_RISC_FSD:
-        tcg_gen_st_i64(cpu_fpr[rs2], t0, ctx->mem_idx);
+        tcg_gen_qemu_st64(cpu_fpr[rs2], t0, ctx->mem_idx);
         break;
     default:
         kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);

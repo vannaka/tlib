@@ -97,9 +97,9 @@ typedef struct CPUTLBEntry {
        use the corresponding iotlb value.  */
     unsigned long addend;
     /* padding to get a power of two size */
-    uint8_t dummy[(1 << CPU_TLB_ENTRY_BITS) - 
-                  (sizeof(target_ulong) * 3 + 
-                   ((-sizeof(target_ulong) * 3) & (sizeof(unsigned long) - 1)) + 
+    uint8_t dummy[(1 << CPU_TLB_ENTRY_BITS) -
+                  (sizeof(target_ulong) * 3 +
+                   ((-sizeof(target_ulong) * 3) & (sizeof(unsigned long) - 1)) +
                    sizeof(unsigned long))];
 } CPUTLBEntry;
 
@@ -135,10 +135,10 @@ typedef struct CPUBreakpoint {
                                 accessed */                             \
     target_ulong mem_io_vaddr; /* target virtual addr at which the      \
                                      memory was accessed */             \
-    uint32_t wfi; /* Nonzero if the CPU is in suspend state */       \
+    uint32_t wfi; /* Nonzero if the CPU is in suspend state */          \
     uint32_t interrupt_request;                                         \
     volatile sig_atomic_t exit_request;                                 \
-    int tb_restart_request;                                 \
+    int tb_restart_request;                                             \
     CPU_COMMON_TLB                                                      \
     struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];           \
     /* buffer for temporaries in the code generator */                  \
@@ -159,29 +159,29 @@ typedef struct CPUBreakpoint {
 
 #endif
 
-#define CPU_REGISTER_GETTER(width)                                          \
-    uint##width##_t tlib_get_register_value_##width(int reg_number)          \
-    {                                                                       \
-        uint##width##_t* ptr = get_reg_pointer_##width(reg_number);         \
-        if(ptr == NULL)                                                     \
-        {                                                                   \
+#define CPU_REGISTER_GETTER(width)                                                           \
+    uint##width##_t tlib_get_register_value_##width(int reg_number)                          \
+    {                                                                                        \
+        uint##width##_t* ptr = get_reg_pointer_##width(reg_number);                          \
+        if(ptr == NULL)                                                                      \
+        {                                                                                    \
             tlib_abortf("Read from undefined CPU register number %d detected", reg_number);  \
-        }                                                                   \
-                                                                            \
-        return *ptr;                                                        \
-    }                                                                       \
+        }                                                                                    \
+                                                                                             \
+        return *ptr;                                                                         \
+    }                                                                                        \
 
-#define CPU_REGISTER_SETTER(width)                                              \
-    void tlib_set_register_value_##width(int reg_number, uint##width##_t value)  \
-    {                                                                           \
-        uint##width##_t* ptr = get_reg_pointer_##width(reg_number);             \
-        if(ptr == NULL)                                                         \
-        {                                                                       \
-            tlib_abortf("Write to undefined CPU register number %d detected", reg_number);       \
-        }                                                                       \
-                                                                                \
-        *ptr = value;                                                           \
-    }                                                                           \
+#define CPU_REGISTER_SETTER(width)                                                           \
+    void tlib_set_register_value_##width(int reg_number, uint##width##_t value)              \
+    {                                                                                        \
+        uint##width##_t* ptr = get_reg_pointer_##width(reg_number);                          \
+        if(ptr == NULL)                                                                      \
+        {                                                                                    \
+            tlib_abortf("Write to undefined CPU register number %d detected", reg_number);   \
+        }                                                                                    \
+                                                                                             \
+        *ptr = value;                                                                        \
+    }                                                                                        \
 
 #define CPU_REGISTER_ACCESSOR(width) \
         CPU_REGISTER_GETTER(width)   \

@@ -1395,8 +1395,8 @@ static void gen_fp_arith(DisasContext *ctx, uint32_t opc, int rd,
         }
     case OPC_RISC_FMV_D_X:
         {
-            TCGLabel *fp_ok = gen_new_label();
-            TCGLabel *done = gen_new_label();
+            int fp_ok = gen_new_label();
+            int done = gen_new_label();
 
             // check MSTATUS.FS
             tcg_gen_ld_tl(write_int_rd, cpu_env, offsetof(CPUState, mstatus));

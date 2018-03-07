@@ -1996,7 +1996,7 @@ void gen_intermediate_code(CPUState *env,
         ctx.opcode = ldl_code(ctx.pc);
 
         char msg[1024];
-        sprintf(msg, "opcode 0x%08X at pc=0x%08X [tcg id=%d]", ctx.opcode, ctx.pc, (int)(gen_opc_ptr - tcg->gen_opc_buf));
+        sprintf(msg, "opcode 0x%08X at pc=0x" TARGET_FMT_plx " [tcg id=%d]", ctx.opcode, ctx.pc, (int)(gen_opc_ptr - tcg->gen_opc_buf));
         generate_log(ctx.pc, "---> tcg: we are executing %s", msg);
 
         tb->size += disas_insn(env, &ctx);

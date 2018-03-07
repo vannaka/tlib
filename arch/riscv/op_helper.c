@@ -325,7 +325,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
 #if defined(TARGET_RISCV32)
         env->mcycle_snapshot_offset = (get_mcycles_current(env) & 0xFFFFFFFF00000000) | val_to_write;
 #else
-        env->mcycle_snapshot_offset = get_mcycles_current(env)
+        env->mcycle_snapshot_offset = get_mcycles_current(env);
 #endif
         env->mcycle_snapshot = cpu_riscv_read_instret(env);
         break;
@@ -339,7 +339,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
 #if defined(TARGET_RISCV32)
         env->minstret_snapshot_offset = (get_minstret_current(env) & 0xFFFFFFFF00000000) | val_to_write;
 #else
-        env->minstret_snapshot_offset = get_minstret_current(env)
+        env->minstret_snapshot_offset = get_minstret_current(env);
 #endif
         env->minstret_snapshot = cpu_riscv_read_instret(env);
         break;

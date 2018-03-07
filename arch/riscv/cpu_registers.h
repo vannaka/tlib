@@ -1,6 +1,44 @@
 #include "cpu-defs.h"
 
+// REMARK: we use #ifdef/#endif, #ifdef/#endif instead of #ifdef/#else/#endif notation due to the limitation of `RegisterEnumParser.cs`
 typedef enum {
+#ifdef TARGET_RISCV64
+    ZERO_64 = 0,
+    X_0_64 = 0,
+    X_1_64 = 1,
+    X_2_64 = 2,
+    X_3_64 = 3,
+    X_4_64 = 4,
+    X_5_64 = 5,
+    X_6_64 = 6,
+    X_7_64 = 7,
+    X_8_64 = 8,
+    X_9_64 = 9,
+    X_10_64 = 10,
+    X_11_64 = 11,
+    X_12_64 = 12,
+    X_13_64 = 13,
+    X_14_64 = 14,
+    X_15_64 = 15,
+    X_16_64 = 16,
+    X_17_64 = 17,
+    X_18_64 = 18,
+    X_19_64 = 19,
+    X_20_64 = 20,
+    X_21_64 = 21,
+    X_22_64 = 22,
+    X_23_64 = 23,
+    X_24_64 = 24,
+    X_25_64 = 25,
+    X_26_64 = 26,
+    X_27_64 = 27,
+    X_28_64 = 28,
+    X_29_64 = 29,
+    X_30_64 = 30,
+    X_31_64 = 31,
+    PC_64 = 32
+#endif
+#ifdef TARGET_RISCV32
     ZERO_32 = 0,
     X_0_32 = 0,
     X_1_32 = 1,
@@ -35,4 +73,5 @@ typedef enum {
     X_30_32 = 30,
     X_31_32 = 31,
     PC_32 = 32
+#endif
 } Registers;

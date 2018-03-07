@@ -21,6 +21,24 @@
 #include "cpu.h"
 #include "cpu_registers.h"
 
+// REMARK: here we use #ifdef/#endif,#ifdef/#endif notation just to be consistent with header file; in header it is required by our parser
+#ifdef TARGET_RISCV64
+uint64_t* get_reg_pointer_64(int reg)
+{
+    switch(reg)
+    {
+        case X_0_64 ... X_31_64:
+            return &(cpu->gpr[reg]);
+        case PC_64:
+            return &(cpu->pc);
+        default:
+            return NULL;
+    }
+}
+
+CPU_REGISTER_ACCESSOR(64)
+#endif
+#ifdef TARGET_RISCV32
 uint32_t* get_reg_pointer_32(int reg)
 {
     switch(reg)
@@ -35,3 +53,4 @@ uint32_t* get_reg_pointer_32(int reg)
 }
 
 CPU_REGISTER_ACCESSOR(32)
+#endif

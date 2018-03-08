@@ -158,7 +158,7 @@ uint32_t tlib_get_page_size()
   return TARGET_PAGE_SIZE;
 }
 
-void tlib_map_range(uint32_t start_addr, uint32_t length)
+void tlib_map_range(uint64_t start_addr, uint64_t length)
 {
   ram_addr_t phys_offset = start_addr;
   ram_addr_t size = length;
@@ -186,9 +186,9 @@ void tlib_map_range(uint32_t start_addr, uint32_t length)
   cpu_register_physical_memory(start_addr, size, phys_offset | IO_MEM_RAM);
 }
 
-void tlib_unmap_range(uint32_t start, uint32_t end)
+void tlib_unmap_range(uint64_t start, uint64_t end)
 {
-  uint32_t new_start;
+  uint64_t new_start;
 
   while(start <= end)
   {
@@ -202,13 +202,13 @@ void tlib_unmap_range(uint32_t start, uint32_t end)
   }
 }
 
-uint32_t tlib_is_range_mapped(uint32_t start, uint32_t end)
+uint32_t tlib_is_range_mapped(uint64_t start, uint64_t end)
 {
   PhysPageDesc *pd;
 
   while(start < end)
   {
-    pd = phys_page_find(start >> TARGET_PAGE_BITS);
+    pd = phys_page_find((target_phys_addr_t)start >> TARGET_PAGE_BITS);
     if(pd != NULL && pd->phys_offset != IO_MEM_UNASSIGNED)
     {
       return 1; // at least one page of this region is mapped
@@ -223,7 +223,7 @@ void tlib_invalidate_translation_blocks(unsigned long start, unsigned long end)
   tb_invalidate_phys_page_range_inner(start, end, 0, 0);
 }
 
-uint32_t tlib_translate_to_physical_address(uint32_t address)
+uint64_t tlib_translate_to_physical_address(uint64_t address)
 {
   return virt_to_phys(address);
 }
@@ -245,12 +245,12 @@ int32_t tlib_is_irq_set()
   return cpu->interrupt_request;
 }
 
-void tlib_add_breakpoint(uint32_t address)
+void tlib_add_breakpoint(uint64_t address)
 {
   cpu_breakpoint_insert(cpu, address, BP_GDB, NULL);
 }
 
-void tlib_remove_breakpoint(uint32_t address)
+void tlib_remove_breakpoint(uint64_t address)
 {
   cpu_breakpoint_remove(cpu, address, BP_GDB);
 }

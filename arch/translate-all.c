@@ -66,12 +66,12 @@ static inline void gen_block_header(TranslationBlock *tb)
 
     if(tlib_is_block_begin_event_enabled())
     {
-      TCGv_i32 event_address = tcg_const_i32(tb->pc);
+      TCGv event_address = tcg_const_tl(tb->pc);
       event_size_arg = gen_opparam_ptr + 1;
       TCGv_i32 event_size = tcg_const_i32(0xFFFF); // bogus value that is to be fixed at later point
 
       gen_helper_block_begin_event(event_address, event_size);
-      tcg_temp_free_i32(event_address);
+      tcg_temp_free(event_address);
       tcg_temp_free_i32(event_size);
     }
 }

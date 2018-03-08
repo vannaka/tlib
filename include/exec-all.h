@@ -264,7 +264,7 @@ PhysPageDesc *phys_page_find(target_phys_addr_t index);
 void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t end,
                                          int is_cpu_write_access, int broadcast);
 
-extern void unmap_page(uint32_t address);
+extern void unmap_page(target_phys_addr_t address);
 void free_all_page_descriptors(void);
 void cpu_reset_exit_request(CPUState *env);
 void code_gen_free(void);

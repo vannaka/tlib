@@ -20,9 +20,16 @@
 #include "tcg.h"
 
 target_ulong virt_to_phys(target_ulong virt) {
+#if (TARGET_LONG_BITS == 32)
         #define MASK2 (0xFFFFFFFF - MASK1)
         #define MASK1 (0xFFFFFFFF >> (32-TARGET_PAGE_BITS))
-        target_ulong phys_addr = 0xFFFFFFFF;
+#elif (TARGET_LONG_BITS == 64)
+        #define MASK2 (0xFFFFFFFFFFFFFFFF - MASK1)
+        #define MASK1 (0xFFFFFFFFFFFFFFFF >> (64-TARGET_PAGE_BITS))
+#else
+    #error Unsupported TARGET_LONG_BITS
+#endif
+        target_ulong phys_addr = -1;
         int index = (virt >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
         int i;
         for (i = 0; i < NB_MMU_MODES; i++) {
@@ -30,7 +37,7 @@ target_ulong virt_to_phys(target_ulong virt) {
           if ((virt == addr)) {
             void *p = (void *)(unsigned long)((cpu->tlb_table[i][index].addr_code & TARGET_PAGE_MASK) + cpu->tlb_table[i][index].addend);
             phys_addr = tlib_host_ptr_to_guest_offset(p);
-            if (phys_addr != 0xFFFFFFFF)
+            if (phys_addr != -1)
               phys_addr += (virt & MASK1);
             break;
           }

@@ -318,7 +318,7 @@ inline PhysPageDesc *phys_page_find(target_phys_addr_t index)
     return phys_page_find_alloc(index, 0);
 }
 
-void unmap_page(uint32_t address)
+void unmap_page(target_phys_addr_t address)
 {
     PhysPageDesc *pd;
 

@@ -626,8 +626,9 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
 
     target_ulong mstatus = env->mstatus;
     target_ulong prev_priv = get_field(mstatus, MSTATUS_SPP);
-    mstatus = set_field(mstatus, MSTATUS_UIE << prev_priv,
-                        get_field(mstatus, MSTATUS_SPIE));
+    mstatus = set_field(mstatus,
+        env->privilege_mode_1_10 ? MSTATUS_SIE : MSTATUS_UIE << prev_priv,
+        get_field(mstatus, MSTATUS_SPIE));
     mstatus = set_field(mstatus, MSTATUS_SPIE, 0);
     mstatus = set_field(mstatus, MSTATUS_SPP, PRV_U);
     riscv_set_mode(env, prev_priv);
@@ -645,8 +646,9 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
     target_ulong retpc = env->mepc;
     target_ulong mstatus = env->mstatus;
     target_ulong prev_priv = get_field(mstatus, MSTATUS_MPP);
-    mstatus = set_field(mstatus, MSTATUS_UIE << prev_priv,
-                        get_field(mstatus, MSTATUS_MPIE));
+    mstatus = set_field(mstatus,
+        env->privilege_mode_1_10 ? MSTATUS_MIE : MSTATUS_UIE << prev_priv,
+        get_field(mstatus, MSTATUS_MPIE));
     mstatus = set_field(mstatus, MSTATUS_MPIE, 0);
     mstatus = set_field(mstatus, MSTATUS_MPP, PRV_U);
     riscv_set_mode(env, prev_priv);

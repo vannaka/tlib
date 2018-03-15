@@ -433,6 +433,13 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
+    case CSR_TIME:
+        return tlib_get_cpu_time();
+    case CSR_TIMEH:
+#if defined(TARGET_RISCV32)
+        return tlib_get_cpu_time() >> 32;
+#endif
+        break;
     case CSR_INSTRET:
     case CSR_CYCLE:
         if (ctr_ok) {

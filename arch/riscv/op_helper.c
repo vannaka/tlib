@@ -621,7 +621,7 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
     }
 
     target_ulong retpc = env->sepc;
-    if (retpc & 0x3) {
+    if (!riscv_has_ext(env, RISCV_FEATURE_RVC) && (retpc & 0x3)) {
         helper_raise_exception(env, RISCV_EXCP_INST_ADDR_MIS);
     }
 
@@ -645,6 +645,10 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
     }
 
     target_ulong retpc = env->mepc;
+    if (!riscv_has_ext(env, RISCV_FEATURE_RVC) && (retpc & 0x3)) {
+        helper_raise_exception(env, RISCV_EXCP_INST_ADDR_MIS);
+    }
+
     target_ulong mstatus = env->mstatus;
     target_ulong prev_priv = get_field(mstatus, MSTATUS_MPP);
     mstatus = set_field(mstatus,

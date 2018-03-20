@@ -640,6 +640,7 @@ static void gen_load(DisasContext *ctx, uint32_t opc, int rd, int rs1,
 
     tcg_gen_addi_tl(t0, t0, imm);
 
+    tcg_gen_movi_tl(cpu_pc, ctx->pc);
     switch (opc) {
 
     case OPC_RISC_LB:
@@ -678,6 +679,8 @@ static void gen_load(DisasContext *ctx, uint32_t opc, int rd, int rs1,
 static void gen_store(DisasContext *ctx, uint32_t opc, int rs1, int rs2,
         target_long imm)
 {
+    tcg_gen_movi_tl(cpu_pc, ctx->pc);
+
     TCGv t0 = tcg_temp_new();
     TCGv dat = tcg_temp_new();
     gen_get_gpr(t0, rs1);

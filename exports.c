@@ -89,6 +89,11 @@ int32_t tlib_get_executed_instructions()
   return cpu->instructions_count_value;
 }
 
+int32_t tlib_get_total_executed_instructions()
+{
+  return cpu->instructions_count_total_value;
+}
+
 void tlib_reset()
 {
   cpu_reset(cpu);

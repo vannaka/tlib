@@ -2026,6 +2026,7 @@ void gen_intermediate_code(CPUState *env,
             break;
         }
         if (tb->icount >= max_insns) {
+            ctx.bstate = BS_STOP;
             break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
@@ -2035,6 +2036,7 @@ void gen_intermediate_code(CPUState *env,
         {
             // `search_pc` is set to 1 only when restoring the block;
             // this is to ensure that the size of restored block is not bigger than the size of the original one
+            ctx.bstate = BS_STOP;
             break;
         }
     }

@@ -243,7 +243,7 @@ int cpu_exec(CPUState *env)
                    spans two pages, we cannot safely do a direct
                    jump. */
 
-                if (next_tb != 0 && tb->page_addr[1] == -1) {
+                if (!env->chaining_disabled && next_tb != 0 && tb->page_addr[1] == -1) {
                     tb_add_jump((TranslationBlock *)(next_tb & ~3), next_tb & 3, tb);
                 }
 

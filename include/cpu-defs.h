@@ -156,6 +156,8 @@ typedef struct CPUBreakpoint {
     int nr_threads;/* number of threads within this CPU */              \
     /* user data */                                                     \
     void *opaque;                                                       \
+    /* chaining is enabled by default */                                \
+    int chaining_disabled;                                              \
 
 #endif
 

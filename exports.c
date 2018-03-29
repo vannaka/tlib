@@ -328,3 +328,13 @@ void tlib_request_exit()
 {
   cpu->interrupt_request = CPU_INTERRUPT_DEBUG;
 }
+
+void tlib_set_chaining_enabled(uint32_t val)
+{
+  cpu->chaining_disabled = !val;
+}
+
+uint32_t tlib_get_chaining_enabled()
+{
+  return !cpu->chaining_disabled;
+}

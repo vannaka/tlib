@@ -82,11 +82,20 @@ void tlib_dispose()
   tcg_dispose();
 }
 
-// this function returns number of instructions executed by a single call of `tlib_execute`;
+// this function returns number of instructions executed since the previous call
 // there is `cpu->instructions_count_total_value` that contains the cumulative value
 int32_t tlib_get_executed_instructions()
 {
-  return cpu->instructions_count_value;
+  int32_t result = cpu->instructions_count_value;
+  cpu->instructions_count_value = 0;
+  return result;
+}
+
+// this function is used by C# to return unused instructions
+// that were returned as a result of a call to `tlib_get_executed_instructions`
+void tlib_reset_executed_instructions(int32_t val)
+{
+  cpu->instructions_count_value = val;
 }
 
 int32_t tlib_get_total_executed_instructions()
@@ -101,7 +110,10 @@ void tlib_reset()
 
 int32_t tlib_execute(int32_t max_insns)
 {
-  cpu->instructions_count_value = 0;
+  if(cpu->instructions_count_value != 0)
+  {
+    tlib_abortf("Tried to execute cpu without reading executed instructions count first.");
+  }
   cpu->instructions_count_threshold = max_insns;
   return cpu_exec(cpu);
 }

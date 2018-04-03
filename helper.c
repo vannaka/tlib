@@ -5,9 +5,12 @@
 
 // verify if there are instructions left to execute, update instructions count
 // and trim the block and exit to the main loop if necessary
-void HELPER(prepare_block_for_execution)(int current_block_size)
+void HELPER(prepare_block_for_execution)(void* tb)
 {
+  cpu->current_tb = (TranslationBlock*)tb;
+
   uint32_t instructions_left = cpu->instructions_count_threshold - cpu->instructions_count_value;
+  uint32_t current_block_size = cpu->current_tb->icount;
 
   if(instructions_left == 0)
   {

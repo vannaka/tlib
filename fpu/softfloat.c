@@ -6536,6 +6536,81 @@ uint64_t float64_to_uint64_round_to_zero (float64 a STATUS_PARAM)
     return v - INT64_MIN;
 }
 
+static int64_t roundAndPackUint64(flag zSign, uint64_t absZ0,
+                                uint64_t absZ1, float_status *status)
+{
+    int8_t roundingMode;
+    flag roundNearestEven, increment = 0;
+
+    roundingMode = status->float_rounding_mode;
+    roundNearestEven = (roundingMode == float_round_nearest_even);
+    increment = ((int64_t)absZ1 < 0);
+    if (!roundNearestEven) {
+        if (roundingMode == float_round_to_zero) {
+            increment = 0;
+        } else if (absZ1) {
+            if (zSign) {
+                increment = (roundingMode == float_round_down) && absZ1;
+            } else {
+                increment = (roundingMode == float_round_up) && absZ1;
+            }
+        }
+    }
+    if (increment) {
+        ++absZ0;
+        if (absZ0 == 0) {
+            float_raise(float_flag_invalid, status);
+            return LIT64(0xFFFFFFFFFFFFFFFF);
+        }
+        absZ0 &= ~(((uint64_t)(absZ1<<1) == 0) & roundNearestEven);
+    }
+
+    if (zSign && absZ0) {
+        float_raise(float_flag_invalid, status);
+        return 0;
+    }
+
+    if (absZ1) {
+        status->float_exception_flags |= float_flag_inexact;
+    }
+    return absZ0;
+}
+
+uint64_t float32_to_uint64(float32 a, float_status *status)
+{
+    flag aSign;
+    int aExp;
+    int shiftCount;
+    uint32_t aSig;
+    uint64_t aSig64, aSigExtra;
+    a = float32_squash_input_denormal(a, status);
+
+    aSig = extractFloat32Frac(a);
+    aExp = extractFloat32Exp(a);
+    aSign = extractFloat32Sign(a);
+    if ((aSign) && (aExp > 126)) {
+        float_raise(float_flag_invalid, status);
+        if (float32_is_any_nan(a)) {
+            return LIT64(0xFFFFFFFFFFFFFFFF);
+        } else {
+            return 0;
+        }
+    }
+    shiftCount = 0xBE - aExp;
+    if (aExp) {
+        aSig |= 0x00800000;
+    }
+    if (shiftCount < 0) {
+        float_raise(float_flag_invalid, status);
+        return LIT64(0xFFFFFFFFFFFFFFFF);
+    }
+
+    aSig64 = aSig;
+    aSig64 <<= 40;
+    shift64ExtraRightJamming(aSig64, 0, shiftCount, &aSig64, &aSigExtra);
+    return roundAndPackUint64(aSign, aSig64, aSigExtra, status);
+}
+
 #define COMPARE(s, nan_exp)                                                  \
 INLINE int float ## s ## _compare_internal( float ## s a, float ## s b,      \
                                       int is_quiet STATUS_PARAM )            \

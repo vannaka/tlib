@@ -568,4 +568,6 @@ INLINE int float128_is_any_nan(float128 a)
 *----------------------------------------------------------------------------*/
 extern const float128 float128_default_nan;
 
+uint64_t float32_to_uint64(float32 a, float_status *status);
+
 #endif /* !SOFTFLOAT_H */

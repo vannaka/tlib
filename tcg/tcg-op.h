@@ -2091,15 +2091,16 @@ static inline void tcg_gen_deposit_i32(TCGv_i32 ret, TCGv_i32 arg1,
 static inline void tcg_gen_movcond_i32(TCGCond cond, TCGv_i32 ret, TCGv_i32 c1,
                          TCGv_i32 c2, TCGv_i32 v1, TCGv_i32 v2)
 {
-        TCGv_i32 t0 = tcg_temp_new_i32();
-        TCGv_i32 t1 = tcg_temp_new_i32();
-        tcg_gen_setcond_i32(cond, t0, c1, c2);
-        tcg_gen_neg_i32(t0, t0);
-        tcg_gen_and_i32(t1, v1, t0);
-        tcg_gen_andc_i32(ret, v2, t0);
-        tcg_gen_or_i32(ret, ret, t1);
-        tcg_temp_free_i32(t0);
-        tcg_temp_free_i32(t1);
+    assert(cond == TCG_COND_EQ);
+    TCGv_i32 t0 = tcg_temp_new_i32();
+    TCGv_i32 t1 = tcg_temp_new_i32();
+    tcg_gen_setcond_i32(cond, t0, c1, c2);
+    tcg_gen_neg_i32(t0, t0);
+    tcg_gen_and_i32(t1, v1, t0);
+    tcg_gen_andc_i32(ret, v2, t0);
+    tcg_gen_or_i32(ret, ret, t1);
+    tcg_temp_free_i32(t0);
+    tcg_temp_free_i32(t1);
 }
 
 static inline void tcg_gen_movcond_i64(TCGCond cond, TCGv_i64 ret, TCGv_i64 c1,

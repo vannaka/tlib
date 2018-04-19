@@ -2102,6 +2102,21 @@ static inline void tcg_gen_movcond_i32(TCGCond cond, TCGv_i32 ret, TCGv_i32 c1,
         tcg_temp_free_i32(t1);
 }
 
+static inline void tcg_gen_movcond_i64(TCGCond cond, TCGv_i64 ret, TCGv_i64 c1,
+                         TCGv_i64 c2, TCGv_i64 v1, TCGv_i64 v2)
+{
+    assert(cond == TCG_COND_EQ);
+    TCGv_i64 t0 = tcg_temp_new_i64();
+    TCGv_i64 t1 = tcg_temp_new_i64();
+    tcg_gen_setcond_i64(cond, t0, c1, c2);
+    tcg_gen_neg_i64(t0, t0);
+    tcg_gen_and_i64(t1, v1, t0);
+    tcg_gen_andc_i64(ret, v2, t0);
+    tcg_gen_or_i64(ret, ret, t1);
+    tcg_temp_free_i64(t0);
+    tcg_temp_free_i64(t1);
+}
+
 static inline void tcg_gen_deposit_i64(TCGv_i64 ret, TCGv_i64 arg1,
                                        TCGv_i64 arg2, unsigned int ofs,
                                        unsigned int len)

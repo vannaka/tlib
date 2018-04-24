@@ -170,7 +170,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     }
     case CSR_MIP: {
         target_ulong mask = MIP_SSIP | MIP_STIP | MIP_SEIP;
-        tlib_mip_changed((env->mip & ~mask) | (val_to_write & mask));
+        env->mip = (env->mip & ~mask) | (val_to_write & mask);
         break;
     }
     case CSR_MIE: {

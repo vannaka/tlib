@@ -19,14 +19,47 @@
 #include <stdint.h>
 #include "cpu.h"
 
-void tlib_set_mip(uint32_t value)
+void tlib_set_interrupt(uint32_t id, uint32_t value)
 {
-   cpu->mip = value;
-}
+    target_ulong priv = cpu->priv;
+    target_ulong mideleg = cpu->mideleg;
+    int position = -1;
 
-uint32_t tlib_get_mip()
-{
-   return cpu->mip;
+    switch(id)
+    {
+    // Timer Interrupt
+    case 0:
+        position = 7;
+        break;
+    // External Interrupt
+    case 1:
+        position = 11;
+        break;
+    // Software Interrupt
+    case 2:
+        position = 3;
+        break;
+    default:
+        tlib_abortf("Unsupported interrupt id: %d", id);
+    }
+
+    if(priv == PRV_S)
+    {
+        if(mideleg & (1 << (position - 2)))
+        {
+            position -= 2;
+        }
+    }
+
+    // here we might have a race
+    if(value)
+    {
+        cpu->mip |= (1 << position);
+    }
+    else
+    {
+        cpu->mip &= ~(1 << position);
+    }
 }
 
 void tlib_allow_feature(uint32_t feature_bit)

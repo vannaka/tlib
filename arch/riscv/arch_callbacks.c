@@ -19,5 +19,4 @@
 #include "callbacks.h"
 #include "arch_callbacks.h"
 
-DEFAULT_VOID_HANDLER1(void tlib_mip_changed, uint32_t value)
 DEFAULT_INT_HANDLER1(uint64_t tlib_get_cpu_time, void)

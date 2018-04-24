@@ -3,10 +3,6 @@
 
 #include <stdint.h>
 
-void tlib_set_mip(uint32_t value);
-
-uint32_t tlib_get_mip();
-
 void tlib_allow_feature(uint32_t feature_bit);
 
 uint32_t tlib_is_feature_enabled(uint32_t feature_bit);

@@ -19,6 +19,16 @@
 #include <stdint.h>
 #include "cpu.h"
 
+void tlib_set_hart_id(uint32_t id)
+{
+    cpu->mhartid = id;
+}
+
+uint32_t tlib_get_hart_id()
+{
+    return cpu->mhartid;
+}
+
 void tlib_set_interrupt(uint32_t id, uint32_t value)
 {
     target_ulong priv = cpu->priv;

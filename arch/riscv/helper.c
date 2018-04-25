@@ -19,6 +19,7 @@
 #include "cpu.h"
 
 #include "cpu-common.h"
+#include "arch_callbacks.h"
 
 // This could possibly be generalized. 0 and 1 values are used as "is_write". This conflicts in a way with READ_ACCESS_TYPE et al.
 #define MMU_DATA_LOAD 0
@@ -37,6 +38,7 @@ void cpu_reset(CPUState *env)
     tlb_flush(env, 1);
     cpu_state_reset(env);
     env->priv = PRV_M;
+    tlib_privilege_level_changed(env->priv);
     env->mtvec = DEFAULT_MTVEC;
     env->pc = DEFAULT_RSTVEC;
     env->exception_index = EXCP_NONE;

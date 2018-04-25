@@ -611,7 +611,10 @@ void riscv_set_mode(CPUState *env, target_ulong newpriv)
         newpriv = PRV_U;
     }
     helper_tlb_flush(env);
-    env->priv = newpriv;
+    if(newpriv != env->priv) {
+        env->priv = newpriv;
+        tlib_privilege_level_changed(env->priv);
+    }
 }
 
 target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)

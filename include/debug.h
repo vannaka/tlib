@@ -2,6 +2,7 @@
 #define __DEBUG_H__
 
 #include <stdint.h>
+#include "tcg-op.h"
 
 #define MAX_MSG_COUNT 10000
 extern char *msgs[MAX_MSG_COUNT];
@@ -13,6 +14,7 @@ extern char *msgs[MAX_MSG_COUNT];
 #endif
 
 void generate_log(uint32_t pc, char *format, ...);
+void generate_var_log(TCGv v);
 
 void mark_as_locked(struct TranslationBlock *tb, char* filename, int line_number);
 void check_locked(struct TranslationBlock *tb);

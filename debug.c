@@ -86,3 +86,11 @@ void check_locked(struct TranslationBlock *tb)
     }
 #endif
 }
+
+void generate_var_log(TCGv v)
+{
+#ifdef DEBUG_ON
+    gen_helper_var_log(v);
+#endif
+}
+

@@ -73,3 +73,9 @@ target_ulong HELPER(check_address_reservation)(CPUState *env, ram_addr_t address
 {
   return check_address_reservation(env, address);
 }
+
+void HELPER(var_log)(target_ulong v)
+{
+  tlib_printf(LOG_LEVEL_INFO, "Var Log: 0x" TARGET_FMT_lx, v);
+}
+

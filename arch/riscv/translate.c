@@ -317,6 +317,7 @@ static void gen_arith(DisasContext *ctx, uint32_t opc, int rd, int rs1,
         tcg_gen_ext32s_tl(source2, source2);
         /* fall through to DIV */
 #endif
+        /* fallthrough */
     case OPC_RISC_DIV:
         /* Handle by altering args to tcg_gen_div to produce req'd results:
          * For overflow: want source1 in source1 and 1 in source2
@@ -353,6 +354,7 @@ static void gen_arith(DisasContext *ctx, uint32_t opc, int rd, int rs1,
         tcg_gen_ext32u_tl(source2, source2);
         /* fall through to DIVU */
 #endif
+        /* fallthrough */
     case OPC_RISC_DIVU:
         cond1 = tcg_temp_new();
         zeroreg = tcg_const_tl(0);
@@ -377,6 +379,7 @@ static void gen_arith(DisasContext *ctx, uint32_t opc, int rd, int rs1,
         tcg_gen_ext32s_tl(source2, source2);
         /* fall through to REM */
 #endif
+        /* fallthrough */
     case OPC_RISC_REM:
         cond1 = tcg_temp_new();
         cond2 = tcg_temp_new();
@@ -409,6 +412,7 @@ static void gen_arith(DisasContext *ctx, uint32_t opc, int rd, int rs1,
         tcg_gen_ext32u_tl(source2, source2);
         /* fall through to REMU */
 #endif
+        /* fallthrough */
     case OPC_RISC_REMU:
         cond1 = tcg_temp_new();
         zeroreg = tcg_const_tl(0);
@@ -480,6 +484,7 @@ generate_log(ctx->pc, "we are in gen_arith_imm");
          }
         /* fall through to SLLI */
 #endif
+        /* fallthrough */
     case OPC_RISC_SLLI:
         if (imm < TARGET_LONG_BITS) {
             tcg_gen_shli_tl(source1, source1, imm);
@@ -496,6 +501,7 @@ generate_log(ctx->pc, "we are in gen_arith_imm");
         extra_shamt = 32;
         /* fall through to SHIFT_RIGHT_I */
 #endif
+        /* fallthrough */
     case OPC_RISC_SHIFT_RIGHT_I:
         /* differentiate on IMM */
         if ((imm & 0x3ff) < TARGET_LONG_BITS) {

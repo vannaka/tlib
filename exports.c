@@ -91,8 +91,10 @@ int32_t tlib_get_executed_instructions()
   return result;
 }
 
-// this function is used by C# to return unused instructions
-// that were returned as a result of a call to `tlib_get_executed_instructions`
+// `TranslationCPU` uses the number of executed instructions to calculate the elapsed virtual time.
+// This number is divided by `PerformanceInMIPS` value, but may leave a remainder, that is not reflected in `TranslationCPU` state.
+// To account for that, we have to report this remainder back to tlib, so that the next call to `tlib_get_executed_instructions`
+// includes it in the returned value.
 void tlib_reset_executed_instructions(int32_t val)
 {
   cpu->instructions_count_value = val;

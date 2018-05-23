@@ -20,4 +20,3 @@
 #include "arch_callbacks.h"
 
 DEFAULT_INT_HANDLER1(uint64_t tlib_get_cpu_time, void)
-DEFAULT_VOID_HANDLER1(void tlib_privilege_level_changed, uint32_t level)

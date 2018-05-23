@@ -2021,7 +2021,6 @@ void cpu_state_reset(CPUState *env)
     env->pc = RISCV_START_PC; // STARTING PC VALUE def'd in cpu.h
     env->exception_index = EXCP_NONE;
     env->priv = PRV_M;
-    tlib_privilege_level_changed(env->priv);
     env->misa = env->misa_mask;
 }
 

@@ -38,7 +38,6 @@ void cpu_reset(CPUState *env)
     tlb_flush(env, 1);
     cpu_state_reset(env);
     env->priv = PRV_M;
-    tlib_privilege_level_changed(env->priv);
     env->mtvec = DEFAULT_MTVEC;
     env->pc = DEFAULT_RSTVEC;
     env->exception_index = EXCP_NONE;

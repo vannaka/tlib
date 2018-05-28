@@ -28,9 +28,15 @@ uint64_t* get_reg_pointer_64(int reg)
     switch(reg)
     {
         case X_0_64 ... X_31_64:
-            return &(cpu->gpr[reg]);
+            return &(cpu->gpr[reg - X_0_64]);
+        case F_0_64 ... F_31_64:
+            return &(cpu->fpr[reg - F_0_64]);
         case PC_64:
             return &(cpu->pc);
+        case PRIV_64:
+            return &(cpu->priv);
+        case MCAUSE_64:
+            return &(cpu->mcause);
         default:
             return NULL;
     }
@@ -44,9 +50,15 @@ uint32_t* get_reg_pointer_32(int reg)
     switch(reg)
     {
         case X_0_32 ... X_31_32:
-            return &(cpu->gpr[reg]);
+            return &(cpu->gpr[reg - X_0_32]);
+        case F_0_32 ... F_31_32:
+            return (uint32_t*)(&(cpu->fpr[reg - F_0_32]));
         case PC_32:
             return &(cpu->pc);
+        case PRIV_32:
+            return &(cpu->priv);
+        case MCAUSE_32:
+            return &(cpu->mcause);
         default:
             return NULL;
     }

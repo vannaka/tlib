@@ -55,7 +55,6 @@ struct CPUState {
     target_ulong load_res;
 
     target_ulong frm;
-    target_ulong fstatus;
     target_ulong fflags;
 
     target_ulong badaddr;

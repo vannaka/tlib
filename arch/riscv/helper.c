@@ -113,7 +113,7 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
     int levels=0, ptidxbits=0, ptesize=0, vm=0, sum=0;
     int mxr = get_field(env->mstatus, MSTATUS_MXR);
 
-    if (env->privilege_mode_1_10) {
+    if (env->privilege_architecture_1_10) {
         base = get_field(env->satp, SATP_PPN) << PGSHIFT;
         sum = get_field(env->mstatus, MSTATUS_SUM);
         vm = get_field(env->satp, SATP_MODE);
@@ -228,7 +228,7 @@ static void raise_mmu_exception(CPUState *env, target_ulong address,
                                 int access_type)
 {
     int page_fault_exceptions =
-        (env->privilege_mode_1_10) &&
+        (env->privilege_architecture_1_10) &&
         get_field(env->satp, SATP_MODE) != VM_1_10_MBARE;
     int exception = 0;
     if (access_type == MMU_INST_FETCH) { /* inst access */
@@ -364,7 +364,7 @@ void do_interrupt(CPUState *env)
         }
 
         target_ulong s = env->mstatus;
-        s = set_field(s, MSTATUS_SPIE, env->privilege_mode_1_10 ? get_field(s, MSTATUS_SIE) : get_field(s, MSTATUS_UIE << env->priv));
+        s = set_field(s, MSTATUS_SPIE, env->privilege_architecture_1_10 ? get_field(s, MSTATUS_SIE) : get_field(s, MSTATUS_UIE << env->priv));
         s = set_field(s, MSTATUS_SPP, env->priv);
         s = set_field(s, MSTATUS_SIE, 0);
         csr_write_helper(env, s, CSR_MSTATUS);
@@ -380,7 +380,7 @@ void do_interrupt(CPUState *env)
         }
 
         target_ulong s = env->mstatus;
-        s = set_field(s, MSTATUS_MPIE, env->privilege_mode_1_10 ? get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
+        s = set_field(s, MSTATUS_MPIE, env->privilege_architecture_1_10 ? get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
         s = set_field(s, MSTATUS_MPP, env->priv);
         s = set_field(s, MSTATUS_MIE, 0);
         csr_write_helper(env, s, CSR_MSTATUS);

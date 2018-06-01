@@ -58,7 +58,7 @@ uint32_t tlib_is_feature_allowed(uint32_t feature_bit)
    return (cpu->misa_mask & (1L << feature_bit)) != 0;
 }
 
-void tlib_set_privilege_mode_1_09(uint32_t enable)
+void tlib_set_privilege_architecture_1_09(uint32_t enable)
 {
-   cpu->privilege_mode_1_10 = enable ? 0 : 1;
+   cpu->privilege_architecture_1_10 = enable ? 0 : 1;
 }

@@ -42,9 +42,9 @@ register CPUState *env asm(AREG0);
 #if defined(__arm__)
 /* Thumb return addresses have the low bit set, so we need to subtract two.
    This is still safe in ARM mode because instructions are 4 bytes.  */
-# define GETPC() ((void *)((unsigned long)__builtin_return_address(0) - 2))
+# define GETPC() ((void *)((uintptr_t)__builtin_return_address(0) - 2))
 #else
-# define GETPC() ((void *)((unsigned long)__builtin_return_address(0) - 1))
+# define GETPC() ((void *)((uintptr_t)__builtin_return_address(0) - 1))
 #endif
 
 #endif /* !defined(__DYNGEN_EXEC_H__) */

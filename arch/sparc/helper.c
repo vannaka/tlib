@@ -76,7 +76,7 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
     target_phys_addr_t pde_ptr;
     uint32_t pde;
     int error_code = 0, is_dirty, is_user;
-    unsigned long page_offset;
+    uintptr_t page_offset;
 
     is_user = mmu_idx == MMU_USER_IDX;
 

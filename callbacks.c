@@ -72,7 +72,7 @@ void tlib_free(void *ptr)
 
 DEFAULT_VOID_HANDLER1(void tlib_on_translation_cache_size_change, int32_t new_size)
 
-DEFAULT_VOID_HANDLER2(void tlib_invalidate_tb_in_other_cpus, unsigned long start, unsigned long end)
+DEFAULT_VOID_HANDLER2(void tlib_invalidate_tb_in_other_cpus, uintptr_t start, uintptr_t end)
 
 DEFAULT_INT_HANDLER1(int32_t tlib_get_cpu_index, void)
 

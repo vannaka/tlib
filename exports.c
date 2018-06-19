@@ -201,7 +201,7 @@ uint32_t tlib_is_range_mapped(uint32_t start, uint32_t end)
   return 0;
 }
 
-void tlib_invalidate_translation_blocks(unsigned long start, unsigned long end)
+void tlib_invalidate_translation_blocks(uintptr_t start, uintptr_t end)
 {
   tb_invalidate_phys_page_range_inner(start, end, 0, 0);
 }
@@ -238,9 +238,9 @@ void tlib_remove_breakpoint(uint32_t address)
   cpu_breakpoint_remove(cpu, address, BP_GDB);
 }
 
-unsigned long translation_cache_size;
+uintptr_t translation_cache_size;
 
-void tlib_set_translation_cache_size(unsigned long size)
+void tlib_set_translation_cache_size(uintptr_t size)
 {
   translation_cache_size = size;
 }
@@ -274,10 +274,10 @@ extern void *global_retaddr;
 
 void tlib_restore_context()
 {
-  unsigned long pc;
+  uintptr_t pc;
   TranslationBlock *tb;
 
-  pc = (unsigned long)global_retaddr;
+  pc = (uintptr_t)global_retaddr;
   tb = tb_find_pc(pc);
   if(tb == 0)
   {

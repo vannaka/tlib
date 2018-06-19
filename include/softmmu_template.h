@@ -74,7 +74,7 @@ static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr,
 {
     DATA_TYPE res;
     physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
-    cpu->mem_io_pc = (unsigned long)retaddr;
+    cpu->mem_io_pc = (uintptr_t)retaddr;
     cpu->mem_io_vaddr = addr;
 #if SHIFT == 0
     res = tlib_read_byte(physaddr);
@@ -102,8 +102,8 @@ DATA_TYPE REGPARM glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
     int index;
     target_ulong tlb_addr;
     target_phys_addr_t ioaddr;
-    unsigned long addend;
     void *retaddr;
+    uintptr_t addend;
 
     /* test if there is match for unaligned or IO access */
     /* XXX: could done more in memory macro in a non portable way */
@@ -137,7 +137,7 @@ DATA_TYPE REGPARM glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
             }
 #endif
             addend = cpu->tlb_table[mmu_idx][index].addend;
-            res = glue(glue(ld, USUFFIX), _raw)((uint8_t *)(long)(addr+addend));
+            res = glue(glue(ld, USUFFIX), _raw)((uint8_t *)(uintptr_t)(addr+addend));
         }
     } else {
         /* the page is not in the TLB : fill it */
@@ -160,8 +160,8 @@ static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
     DATA_TYPE res, res1, res2;
     int index, shift;
     target_phys_addr_t ioaddr;
-    unsigned long addend;
     target_ulong tlb_addr, addr1, addr2;
+    uintptr_t addend;
 
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
  redo:
@@ -192,7 +192,7 @@ static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
         } else {
             /* unaligned/aligned access in the same page */
             addend = cpu->tlb_table[mmu_idx][index].addend;
-            res = glue(glue(ld, USUFFIX), _raw)((uint8_t *)(long)(addr+addend));
+            res = glue(glue(ld, USUFFIX), _raw)((uint8_t *)(uintptr_t)(addr+addend));
         }
     } else {
         /* the page is not in the TLB : fill it */
@@ -221,7 +221,7 @@ static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr,
 #endif
     physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
     cpu->mem_io_vaddr = addr;
-    cpu->mem_io_pc = (unsigned long)retaddr;
+    cpu->mem_io_pc = (uintptr_t)retaddr;
     /* TODO: added stuff */
 #if SHIFT <= 2
     if(index == IO_MEM_NOTDIRTY >> IO_MEM_SHIFT)
@@ -256,10 +256,10 @@ void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr,
                                                  int mmu_idx)
 {
     target_phys_addr_t ioaddr;
-    unsigned long addend;
     target_ulong tlb_addr;
     void *retaddr;
     int index;
+    uintptr_t addend;
 
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
  redo:
@@ -290,7 +290,7 @@ void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr,
             }
 #endif
             addend = cpu->tlb_table[mmu_idx][index].addend;
-            glue(glue(st, SUFFIX), _raw)((uint8_t *)(long)(addr+addend), val);
+            glue(glue(st, SUFFIX), _raw)((uint8_t *)(uintptr_t)(addr+addend), val);
         }
     } else {
         /* the page is not in the TLB : fill it */
@@ -311,9 +311,9 @@ static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr,
                                                    void *retaddr)
 {
     target_phys_addr_t ioaddr;
-    unsigned long addend;
     target_ulong tlb_addr;
     int index, i;
+    uintptr_t addend;
 
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
  redo:
@@ -342,7 +342,7 @@ static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr,
         } else {
             /* aligned/unaligned access in the same page */
             addend = cpu->tlb_table[mmu_idx][index].addend;
-            glue(glue(st, SUFFIX), _raw)((uint8_t *)(long)(addr+addend), val);
+            glue(glue(st, SUFFIX), _raw)((uint8_t *)(uintptr_t)(addr+addend), val);
         }
     } else {
         /* the page is not in the TLB : fill it */

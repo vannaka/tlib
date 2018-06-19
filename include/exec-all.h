@@ -48,7 +48,7 @@ void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb,
 void cpu_gen_code(CPUState *env, struct TranslationBlock *tb,
                  int *gen_code_size_ptr);
 int cpu_restore_state(CPUState *env, struct TranslationBlock *tb,
-                unsigned long searched_pc);
+		 uintptr_t searched_pc);
 TranslationBlock *tb_gen_code(CPUState *env,
                               target_ulong pc, target_ulong cs_base, int flags,
                               int cflags);
@@ -107,7 +107,7 @@ struct TranslationBlock {
     struct TranslationBlock *jmp_next[2];
     struct TranslationBlock *jmp_first;
     uint32_t icount;
-    int search_pc;
+    uintptr_t search_pc;
     // this field is necessary when restoring the state of tb (using cpu_restore_state) in order to limit the size of retranslated block not to be bigger than original one;
     // SIGSEGVs have been observed otherwise
     uint16_t original_size;
@@ -142,14 +142,14 @@ void tb_phys_invalidate(TranslationBlock *tb, tb_page_addr_t page_addr);
 extern TranslationBlock *tb_phys_hash[CODE_GEN_PHYS_HASH_SIZE];
 
 #if defined(__i386__) || defined(__x86_64__)
-static inline void tb_set_jmp_target1(unsigned long jmp_addr, unsigned long addr)
+static inline void tb_set_jmp_target1(uintptr_t jmp_addr, uintptr_t addr)
 {
     /* patch the branch destination */
     *(uint32_t *)jmp_addr = addr - (jmp_addr + 4);
     /* no need to flush icache explicitly */
 }
 #elif defined(__arm__)
-static inline void tb_set_jmp_target1(unsigned long jmp_addr, unsigned long addr)
+static inline void tb_set_jmp_target1(uintptr_t jmp_addr, uintptr_t addr)
 {
 #if !defined(__GNUC__)
     register unsigned long _beg __asm ("a1");
@@ -177,12 +177,12 @@ static inline void tb_set_jmp_target1(unsigned long jmp_addr, unsigned long addr
 #endif
 
 static inline void tb_set_jmp_target(TranslationBlock *tb,
-                                     int n, unsigned long addr)
+                                     int n, uintptr_t addr)
 {
-    unsigned long offset;
+    uintptr_t offset;
 
     offset = tb->tb_jmp_offset[n];
-    tb_set_jmp_target1((unsigned long)(tb->tc_ptr + offset), addr);
+    tb_set_jmp_target1((uintptr_t)(tb->tc_ptr + offset), addr);
 }
 
 static inline void tb_add_jump(TranslationBlock *tb, int n,
@@ -191,15 +191,15 @@ static inline void tb_add_jump(TranslationBlock *tb, int n,
     /* NOTE: this test is only needed for thread safety */
     if (!tb->jmp_next[n]) {
         /* patch the native jump address */
-        tb_set_jmp_target(tb, n, (unsigned long)tb_next->tc_ptr);
+        tb_set_jmp_target(tb, n, (uintptr_t)tb_next->tc_ptr);
 
         /* add in TB jmp circular list */
         tb->jmp_next[n] = tb_next->jmp_first;
-        tb_next->jmp_first = (TranslationBlock *)((long)(tb) | (n));
+        tb_next->jmp_first = (TranslationBlock *)((uintptr_t)(tb) | (n));
     }
 }
 
-TranslationBlock *tb_find_pc(unsigned long pc_ptr);
+TranslationBlock *tb_find_pc(uintptr_t pc_ptr);
 
 extern int tb_invalidated_flag;
 

@@ -63,7 +63,7 @@ void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx,
 {
     TranslationBlock *tb;
     CPUState *saved_env;
-    unsigned long pc;
+    uintptr_t pc;
     int ret;
 
     saved_env = env;
@@ -72,7 +72,7 @@ void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx,
     if (unlikely(ret)) {
         if (retaddr) {
             /* now we have a real cpu fault */
-            pc = (unsigned long)retaddr;
+            pc = (uintptr_t)retaddr;
             tb = tb_find_pc(pc);
             if (tb) {
                 /* the PC is inside the translated code. It means that we have

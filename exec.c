@@ -38,9 +38,9 @@ static int nb_tbs;
 /* any access to the tbs or the page table must use this lock */
 
 static uint8_t *code_gen_buffer;
-static unsigned long code_gen_buffer_size;
+static uintptr_t code_gen_buffer_size;
 /* threshold to flush the translated code buffer */
-static unsigned long code_gen_buffer_max_size;
+static uintptr_t code_gen_buffer_max_size;
 static uint8_t *code_gen_ptr;
 
 dirty_ram_t dirty_ram = {0};
@@ -93,10 +93,10 @@ typedef struct PageDesc {
 #define P_L1_SHIFT (TARGET_PHYS_ADDR_SPACE_BITS - TARGET_PAGE_BITS - P_L1_BITS)
 #define V_L1_SHIFT (L1_MAP_ADDR_SPACE_BITS - TARGET_PAGE_BITS - V_L1_BITS)
 
-unsigned long tlib_real_host_page_size;
-unsigned long tlib_host_page_bits;
-unsigned long tlib_host_page_size;
-unsigned long tlib_host_page_mask;
+uintptr_t tlib_real_host_page_size;
+uintptr_t tlib_host_page_bits;
+uintptr_t tlib_host_page_size;
+uintptr_t tlib_host_page_mask;
 
 /* This is a multi-level map on the virtual address space.
    The bottom level has pointers to PageDesc.  */
@@ -120,20 +120,20 @@ static int tb_phys_invalidate_count;
 static void map_exec(void *addr, long size)
 {
     DWORD old_protect;
-    VirtualProtect(addr, size,
-                   PAGE_EXECUTE_READWRITE, &old_protect);
+    int temp = VirtualProtect(addr, size, PAGE_EXECUTE_READWRITE, &old_protect);
+    temp++;
 
 }
 #else
 static void map_exec(void *addr, long size)
 {
-    unsigned long start, end, page_size;
+    uintptr_t start, end, page_size;
 
     page_size = getpagesize();
-    start = (unsigned long)addr;
+    start = (uintptr_t)addr;
     start &= ~(page_size - 1);
 
-    end = (unsigned long)addr + size;
+    end = (uintptr_t)addr + size;
     end += page_size - 1;
     end &= ~(page_size - 1);
 
@@ -486,7 +486,7 @@ static void page_flush_tb(void)
 /* XXX: tb_flush is currently not thread safe */
 void tb_flush(CPUState *env1)
 {
-    if ((unsigned long)(code_gen_ptr - code_gen_buffer) > code_gen_buffer_size)
+    if ((uintptr_t)(code_gen_ptr - code_gen_buffer) > code_gen_buffer_size)
         cpu_abort(env1, "Internal error: code buffer overflow\n");
 
     nb_tbs = 0;
@@ -522,8 +522,8 @@ static inline void tb_page_remove(TranslationBlock **ptb, TranslationBlock *tb)
 
     for(;;) {
         tb1 = *ptb;
-        n1 = (long)tb1 & 3;
-        tb1 = (TranslationBlock *)((long)tb1 & ~3);
+        n1 = (uintptr_t)tb1 & 3;
+        tb1 = (TranslationBlock *)((uintptr_t)tb1 & ~3);
         if (tb1 == tb) {
             *ptb = tb1->page_next[n1];
             break;
@@ -543,8 +543,8 @@ static inline void tb_jmp_remove(TranslationBlock *tb, int n)
         /* find tb(n) in circular list */
         for(;;) {
             tb1 = *ptb;
-            n1 = (long)tb1 & 3;
-            tb1 = (TranslationBlock *)((long)tb1 & ~3);
+            n1 = (uintptr_t)tb1 & 3;
+            tb1 = (TranslationBlock *)((uintptr_t)tb1 & ~3);
             if (n1 == n && tb1 == tb)
                 break;
             if (n1 == 2) {
@@ -564,7 +564,7 @@ static inline void tb_jmp_remove(TranslationBlock *tb, int n)
    another TB */
 static inline void tb_reset_jump(TranslationBlock *tb, int n)
 {
-    tb_set_jmp_target(tb, n, (unsigned long)(tb->tc_ptr + tb->tb_next_offset[n]));
+    tb_set_jmp_target(tb, n, (uintptr_t)(tb->tc_ptr + tb->tb_next_offset[n]));
 }
 
 void tb_phys_invalidate(TranslationBlock *tb, tb_page_addr_t page_addr)
@@ -606,16 +606,16 @@ void tb_phys_invalidate(TranslationBlock *tb, tb_page_addr_t page_addr)
     /* suppress any remaining jumps to this TB */
     tb1 = tb->jmp_first;
     for(;;) {
-        n1 = (long)tb1 & 3;
+        n1 = (uintptr_t)tb1 & 3;
         if (n1 == 2)
             break;
-        tb1 = (TranslationBlock *)((long)tb1 & ~3);
+        tb1 = (TranslationBlock *)((uintptr_t)tb1 & ~3);
         tb2 = tb1->jmp_next[n1];
         tb_reset_jump(tb1, n1);
         tb1->jmp_next[n1] = NULL;
         tb1 = tb2;
     }
-    tb->jmp_first = (TranslationBlock *)((long)tb | 2); /* fail safe */
+    tb->jmp_first = (TranslationBlock *)((uintptr_t)tb | 2); /* fail safe */
 
     tb_phys_invalidate_count++;
 }
@@ -656,8 +656,8 @@ static void build_page_bitmap(PageDesc *p)
 
     tb = p->first_tb;
     while (tb != NULL) {
-        n = (long)tb & 3;
-        tb = (TranslationBlock *)((long)tb & ~3);
+        n = (uintptr_t)tb & 3;
+        tb = (TranslationBlock *)((uintptr_t)tb & ~3);
         /* NOTE: this is subtle as a TB may span two physical pages */
         if (n == 0) {
             /* NOTE: tb_end may be after the end of the page, but
@@ -701,7 +701,7 @@ TranslationBlock *tb_gen_code(CPUState *env,
     tb->flags = flags;
     tb->cflags = cflags;
     cpu_gen_code(env, tb, &code_gen_size);
-    code_gen_ptr = (void *)(((unsigned long)code_gen_ptr + code_gen_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
+    code_gen_ptr = (void *)(((uintptr_t)code_gen_ptr + code_gen_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
 
     /* check next page if needed */
     virt_page2 = (pc + tb->size - 1) & TARGET_PAGE_MASK;
@@ -749,8 +749,8 @@ void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t en
     /* XXX: see if in some cases it could be faster to invalidate all the code */
     tb = p->first_tb;
     while (tb != NULL) {
-        n = (long)tb & 3;
-        tb = (TranslationBlock *)((long)tb & ~3);
+        n = (uintptr_t)tb & 3;
+        tb = (TranslationBlock *)((uintptr_t)tb & ~3);
         tb_next = tb->page_next[n];
         /* NOTE: this is subtle as a TB may span two physical pages */
         if (n == 0) {
@@ -861,7 +861,7 @@ static inline void tb_alloc_page(TranslationBlock *tb,
     p = page_find_alloc(page_addr >> TARGET_PAGE_BITS, 1);
     tb->page_next[n] = p->first_tb;
     page_already_protected = p->first_tb != NULL;
-    p->first_tb = (TranslationBlock *)((long)tb | n);
+    p->first_tb = (TranslationBlock *)((uintptr_t)tb | n);
     invalidate_page_bitmap(p);
 
     /* if some code is already present, then the pages are already
@@ -896,7 +896,7 @@ void tb_link_page(TranslationBlock *tb,
     else
         tb->page_addr[1] = -1;
 
-    tb->jmp_first = (TranslationBlock *)((long)tb | 2);
+    tb->jmp_first = (TranslationBlock *)((uintptr_t)tb | 2);
     tb->jmp_next[0] = NULL;
     tb->jmp_next[1] = NULL;
 
@@ -911,16 +911,16 @@ void tb_link_page(TranslationBlock *tb,
 
 /* find the TB 'tb' such that tb[0].tc_ptr <= tc_ptr <
    tb[1].tc_ptr. Return NULL if not found */
-TranslationBlock *tb_find_pc(unsigned long tc_ptr)
+TranslationBlock *tb_find_pc(uintptr_t tc_ptr)
 {
     int m_min, m_max, m;
-    unsigned long v;
+    uintptr_t v;
     TranslationBlock *tb;
 
     if (nb_tbs <= 0)
         return NULL;
-    if (tc_ptr < (unsigned long)code_gen_buffer ||
-        tc_ptr >= (unsigned long)code_gen_ptr)
+    if (tc_ptr < (uintptr_t)code_gen_buffer ||
+        tc_ptr >= (uintptr_t)code_gen_ptr)
         return NULL;
     /* binary search (cf Knuth) */
     m_min = 0;
@@ -928,7 +928,7 @@ TranslationBlock *tb_find_pc(unsigned long tc_ptr)
     while (m_min <= m_max) {
         m = (m_min + m_max) >> 1;
         tb = &tbs[m];
-        v = (unsigned long)tb->tc_ptr;
+        v = (uintptr_t)tb->tc_ptr;
         if (v == tc_ptr)
             return tb;
         else if (tc_ptr < v) {
@@ -1195,10 +1195,9 @@ static void tlb_unprotect_code_phys(CPUState *env, ram_addr_t ram_addr,
     cpu_physical_memory_set_dirty_flags(ram_addr, CODE_DIRTY_FLAG);
 }
 
-static inline void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry,
-                                         unsigned long start, unsigned long length)
+static inline void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry, uintptr_t start, uintptr_t length)
 {
-    unsigned long addr;
+    uintptr_t addr;
     if ((tlb_entry->addr_write & ~TARGET_PAGE_MASK) == IO_MEM_RAM) {
         addr = (tlb_entry->addr_write & TARGET_PAGE_MASK) + tlb_entry->addend;
         if ((addr - start) < length) {
@@ -1211,7 +1210,7 @@ static inline void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry,
 void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
                                      int dirty_flags)
 {
-    unsigned long length, start1;
+    uintptr_t length, start1;
     int i;
 
     start &= TARGET_PAGE_MASK;
@@ -1224,10 +1223,10 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
 
     /* we modify the TLB cache so that the dirty bit will be set again
        when accessing the range */
-    start1 = (unsigned long)get_ram_ptr(start);
+    start1 = (uintptr_t)get_ram_ptr(start);
     /* Check that we don't span multiple blocks - this breaks the
        address comparisons below.  */
-    if ((unsigned long)get_ram_ptr(end - 1) - start1
+    if ((uintptr_t)get_ram_ptr(end - 1) - start1
             != (end - 1) - start) {
         tlib_abort("cpu_physical_memory_reset_dirty");
     }
@@ -1294,7 +1293,7 @@ void tlb_set_page(CPUState *env, target_ulong vaddr,
     unsigned int index;
     target_ulong address;
     target_ulong code_address;
-    unsigned long addend;
+    uintptr_t addend;
     CPUTLBEntry *te;
     target_phys_addr_t iotlb;
 
@@ -1315,7 +1314,7 @@ void tlb_set_page(CPUState *env, target_ulong vaddr,
         address |= TLB_MMIO;
         addend = 0;
     } else {
-      addend = (unsigned long)get_ram_ptr(pd & TARGET_PAGE_MASK);
+      addend = (uintptr_t)get_ram_ptr(pd & TARGET_PAGE_MASK);
     }
     if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM) {
         /* Normal RAM.  */
@@ -1552,7 +1551,7 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
                     l = 1;
                 }
             } else {
-                unsigned long addr1;
+                uintptr_t addr1;
                 addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
                 /* RAM case */
                 ptr = get_ram_ptr(addr1);
@@ -1627,7 +1626,7 @@ void cpu_physical_memory_write_rom(target_phys_addr_t addr,
             !(pd & IO_MEM_ROMD)) {
             /* do nothing */
         } else {
-            unsigned long addr1;
+            uintptr_t addr1;
             addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
             /* ROM/RAM case */
             ptr = get_ram_ptr(addr1);
@@ -1767,7 +1766,7 @@ void stl_phys_notdirty(target_phys_addr_t addr, uint32_t val)
             addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
         tlib_write_double_word(addr, val);
     } else {
-        unsigned long addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
+        uintptr_t addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
         ptr = get_ram_ptr(addr1);
         stl_p(ptr, val);
     }
@@ -1824,7 +1823,7 @@ void stl_phys(target_phys_addr_t addr, uint32_t val)
             addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
         tlib_write_double_word(addr, val);
     } else {
-        unsigned long addr1;
+        uintptr_t addr1;
         addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
         /* RAM case */
         ptr = get_ram_ptr(addr1);
@@ -1865,7 +1864,7 @@ void stw_phys(target_phys_addr_t addr, uint32_t val)
             addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
         tlib_write_word(addr, val);
     } else {
-        unsigned long addr1;
+        uintptr_t addr1;
         addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
         /* RAM case */
         ptr = get_ram_ptr(addr1);

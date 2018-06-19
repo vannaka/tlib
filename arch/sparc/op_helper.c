@@ -82,7 +82,7 @@ void HELPER(raise_exception)(int tt)
 target_ulong HELPER(ldstub)(uint32_t addr)
 {
     int page_index;
-    unsigned long physaddr;
+    uintptr_t physaddr;
     int mmu_idx;
     void *retaddr;
     uint8_t ret;
@@ -113,7 +113,7 @@ target_ulong HELPER(ldstub)(uint32_t addr)
 target_ulong HELPER(swap)(target_ulong value, uint32_t addr)
 {
     int page_index;
-    unsigned long physaddr;
+    uintptr_t physaddr;
     int mmu_idx;
     void *retaddr;
     uint32_t ret;
@@ -1677,11 +1677,11 @@ target_ulong helper_rdpsr(void)
 static void cpu_restore_state2(void *retaddr)
 {
     TranslationBlock *tb;
-    unsigned long pc;
+    uintptr_t pc;
 
     if (retaddr) {
         /* now we have a real cpu fault */
-        pc = (unsigned long)retaddr;
+        pc = (uintptr_t)retaddr;
         tb = tb_find_pc(pc);
         if (tb) {
             /* the PC is inside the translated code. It means that we have

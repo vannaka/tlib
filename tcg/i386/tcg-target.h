@@ -137,7 +137,7 @@ typedef enum {
 #endif
 #endif
 
-static inline void flush_icache_range(unsigned long start, unsigned long stop)
+static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
 }
 #endif

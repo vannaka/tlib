@@ -90,7 +90,7 @@ static inline void gen_block_footer(TranslationBlock *tb)
       *event_size_arg = tb->icount;
     }
     gen_set_label(stopflag_label);
-    tcg_gen_exit_tb((long)tb + 2);
+    tcg_gen_exit_tb((uintptr_t)tb + 2);
     *icount_arg = tb->icount;
     *gen_opc_ptr = INDEX_op_end;
 }
@@ -141,11 +141,11 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
 /* The cpu state corresponding to 'searched_pc' is restored.
  */
 int cpu_restore_state(CPUState *env,
-                TranslationBlock *tb, unsigned long searched_pc)
+                TranslationBlock *tb, uintptr_t searched_pc)
 {
     TCGContext *s = tcg->ctx;
     int j, k;
-    unsigned long tc_ptr;
+    uintptr_t tc_ptr;
     int instructions_executed_so_far = 0;
 
     tcg_func_start(s);
@@ -159,7 +159,7 @@ int cpu_restore_state(CPUState *env,
     gen_block_footer(tb);
 
     /* find opc index corresponding to search_pc */
-    tc_ptr = (unsigned long)tb->tc_ptr;
+    tc_ptr = (uintptr_t)tb->tc_ptr;
     if (searched_pc < tc_ptr)
         return -1;
 

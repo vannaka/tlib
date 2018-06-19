@@ -28,7 +28,7 @@ target_ulong virt_to_phys(target_ulong virt) {
         for (i = 0; i < NB_MMU_MODES; i++) {
           target_ulong addr = (cpu->tlb_table[i][index].addr_code & MASK2) | (virt & (MASK1));
           if ((virt == addr)) {
-            void *p = (void *)(unsigned long)((cpu->tlb_table[i][index].addr_code & TARGET_PAGE_MASK) + cpu->tlb_table[i][index].addend);
+            void *p = (void *)(uintptr_t)((cpu->tlb_table[i][index].addr_code & TARGET_PAGE_MASK) + cpu->tlb_table[i][index].addend);
             phys_addr = tlib_host_ptr_to_guest_offset(p);
             if (phys_addr != 0xFFFFFFFF)
               phys_addr += (virt & MASK1);
@@ -148,7 +148,7 @@ int cpu_exec(CPUState *env)
     int ret, interrupt_request;
     TranslationBlock *tb;
     uint8_t *tc_ptr;
-    unsigned long next_tb;
+    uintptr_t next_tb;
 
     if (env->wfi) {
         if (!cpu_has_work(env)) {
@@ -262,7 +262,7 @@ int cpu_exec(CPUState *env)
                     /* execute the generated code */
                     next_tb = tcg_tb_exec(env, tc_ptr);
                     if ((next_tb & 3) == 2) {
-                        tb = (TranslationBlock *)(long)(next_tb & ~3);
+                        tb = (TranslationBlock *)(uintptr_t)(next_tb & ~3);
                         /* Restore PC.  */
                         cpu_pc_from_tb(env, tb);
                         env->exception_index = EXCP_INTERRUPT;

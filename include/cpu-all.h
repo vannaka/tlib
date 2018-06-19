@@ -478,8 +478,8 @@ static inline void stfq_be_p(void *ptr, float64 v)
 
 /* NOTE: we use double casts if pointers and target_ulong have
    different sizes */
-#define saddr(x) (uint8_t *)(long)(x)
-#define laddr(x) (uint8_t *)(long)(x)
+#define saddr(x) (uint8_t *)(uintptr_t)(x)
+#define laddr(x) (uint8_t *)(uintptr_t)(x)
 
 #define ldub_raw(p) ldub_p(laddr((p)))
 #define ldsb_raw(p) ldsb_p(laddr((p)))
@@ -500,10 +500,10 @@ static inline void stfq_be_p(void *ptr, float64 v)
 #define TARGET_PAGE_ALIGN(addr) (((addr) + TARGET_PAGE_SIZE - 1) & TARGET_PAGE_MASK)
 
 /* ??? These should be the larger of unsigned long and target_ulong.  */
-extern unsigned long tlib_real_host_page_size;
-extern unsigned long tlib_host_page_bits;
-extern unsigned long tlib_host_page_size;
-extern unsigned long tlib_host_page_mask;
+extern uintptr_t tlib_real_host_page_size;
+extern uintptr_t tlib_host_page_bits;
+extern uintptr_t tlib_host_page_size;
+extern uintptr_t tlib_host_page_mask;
 
 #define HOST_PAGE_ALIGN(addr) (((addr) + tlib_host_page_size - 1) & tlib_host_page_mask)
 
@@ -608,7 +608,7 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr);
 
 /* memory API */
 
-extern unsigned long translation_cache_size;
+extern uintptr_t translation_cache_size;
 
 typedef struct dirty_ram_t {
     uint8_t *phys_dirty;

@@ -434,7 +434,7 @@ int cpu_x86_register (CPUState *env, const char *cpu_model)
 #define setscalar(pval, str, perr)                      \
 {                                                       \
     char *pend;                                         \
-    unsigned long ul;                                   \
+    uintptr_t ul;                                       \
                                                         \
     ul = strtoul(str, &pend, 0);                        \
     *str && !*pend ? (*pval = ul) : (*perr = 1);        \

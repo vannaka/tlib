@@ -19,13 +19,13 @@ uint32_t tlib_get_page_size(void);
 void tlib_map_range(uint32_t start_addr, uint32_t length);
 void tlib_unmap_range(uint32_t start, uint32_t end);
 uint32_t tlib_is_range_mapped(uint32_t start, uint32_t end);
-void tlib_invalidate_translation_blocks(unsigned long start, unsigned long end);
+void tlib_invalidate_translation_blocks(uintptr_t start, uintptr_t end);
 
 void tlib_set_irq(int32_t interrupt, int32_t state);
 int32_t tlib_is_irq_set(void);
 void tlib_add_breakpoint(uint32_t address);
 void tlib_remove_breakpoint(uint32_t address);
-void tlib_set_translation_cache_size(unsigned long size);
+void tlib_set_translation_cache_size(uintptr_t size);
 void tlib_invalidate_translation_cache(void);
 uint32_t tlib_set_maximum_block_size(uint32_t size);
 uint32_t tlib_get_maximum_block_size(void);

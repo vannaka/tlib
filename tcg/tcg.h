@@ -354,7 +354,7 @@ struct TCGContext {
 
     /* goto_tb support */
     uint8_t *code_buf;
-    unsigned long *tb_next;
+    uintptr_t *tb_next;
     uint16_t *tb_next_offset;
     uint16_t *tb_jmp_offset;
 
@@ -449,7 +449,7 @@ void tcg_prologue_init();
 void tcg_func_start(TCGContext *s);
 
 int tcg_gen_code(TCGContext *s, uint8_t *gen_code_buf);
-int tcg_gen_code_search_pc(TCGContext *s, uint8_t *gen_code_buf, long offset);
+int tcg_gen_code_search_pc(TCGContext *s, uint8_t *gen_code_buf, uintptr_t offset);
 
 void tcg_set_frame(TCGContext *s, int reg,
                    tcg_target_long start, tcg_target_long size);
@@ -603,5 +603,5 @@ static inline bool tcg_op_buf_full(void)
 /* TCG targets may use a different definition of tcg_tb_exec. */
 #if !defined(tcg_tb_exec)
 # define tcg_tb_exec(env, tb_ptr) \
-    ((long REGPARM (*)(void *, void *))tcg->code_gen_prologue)(env, tb_ptr)
+    ((uintptr_t REGPARM (*)(void *, void *))tcg->code_gen_prologue)(env, tb_ptr)
 #endif

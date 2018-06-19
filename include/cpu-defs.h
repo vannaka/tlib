@@ -27,6 +27,13 @@
 #include "targphys.h"
 #include "infrastructure.h"
 
+#if defined(_WIN64)
+/* This is to avoid longjmp crashing because of stack unwinding. 
+ * It is incompatible with the execution of generated code. */
+# undef setjmp
+# define setjmp(env) _setjmp(env, NULL)
+#endif
+
 #ifndef TARGET_LONG_BITS
 #error TARGET_LONG_BITS must be defined before including this header
 #endif

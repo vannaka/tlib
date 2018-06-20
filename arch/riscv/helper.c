@@ -47,20 +47,7 @@ void cpu_reset(CPUState *env)
 
 int riscv_cpu_mmu_index(CPUState *env)
 {
-    target_ulong mode = env->priv;
-    if (get_field(env->mstatus, MSTATUS_MPRV)) {
-        mode = get_field(env->mstatus, MSTATUS_MPP);
-    }
-    if (env->privilege_mode_1_10) {
-        if (get_field(env->satp, SATP_MODE) == VM_1_10_MBARE) {
-            mode = PRV_M;
-        }
-    } else {
-        if (get_field(env->mstatus, MSTATUS_VM) == VM_1_09_MBARE) {
-            mode = PRV_M;
-        }
-    }
-    return mode;
+    return env->priv;
 }
 
 /*
@@ -105,15 +92,21 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
     /* NOTE: the env->pc value visible here will not be
      * correct, but the value visible to the exception handler
      * (riscv_cpu_do_interrupt) is correct */
-    const int mode = mmu_idx;
+    int mode = mmu_idx;
 
-    *prot = 0;
+    if (mode == PRV_M && access_type != MMU_INST_FETCH) {
+        if(get_field(env->mstatus, MSTATUS_MPRV)) {
+            mode = get_field(env->mstatus, MSTATUS_MPP);
+        }
+    }
 
     if (mode == PRV_M) {
         *physical = address;
         *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
         return TRANSLATE_SUCCESS;
     }
+
+    *prot = 0;
 
     target_ulong addr = address;
     target_ulong base;
@@ -135,7 +128,9 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
         case VM_1_10_SV57:
           levels = 5; ptidxbits = 9; ptesize = 8; break;
         case VM_1_10_MBARE:
-          /* cpu_mmu_index returns PRV_M for S-Mode bare */
+            *physical = addr;
+            *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+            return TRANSLATE_SUCCESS;
         default:
           tlib_abort("unsupported SATP_MODE value\n");
         }
@@ -151,7 +146,9 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
         case VM_1_09_SV48:
           levels = 4; ptidxbits = 9; ptesize = 8; break;
         case VM_1_09_MBARE:
-          /* cpu_mmu_index returns PRV_M for S-Mode bare */
+            *physical = addr;
+            *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+            return TRANSLATE_SUCCESS;
         default:
           tlib_abort("unsupported MSTATUS_VM value\n");
         }

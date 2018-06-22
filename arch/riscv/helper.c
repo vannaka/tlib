@@ -19,6 +19,7 @@
 #include "cpu.h"
 
 #include "cpu-common.h"
+#include "arch_callbacks.h"
 
 // This could possibly be generalized. 0 and 1 values are used as "is_write". This conflicts in a way with READ_ACCESS_TYPE et al.
 #define MMU_DATA_LOAD 0
@@ -45,20 +46,7 @@ void cpu_reset(CPUState *env)
 
 int riscv_cpu_mmu_index(CPUState *env)
 {
-    target_ulong mode = env->priv;
-    if (get_field(env->mstatus, MSTATUS_MPRV)) {
-        mode = get_field(env->mstatus, MSTATUS_MPP);
-    }
-    if (env->privilege_mode_1_10) {
-        if (get_field(env->satp, SATP_MODE) == VM_1_10_MBARE) {
-            mode = PRV_M;
-        }
-    } else {
-        if (get_field(env->mstatus, MSTATUS_VM) == VM_1_09_MBARE) {
-            mode = PRV_M;
-        }
-    }
-    return mode;
+    return env->priv;
 }
 
 /*
@@ -103,9 +91,13 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
     /* NOTE: the env->pc value visible here will not be
      * correct, but the value visible to the exception handler
      * (riscv_cpu_do_interrupt) is correct */
-    const int mode = mmu_idx;
+    int mode = mmu_idx;
 
-    *prot = 0;
+    if (mode == PRV_M && access_type != MMU_INST_FETCH) {
+        if(get_field(env->mstatus, MSTATUS_MPRV)) {
+            mode = get_field(env->mstatus, MSTATUS_MPP);
+        }
+    }
 
     if (mode == PRV_M) {
         *physical = address;
@@ -113,13 +105,15 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
         return TRANSLATE_SUCCESS;
     }
 
+    *prot = 0;
+
     target_ulong addr = address;
     target_ulong base;
 
     int levels=0, ptidxbits=0, ptesize=0, vm=0, sum=0;
     int mxr = get_field(env->mstatus, MSTATUS_MXR);
 
-    if (env->privilege_mode_1_10) {
+    if (env->privilege_architecture_1_10) {
         base = get_field(env->satp, SATP_PPN) << PGSHIFT;
         sum = get_field(env->mstatus, MSTATUS_SUM);
         vm = get_field(env->satp, SATP_MODE);
@@ -133,7 +127,9 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
         case VM_1_10_SV57:
           levels = 5; ptidxbits = 9; ptesize = 8; break;
         case VM_1_10_MBARE:
-          /* cpu_mmu_index returns PRV_M for S-Mode bare */
+            *physical = addr;
+            *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+            return TRANSLATE_SUCCESS;
         default:
           tlib_abort("unsupported SATP_MODE value\n");
         }
@@ -149,7 +145,9 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
         case VM_1_09_SV48:
           levels = 4; ptidxbits = 9; ptesize = 8; break;
         case VM_1_09_MBARE:
-          /* cpu_mmu_index returns PRV_M for S-Mode bare */
+            *physical = addr;
+            *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+            return TRANSLATE_SUCCESS;
         default:
           tlib_abort("unsupported MSTATUS_VM value\n");
         }
@@ -230,7 +228,7 @@ static void raise_mmu_exception(CPUState *env, target_ulong address,
                                 int access_type)
 {
     int page_fault_exceptions =
-        (env->privilege_mode_1_10) &&
+        (env->privilege_architecture_1_10) &&
         get_field(env->satp, SATP_MODE) != VM_1_10_MBARE;
     int exception = 0;
     if (access_type == MMU_INST_FETCH) { /* inst access */
@@ -366,7 +364,7 @@ void do_interrupt(CPUState *env)
         }
 
         target_ulong s = env->mstatus;
-        s = set_field(s, MSTATUS_SPIE, get_field(s, MSTATUS_UIE << env->priv));
+        s = set_field(s, MSTATUS_SPIE, env->privilege_architecture_1_10 ? get_field(s, MSTATUS_SIE) : get_field(s, MSTATUS_UIE << env->priv));
         s = set_field(s, MSTATUS_SPP, env->priv);
         s = set_field(s, MSTATUS_SIE, 0);
         csr_write_helper(env, s, CSR_MSTATUS);
@@ -382,7 +380,7 @@ void do_interrupt(CPUState *env)
         }
 
         target_ulong s = env->mstatus;
-        s = set_field(s, MSTATUS_MPIE, get_field(s, MSTATUS_UIE << env->priv));
+        s = set_field(s, MSTATUS_MPIE, env->privilege_architecture_1_10 ? get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
         s = set_field(s, MSTATUS_MPP, env->priv);
         s = set_field(s, MSTATUS_MIE, 0);
         csr_write_helper(env, s, CSR_MSTATUS);

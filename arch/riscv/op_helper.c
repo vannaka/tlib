@@ -44,7 +44,7 @@ static const char valid_vm_1_10[16] = {
 
 static int validate_vm(CPUState *env, target_ulong vm)
 {
-    return (env->privilege_mode_1_10) ?
+    return (env->privilege_architecture_1_10) ?
         valid_vm_1_10[vm & 0xf] : valid_vm_1_09[vm & 0xf];
 }
 
@@ -140,7 +140,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     case CSR_MSTATUS: {
         target_ulong mstatus = env->mstatus;
         target_ulong mask = 0;
-        if (!env->privilege_mode_1_10) {
+        if (!env->privilege_architecture_1_10) {
             if ((val_to_write ^ mstatus) & (MSTATUS_MXR | MSTATUS_MPP |
                     MSTATUS_MPRV | MSTATUS_SUM | MSTATUS_VM)) {
                 helper_tlb_flush(env);
@@ -151,7 +151,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
                 (validate_vm(env, get_field(val_to_write, MSTATUS_VM)) ?
                     MSTATUS_VM : 0);
         }
-        if (env->privilege_mode_1_10) {
+        if (env->privilege_architecture_1_10) {
            if ((val_to_write ^ mstatus) & (MSTATUS_MXR | MSTATUS_MPP |
                    MSTATUS_MPRV | MSTATUS_SUM)) {
                 helper_tlb_flush(env);
@@ -170,7 +170,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     }
     case CSR_MIP: {
         target_ulong mask = MIP_SSIP | MIP_STIP | MIP_SEIP;
-        tlib_mip_changed((env->mip & ~mask) | (val_to_write & mask));
+        env->mip = (env->mip & ~mask) | (val_to_write & mask);
         break;
     }
     case CSR_MIE: {
@@ -233,13 +233,13 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         break;
     }
     case CSR_SATP: /* CSR_SPTBR */ {
-        if (!env->privilege_mode_1_10 && (val_to_write ^ env->sptbr))
+        if (!env->privilege_architecture_1_10 && (val_to_write ^ env->sptbr))
         {
             helper_tlb_flush(env);
             env->sptbr = val_to_write & (((target_ulong)
                 1 << (TARGET_PHYS_ADDR_SPACE_BITS - PGSHIFT)) - 1);
         }
-        if (env->privilege_mode_1_10 &&
+        if (env->privilege_architecture_1_10 &&
             validate_vm(env, get_field(val_to_write, SATP_MODE)) &&
             ((val_to_write ^ env->satp) & (SATP_MODE | SATP_ASID | SATP_PPN)))
         {
@@ -325,7 +325,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
 #if defined(TARGET_RISCV32)
         env->mcycle_snapshot_offset = (get_mcycles_current(env) & 0xFFFFFFFF00000000) | val_to_write;
 #else
-        env->mcycle_snapshot_offset = get_mcycles_current(env)
+        env->mcycle_snapshot_offset = get_mcycles_current(env);
 #endif
         env->mcycle_snapshot = cpu_riscv_read_instret(env);
         break;
@@ -339,7 +339,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
 #if defined(TARGET_RISCV32)
         env->minstret_snapshot_offset = (get_minstret_current(env) & 0xFFFFFFFF00000000) | val_to_write;
 #else
-        env->minstret_snapshot_offset = get_minstret_current(env)
+        env->minstret_snapshot_offset = get_minstret_current(env);
 #endif
         env->minstret_snapshot = cpu_riscv_read_instret(env);
         break;
@@ -433,6 +433,13 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
+    case CSR_TIME:
+        return tlib_get_cpu_time();
+    case CSR_TIMEH:
+#if defined(TARGET_RISCV32)
+        return tlib_get_cpu_time() >> 32;
+#endif
+        break;
     case CSR_INSTRET:
     case CSR_CYCLE:
         if (ctr_ok) {
@@ -461,7 +468,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         target_ulong mask = SSTATUS_SIE | SSTATUS_SPIE | SSTATUS_UIE
             | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_FS | SSTATUS_XS
             | SSTATUS_SUM |  SSTATUS_SD;
-        if (env->privilege_mode_1_10) {
+        if (env->privilege_architecture_1_10) {
             mask |= SSTATUS_MXR;
         }
         return env->mstatus & mask;
@@ -481,7 +488,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     case CSR_SCAUSE:
         return env->scause;
     case CSR_SATP: /* CSR_SPTBR */
-        if (env->privilege_mode_1_10) {
+        if (env->privilege_architecture_1_10) {
             return env->satp;
         } else {
             return env->sptbr;
@@ -503,6 +510,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     case CSR_MBADADDR:
         return env->mbadaddr;
     case CSR_MISA:
+        env->misa |= 0x00040000; // 'S'
         return env->misa;
     case CSR_MARCHID:
         return 0; /* as spike does */
@@ -613,14 +621,15 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
     }
 
     target_ulong retpc = env->sepc;
-    if (retpc & 0x3) {
+    if (!riscv_has_ext(env, RISCV_FEATURE_RVC) && (retpc & 0x3)) {
         helper_raise_exception(env, RISCV_EXCP_INST_ADDR_MIS);
     }
 
     target_ulong mstatus = env->mstatus;
     target_ulong prev_priv = get_field(mstatus, MSTATUS_SPP);
-    mstatus = set_field(mstatus, MSTATUS_UIE << prev_priv,
-                        get_field(mstatus, MSTATUS_SPIE));
+    mstatus = set_field(mstatus,
+        env->privilege_architecture_1_10 ? MSTATUS_SIE : MSTATUS_UIE << prev_priv,
+        get_field(mstatus, MSTATUS_SPIE));
     mstatus = set_field(mstatus, MSTATUS_SPIE, 0);
     mstatus = set_field(mstatus, MSTATUS_SPP, PRV_U);
     riscv_set_mode(env, prev_priv);
@@ -636,10 +645,15 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
     }
 
     target_ulong retpc = env->mepc;
+    if (!riscv_has_ext(env, RISCV_FEATURE_RVC) && (retpc & 0x3)) {
+        helper_raise_exception(env, RISCV_EXCP_INST_ADDR_MIS);
+    }
+
     target_ulong mstatus = env->mstatus;
     target_ulong prev_priv = get_field(mstatus, MSTATUS_MPP);
-    mstatus = set_field(mstatus, MSTATUS_UIE << prev_priv,
-                        get_field(mstatus, MSTATUS_MPIE));
+    mstatus = set_field(mstatus,
+        env->privilege_architecture_1_10 ? MSTATUS_MIE : MSTATUS_UIE << prev_priv,
+        get_field(mstatus, MSTATUS_MPIE));
     mstatus = set_field(mstatus, MSTATUS_MPIE, 0);
     mstatus = set_field(mstatus, MSTATUS_MPP, PRV_U);
     riscv_set_mode(env, prev_priv);

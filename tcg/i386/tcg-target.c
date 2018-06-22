@@ -1635,16 +1635,15 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
     case INDEX_op_qemu_st64:
         tcg_out_qemu_st(s, args, 3);
         break;
-
+    OP_32_64(mulu2):
+        tcg_out_modrm(s, OPC_GRP3_Ev + rexw, EXT3_MUL, args[3]);
+        break;
 #if TCG_TARGET_REG_BITS == 32
     case INDEX_op_brcond2_i32:
         tcg_out_brcond2(s, args, const_args, 0);
         break;
     case INDEX_op_setcond2_i32:
         tcg_out_setcond2(s, args, const_args);
-        break;
-    case INDEX_op_mulu2_i32:
-        tcg_out_modrm(s, OPC_GRP3_Ev, EXT3_MUL, args[3]);
         break;
     case INDEX_op_add2_i32:
         if (const_args[4]) {

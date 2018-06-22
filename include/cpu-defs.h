@@ -132,8 +132,6 @@ typedef struct CPUBreakpoint {
     int32_t instructions_count_threshold;                               \
     int32_t instructions_count_value;                                   \
     int32_t instructions_count_total_value;                             \
-    /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                  \
-    struct TranslationBlock *current_tb; /* currently executing TB  */  \
     /* soft mmu support */                                              \
     /* in order to avoid passing too many arguments to the MMIO         \
        helpers, we store some rarely used information in the CPU        \
@@ -146,16 +144,10 @@ typedef struct CPUBreakpoint {
     uint32_t interrupt_request;                                         \
     volatile sig_atomic_t exit_request;                                 \
     int tb_restart_request;                                             \
-    CPU_COMMON_TLB                                                      \
-    struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];           \
-    /* buffer for temporaries in the code generator */                  \
-    long temp_buf[CPU_TEMP_BUF_NLONGS];                                 \
-                                                                        \
     /* from this point: preserved by CPU reset */                       \
     /* ice debug support */                                             \
     QTAILQ_HEAD(breakpoints_head, CPUBreakpoint) breakpoints;           \
     int singlestep_enabled;                                             \
-                                                                        \
     /* Core interrupt code */                                           \
     jmp_buf jmp_env;                                                    \
     int exception_index;                                                \
@@ -163,6 +155,15 @@ typedef struct CPUBreakpoint {
     int nr_threads;/* number of threads within this CPU */              \
     /* user data */                                                     \
     void *opaque;                                                       \
+    /* chaining is enabled by default */                                \
+    int chaining_disabled;                                              \
+    /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                  \
+    struct TranslationBlock *current_tb; /* currently executing TB  */  \
+    CPU_COMMON_TLB                                                      \
+    struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];           \
+    /* buffer for temporaries in the code generator */                  \
+    long temp_buf[CPU_TEMP_BUF_NLONGS];                                 \
+                                                                        \
 
 #endif
 

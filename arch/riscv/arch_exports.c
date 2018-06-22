@@ -19,14 +19,27 @@
 #include <stdint.h>
 #include "cpu.h"
 
-void tlib_set_mip(uint32_t value)
+void tlib_set_hart_id(uint32_t id)
 {
-   cpu->mip = value;
+    cpu->mhartid = id;
 }
 
-uint32_t tlib_get_mip()
+uint32_t tlib_get_hart_id()
 {
-   return cpu->mip;
+    return cpu->mhartid;
+}
+
+void tlib_set_mip_bit(uint32_t position, uint32_t value)
+{
+    // here we might have a race
+    if(value)
+    {
+        cpu->mip |= (1 << position);
+    }
+    else
+    {
+        cpu->mip &= ~(1 << position);
+    }
 }
 
 void tlib_allow_feature(uint32_t feature_bit)
@@ -45,7 +58,7 @@ uint32_t tlib_is_feature_allowed(uint32_t feature_bit)
    return (cpu->misa_mask & (1L << feature_bit)) != 0;
 }
 
-void tlib_set_privilege_mode_1_09(uint32_t enable)
+void tlib_set_privilege_architecture_1_09(uint32_t enable)
 {
-   cpu->privilege_mode_1_10 = enable ? 0 : 1;
+   cpu->privilege_architecture_1_10 = enable ? 0 : 1;
 }

@@ -55,7 +55,6 @@ struct CPUState {
     target_ulong load_res;
 
     target_ulong frm;
-    target_ulong fstatus;
     target_ulong fflags;
 
     target_ulong badaddr;
@@ -112,8 +111,8 @@ struct CPUState {
     uint64_t minstret_snapshot_offset;
     uint64_t minstret_snapshot;
 
-    /* if privilege mode v1.10 is not set, we assume 1.09 */
-    bool privilege_mode_1_10;
+    /* if privilege architecture v1.10 is not set, we assume 1.09 */
+    bool privilege_architecture_1_10;
 
     CPU_COMMON
 };

@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include "callbacks.h"
 
-DEFAULT_VOID_HANDLER1(void tlib_on_translation_block_find_slow, uint32_t pc)
+DEFAULT_VOID_HANDLER1(void tlib_on_translation_block_find_slow, uint64_t pc)
 
 void tlib_abort(char *message) __attribute__((weak));
 
@@ -31,21 +31,21 @@ void tlib_abort(char *message)
 
 DEFAULT_VOID_HANDLER2(void tlib_log, enum log_level level, char* message)
 
-DEFAULT_INT_HANDLER1(uint32_t tlib_read_byte, uint32_t address)
+DEFAULT_INT_HANDLER1(uint32_t tlib_read_byte, uint64_t address)
 
-DEFAULT_INT_HANDLER1(uint32_t tlib_read_word, uint32_t address)
+DEFAULT_INT_HANDLER1(uint32_t tlib_read_word, uint64_t address)
 
-DEFAULT_INT_HANDLER1(uint32_t tlib_read_double_word, uint32_t address)
+DEFAULT_INT_HANDLER1(uint32_t tlib_read_double_word, uint64_t address)
 
-DEFAULT_VOID_HANDLER2(void tlib_write_byte, uint32_t address, uint32_t value)
+DEFAULT_VOID_HANDLER2(void tlib_write_byte, uint64_t address, uint32_t value)
 
-DEFAULT_VOID_HANDLER2(void tlib_write_word, uint32_t address, uint32_t value)
+DEFAULT_VOID_HANDLER2(void tlib_write_word, uint64_t address, uint32_t value)
 
-DEFAULT_VOID_HANDLER2(void tlib_write_double_word, uint32_t address, uint32_t value)
+DEFAULT_VOID_HANDLER2(void tlib_write_double_word, uint64_t address, uint32_t value)
 
-DEFAULT_INT_HANDLER1(int32_t tlib_is_io_accessed, uint32_t address)
+DEFAULT_INT_HANDLER1(int32_t tlib_is_io_accessed, uint64_t address)
 
-DEFAULT_VOID_HANDLER2(void tlib_on_block_begin, uint32_t address, uint32_t size)
+DEFAULT_VOID_HANDLER2(void tlib_on_block_begin, uint64_t address, uint32_t size)
 
 DEFAULT_INT_HANDLER1(uint32_t tlib_is_block_begin_event_enabled, void)
 
@@ -70,7 +70,7 @@ void tlib_free(void *ptr)
   free(ptr);
 }
 
-DEFAULT_VOID_HANDLER1(void tlib_on_translation_cache_size_change, int32_t new_size)
+DEFAULT_VOID_HANDLER1(void tlib_on_translation_cache_size_change, uint64_t new_size)
 
 DEFAULT_VOID_HANDLER2(void tlib_invalidate_tb_in_other_cpus, uintptr_t start, uintptr_t end)
 
@@ -83,9 +83,9 @@ void tlib_set_on_block_translation_enabled(int32_t value)
   tlib_is_on_block_translation_enabled = value;
 }
 
-void tlib_on_block_translation(uint32_t start, uint32_t size, uint32_t flags) __attribute__((weak));
+void tlib_on_block_translation(uint64_t start, uint32_t size, uint32_t flags) __attribute__((weak));
 
-void tlib_on_block_translation(uint32_t start, uint32_t size, uint32_t flags)
+void tlib_on_block_translation(uint64_t start, uint32_t size, uint32_t flags)
 {
 
 }

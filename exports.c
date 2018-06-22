@@ -82,11 +82,27 @@ void tlib_dispose()
   tcg_dispose();
 }
 
-// this function returns number of instructions executed by a single call of `tlib_execute`;
+// this function returns number of instructions executed since the previous call
 // there is `cpu->instructions_count_total_value` that contains the cumulative value
 int32_t tlib_get_executed_instructions()
 {
-  return cpu->instructions_count_value;
+  int32_t result = cpu->instructions_count_value;
+  cpu->instructions_count_value = 0;
+  return result;
+}
+
+// `TranslationCPU` uses the number of executed instructions to calculate the elapsed virtual time.
+// This number is divided by `PerformanceInMIPS` value, but may leave a remainder, that is not reflected in `TranslationCPU` state.
+// To account for that, we have to report this remainder back to tlib, so that the next call to `tlib_get_executed_instructions`
+// includes it in the returned value.
+void tlib_reset_executed_instructions(int32_t val)
+{
+  cpu->instructions_count_value = val;
+}
+
+int32_t tlib_get_total_executed_instructions()
+{
+  return cpu->instructions_count_total_value;
 }
 
 void tlib_reset()
@@ -96,7 +112,10 @@ void tlib_reset()
 
 int32_t tlib_execute(int32_t max_insns)
 {
-  cpu->instructions_count_value = 0;
+  if(cpu->instructions_count_value != 0)
+  {
+    tlib_abortf("Tried to execute cpu without reading executed instructions count first.");
+  }
   cpu->instructions_count_threshold = max_insns;
   return cpu_exec(cpu);
 }
@@ -141,7 +160,7 @@ uint32_t tlib_get_page_size()
   return TARGET_PAGE_SIZE;
 }
 
-void tlib_map_range(uint32_t start_addr, uint32_t length)
+void tlib_map_range(uint64_t start_addr, uint64_t length)
 {
   ram_addr_t phys_offset = start_addr;
   ram_addr_t size = length;
@@ -169,9 +188,9 @@ void tlib_map_range(uint32_t start_addr, uint32_t length)
   cpu_register_physical_memory(start_addr, size, phys_offset | IO_MEM_RAM);
 }
 
-void tlib_unmap_range(uint32_t start, uint32_t end)
+void tlib_unmap_range(uint64_t start, uint64_t end)
 {
-  uint32_t new_start;
+  uint64_t new_start;
 
   while(start <= end)
   {
@@ -185,13 +204,13 @@ void tlib_unmap_range(uint32_t start, uint32_t end)
   }
 }
 
-uint32_t tlib_is_range_mapped(uint32_t start, uint32_t end)
+uint32_t tlib_is_range_mapped(uint64_t start, uint64_t end)
 {
   PhysPageDesc *pd;
 
   while(start < end)
   {
-    pd = phys_page_find(start >> TARGET_PAGE_BITS);
+    pd = phys_page_find((target_phys_addr_t)start >> TARGET_PAGE_BITS);
     if(pd != NULL && pd->phys_offset != IO_MEM_UNASSIGNED)
     {
       return 1; // at least one page of this region is mapped
@@ -206,7 +225,7 @@ void tlib_invalidate_translation_blocks(uintptr_t start, uintptr_t end)
   tb_invalidate_phys_page_range_inner(start, end, 0, 0);
 }
 
-uint32_t tlib_translate_to_physical_address(uint32_t address)
+uint64_t tlib_translate_to_physical_address(uint64_t address)
 {
   return virt_to_phys(address);
 }
@@ -228,12 +247,12 @@ int32_t tlib_is_irq_set()
   return cpu->interrupt_request;
 }
 
-void tlib_add_breakpoint(uint32_t address)
+void tlib_add_breakpoint(uint64_t address)
 {
   cpu_breakpoint_insert(cpu, address, BP_GDB, NULL);
 }
 
-void tlib_remove_breakpoint(uint32_t address)
+void tlib_remove_breakpoint(uint64_t address)
 {
   cpu_breakpoint_remove(cpu, address, BP_GDB);
 }
@@ -311,3 +330,14 @@ void tlib_request_exit()
 {
   cpu->interrupt_request = CPU_INTERRUPT_DEBUG;
 }
+
+void tlib_set_chaining_enabled(uint32_t val)
+{
+  cpu->chaining_disabled = !val;
+}
+
+uint32_t tlib_get_chaining_enabled()
+{
+  return !cpu->chaining_disabled;
+}
+

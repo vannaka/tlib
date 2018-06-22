@@ -318,7 +318,7 @@ inline PhysPageDesc *phys_page_find(target_phys_addr_t index)
     return phys_page_find_alloc(index, 0);
 }
 
-void unmap_page(uint32_t address)
+void unmap_page(target_phys_addr_t address)
 {
     PhysPageDesc *pd;
 
@@ -762,7 +762,8 @@ void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t en
             tb_start = tb->page_addr[1];
             tb_end = tb_start + ((tb->pc + tb->size) & ~TARGET_PAGE_MASK);
         }
-        if (!(tb_end <= start || tb_start >= end)) {
+        // condition in this form supports blocks where 'tb_start' == 'tb_end' (empty blocks with just a breakpoint)
+        if((tb_start >= start && tb_start < end) || (tb_end >= start && tb_end < end) || (tb_start <= start && tb_end >= end)) {
 #ifdef TARGET_HAS_PRECISE_SMC
             if (current_tb_not_found) {
                 current_tb_not_found = 0;
@@ -991,11 +992,6 @@ int cpu_breakpoint_remove(CPUState *env, target_ulong pc, int flags)
     QTAILQ_FOREACH(bp, &env->breakpoints, entry) {
         if (bp->pc == pc && bp->flags == flags) {
             cpu_breakpoint_remove_by_ref(env, bp);
-            // FIXME:
-            // this should not be necessary, but is
-            // it seems that for some unknown reason the TB containing this breakpoint is not invalidated properly and we cannot move on after hitting it for the first time
-            // flushing the *whole* TB cache helps, but... well it's not an elegant or effective approach
-            tb_flush(env);
             return 0;
         }
     }

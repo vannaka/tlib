@@ -32,7 +32,7 @@
 int gen_new_label(void);
 
 TCGv_ptr cpu_env;
-static TCGArg *icount_arg, *event_size_arg;
+static TCGArg *event_size_arg;
 
 static int stopflag_label;
 
@@ -55,13 +55,9 @@ static inline void gen_block_header(TranslationBlock *tb)
     tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, stopflag_label);
     tcg_temp_free_i32(flag);
 
-    icount_arg = gen_opparam_ptr + 1;
-    // at this moment this const contains magic value 88888
-    // which is replaced at gen_block_footer near the end of
-    // the block
-    TCGv_i32 instruction_count = tcg_const_i32(88888);
-    gen_helper_prepare_block_for_execution(instruction_count);
-    tcg_temp_free_i32(instruction_count);
+    TCGv_ptr tb_pointer = tcg_const_ptr((tcg_target_long)tb);
+    gen_helper_prepare_block_for_execution(tb_pointer);
+    tcg_temp_free_ptr(tb_pointer);
 
     flag = tcg_temp_local_new_i32();
     tcg_gen_ld_i32(flag, cpu_env, offsetof(CPUState, tb_restart_request));
@@ -70,12 +66,12 @@ static inline void gen_block_header(TranslationBlock *tb)
 
     if(tlib_is_block_begin_event_enabled())
     {
-      TCGv_i32 event_address = tcg_const_i32(tb->pc);
+      TCGv event_address = tcg_const_tl(tb->pc);
       event_size_arg = gen_opparam_ptr + 1;
       TCGv_i32 event_size = tcg_const_i32(0xFFFF); // bogus value that is to be fixed at later point
 
       gen_helper_block_begin_event(event_address, event_size);
-      tcg_temp_free_i32(event_address);
+      tcg_temp_free(event_address);
       tcg_temp_free_i32(event_size);
     }
 }
@@ -91,7 +87,6 @@ static inline void gen_block_footer(TranslationBlock *tb)
     }
     gen_set_label(stopflag_label);
     tcg_gen_exit_tb((uintptr_t)tb + 2);
-    *icount_arg = tb->icount;
     *gen_opc_ptr = INDEX_op_end;
 }
 

@@ -107,7 +107,11 @@ static void patch_reloc(uint8_t *code_ptr, int type,
 static inline int tcg_target_get_call_iarg_regs_count(int flags)
 {
     if (TCG_TARGET_REG_BITS == 64) {
+#if defined(_WIN64)
+        return 4;
+#else
         return 6;
+#endif
     }
 
     flags &= TCG_CALL_TYPE_MASK;

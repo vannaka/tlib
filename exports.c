@@ -348,3 +348,7 @@ uint32_t tlib_get_chaining_enabled()
   return !cpu->chaining_disabled;
 }
 
+void tlib_set_block_finished_hook_present(uint32_t val)
+{
+  cpu->block_finished_hook_present = !!val;
+}

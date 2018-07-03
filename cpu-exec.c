@@ -261,9 +261,11 @@ int cpu_exec(CPUState *env)
                 }
                 /* see if we can patch the calling TB. When the TB
                    spans two pages, we cannot safely do a direct
-                   jump. */
+                   jump.
+                   We do not chain blocks if the chaining is explicitly disabled or if
+                   there is a hook registered for the block footer. */
 
-                if (!env->chaining_disabled && next_tb != 0 && tb->page_addr[1] == -1) {
+                if (!env->chaining_disabled && !env->block_finished_hook_present && next_tb != 0 && tb->page_addr[1] == -1) {
                     tb_add_jump((TranslationBlock *)(next_tb & ~3), next_tb & 3, tb);
                 }
 

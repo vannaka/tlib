@@ -157,6 +157,9 @@ typedef struct CPUBreakpoint {
     void *opaque;                                                       \
     /* chaining is enabled by default */                                \
     int chaining_disabled;                                              \
+    /* indicates if the block_finished hook is registered, implicitly   \
+                          disabling block chaining */                   \
+    int block_finished_hook_present;                                    \
     /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                  \
     struct TranslationBlock *current_tb; /* currently executing TB  */  \
     CPU_COMMON_TLB                                                      \

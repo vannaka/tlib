@@ -49,6 +49,8 @@ DEFAULT_VOID_HANDLER2(void tlib_on_block_begin, uint64_t address, uint32_t size)
 
 DEFAULT_INT_HANDLER1(uint32_t tlib_is_block_begin_event_enabled, void)
 
+DEFAULT_VOID_HANDLER2(void tlib_on_block_finished, uint64_t pc, uint32_t executed_instructions)
+
 void *tlib_malloc(size_t size) __attribute__((weak));
 
 void *tlib_malloc(size_t size)

@@ -39,6 +39,11 @@ void HELPER(block_begin_event)(target_ulong address, uint32_t size)
   tlib_on_block_begin(address, size);
 }
 
+void HELPER(block_finished_event)(target_ulong address, uint32_t executed_instructions)
+{
+  tlib_on_block_finished(address, executed_instructions);
+}
+
 void HELPER(abort)(void) {
 	tlib_abort("aborted by gen_abort!");
 }

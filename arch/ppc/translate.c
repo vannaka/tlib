@@ -2503,7 +2503,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
         likely(!s->singlestep_enabled)) {
         tcg_gen_goto_tb(n);
         tcg_gen_movi_tl(cpu_nip, dest & ~3);
-        tcg_gen_exit_tb((tcg_target_long)tb + n);
+        gen_exit_tb((tcg_target_long)tb + n, tb);
     } else {
         tcg_gen_movi_tl(cpu_nip, dest & ~3);
         if (unlikely(s->singlestep_enabled)) {
@@ -2519,7 +2519,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
                 gen_debug_exception(s);
             }
         }
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, tb);
     }
 }
 
@@ -2610,10 +2610,10 @@ static inline void gen_bcond(DisasContext *s, int type)
         gen_goto_tb(s, 1, s->pc);
     } else {
         tcg_gen_andi_tl(cpu_nip, target, ~3);
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, s->tb);
         gen_set_label(l1);
         tcg_gen_movi_tl(cpu_nip, s->pc);
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, s->tb);
     }
 }
 
@@ -8107,6 +8107,7 @@ void gen_intermediate_code(CPUState *env,
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
+        tb->prev_size = tb->size;
         tb->size += disas_insn(env, &dc);
         tb->icount++;
 
@@ -8157,7 +8158,7 @@ void gen_intermediate_code(CPUState *env,
             gen_debug_exception(&dc);
         }
         /* Generate the return instruction */
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, tb);
     }
 
     tb->disas_flags = get_disas_flags(env, &dc);

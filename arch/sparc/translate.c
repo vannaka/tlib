@@ -194,12 +194,12 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num,
         tcg_gen_goto_tb(tb_num);
         tcg_gen_movi_tl(cpu_pc, pc);
         tcg_gen_movi_tl(cpu_npc, npc);
-        tcg_gen_exit_tb((tcg_target_long)tb + tb_num);
+        gen_exit_tb((tcg_target_long)tb + tb_num, tb);
     } else {
         /* jump to another page: currently not optimized */
         tcg_gen_movi_tl(cpu_pc, pc);
         tcg_gen_movi_tl(cpu_npc, npc);
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, tb);
     }
 }
 
@@ -1581,7 +1581,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                     tcg_temp_free(r_cond);
                 }
                 gen_op_next_insn();
-                tcg_gen_exit_tb(0);
+                gen_exit_tb(0, dc->tb);
                 dc->is_jmp = DISAS_JUMP;
                 goto jmp_insn;
             } else if (xop == 0x28) {
@@ -2236,7 +2236,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                             dc->cc_op = CC_OP_FLAGS;
                             save_state(dc, cpu_cond);
                             gen_op_next_insn();
-                            tcg_gen_exit_tb(0);
+                            gen_exit_tb(0, dc->tb);
                             dc->is_jmp = DISAS_JUMP;
                         }
                         break;
@@ -2763,7 +2763,7 @@ int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
         save_state(dc, cpu_cond);
     }
     gen_helper_debug();
-    tcg_gen_exit_tb(0);
+    gen_exit_tb(0, dc->tb);
     dc->is_jmp = DISAS_JUMP;
     return 1;
 }
@@ -2790,6 +2790,7 @@ void gen_intermediate_code(CPUState *env,
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
+        tb->prev_size = tb->size;
         tb->size += disas_insn(env, &dc);
         tb->icount++;
 
@@ -2853,7 +2854,7 @@ void gen_intermediate_code(CPUState *env,
             if (dc.pc != DYNAMIC_PC)
                 tcg_gen_movi_tl(cpu_pc, dc.pc);
             save_npc(&dc, cpu_cond);
-            tcg_gen_exit_tb(0);
+            gen_exit_tb(0, dc.tb);
         }
     }
     if (tb->search_pc) {

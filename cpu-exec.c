@@ -18,6 +18,7 @@
  */
 #include "cpu.h"
 #include "tcg.h"
+#include "dyngen-exec.h"
 
 target_ulong virt_to_phys(target_ulong virt) {
 #if (TARGET_LONG_BITS == 32)
@@ -47,23 +48,40 @@ target_ulong virt_to_phys(target_ulong virt) {
 
 int tb_invalidated_flag;
 
-void TLIB_NORETURN cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc)
+static void TLIB_NORETURN cpu_loop_exit_without_hook(CPUState *env)
 {
-    TranslationBlock *tb;
-    if (pc) {
-        tb = tb_find_pc(pc);
-        if(tb)
-        {
-            cpu_restore_state_and_restore_instructions_count(cpu, tb, pc);
-        }
-    }
-    cpu_loop_exit(cpu);
+    env->current_tb = NULL;
+    longjmp(env->jmp_env, 1);
 }
 
 void TLIB_NORETURN cpu_loop_exit(CPUState *env)
 {
-    env->current_tb = NULL;
-    longjmp(env->jmp_env, 1);
+    if(env->block_finished_hook_present)
+    {
+        target_ulong pc = CPU_PC(env);
+        // TODO: here we would need to have the number of executed instructions, how?!
+        tlib_on_block_finished(pc, 0);
+    }
+    cpu_loop_exit_without_hook(env);
+}
+
+void TLIB_NORETURN cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc, uint32_t call_hook)
+{
+    TranslationBlock *tb;
+    uint32_t executed_instructions = 0;
+    if (pc) {
+        tb = tb_find_pc(pc);
+        if(tb)
+        {
+            executed_instructions = cpu_restore_state_and_restore_instructions_count(cpu, tb, pc);
+        }
+    }
+    if(call_hook && cpu->block_finished_hook_present)
+    {
+        tlib_on_block_finished(CPU_PC(cpu), executed_instructions);
+    }
+
+    cpu_loop_exit_without_hook(cpu);
 }
 
 static TranslationBlock *tb_find_slow(CPUState *env,
@@ -217,7 +235,7 @@ int cpu_exec(CPUState *env)
                     if (interrupt_request & CPU_INTERRUPT_DEBUG) {
                         env->interrupt_request &= ~CPU_INTERRUPT_DEBUG;
                         env->exception_index = EXCP_DEBUG;
-                        cpu_loop_exit(env);
+                        cpu_loop_exit_without_hook(env);
                     }
                     if (process_interrupt(interrupt_request, env)) {
                         next_tb = 0;
@@ -234,11 +252,11 @@ int cpu_exec(CPUState *env)
                 if (unlikely(env->exit_request)) {
                     env->exit_request = 0;
                     env->exception_index = EXCP_INTERRUPT;
-                    cpu_loop_exit(env);
+                    cpu_loop_exit_without_hook(env);
                 }
                 if (unlikely(env->tb_restart_request)) {
                     env->tb_restart_request = 0;
-                    cpu_loop_exit(env);
+                    cpu_loop_exit_without_hook(env);
                 }
 
 #ifdef TARGET_PROTO_ARM_M
@@ -285,7 +303,7 @@ int cpu_exec(CPUState *env)
                         cpu_pc_from_tb(env, tb);
                         env->exception_index = EXCP_INTERRUPT;
                         next_tb = 0;
-                        cpu_loop_exit(env);
+                        cpu_loop_exit_without_hook(env);
                     }
                 }
                 env->current_tb = NULL;

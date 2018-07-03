@@ -3594,10 +3594,10 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint32_t dest)
     if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)) {
         tcg_gen_goto_tb(n);
         gen_set_pc_im(dest);
-        tcg_gen_exit_tb((tcg_target_long)tb + n);
+        gen_exit_tb((tcg_target_long)tb + n, tb);
     } else {
         gen_set_pc_im(dest);
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, tb);
     }
 }
 
@@ -10000,6 +10000,7 @@ void gen_intermediate_code(CPUState *env,
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
+        tb->prev_size = tb->size;
         tb->size += disas_insn(env, &dc);
         tb->icount++;
 
@@ -10092,7 +10093,7 @@ void gen_intermediate_code(CPUState *env,
         case DISAS_JUMP:
         case DISAS_UPDATE:
             /* indicate that the hash table must be used to find the next TB */
-            tcg_gen_exit_tb(0);
+            gen_exit_tb(0, dc.tb);
             break;
         case DISAS_TB_JUMP:
             /* nothing more to generate */

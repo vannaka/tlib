@@ -129,13 +129,13 @@ static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
         /* chaining is only allowed when the jump is to the same page */
         tcg_gen_goto_tb(n);
         tcg_gen_movi_tl(cpu_pc, dest);
-        tcg_gen_exit_tb((uintptr_t)ctx->tb + n);
+        gen_exit_tb((uintptr_t)ctx->tb + n, ctx->tb);
     } else {
         tcg_gen_movi_tl(cpu_pc, dest);
         if (ctx->singlestep_enabled) {
             gen_helper_raise_exception_debug(cpu_env);
         }
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, ctx->tb);
     }
 }
 
@@ -573,11 +573,11 @@ static void gen_jalr(CPUState *env, DisasContext *ctx, uint32_t opc, int rd, int
         if (rd != 0) {
             tcg_gen_movi_tl(cpu_gpr[rd], ctx->next_pc);
         }
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, ctx->tb);
 
         gen_set_label(misaligned);
         generate_exception_mbadaddr(ctx, RISCV_EXCP_INST_ADDR_MIS);
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, ctx->tb);
         ctx->bstate = BS_BRANCH;
         break;
     default:
@@ -626,7 +626,7 @@ static void gen_branch(CPUState *env, DisasContext *ctx, uint32_t opc, int rs1, 
     if (!riscv_has_ext(env, RISCV_FEATURE_RVC) && ((ctx->pc + bimm) & 0x3)) {
         /* misaligned */
         generate_exception_mbadaddr(ctx, RISCV_EXCP_INST_ADDR_MIS);
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, ctx->tb);
     } else {
         gen_goto_tb(ctx, 0, ctx->pc + bimm);
     }
@@ -1366,12 +1366,12 @@ static void gen_system(DisasContext *ctx, uint32_t opc,
         case 0x0: /* ECALL */
             /* always generates U-level ECALL, fixed in do_interrupt handler */
             generate_exception(ctx, RISCV_EXCP_U_ECALL);
-            tcg_gen_exit_tb(0); /* no chaining */
+            gen_exit_tb(0, ctx->tb); /* no chaining */
             ctx->bstate = BS_BRANCH;
             break;
         case 0x1: /* EBREAK */
             generate_exception(ctx, RISCV_EXCP_BREAKPOINT);
-            tcg_gen_exit_tb(0); /* no chaining */
+            gen_exit_tb(0, ctx->tb); /* no chaining */
             ctx->bstate = BS_BRANCH;
             break;
         case 0x002: /* URET */
@@ -1379,7 +1379,7 @@ static void gen_system(DisasContext *ctx, uint32_t opc,
             break;
         case 0x102: /* SRET */
             gen_helper_sret(cpu_pc, cpu_env, cpu_pc);
-            tcg_gen_exit_tb(0); /* no chaining */
+            gen_exit_tb(0, ctx->tb); /* no chaining */
             ctx->bstate = BS_BRANCH;
             break;
         case 0x202: /* HRET */
@@ -1387,7 +1387,7 @@ static void gen_system(DisasContext *ctx, uint32_t opc,
             break;
         case 0x302: /* MRET */
             gen_helper_mret(cpu_pc, cpu_env, cpu_pc);
-            tcg_gen_exit_tb(0); /* no chaining */
+            gen_exit_tb(0, ctx->tb); /* no chaining */
             ctx->bstate = BS_BRANCH;
             break;
         case 0x7b2: /* DRET */
@@ -1437,7 +1437,7 @@ static void gen_system(DisasContext *ctx, uint32_t opc,
         gen_set_gpr(rd, dest);
         /* end tb since we may be changing priv modes, to get mmu_index right */
         tcg_gen_movi_tl(cpu_pc, ctx->next_pc);
-        tcg_gen_exit_tb(0); /* no chaining */
+        gen_exit_tb(0, ctx->tb); /* no chaining */
         ctx->bstate = BS_BRANCH;
         break;
     }
@@ -1833,7 +1833,7 @@ static void decode_RV32_64G(CPUState *env, DisasContext *ctx)
         if (ctx->opcode & 0x1000) { /* FENCE_I */
             gen_helper_fence_i(cpu_env);
             tcg_gen_movi_tl(cpu_pc, ctx->next_pc);
-            tcg_gen_exit_tb(0); /* no chaining */
+            gen_exit_tb(0, ctx->tb); /* no chaining */
             ctx->bstate = BS_BRANCH;
         }
         break;
@@ -1923,6 +1923,7 @@ void gen_intermediate_code(CPUState *env,
         sprintf(msg, "opcode 0x%08X at pc=0x" TARGET_FMT_plx " [tcg id=%d]", ctx.opcode, ctx.pc, (int)(gen_opc_ptr - tcg->gen_opc_buf));
         generate_log(ctx.pc, "---> tcg: we are executing %s", msg);
 
+        tb->prev_size = tb->size;
         tb->size += disas_insn(env, &ctx);
         tb->icount++;
 
@@ -1976,7 +1977,7 @@ void gen_intermediate_code(CPUState *env,
             break;
         case BS_NONE: /* handle end of page - DO NOT CHAIN. See gen_goto_tb. */
             tcg_gen_movi_tl(cpu_pc, ctx.pc);
-            tcg_gen_exit_tb(0);
+            gen_exit_tb(0, ctx.tb);
             break;
         case BS_BRANCH: /* ops using BS_BRANCH generate own exit seq */
         default:

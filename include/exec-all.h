@@ -40,6 +40,7 @@ typedef ram_addr_t tb_page_addr_t;
 struct TranslationBlock;
 typedef struct TranslationBlock TranslationBlock;
 
+void gen_exit_tb(uintptr_t, TranslationBlock*);
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc);
 void gen_intermediate_code(CPUState *env, struct TranslationBlock *tb, int max_insn);
 void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb,
@@ -114,6 +115,8 @@ struct TranslationBlock {
     // this field is necessary when restoring the state of tb (using cpu_restore_state) in order to limit the size of retranslated block not to be bigger than original one;
     // SIGSEGVs have been observed otherwise
     uint16_t original_size;
+    // this field is used to keep track of the previous value of size, i.e., it shows the size of translation block without the last instruction; used by a blockend hook
+    uint16_t prev_size;
     // signals that the `icount` of this tb has been added to global instructions counters
     // in case of exiting this tb before the end (e.g., in case of an exception, watchpoint etc.) the value of counters must be rebuilt
     uint32_t instructions_count_dirty;

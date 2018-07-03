@@ -32,9 +32,10 @@
 int gen_new_label(void);
 
 TCGv_ptr cpu_env;
+extern CPUState *cpu;
 static TCGArg *event_size_arg;
 
-static int stopflag_label;
+static int exit_no_hook_label;
 
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc) {
     CPUBreakpoint *bp;
@@ -49,10 +50,10 @@ CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc) {
 static inline void gen_block_header(TranslationBlock *tb)
 {
     TCGv_i32 flag;
-    stopflag_label = gen_new_label();
+    exit_no_hook_label = gen_new_label();
     flag = tcg_temp_local_new_i32();
     tcg_gen_ld_i32(flag, cpu_env, offsetof(CPUState, exit_request));
-    tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, stopflag_label);
+    tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, exit_no_hook_label);
     tcg_temp_free_i32(flag);
 
     TCGv_ptr tb_pointer = tcg_const_ptr((tcg_target_long)tb);
@@ -61,7 +62,7 @@ static inline void gen_block_header(TranslationBlock *tb)
 
     flag = tcg_temp_local_new_i32();
     tcg_gen_ld_i32(flag, cpu_env, offsetof(CPUState, tb_restart_request));
-    tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, stopflag_label);
+    tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, exit_no_hook_label);
     tcg_temp_free_i32(flag);
 
     if(tlib_is_block_begin_event_enabled())
@@ -76,6 +77,33 @@ static inline void gen_block_header(TranslationBlock *tb)
     }
 }
 
+static void gen_exit_tb_inner(uintptr_t val, TranslationBlock *tb, uint32_t instructions_count)
+{
+    if(cpu->block_finished_hook_present)
+    {
+        // This line may be missleading - we do not raport exact pc + size,
+        // as the size of the current instruction is not yet taken into account.
+        // Effectively it gives us the PC of the current instruction.
+        TCGv last_instruction = tcg_const_tl(tb->pc + tb->prev_size);
+        TCGv_i32 executed_instructions = tcg_const_i32(instructions_count);
+        gen_helper_block_finished_event(last_instruction, executed_instructions);
+        tcg_temp_free_i32(executed_instructions);
+        tcg_temp_free(last_instruction);
+    }
+    tcg_gen_exit_tb(val);
+}
+
+static void gen_interrupt_tb(uintptr_t val, TranslationBlock *tb)
+{
+    // since the block was interrupted before executing any instruction we return 0
+    gen_exit_tb_inner(val, tb, 0);
+}
+
+void gen_exit_tb(uintptr_t val, TranslationBlock *tb)
+{
+    gen_exit_tb_inner(val, tb, tb->icount);
+}
+
 static inline void gen_block_footer(TranslationBlock *tb)
 {
     if (tlib_is_on_block_translation_enabled) {
@@ -85,8 +113,15 @@ static inline void gen_block_footer(TranslationBlock *tb)
     {
       *event_size_arg = tb->icount;
     }
-    gen_set_label(stopflag_label);
+
+    int finish_label = gen_new_label();
+    gen_exit_tb((uintptr_t)tb + 2, tb);
+    tcg_gen_br(finish_label);
+
+    gen_set_label(exit_no_hook_label);
     tcg_gen_exit_tb((uintptr_t)tb + 2);
+
+    gen_set_label(finish_label);
     *gen_opc_ptr = INDEX_op_end;
 }
 

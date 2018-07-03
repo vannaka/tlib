@@ -2273,7 +2273,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
         /* jump to same page: we can use a direct jump */
         tcg_gen_goto_tb(tb_num);
         gen_jmp_im(eip);
-        tcg_gen_exit_tb((tcg_target_long)tb + tb_num);
+        gen_exit_tb((tcg_target_long)tb + tb_num, tb);
     } else {
         /* jump to another page: currently not optimized */
         gen_jmp_im(eip);
@@ -2690,7 +2690,7 @@ static void gen_eob(DisasContext *s)
     } else if (s->tf) {
         gen_helper_single_step();
     } else {
-        tcg_gen_exit_tb(0);
+        gen_exit_tb(0, s->tb);
     }
     s->is_jmp = DISAS_TB_JUMP;
 }
@@ -7031,7 +7031,7 @@ static int disas_insn(CPUState *env, DisasContext *s)
                     } else {
                         gen_helper_vmrun(tcg_const_i32(s->aflag),
                                          tcg_const_i32(s->pc - pc_start));
-                        tcg_gen_exit_tb(0);
+                        gen_exit_tb(0, s->tb);
                         s->is_jmp = DISAS_TB_JUMP;
                     }
                     break;
@@ -7725,6 +7725,7 @@ void gen_intermediate_code(CPUState *env,
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
+        tb->prev_size = tb->size;
         tb->size += disas_insn(env, &dc);
         tb->icount++;
 

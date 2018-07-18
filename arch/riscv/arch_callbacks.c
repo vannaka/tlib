@@ -20,3 +20,4 @@
 #include "arch_callbacks.h"
 
 DEFAULT_INT_HANDLER1(uint64_t tlib_get_cpu_time, void)
+DEFAULT_INT_HANDLER1(uint32_t tlib_is_in_debug_mode, void)

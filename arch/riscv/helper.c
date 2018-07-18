@@ -57,6 +57,12 @@ int riscv_cpu_mmu_index(CPUState *env)
  */
 int riscv_cpu_hw_interrupts_pending(CPUState *env)
 {
+    if(tlib_is_in_debug_mode())
+    {
+        //According to the debug spec draft, the debug mode implies all interrupts are masked (even NMI)
+        //and the WFI acts as NOP.
+        return EXCP_NONE;
+    }
     target_ulong pending_interrupts = env->mip & env->mie;
 
     target_ulong mie = get_field(env->mstatus, MSTATUS_MIE);

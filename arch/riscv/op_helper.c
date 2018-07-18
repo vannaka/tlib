@@ -664,6 +664,12 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
 
 void helper_wfi(CPUState *env)
 {
+    if(tlib_is_in_debug_mode())
+    {
+        //According to the debug spec draft, the debug mode implies all interrupts are masked (even NMI)
+        //and the WFI acts as NOP.
+        return;
+    }
     env->wfi = 1;
     env->exception_index = EXCP_WFI;
     cpu_loop_exit(env);

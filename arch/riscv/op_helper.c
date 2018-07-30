@@ -374,7 +374,14 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
        pmpaddr_csr_write(env, csrno - CSR_PMPADDR0, val_to_write);
        break;
     default:
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        if(tlib_has_nonstandard_csr(csrno) != 0)
+        {
+            tlib_write_csr(csrno, val_to_write);
+        }
+        else
+        {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        }
     }
 }
 
@@ -550,9 +557,14 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     case CSR_PMPADDR14:
     case CSR_PMPADDR15:
        return pmpaddr_csr_read(env, csrno - CSR_PMPADDR0);
+    default:
+        if(tlib_has_nonstandard_csr(csrno) != 0)
+        {
+            return tlib_read_csr(csrno);
+        }
+        /* used by e.g. MTIME read */
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    /* used by e.g. MTIME read */
-    helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     return 0;
 }
 

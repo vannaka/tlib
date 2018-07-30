@@ -16,27 +16,27 @@ void HELPER(prepare_block_for_execution)(void* tb)
   {
     // setting `tb_restart_request` to 1 will stop executing this block at the end of the header
     cpu->tb_restart_request = 1;
-    return;
   }
-
-  if(current_block_size > instructions_left)
+  else if(current_block_size > instructions_left)
   {
     size_of_next_block_to_translate = instructions_left;
 
     // invalidate this block and jump back to the main loop
     tb_phys_invalidate(cpu->current_tb, -1);
     cpu->tb_restart_request = 1;
-    return;
   }
+}
 
-  // update instructions count and execute the block
+void HELPER(update_instructions_count)(uint32_t current_block_size)
+{
   cpu->instructions_count_value += current_block_size;
+  cpu->instructions_count_total_value += current_block_size;
   cpu->current_tb->instructions_count_dirty = 1;
 }
 
-void HELPER(block_begin_event)(target_ulong address, uint32_t size)
+uint32_t HELPER(block_begin_event)(target_ulong address, uint32_t size)
 {
-  tlib_on_block_begin(address, size);
+  return tlib_on_block_begin(address, size);
 }
 
 void HELPER(block_finished_event)(target_ulong address, uint32_t executed_instructions)

@@ -34,8 +34,10 @@ int gen_new_label(void);
 TCGv_ptr cpu_env;
 extern CPUState *cpu;
 static TCGArg *event_size_arg;
+static TCGArg *event_size2_arg;
 
 static int exit_no_hook_label;
+static int block_header_interrupted_label;
 
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc) {
     CPUBreakpoint *bp;
@@ -51,6 +53,8 @@ static inline void gen_block_header(TranslationBlock *tb)
 {
     TCGv_i32 flag;
     exit_no_hook_label = gen_new_label();
+    block_header_interrupted_label = gen_new_label();
+    int execute_block_label = gen_new_label();
     flag = tcg_temp_local_new_i32();
     tcg_gen_ld_i32(flag, cpu_env, offsetof(CPUState, exit_request));
     tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, exit_no_hook_label);
@@ -71,10 +75,28 @@ static inline void gen_block_header(TranslationBlock *tb)
       event_size_arg = gen_opparam_ptr + 1;
       TCGv_i32 event_size = tcg_const_i32(0xFFFF); // bogus value that is to be fixed at later point
 
-      gen_helper_block_begin_event(event_address, event_size);
+      TCGv_i32 result = tcg_temp_new_i32();
+      gen_helper_block_begin_event(result, event_address, event_size);
       tcg_temp_free(event_address);
       tcg_temp_free_i32(event_size);
+
+      tcg_gen_brcondi_i64(TCG_COND_NE, result, 0, execute_block_label);
+      tcg_temp_free_i32(result);
+
+      TCGv_i32 const_one = tcg_const_i32(1);
+      tcg_gen_st_i32(const_one, cpu_env, offsetof(CPUState, exit_request));
+      tcg_temp_free_i32(const_one);
+
+      tcg_gen_br(block_header_interrupted_label);
     }
+
+    gen_set_label(execute_block_label);
+
+    // it looks like we cannot re-use tcg_const in two places - that's why I create a second copy of it here
+    event_size2_arg = gen_opparam_ptr + 1;
+    TCGv_i32 event_size2 = tcg_const_i32(0xFFFF); // bogus value that is to be fixed at later point
+    gen_helper_update_instructions_count(event_size2);
+    tcg_temp_free_i32(event_size2);
 }
 
 static void gen_exit_tb_inner(uintptr_t val, TranslationBlock *tb, uint32_t instructions_count)
@@ -113,9 +135,14 @@ static inline void gen_block_footer(TranslationBlock *tb)
     {
       *event_size_arg = tb->icount;
     }
+    *event_size2_arg = tb->icount;
 
     int finish_label = gen_new_label();
     gen_exit_tb((uintptr_t)tb + 2, tb);
+    tcg_gen_br(finish_label);
+    
+    gen_set_label(block_header_interrupted_label);
+    gen_interrupt_tb((uintptr_t)tb + 2, tb);
     tcg_gen_br(finish_label);
 
     gen_set_label(exit_no_hook_label);

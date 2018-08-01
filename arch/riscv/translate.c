@@ -1855,18 +1855,18 @@ static int disas_insn(CPUState *env, DisasContext *ctx)
         if (!riscv_has_ext(env, RISCV_FEATURE_RVC)) {
             tlib_log(LOG_LEVEL_ERROR, "RISC-V C instruction set is not enabled for this CPU!");
             kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
-	    return 0;
+	        return 0;
         } else {
             ctx->next_pc = ctx->pc + 2;
             decode_RV32_64C(env, ctx);
-	    ctx->pc = ctx->next_pc;
-	    return 2;
+	        ctx->pc = ctx->next_pc;
+	        return 2;
         }
     } else {
         ctx->next_pc = ctx->pc + 4;
         decode_RV32_64G(env, ctx);
-	ctx->pc = ctx->next_pc;
-	return 4;
+	    ctx->pc = ctx->next_pc;
+	    return 4;
     }
 }
 

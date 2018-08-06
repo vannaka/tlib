@@ -71,9 +71,6 @@ void tlib_free(void *ptr)
 }
 
 DEFAULT_VOID_HANDLER1(void tlib_on_translation_cache_size_change, uint64_t new_size)
-DEFAULT_INT_HANDLER1(int32_t tlib_has_nonstandard_csr, uint64_t csr)
-DEFAULT_INT_HANDLER1(uint64_t tlib_read_csr, uint64_t csr)
-DEFAULT_VOID_HANDLER2(void tlib_write_csr, uint64_t csr, uint64_t value)
 
 DEFAULT_VOID_HANDLER2(void tlib_invalidate_tb_in_other_cpus, uintptr_t start, uintptr_t end)
 

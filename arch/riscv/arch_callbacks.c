@@ -21,3 +21,7 @@
 
 DEFAULT_INT_HANDLER1(uint64_t tlib_get_cpu_time, void)
 DEFAULT_INT_HANDLER1(uint32_t tlib_is_in_debug_mode, void)
+
+DEFAULT_INT_HANDLER1(int32_t tlib_has_nonstandard_csr, uint64_t csr)
+DEFAULT_INT_HANDLER1(uint64_t tlib_read_csr, uint64_t csr)
+DEFAULT_VOID_HANDLER2(void tlib_write_csr, uint64_t csr, uint64_t value)

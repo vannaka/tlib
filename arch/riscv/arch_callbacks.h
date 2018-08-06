@@ -6,4 +6,8 @@
 uint64_t tlib_get_cpu_time();
 uint32_t tlib_is_in_debug_mode();
 
+int32_t tlib_has_nonstandard_csr(uint64_t csr);
+uint64_t tlib_read_csr(uint64_t csr);
+void tlib_write_csr(uint64_t csr, uint64_t value);
+
 #endif

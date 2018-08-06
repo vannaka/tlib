@@ -406,16 +406,18 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         }
 #endif
     }
-    if (csrno >= CSR_MHPMCOUNTER3 && csrno <= CSR_MHPMCOUNTER31) {
-        return 0;
-    }
+    if (env->privilege_architecture_1_10) {
+        if (csrno >= CSR_MHPMCOUNTER3 && csrno <= CSR_MHPMCOUNTER31) {
+            return 0;
+        }
 #if defined(TARGET_RISCV32)
-    if (csrno >= CSR_MHPMCOUNTER3 && csrno <= CSR_MHPMCOUNTER31) {
-        return 0;
-    }
+        if (csrno >= CSR_MHPMCOUNTER3 && csrno <= CSR_MHPMCOUNTER31) {
+            return 0;
+        }
 #endif
-    if (csrno >= CSR_MHPMEVENT3 && csrno <= CSR_MHPMEVENT31) {
-        return 0;
+        if (csrno >= CSR_MHPMEVENT3 && csrno <= CSR_MHPMEVENT31) {
+            return 0;
+        }
     }
 
     switch (csrno) {

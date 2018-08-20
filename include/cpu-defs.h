@@ -157,6 +157,8 @@ typedef struct CPUBreakpoint {
     void *opaque;                                                       \
     /* chaining is enabled by default */                                \
     int chaining_disabled;                                              \
+    /* tb cache is enabled by default */                                \
+    int tb_cache_disabled;                                              \
     /* indicates if the block_finished hook is registered, implicitly   \
                           disabling block chaining */                   \
     int block_finished_hook_present;                                    \

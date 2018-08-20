@@ -177,7 +177,7 @@ int cpu_restore_state(CPUState *env,
 
     restore_state_to_opc(env, tb, j);
 
-    return 0;
+    return instructions_executed_so_far;
 }
 
 int cpu_restore_state_and_restore_instructions_count(CPUState *env,

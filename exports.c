@@ -120,7 +120,7 @@ int32_t tlib_execute(int32_t max_insns)
   return cpu_exec(cpu);
 }
 
-void tlib_restore_context(void);
+int tlib_restore_context(void);
 
 extern void *global_retaddr;
 
@@ -298,7 +298,7 @@ uint32_t tlib_get_maximum_block_size()
   return maximum_block_size;
 }
 
-void tlib_restore_context()
+int tlib_restore_context()
 {
   uintptr_t pc;
   TranslationBlock *tb;
@@ -308,9 +308,9 @@ void tlib_restore_context()
   if(tb == 0)
   {
     // this happens when PC is outside RAM or ROM
-    return;
+    return -1;
   }
-  cpu_restore_state(cpu, tb, pc);
+  return cpu_restore_state(cpu, tb, pc);
 }
 
 void* tlib_export_state()

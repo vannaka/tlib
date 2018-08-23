@@ -21,11 +21,6 @@
 #include "cpu-common.h"
 #include "arch_callbacks.h"
 
-// This could possibly be generalized. 0 and 1 values are used as "is_write". This conflicts in a way with READ_ACCESS_TYPE et al.
-#define MMU_DATA_LOAD 0
-#define MMU_DATA_STORE 1
-#define MMU_INST_FETCH 2
-
 // This is used as a part of MISA register, indicating the architecture width.
 #if defined(TARGET_RISCV32)
 #define RVXLEN  ((target_ulong)1 << (TARGET_LONG_BITS - 2))

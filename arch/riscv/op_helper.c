@@ -19,6 +19,8 @@
 #include "cpu.h"
 #include "arch_callbacks.h"
 
+#define ALIGNED_ONLY
+
 #if defined(TARGET_RISCV32)
 static const char valid_vm_1_09[16] = {
     [VM_1_09_MBARE] = 1,
@@ -704,6 +706,25 @@ void helper_tlb_flush(CPUState *env)
 }
 
 extern CPUState *env;
+
+static void do_unaligned_access(target_ulong addr, int access_type, int mmu_idx,
+                                void *retaddr)
+{
+    switch(access_type) {
+        case MMU_DATA_LOAD:
+            helper_raise_exception(env, RISCV_EXCP_LOAD_ADDR_MIS);
+            break;
+        case MMU_DATA_STORE:
+            helper_raise_exception(env, RISCV_EXCP_STORE_AMO_ADDR_MIS);
+            break;
+        case MMU_INST_FETCH:
+            helper_raise_exception(env, RISCV_EXCP_INST_ADDR_MIS);
+            break;
+        default:
+            tlib_abort("Illegal memory access type!");
+    }
+}
+
 #include "dyngen-exec.h"
 #include "softmmu_exec.h"
 

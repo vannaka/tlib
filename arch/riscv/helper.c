@@ -398,6 +398,7 @@ void tlib_arch_dispose()
 int cpu_init(const char *cpu_model)
 {
     cpu->misa_mask = cpu->misa = RVXLEN;
+    pthread_mutex_init(&cpu->mip_lock, NULL);
 
     cpu_reset(cpu);
 

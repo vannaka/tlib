@@ -31,6 +31,7 @@ uint32_t tlib_get_hart_id()
 
 void tlib_set_mip_bit(uint32_t position, uint32_t value)
 {
+    pthread_mutex_lock(&cpu->mip_lock);
     // here we might have a race
     if(value)
     {
@@ -40,6 +41,7 @@ void tlib_set_mip_bit(uint32_t position, uint32_t value)
     {
         cpu->mip &= ~(1 << position);
     }
+    pthread_mutex_unlock(&cpu->mip_lock);
 }
 
 void tlib_allow_feature(uint32_t feature_bit)

@@ -74,6 +74,7 @@ struct CPUState {
 
     target_ulong mhartid;
 
+    pthread_mutex_t mip_lock;
     target_ulong mip;
     target_ulong mie;
     target_ulong mideleg;

@@ -203,6 +203,11 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         pthread_mutex_lock(&env->mip_lock);
         env->mip = (env->mip & ~mask) | (val_to_write & mask);
         pthread_mutex_unlock(&env->mip_lock);
+        tlib_mip_changed(env->mip);
+        if(env->mip != 0)
+        {
+            env->interrupt_request = CPU_INTERRUPT_HARD;
+        }
         break;
     }
     case CSR_MIE: {

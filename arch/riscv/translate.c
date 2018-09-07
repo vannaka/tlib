@@ -2016,12 +2016,18 @@ void translate_init(void)
 
 void cpu_state_reset(CPUState *env)
 {
+    bool privilege = env->privilege_architecture_1_10;
+    target_ulong mhartid = env->mhartid;
+    target_ulong misa_mask = env->misa_mask;
     memset(env, 0, offsetof(CPUState, breakpoints));
 
+    env->mhartid = mhartid;
+    env->privilege_architecture_1_10 = privilege;
     env->pc = RISCV_START_PC; // STARTING PC VALUE def'd in cpu.h
     env->exception_index = EXCP_NONE;
     env->priv = PRV_M;
-    env->misa = env->misa_mask;
+    env->misa = misa_mask;
+    env->misa_mask = misa_mask;
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

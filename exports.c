@@ -150,15 +150,9 @@ void tlib_restart_translation_block()
   longjmp(cpu->jmp_env, 1);  //for watchpoints!
 }
 
-void tlib_set_paused()
+void tlib_set_return_request()
 {
-  cpu_interrupt(cpu, CPU_INTERRUPT_DEBUG);
-}
-
-void tlib_clear_paused()
-{
-  cpu_reset_interrupt(cpu, CPU_INTERRUPT_DEBUG);
-  cpu_reset_exit_request(cpu);
+  cpu->exit_request = 1;
 }
 
 int32_t tlib_is_wfi()
@@ -337,12 +331,6 @@ int32_t tlib_get_state_size()
   // be interpreted as an amount of bytes
   // to store during serialization.
   return (ssize_t)(&((CPUState *) 0)->current_tb);
-}
-
-// this function is used to exit C code and jump back to C# after finishing execution of the current TB
-void tlib_request_exit()
-{
-  cpu->interrupt_request = CPU_INTERRUPT_DEBUG;
 }
 
 void tlib_set_chaining_enabled(uint32_t val)

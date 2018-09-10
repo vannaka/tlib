@@ -275,6 +275,5 @@ void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t en
 
 extern void unmap_page(target_phys_addr_t address);
 void free_all_page_descriptors(void);
-void cpu_reset_exit_request(CPUState *env);
 void code_gen_free(void);
 #endif

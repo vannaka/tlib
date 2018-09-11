@@ -195,7 +195,7 @@ int cpu_exec(CPUState *env)
 
     if (env->wfi) {
         if (!cpu_has_work(env)) {
-            return EXCP_HALTED;
+            return EXCP_WFI;
         }
 
         env->wfi = 0;

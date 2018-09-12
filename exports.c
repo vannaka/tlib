@@ -88,6 +88,7 @@ int32_t tlib_get_executed_instructions()
 {
   int32_t result = cpu->instructions_count_value;
   cpu->instructions_count_value = 0;
+  cpu->instructions_count_threshold -= result;
   return result;
 }
 
@@ -98,6 +99,7 @@ int32_t tlib_get_executed_instructions()
 void tlib_reset_executed_instructions(int32_t val)
 {
   cpu->instructions_count_value = val;
+  cpu->instructions_count_threshold += val;
 }
 
 int32_t tlib_get_total_executed_instructions()

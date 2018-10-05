@@ -105,6 +105,45 @@ static inline uint64_t get_mcycles_current(CPUState *env)
     return cpu_riscv_read_instret(env) - env->mcycle_snapshot + env->mcycle_snapshot_offset;
 }
 
+target_ulong priv_version_csr_filter(CPUState *env, target_ulong csrno)
+{
+    if (env->privilege_architecture_1_10) {
+        switch(csrno) {
+        case CSR_MUCOUNTEREN:
+        case CSR_MSCOUNTEREN:
+            return CSR_UNHANDLED;
+        }
+        return csrno;
+    } else {
+        switch(csrno) {
+        case CSR_SCOUNTEREN:
+        case CSR_MCOUNTEREN:
+        case CSR_PMPCFG0:
+        case CSR_PMPCFG1:
+        case CSR_PMPCFG2:
+        case CSR_PMPCFG3:
+        case CSR_PMPADDR0:
+        case CSR_PMPADDR1:
+        case CSR_PMPADDR2:
+        case CSR_PMPADDR3:
+        case CSR_PMPADDR4:
+        case CSR_PMPADDR5:
+        case CSR_PMPADDR6:
+        case CSR_PMPADDR7:
+        case CSR_PMPADDR8:
+        case CSR_PMPADDR9:
+        case CSR_PMPADDR10:
+        case CSR_PMPADDR11:
+        case CSR_PMPADDR12:
+        case CSR_PMPADDR13:
+        case CSR_PMPADDR14:
+        case CSR_PMPADDR15:
+            return CSR_UNHANDLED;
+        }
+        return csrno;
+    }
+}
+
 /*
  * Handle writes to CSRs and any resulting special behavior
  *
@@ -115,6 +154,8 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
 {
     uint64_t delegable_ints = MIP_SSIP | MIP_STIP | MIP_SEIP | (1 << IRQ_X_COP);
     uint64_t all_ints = delegable_ints | MIP_MSIP | MIP_MTIP | MIP_MEIP;
+
+    csrno = priv_version_csr_filter(env, csrno);
 
     switch (csrno) {
     case CSR_FFLAGS:
@@ -421,6 +462,8 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
             return 0;
         }
     }
+    
+    csrno = priv_version_csr_filter(env, csrno);
 
     switch (csrno) {
     case CSR_FFLAGS:

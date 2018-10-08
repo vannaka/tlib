@@ -69,6 +69,7 @@ typedef uint64_t target_ulong __attribute__((aligned(TARGET_LONG_ALIGNMENT)));
 #define EXCP_WFI        0x10001 /* hlt instruction reached */
 #define EXCP_DEBUG      0x10002 /* cpu stopped after a breakpoint or singlestep */
 #define EXCP_HALTED     0x10003 /* cpu is halted (waiting for external event) */
+#define EXCP_WATCHPOINT 0x10004
 
 #define TB_JMP_CACHE_BITS 12
 #define TB_JMP_CACHE_SIZE (1 << TB_JMP_CACHE_BITS)

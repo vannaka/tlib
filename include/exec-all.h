@@ -49,6 +49,8 @@ void cpu_gen_code(CPUState *env, struct TranslationBlock *tb,
                  int *gen_code_size_ptr);
 int cpu_restore_state(CPUState *env, struct TranslationBlock *tb,
 		 uintptr_t searched_pc);
+int cpu_restore_state_and_restore_instructions_count(CPUState *env, struct TranslationBlock *tb,
+		 uintptr_t searched_pc);
 TranslationBlock *tb_gen_code(CPUState *env,
                               target_ulong pc, target_ulong cs_base, int flags,
                               int cflags);
@@ -111,6 +113,9 @@ struct TranslationBlock {
     // this field is necessary when restoring the state of tb (using cpu_restore_state) in order to limit the size of retranslated block not to be bigger than original one;
     // SIGSEGVs have been observed otherwise
     uint16_t original_size;
+    // signals that the `icount` of this tb has been added to global instructions counters
+    // in case of exiting this tb before the end (e.g., in case of an exception, watchpoint etc.) the value of counters must be rebuilt
+    uint32_t instructions_count_dirty;
 };
 
 static inline unsigned int tb_jmp_cache_hash_page(target_ulong pc)

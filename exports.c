@@ -122,12 +122,21 @@ int32_t tlib_execute(int32_t max_insns)
 
 void tlib_restore_context(void);
 
+extern void *global_retaddr;
+
 void tlib_restart_translation_block()
 {
   target_ulong pc, cs_base;
   int cpu_flags;
+  TranslationBlock *tb;
+  int executed_instructions = -1;
 
-  tlib_restore_context();
+  tb = tb_find_pc((uintptr_t)global_retaddr);
+  if(tb != 0)
+  {
+    executed_instructions = cpu_restore_state_and_restore_instructions_count(cpu, tb, (uintptr_t)global_retaddr);
+  }
+
   cpu_get_tb_cpu_state(cpu, &pc, &cs_base, &cpu_flags);
   tb_phys_invalidate(cpu->current_tb, -1);
   tb_gen_code(cpu, pc, cs_base, cpu_flags, 1);
@@ -288,8 +297,6 @@ uint32_t tlib_get_maximum_block_size()
 {
   return maximum_block_size;
 }
-
-extern void *global_retaddr;
 
 void tlib_restore_context()
 {

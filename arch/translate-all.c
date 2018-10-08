@@ -174,10 +174,21 @@ int cpu_restore_state(CPUState *env,
       instructions_executed_so_far += tcg->gen_opc_instr_start[k];
       k--;
     }
-    cpu->instructions_count_value -= (tb->icount - instructions_executed_so_far);
-    cpu->instructions_count_total_value -= (tb->icount - instructions_executed_so_far);
 
     restore_state_to_opc(env, tb, j);
 
     return 0;
+}
+
+int cpu_restore_state_and_restore_instructions_count(CPUState *env,
+                TranslationBlock *tb, uintptr_t searched_pc)
+{
+    int executed_instructions = cpu_restore_state(env, tb, searched_pc);
+    if(executed_instructions != -1 && tb->instructions_count_dirty)
+    {
+        cpu->instructions_count_value -= (tb->icount - executed_instructions);
+        cpu->instructions_count_total_value -= (tb->icount - executed_instructions);
+        tb->instructions_count_dirty = 0;
+    }
+    return executed_instructions;
 }

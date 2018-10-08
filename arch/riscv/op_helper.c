@@ -57,7 +57,7 @@ void __attribute__ ((__noreturn__)) cpu_loop_exit_restore(CPUState *cpu, uintptr
         tb = tb_find_pc(pc);
         if(tb)
         {
-            cpu_restore_state(cpu, tb, pc);
+            cpu_restore_state_and_restore_instructions_count(cpu, tb, pc);
         }
     }
     longjmp(cpu->jmp_env, 1);

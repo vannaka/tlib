@@ -47,7 +47,20 @@ target_ulong virt_to_phys(target_ulong virt) {
 
 int tb_invalidated_flag;
 
-void cpu_loop_exit(CPUState *env)
+void TLIB_NORETURN cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc)
+{
+    TranslationBlock *tb;
+    if (pc) {
+        tb = tb_find_pc(pc);
+        if(tb)
+        {
+            cpu_restore_state_and_restore_instructions_count(cpu, tb, pc);
+        }
+    }
+    cpu_loop_exit(cpu);
+}
+
+void TLIB_NORETURN cpu_loop_exit(CPUState *env)
 {
     env->current_tb = NULL;
     longjmp(env->jmp_env, 1);

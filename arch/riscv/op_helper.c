@@ -50,19 +50,6 @@ static int validate_vm(CPUState *env, target_ulong vm)
         valid_vm_1_10[vm & 0xf] : valid_vm_1_09[vm & 0xf];
 }
 
-void __attribute__ ((__noreturn__)) cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc)
-{
-    TranslationBlock *tb;
-    if (pc) {
-        tb = tb_find_pc(pc);
-        if(tb)
-        {
-            cpu_restore_state_and_restore_instructions_count(cpu, tb, pc);
-        }
-    }
-    longjmp(cpu->jmp_env, 1);
-}
-
 static inline uint64_t cpu_riscv_read_instret(CPUState *env)
 {
     uint64_t retval = env->instructions_count_total_value;

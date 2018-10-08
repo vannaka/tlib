@@ -57,6 +57,7 @@ TranslationBlock *tb_gen_code(CPUState *env,
 void cpu_exec_init(CPUState *env);
 void cpu_exec_init_all();
 void TLIB_NORETURN cpu_loop_exit(CPUState *env1);
+void TLIB_NORETURN cpu_loop_exit_restore(CPUState *env1, uintptr_t pc, uint32_t call_hook);
 void tb_invalidate_phys_page_range(tb_page_addr_t start, tb_page_addr_t end,
                                    int is_cpu_write_access);
 void tlb_flush_page(CPUState *env, target_ulong addr);

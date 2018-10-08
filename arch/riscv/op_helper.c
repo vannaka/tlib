@@ -675,7 +675,6 @@ void helper_wfi(CPUState *env)
     }
     env->wfi = 1;
     env->exception_index = EXCP_WFI;
-    cpu_loop_exit(env);
 }
 
 void helper_fence_i(CPUState *env)

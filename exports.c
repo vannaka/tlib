@@ -65,6 +65,13 @@ int32_t tlib_init(char *cpu_name)
   return 0;
 }
 
+void tlib_atomic_memory_state_init(int id, ram_addr_t atomic_memory_state_ptr)
+{
+  cpu->id = id;
+  cpu->atomic_memory_state = (atomic_memory_state_t*)atomic_memory_state_ptr;
+  register_in_atomic_memory_state(cpu->atomic_memory_state, id);
+}
+
 static void free_phys_dirty()
 {
   if(dirty_ram.phys_dirty) {

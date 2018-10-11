@@ -77,6 +77,11 @@ DEF_HELPER_1(wfi, void, env)
 DEF_HELPER_1(tlb_flush, void, env)
 DEF_HELPER_1(fence_i, void, env)
 
+DEF_HELPER_1(acquire_global_memory_lock, void, env)
+DEF_HELPER_1(release_global_memory_lock, void, env)
+DEF_HELPER_2(reserve_address, void, env, tl)
+DEF_HELPER_2(check_address_reservation, tl, env, tl)
+
 void do_interrupt(CPUState *env);
 
 #include "def-helper.h"

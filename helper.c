@@ -2,6 +2,7 @@
 #include <global_helper.h>
 #include "callbacks.h"
 #include "debug.h"
+#include "atomic.h"
 
 // verify if there are instructions left to execute, update instructions count
 // and trim the block and exit to the main loop if necessary
@@ -51,4 +52,24 @@ void HELPER(abort)(void) {
 void HELPER(log)(uint32_t id, uint32_t pc)
 {
   tlib_printf(LOG_LEVEL_INFO, "Log @ pc=0x%08X (block start: 0x%08X) : '%s'", pc, CPU_PC(env), msgs[id] == NULL ? "unknown??" : msgs[id]);
+}
+
+void HELPER(acquire_global_memory_lock)(CPUState *env)
+{
+  acquire_global_memory_lock(env);
+}
+
+void HELPER(release_global_memory_lock)(CPUState *env)
+{
+  release_global_memory_lock(env);
+}
+
+void HELPER(reserve_address)(CPUState *env, ram_addr_t address)
+{
+  reserve_address(env, address);
+}
+
+target_ulong HELPER(check_address_reservation)(CPUState *env, ram_addr_t address)
+{
+  return check_address_reservation(env, address);
 }

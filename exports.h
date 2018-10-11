@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 int32_t tlib_init(char *cpu_name);
+void tlib_atomic_memory_state_init(int id, ram_addr_t atomic_memory_state_ptr);
 void tlib_dispose(void);
 void tlib_reset(void);
 

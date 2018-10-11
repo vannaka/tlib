@@ -26,6 +26,7 @@
 #include "tlib-queue.h"
 #include "targphys.h"
 #include "infrastructure.h"
+#include "atomic.h"
 
 #if defined(_WIN64)
 /* This is to avoid longjmp crashing because of stack unwinding. 
@@ -163,6 +164,8 @@ typedef struct CPUBreakpoint {
     /* indicates if the block_finished hook is registered, implicitly   \
                           disabling block chaining */                   \
     int block_finished_hook_present;                                    \
+    atomic_memory_state_t* atomic_memory_state;                         \
+    int id; \
     /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                  \
     struct TranslationBlock *current_tb; /* currently executing TB  */  \
     CPU_COMMON_TLB                                                      \

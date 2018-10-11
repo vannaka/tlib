@@ -688,6 +688,10 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
     riscv_set_mode(env, prev_priv);
     csr_write_helper(env, mstatus, CSR_MSTATUS);
 
+    acquire_global_memory_lock(env);
+    cancel_reservation(env);
+    release_global_memory_lock(env);
+
     return retpc;
 }
 
@@ -711,6 +715,10 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
     mstatus = set_field(mstatus, MSTATUS_MPP, PRV_U);
     riscv_set_mode(env, prev_priv);
     csr_write_helper(env, mstatus, CSR_MSTATUS);
+
+    acquire_global_memory_lock(env);
+    cancel_reservation(env);
+    release_global_memory_lock(env);
 
     return retpc;
 }

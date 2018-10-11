@@ -23,6 +23,7 @@
  */
 #include "infrastructure.h"
 #include <stdint.h>
+#include "atomic.h"
 
 extern void *global_retaddr;
 
@@ -105,6 +106,9 @@ DATA_TYPE REGPARM glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
     void *retaddr;
     uintptr_t addend;
 
+    acquire_global_memory_lock(cpu);
+    register_address_access(cpu, addr);
+
     /* test if there is match for unaligned or IO access */
     /* XXX: could done more in memory macro in a non portable way */
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
@@ -149,6 +153,8 @@ DATA_TYPE REGPARM glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
         tlb_fill(cpu, addr, READ_ACCESS_TYPE, mmu_idx, retaddr);
         goto redo;
     }
+
+    release_global_memory_lock(cpu);
     return res;
 }
 
@@ -261,6 +267,9 @@ void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr,
     int index;
     uintptr_t addend;
 
+    acquire_global_memory_lock(cpu);
+    register_address_access(cpu, addr);
+
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
  redo:
     tlb_addr = cpu->tlb_table[mmu_idx][index].addr_write;
@@ -302,6 +311,8 @@ void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr,
         tlb_fill(cpu, addr, 1, mmu_idx, retaddr);
         goto redo;
     }
+
+    release_global_memory_lock(cpu);
 }
 
 /* handles all unaligned cases */

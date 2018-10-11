@@ -801,20 +801,27 @@ static void gen_atomic(DisasContext *ctx, uint32_t opc,
     opc = MASK_OP_ATOMIC_NO_AQ_RL(opc);
     TCGv source1, source2, dat;
     int done;
+    int finish_label;
     source1 = tcg_temp_local_new();
     source2 = tcg_temp_local_new();
     done = gen_new_label();
     dat = tcg_temp_local_new();
     gen_get_gpr(source1, rs1);
     gen_get_gpr(source2, rs2);
+
+    gen_helper_acquire_global_memory_lock(cpu_env);
+
     switch (opc) {
-        /* all currently implemented as non-atomics */
     case OPC_RISC_LR_W:
+        gen_helper_reserve_address(cpu_env, source1);
         tcg_gen_qemu_ld32s(dat, source1, ctx->mem_idx);
         break;
     case OPC_RISC_SC_W:
+        finish_label = gen_new_label();
+        gen_helper_check_address_reservation(dat, cpu_env, source1);
+        tcg_gen_brcondi_tl(TCG_COND_NE, dat, 0, finish_label);
         tcg_gen_qemu_st32(source2, source1, ctx->mem_idx);
-        tcg_gen_movi_tl(dat, 0);
+        gen_set_label(finish_label);
         break;
     case OPC_RISC_AMOSWAP_W:
         tcg_gen_qemu_ld32s(dat, source1, ctx->mem_idx);
@@ -927,6 +934,9 @@ static void gen_atomic(DisasContext *ctx, uint32_t opc,
         kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
+
+    gen_helper_release_global_memory_lock(cpu_env);
+
     gen_set_label(done);
     generate_log(ctx->pc, "after gen_atomic");
     gen_set_gpr(rd, dat);

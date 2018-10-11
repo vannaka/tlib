@@ -19,6 +19,7 @@
 #include "cpu.h"
 #include "tcg.h"
 #include "dyngen-exec.h"
+#include "atomic.h"
 
 target_ulong virt_to_phys(target_ulong virt) {
 #if (TARGET_LONG_BITS == 32)
@@ -178,6 +179,14 @@ CPUDebugExcpHandler *cpu_set_debug_excp_handler(CPUDebugExcpHandler *handler)
     return old_handler;
 }
 
+static void verify_state(CPUState *env)
+{
+    if(env->atomic_memory_state->locking_cpu_id == env->id)
+    {
+        clear_global_memory_lock(env);
+    }
+}
+
 /* main execution loop */
 
 int process_interrupt(int interrupt_request, CPUState *env);
@@ -207,6 +216,7 @@ int cpu_exec(CPUState *env)
 
     /* prepare setjmp context for exception handling */
     for(;;) {
+        verify_state(env);
         if (setjmp(env->jmp_env) == 0) {
             /* if an exception is pending, we execute it here */
             if (env->exception_index >= 0) {

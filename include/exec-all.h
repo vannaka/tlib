@@ -121,6 +121,11 @@ struct TranslationBlock {
     // signals that the `icount` of this tb has been added to global instructions counters
     // in case of exiting this tb before the end (e.g., in case of an exception, watchpoint etc.) the value of counters must be rebuilt
     uint32_t instructions_count_dirty;
+#if DEBUG
+    uint32_t lock_active;
+    char* lock_file;
+    int lock_line;
+#endif
 };
 
 static inline unsigned int tb_jmp_cache_hash_page(target_ulong pc)

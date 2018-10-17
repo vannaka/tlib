@@ -67,3 +67,22 @@ void generate_log(uint32_t pc, char *format, ...) {
     tcg_temp_free(ll2);
 #endif
 }
+
+void mark_as_locked(struct TranslationBlock *tb, char* filename, int line_number)
+{
+#if DEBUG
+    tb->lock_active = 1;
+    tb->lock_file = filename;
+    tb->lock_line = line_number;
+#endif
+}
+
+void check_locked(struct TranslationBlock *tb)
+{
+#if DEBUG
+    if(tb->lock_active)
+    {
+        tlib_abortf("Translation after locking the TB detected @ %s:%d", tb->lock_file, tb->lock_line);
+    }
+#endif
+}

@@ -32,6 +32,8 @@
 
 #include "tb-helper.h"
 
+#include "debug.h"
+
 #define abort() do { cpu_abort(cpu, "ABORT at %s : %d\n", __FILE__, __LINE__); } while (0)
 
 #define ENABLE_ARCH_4T    arm_feature(env, ARM_FEATURE_V4T)
@@ -7101,6 +7103,7 @@ static void disas_arm_insn(CPUState * env, DisasContext *s)
             /* bkpt */
             ARCH(5);
             gen_exception_insn(s, 4, EXCP_BKPT);
+            LOCK_TB(s->tb);
             break;
         case 0x8: /* signed multiply */
         case 0xa:
@@ -8032,10 +8035,12 @@ static void disas_arm_insn(CPUState * env, DisasContext *s)
             /* swi */
             gen_set_pc_im(s->pc);
             s->is_jmp = DISAS_SWI;
+            LOCK_TB(s->tb);
             break;
         default:
         illegal_op:
             gen_exception_insn(s, 4, EXCP_UDEF);
+            LOCK_TB(s->tb);
             break;
         }
     }
@@ -9737,6 +9742,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
         case 0xe: /* bkpt */
             ARCH(5);
             gen_exception_insn(s, 2, EXCP_BKPT);
+            LOCK_TB(s->tb);
             break;
 
         case 0xa: /* rev */
@@ -9835,6 +9841,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
             /* swi */
             gen_set_pc_im(s->pc);
             s->is_jmp = DISAS_SWI;
+            LOCK_TB(s->tb);
             break;
         }
         /* generate a conditional jump to next instruction */
@@ -9874,10 +9881,12 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
     return;
 undef32:
     gen_exception_insn(s, 4, EXCP_UDEF);
+    LOCK_TB(s->tb);
     return;
 illegal_op:
 undef:
     gen_exception_insn(s, 2, EXCP_UDEF);
+    LOCK_TB(s->tb);
 }
 
 int disas_insn(CPUState *env, DisasContext *dc) {
@@ -9967,6 +9976,7 @@ void create_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb)
 
 int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
     gen_exception_insn(dc, 0, EXCP_DEBUG);
+    LOCK_TB(dc->tb);
     /* Advance PC so that clearing the breakpoint will
       invalidate this TB.  */
     dc->pc += 2;
@@ -9987,7 +9997,11 @@ void gen_intermediate_code(CPUState *env,
     create_disas_context(&dc, env, tb);
     tcg_clear_temp_count();
 
+#if DEBUG
+    tb->lock_active = 0;
+#endif
     while (1) {
+        check_locked(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
             bp = process_breakpoints(env, dc.pc);
             if (bp != NULL && gen_breakpoint(&dc, bp)) {

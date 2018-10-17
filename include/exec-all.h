@@ -41,6 +41,7 @@ struct TranslationBlock;
 typedef struct TranslationBlock TranslationBlock;
 
 void gen_exit_tb(uintptr_t, TranslationBlock*);
+void gen_exit_tb_no_chaining(TranslationBlock*);
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc);
 void gen_intermediate_code(CPUState *env, struct TranslationBlock *tb, int max_insn);
 void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb,

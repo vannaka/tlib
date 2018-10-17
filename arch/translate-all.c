@@ -126,6 +126,11 @@ void gen_exit_tb(uintptr_t val, TranslationBlock *tb)
     gen_exit_tb_inner(val, tb, tb->icount);
 }
 
+void gen_exit_tb_no_chaining(TranslationBlock *tb)
+{
+    gen_exit_tb_inner(0, tb, tb->icount);
+}
+
 static inline void gen_block_footer(TranslationBlock *tb)
 {
     if (tlib_is_on_block_translation_enabled) {

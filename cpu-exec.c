@@ -245,6 +245,10 @@ int cpu_exec(CPUState *env)
                     if (process_interrupt(interrupt_request, env)) {
                         next_tb = 0;
                     }
+                    if (env->exception_index == EXCP_WFI) {
+                        cpu_loop_exit_without_hook(env);
+                    }
+                    env->exception_index = -1;
                     /* Don't use the cached interrupt_request value,
                        do_interrupt may have updated the EXITTB flag. */
                     if (env->interrupt_request & CPU_INTERRUPT_EXITTB) {
@@ -261,6 +265,10 @@ int cpu_exec(CPUState *env)
                 }
                 if (unlikely(env->tb_restart_request)) {
                     env->tb_restart_request = 0;
+                    cpu_loop_exit_without_hook(env);
+                }
+                if(unlikely(env->exception_index != -1))
+                {
                     cpu_loop_exit_without_hook(env);
                 }
 

@@ -71,10 +71,11 @@ void TLIB_NORETURN cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc, uint32_t c
     uint32_t executed_instructions = 0;
     if (pc) {
         tb = tb_find_pc(pc);
-        if(tb)
+        if(!tb)
         {
-            executed_instructions = cpu_restore_state_and_restore_instructions_count(cpu, tb, pc);
+            tlib_abortf("tb_find_pc for pc = 0x%lx failed!", pc);
         }
+        executed_instructions = cpu_restore_state_and_restore_instructions_count(cpu, tb, pc);
     }
     if(call_hook && cpu->block_finished_hook_present)
     {

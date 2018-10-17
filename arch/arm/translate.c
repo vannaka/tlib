@@ -8005,14 +8005,16 @@ static void disas_arm_insn(CPUState * env, DisasContext *s)
             break;
         case 0xa:
         case 0xb:
+            /* branch (and link) */
+            if (insn == 0xeafffffe)
+            {
+                tlib_printf(LOG_LEVEL_NOISY, "Loop to itself detected");
+                gen_helper_wfi();
+                s->is_jmp = DISAS_JUMP;
+            }
+            else
             {
                 int32_t offset;
-
-                /* branch (and link) */
-                if (insn == 0xeafffffe) {
-                        tlib_printf(LOG_LEVEL_NOISY, "Loop to itself detected");
-                        gen_helper_wfi();
-                }
                 val = (int32_t)s->pc;
                 if (insn & (1 << 24)) {
                     tmp = tcg_temp_new_i32();
@@ -9863,16 +9865,20 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
             break;
         }
         /* unconditional branch */
-        if (insn == 0xe7fe) {
-                tlib_printf(LOG_LEVEL_NOISY, "Loop to itself detected");
-                gen_helper_wfi();
+        if (insn == 0xe7fe)
+        {
+            tlib_printf(LOG_LEVEL_NOISY, "Loop to itself detected");
+            gen_helper_wfi();
+            s->is_jmp = DISAS_JUMP;
         }
-        val = (uint32_t)s->pc;
-        offset = ((int32_t)insn << 21) >> 21;
-        val += (offset << 1) + 2;
-        gen_jmp(s, val);
+        else
+        {
+            val = (uint32_t)s->pc;
+            offset = ((int32_t)insn << 21) >> 21;
+            val += (offset << 1) + 2;
+            gen_jmp(s, val);
+        }
         break;
-
     case 15:
         if (disas_thumb2_insn(env, s, insn))
             goto undef32;
@@ -10114,9 +10120,11 @@ void gen_intermediate_code(CPUState *env,
             break;
         case DISAS_WFI:
             gen_helper_wfi();
+            gen_exit_tb_no_chaining(dc.tb);
             break;
         case DISAS_SWI:
             gen_exception(EXCP_SWI);
+            gen_exit_tb_no_chaining(dc.tb);
             break;
         }
         if (dc.condjmp) {

@@ -24,12 +24,6 @@
 #define SIGNBIT (uint32_t)0x80000000
 #define SIGNBIT64 ((uint64_t)1 << 63)
 
-static void raise_exception(int tt)
-{
-    env->exception_index = tt;
-    cpu_loop_exit(env);
-}
-
 uint32_t HELPER(neon_tbl)(uint32_t ireg, uint32_t def,
                           uint32_t rn, uint32_t maxindex)
 {
@@ -61,26 +55,15 @@ uint32_t HELPER(neon_tbl)(uint32_t ireg, uint32_t def,
 void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx,
               void *retaddr)
 {
-    TranslationBlock *tb;
     CPUState *saved_env;
-    uintptr_t pc;
     int ret;
 
     saved_env = env;
     env = env1;
     ret = cpu_arm_handle_mmu_fault(env, addr, is_write, mmu_idx);
     if (unlikely(ret)) {
-        if (retaddr) {
-            /* now we have a real cpu fault */
-            pc = (uintptr_t)retaddr;
-            tb = tb_find_pc(pc);
-            if (tb) {
-                /* the PC is inside the translated code. It means that we have
-                   a virtual CPU fault */
-                cpu_restore_state_and_restore_instructions_count(env, tb, pc);
-            }
-        }
-        raise_exception(env->exception_index);
+        // is_write == 2 ==> CODE ACCESS - do not fire block_end hooks!
+        cpu_loop_exit_restore(env, (uintptr_t)retaddr, is_write != 2);
     }
     env = saved_env;
 }
@@ -220,13 +203,11 @@ void HELPER(wfi)(void)
 {
     env->exception_index = EXCP_WFI;
     env->wfi = 1;
-    cpu_loop_exit(env);
 }
 
 void HELPER(exception)(uint32_t excp)
 {
     env->exception_index = excp;
-    cpu_loop_exit(env);
 }
 
 uint32_t HELPER(cpsr_read)(void)

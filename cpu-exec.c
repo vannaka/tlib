@@ -60,7 +60,7 @@ void TLIB_NORETURN cpu_loop_exit(CPUState *env)
     {
         target_ulong pc = CPU_PC(env);
         // TODO: here we would need to have the number of executed instructions, how?!
-        tlib_on_block_finished(pc, 0);
+        tlib_on_block_finished(pc, -1);
     }
     cpu_loop_exit_without_hook(env);
 }

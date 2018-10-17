@@ -10124,12 +10124,6 @@ void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
 
 int process_interrupt(int interrupt_request, CPUState *env)
 {
-    if (interrupt_request & CPU_INTERRUPT_HALT) {
-        env->interrupt_request &= ~CPU_INTERRUPT_HALT;
-        env->wfi = 1;
-        env->exception_index = EXCP_WFI;
-        cpu_loop_exit(env);
-    }
     if (interrupt_request & CPU_INTERRUPT_FIQ
             && !(env->uncached_cpsr & CPSR_F)) {
         env->exception_index = EXCP_FIQ;

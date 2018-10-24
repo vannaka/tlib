@@ -8011,6 +8011,7 @@ static void disas_arm_insn(CPUState * env, DisasContext *s)
                 tlib_printf(LOG_LEVEL_NOISY, "Loop to itself detected");
                 gen_helper_wfi();
                 s->is_jmp = DISAS_JUMP;
+                LOCK_TB(s->tb);
             }
             else
             {
@@ -9870,6 +9871,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
             tlib_printf(LOG_LEVEL_NOISY, "Loop to itself detected");
             gen_helper_wfi();
             s->is_jmp = DISAS_JUMP;
+            LOCK_TB(s->tb);
         }
         else
         {

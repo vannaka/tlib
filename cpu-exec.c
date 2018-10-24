@@ -268,8 +268,7 @@ int cpu_exec(CPUState *env)
                     env->tb_restart_request = 0;
                     cpu_loop_exit_without_hook(env);
                 }
-                if(unlikely(env->exception_index != -1))
-                {
+                if(unlikely(env->exception_index != -1)) {
                     cpu_loop_exit_without_hook(env);
                 }
 

@@ -10003,11 +10003,9 @@ void gen_intermediate_code(CPUState *env,
     create_disas_context(&dc, env, tb);
     tcg_clear_temp_count();
 
-#if DEBUG
-    tb->lock_active = 0;
-#endif
+    UNLOCK_TB(tb);
     while (1) {
-        check_locked(tb);
+        CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
             bp = process_breakpoints(env, dc.pc);
             if (bp != NULL && gen_breakpoint(&dc, bp)) {

@@ -3599,7 +3599,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint32_t dest)
         gen_exit_tb((tcg_target_long)tb + n, tb);
     } else {
         gen_set_pc_im(dest);
-        gen_exit_tb(0, tb);
+        gen_exit_tb_no_chaining(tb);
     }
 }
 
@@ -10113,7 +10113,7 @@ void gen_intermediate_code(CPUState *env,
         case DISAS_JUMP:
         case DISAS_UPDATE:
             /* indicate that the hash table must be used to find the next TB */
-            gen_exit_tb(0, dc.tb);
+            gen_exit_tb_no_chaining(dc.tb);
             break;
         case DISAS_TB_JUMP:
             /* nothing more to generate */

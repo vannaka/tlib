@@ -2690,7 +2690,7 @@ static void gen_eob(DisasContext *s)
     } else if (s->tf) {
         gen_helper_single_step();
     } else {
-        gen_exit_tb(0, s->tb);
+        gen_exit_tb_no_chaining(s->tb);
     }
     s->is_jmp = DISAS_TB_JUMP;
 }
@@ -7031,7 +7031,7 @@ static int disas_insn(CPUState *env, DisasContext *s)
                     } else {
                         gen_helper_vmrun(tcg_const_i32(s->aflag),
                                          tcg_const_i32(s->pc - pc_start));
-                        gen_exit_tb(0, s->tb);
+                        gen_exit_tb_no_chaining(s->tb);
                         s->is_jmp = DISAS_TB_JUMP;
                     }
                     break;

@@ -2519,7 +2519,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
                 gen_debug_exception(s);
             }
         }
-        gen_exit_tb(0, tb);
+        gen_exit_tb_no_chaining(tb);
     }
 }
 
@@ -2610,10 +2610,10 @@ static inline void gen_bcond(DisasContext *s, int type)
         gen_goto_tb(s, 1, s->pc);
     } else {
         tcg_gen_andi_tl(cpu_nip, target, ~3);
-        gen_exit_tb(0, s->tb);
+        gen_exit_tb_no_chaining(s->tb);
         gen_set_label(l1);
         tcg_gen_movi_tl(cpu_nip, s->pc);
-        gen_exit_tb(0, s->tb);
+        gen_exit_tb_no_chaining(s->tb);
     }
 }
 
@@ -8158,7 +8158,7 @@ void gen_intermediate_code(CPUState *env,
             gen_debug_exception(&dc);
         }
         /* Generate the return instruction */
-        gen_exit_tb(0, tb);
+        gen_exit_tb_no_chaining(tb);
     }
 
     tb->disas_flags = get_disas_flags(env, &dc);

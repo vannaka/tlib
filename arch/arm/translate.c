@@ -32,6 +32,8 @@
 
 #include "tb-helper.h"
 
+#include "debug.h"
+
 #define abort() do { cpu_abort(cpu, "ABORT at %s : %d\n", __FILE__, __LINE__); } while (0)
 
 #define ENABLE_ARCH_4T    arm_feature(env, ARM_FEATURE_V4T)
@@ -3594,10 +3596,10 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint32_t dest)
     if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)) {
         tcg_gen_goto_tb(n);
         gen_set_pc_im(dest);
-        tcg_gen_exit_tb((tcg_target_long)tb + n);
+        gen_exit_tb((tcg_target_long)tb + n, tb);
     } else {
         gen_set_pc_im(dest);
-        tcg_gen_exit_tb(0);
+        gen_exit_tb_no_chaining(tb);
     }
 }
 
@@ -7101,6 +7103,7 @@ static void disas_arm_insn(CPUState * env, DisasContext *s)
             /* bkpt */
             ARCH(5);
             gen_exception_insn(s, 4, EXCP_BKPT);
+            LOCK_TB(s->tb);
             break;
         case 0x8: /* signed multiply */
         case 0xa:
@@ -8002,14 +8005,17 @@ static void disas_arm_insn(CPUState * env, DisasContext *s)
             break;
         case 0xa:
         case 0xb:
+            /* branch (and link) */
+            if (insn == 0xeafffffe)
+            {
+                tlib_printf(LOG_LEVEL_NOISY, "Loop to itself detected");
+                gen_helper_wfi();
+                s->is_jmp = DISAS_JUMP;
+                LOCK_TB(s->tb);
+            }
+            else
             {
                 int32_t offset;
-
-                /* branch (and link) */
-                if (insn == 0xeafffffe) {
-                        tlib_printf(LOG_LEVEL_NOISY, "Loop to itself detected");
-                        gen_helper_wfi();
-                }
                 val = (int32_t)s->pc;
                 if (insn & (1 << 24)) {
                     tmp = tcg_temp_new_i32();
@@ -8032,10 +8038,12 @@ static void disas_arm_insn(CPUState * env, DisasContext *s)
             /* swi */
             gen_set_pc_im(s->pc);
             s->is_jmp = DISAS_SWI;
+            LOCK_TB(s->tb);
             break;
         default:
         illegal_op:
             gen_exception_insn(s, 4, EXCP_UDEF);
+            LOCK_TB(s->tb);
             break;
         }
     }
@@ -9737,6 +9745,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
         case 0xe: /* bkpt */
             ARCH(5);
             gen_exception_insn(s, 2, EXCP_BKPT);
+            LOCK_TB(s->tb);
             break;
 
         case 0xa: /* rev */
@@ -9835,6 +9844,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
             /* swi */
             gen_set_pc_im(s->pc);
             s->is_jmp = DISAS_SWI;
+            LOCK_TB(s->tb);
             break;
         }
         /* generate a conditional jump to next instruction */
@@ -9856,16 +9866,21 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
             break;
         }
         /* unconditional branch */
-        if (insn == 0xe7fe) {
-                tlib_printf(LOG_LEVEL_NOISY, "Loop to itself detected");
-                gen_helper_wfi();
+        if (insn == 0xe7fe)
+        {
+            tlib_printf(LOG_LEVEL_NOISY, "Loop to itself detected");
+            gen_helper_wfi();
+            s->is_jmp = DISAS_JUMP;
+            LOCK_TB(s->tb);
         }
-        val = (uint32_t)s->pc;
-        offset = ((int32_t)insn << 21) >> 21;
-        val += (offset << 1) + 2;
-        gen_jmp(s, val);
+        else
+        {
+            val = (uint32_t)s->pc;
+            offset = ((int32_t)insn << 21) >> 21;
+            val += (offset << 1) + 2;
+            gen_jmp(s, val);
+        }
         break;
-
     case 15:
         if (disas_thumb2_insn(env, s, insn))
             goto undef32;
@@ -9874,10 +9889,12 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
     return;
 undef32:
     gen_exception_insn(s, 4, EXCP_UDEF);
+    LOCK_TB(s->tb);
     return;
 illegal_op:
 undef:
     gen_exception_insn(s, 2, EXCP_UDEF);
+    LOCK_TB(s->tb);
 }
 
 int disas_insn(CPUState *env, DisasContext *dc) {
@@ -9967,6 +9984,7 @@ void create_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb)
 
 int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
     gen_exception_insn(dc, 0, EXCP_DEBUG);
+    LOCK_TB(dc->tb);
     /* Advance PC so that clearing the breakpoint will
       invalidate this TB.  */
     dc->pc += 2;
@@ -9987,7 +10005,9 @@ void gen_intermediate_code(CPUState *env,
     create_disas_context(&dc, env, tb);
     tcg_clear_temp_count();
 
+    UNLOCK_TB(tb);
     while (1) {
+        CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
             bp = process_breakpoints(env, dc.pc);
             if (bp != NULL && gen_breakpoint(&dc, bp)) {
@@ -10000,6 +10020,7 @@ void gen_intermediate_code(CPUState *env,
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
+        tb->prev_size = tb->size;
         tb->size += disas_insn(env, &dc);
         tb->icount++;
 
@@ -10077,7 +10098,7 @@ void gen_intermediate_code(CPUState *env,
     } else {
         /* While branches must always occur at the end of an IT block,
            there are a few other things that can cause us to terminate
-           the TB in the middel of an IT block:
+           the TB in the middle of an IT block:
             - Exception generating instructions (bkpt, swi, undefined).
             - Page boundaries.
             - Hardware watchpoints.
@@ -10092,16 +10113,18 @@ void gen_intermediate_code(CPUState *env,
         case DISAS_JUMP:
         case DISAS_UPDATE:
             /* indicate that the hash table must be used to find the next TB */
-            tcg_gen_exit_tb(0);
+            gen_exit_tb_no_chaining(dc.tb);
             break;
         case DISAS_TB_JUMP:
             /* nothing more to generate */
             break;
         case DISAS_WFI:
             gen_helper_wfi();
+            gen_exit_tb_no_chaining(dc.tb);
             break;
         case DISAS_SWI:
             gen_exception(EXCP_SWI);
+            gen_exit_tb_no_chaining(dc.tb);
             break;
         }
         if (dc.condjmp) {
@@ -10123,12 +10146,6 @@ void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
 
 int process_interrupt(int interrupt_request, CPUState *env)
 {
-    if (interrupt_request & CPU_INTERRUPT_HALT) {
-        env->interrupt_request &= ~CPU_INTERRUPT_HALT;
-        env->wfi = 1;
-        env->exception_index = EXCP_WFI;
-        cpu_loop_exit(env);
-    }
     if (interrupt_request & CPU_INTERRUPT_FIQ
             && !(env->uncached_cpsr & CPSR_F)) {
         env->exception_index = EXCP_FIQ;

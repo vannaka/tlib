@@ -18,6 +18,7 @@
  */
 #include "cpu.h"
 #include "tcg.h"
+#include "dyngen-exec.h"
 
 target_ulong virt_to_phys(target_ulong virt) {
 #if (TARGET_LONG_BITS == 32)
@@ -47,10 +48,41 @@ target_ulong virt_to_phys(target_ulong virt) {
 
 int tb_invalidated_flag;
 
-void cpu_loop_exit(CPUState *env)
+static void TLIB_NORETURN cpu_loop_exit_without_hook(CPUState *env)
 {
     env->current_tb = NULL;
     longjmp(env->jmp_env, 1);
+}
+
+void TLIB_NORETURN cpu_loop_exit(CPUState *env)
+{
+    if(env->block_finished_hook_present)
+    {
+        target_ulong pc = CPU_PC(env);
+        // TODO: here we would need to have the number of executed instructions, how?!
+        tlib_on_block_finished(pc, -1);
+    }
+    cpu_loop_exit_without_hook(env);
+}
+
+void TLIB_NORETURN cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc, uint32_t call_hook)
+{
+    TranslationBlock *tb;
+    uint32_t executed_instructions = 0;
+    if (pc) {
+        tb = tb_find_pc(pc);
+        if(!tb)
+        {
+            tlib_abortf("tb_find_pc for pc = 0x%lx failed!", pc);
+        }
+        executed_instructions = cpu_restore_state_and_restore_instructions_count(cpu, tb, pc);
+    }
+    if(call_hook && cpu->block_finished_hook_present)
+    {
+        tlib_on_block_finished(CPU_PC(cpu), executed_instructions);
+    }
+
+    cpu_loop_exit_without_hook(cpu);
 }
 
 static TranslationBlock *tb_find_slow(CPUState *env,
@@ -71,6 +103,11 @@ static TranslationBlock *tb_find_slow(CPUState *env,
     phys_page1 = phys_pc & TARGET_PAGE_MASK;
     h = tb_phys_hash_func(phys_pc);
     ptb1 = &tb_phys_hash[h];
+
+    if(unlikely(env->tb_cache_disabled)) {
+        goto not_found;
+    }
+
     for(;;) {
         tb = *ptb1;
         if (!tb)
@@ -125,7 +162,7 @@ static inline TranslationBlock *tb_find_fast(CPUState *env)
     cpu_get_tb_cpu_state(env, &pc, &cs_base, &flags);
     tb = env->tb_jmp_cache[tb_jmp_cache_hash_func(pc)];
     if (unlikely(!tb || tb->pc != pc || tb->cs_base != cs_base ||
-                 tb->flags != flags)) {
+                 tb->flags != flags || env->tb_cache_disabled)) {
         tb = tb_find_slow(env, pc, cs_base, flags);
     }
     return tb;
@@ -159,7 +196,7 @@ int cpu_exec(CPUState *env)
 
     if (env->wfi) {
         if (!cpu_has_work(env)) {
-            return EXCP_HALTED;
+            return EXCP_WFI;
         }
 
         env->wfi = 0;
@@ -204,11 +241,15 @@ int cpu_exec(CPUState *env)
                     if (interrupt_request & CPU_INTERRUPT_DEBUG) {
                         env->interrupt_request &= ~CPU_INTERRUPT_DEBUG;
                         env->exception_index = EXCP_DEBUG;
-                        cpu_loop_exit(env);
+                        cpu_loop_exit_without_hook(env);
                     }
                     if (process_interrupt(interrupt_request, env)) {
                         next_tb = 0;
                     }
+                    if (env->exception_index == EXCP_WFI) {
+                        cpu_loop_exit_without_hook(env);
+                    }
+                    env->exception_index = -1;
                     /* Don't use the cached interrupt_request value,
                        do_interrupt may have updated the EXITTB flag. */
                     if (env->interrupt_request & CPU_INTERRUPT_EXITTB) {
@@ -221,11 +262,14 @@ int cpu_exec(CPUState *env)
                 if (unlikely(env->exit_request)) {
                     env->exit_request = 0;
                     env->exception_index = EXCP_INTERRUPT;
-                    cpu_loop_exit(env);
+                    cpu_loop_exit_without_hook(env);
                 }
                 if (unlikely(env->tb_restart_request)) {
                     env->tb_restart_request = 0;
-                    cpu_loop_exit(env);
+                    cpu_loop_exit_without_hook(env);
+                }
+                if(unlikely(env->exception_index != -1)) {
+                    cpu_loop_exit_without_hook(env);
                 }
 
 #ifdef TARGET_PROTO_ARM_M
@@ -248,9 +292,11 @@ int cpu_exec(CPUState *env)
                 }
                 /* see if we can patch the calling TB. When the TB
                    spans two pages, we cannot safely do a direct
-                   jump. */
+                   jump.
+                   We do not chain blocks if the chaining is explicitly disabled or if
+                   there is a hook registered for the block footer. */
 
-                if (!env->chaining_disabled && next_tb != 0 && tb->page_addr[1] == -1) {
+                if (!env->chaining_disabled && !env->block_finished_hook_present && next_tb != 0 && tb->page_addr[1] == -1) {
                     tb_add_jump((TranslationBlock *)(next_tb & ~3), next_tb & 3, tb);
                 }
 
@@ -270,7 +316,7 @@ int cpu_exec(CPUState *env)
                         cpu_pc_from_tb(env, tb);
                         env->exception_index = EXCP_INTERRUPT;
                         next_tb = 0;
-                        cpu_loop_exit(env);
+                        cpu_loop_exit_without_hook(env);
                     }
                 }
                 env->current_tb = NULL;

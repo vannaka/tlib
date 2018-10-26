@@ -58,11 +58,12 @@ void tlib_abort(char *message);
 void tlib_log(enum log_level level, char* message);
 
 void tlib_on_translation_block_find_slow(uint64_t pc);
-void tlib_on_block_begin(uint64_t address, uint32_t size);
+uint32_t tlib_on_block_begin(uint64_t address, uint32_t size);
 uint32_t tlib_is_block_begin_event_enabled(void);
 void tlib_on_translation_cache_size_change(uint64_t new_size);
 void tlib_on_block_translation(uint64_t start, uint32_t size, uint32_t flags);
 extern int32_t tlib_is_on_block_translation_enabled;
 void tlib_set_on_block_translation_enabled(int32_t value);
+void tlib_on_block_finished(uint64_t pc, uint32_t executed_instructions);
 
 #endif

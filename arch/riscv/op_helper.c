@@ -50,19 +50,6 @@ static int validate_vm(CPUState *env, target_ulong vm)
         valid_vm_1_10[vm & 0xf] : valid_vm_1_09[vm & 0xf];
 }
 
-void __attribute__ ((__noreturn__)) cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc)
-{
-    TranslationBlock *tb;
-    if (pc) {
-        tb = tb_find_pc(pc);
-        if(tb)
-        {
-            cpu_restore_state(cpu, tb, pc);
-        }
-    }
-    longjmp(cpu->jmp_env, 1);
-}
-
 static inline uint64_t cpu_riscv_read_instret(CPUState *env)
 {
     uint64_t retval = env->instructions_count_total_value;
@@ -71,26 +58,26 @@ static inline uint64_t cpu_riscv_read_instret(CPUState *env)
 
 /* Exceptions processing helpers */
 static inline void __attribute__ ((__noreturn__)) do_raise_exception_err(CPUState *env,
-                                          uint32_t exception, uintptr_t pc)
+                                          uint32_t exception, uintptr_t pc, uint32_t call_hook)
 {
     env->exception_index = exception;
-    cpu_loop_exit_restore(env, pc);
+    cpu_loop_exit_restore(env, pc, call_hook);
 }
 
 void helper_raise_exception(CPUState *env, uint32_t exception)
 {
-    do_raise_exception_err(env, exception, 0);
+    do_raise_exception_err(env, exception, 0, 1);
 }
 
 void helper_raise_exception_debug(CPUState *env)
 {
-    do_raise_exception_err(env, EXCP_DEBUG, 0);
+    do_raise_exception_err(env, EXCP_DEBUG, 0, 1);
 }
 
 void helper_raise_exception_mbadaddr(CPUState *env, uint32_t exception,
         target_ulong bad_pc) {
     env->badaddr = bad_pc;
-    do_raise_exception_err(env, exception, 0);
+    do_raise_exception_err(env, exception, 0, 1);
 }
 
 void helper_tlb_flush(CPUState *env);
@@ -625,7 +612,7 @@ void validate_csr(CPUState *env, uint64_t which, uint64_t write)
     unsigned csr_priv = get_field((which), 0x300);
     unsigned csr_read_only = get_field((which), 0xC00) == 3;
     if (((write) && csr_read_only) || (env->priv < csr_priv)) {
-        do_raise_exception_err(env, RISCV_EXCP_ILLEGAL_INST, env->pc);
+        do_raise_exception_err(env, RISCV_EXCP_ILLEGAL_INST, env->pc, 1);
     }
 }
 
@@ -731,7 +718,6 @@ void helper_wfi(CPUState *env)
     }
     env->wfi = 1;
     env->exception_index = EXCP_WFI;
-    cpu_loop_exit(env);
 }
 
 void helper_fence_i(CPUState *env)
@@ -778,6 +764,7 @@ void tlb_fill(CPUState *env, target_ulong addr, int is_write, int mmu_idx,
     int ret;
     ret = cpu_riscv_handle_mmu_fault(env, addr, is_write, mmu_idx);
     if (ret == TRANSLATE_FAIL) {
-        do_raise_exception_err(env, env->exception_index, 0);
+        // is_write == 2 ==> CODE ACCESS - do not fire block_end hooks!
+        do_raise_exception_err(env, env->exception_index, 0, is_write != 2);
     }
 }

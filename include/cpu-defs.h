@@ -69,6 +69,7 @@ typedef uint64_t target_ulong __attribute__((aligned(TARGET_LONG_ALIGNMENT)));
 #define EXCP_WFI        0x10001 /* hlt instruction reached */
 #define EXCP_DEBUG      0x10002 /* cpu stopped after a breakpoint or singlestep */
 #define EXCP_HALTED     0x10003 /* cpu is halted (waiting for external event) */
+#define EXCP_WATCHPOINT 0x10004
 
 #define TB_JMP_CACHE_BITS 12
 #define TB_JMP_CACHE_SIZE (1 << TB_JMP_CACHE_BITS)
@@ -157,6 +158,11 @@ typedef struct CPUBreakpoint {
     void *opaque;                                                       \
     /* chaining is enabled by default */                                \
     int chaining_disabled;                                              \
+    /* tb cache is enabled by default */                                \
+    int tb_cache_disabled;                                              \
+    /* indicates if the block_finished hook is registered, implicitly   \
+                          disabling block chaining */                   \
+    int block_finished_hook_present;                                    \
     /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                  \
     struct TranslationBlock *current_tb; /* currently executing TB  */  \
     CPU_COMMON_TLB                                                      \

@@ -32,9 +32,12 @@
 int gen_new_label(void);
 
 TCGv_ptr cpu_env;
+extern CPUState *cpu;
 static TCGArg *event_size_arg;
+static TCGArg *event_size2_arg;
 
-static int stopflag_label;
+static int exit_no_hook_label;
+static int block_header_interrupted_label;
 
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc) {
     CPUBreakpoint *bp;
@@ -49,10 +52,12 @@ CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc) {
 static inline void gen_block_header(TranslationBlock *tb)
 {
     TCGv_i32 flag;
-    stopflag_label = gen_new_label();
+    exit_no_hook_label = gen_new_label();
+    block_header_interrupted_label = gen_new_label();
+    int execute_block_label = gen_new_label();
     flag = tcg_temp_local_new_i32();
     tcg_gen_ld_i32(flag, cpu_env, offsetof(CPUState, exit_request));
-    tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, stopflag_label);
+    tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, exit_no_hook_label);
     tcg_temp_free_i32(flag);
 
     TCGv_ptr tb_pointer = tcg_const_ptr((tcg_target_long)tb);
@@ -61,7 +66,7 @@ static inline void gen_block_header(TranslationBlock *tb)
 
     flag = tcg_temp_local_new_i32();
     tcg_gen_ld_i32(flag, cpu_env, offsetof(CPUState, tb_restart_request));
-    tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, stopflag_label);
+    tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, exit_no_hook_label);
     tcg_temp_free_i32(flag);
 
     if(tlib_is_block_begin_event_enabled())
@@ -70,10 +75,60 @@ static inline void gen_block_header(TranslationBlock *tb)
       event_size_arg = gen_opparam_ptr + 1;
       TCGv_i32 event_size = tcg_const_i32(0xFFFF); // bogus value that is to be fixed at later point
 
-      gen_helper_block_begin_event(event_address, event_size);
+      TCGv_i32 result = tcg_temp_new_i32();
+      gen_helper_block_begin_event(result, event_address, event_size);
       tcg_temp_free(event_address);
       tcg_temp_free_i32(event_size);
+
+      tcg_gen_brcondi_i64(TCG_COND_NE, result, 0, execute_block_label);
+      tcg_temp_free_i32(result);
+
+      TCGv_i32 const_one = tcg_const_i32(1);
+      tcg_gen_st_i32(const_one, cpu_env, offsetof(CPUState, exit_request));
+      tcg_temp_free_i32(const_one);
+
+      tcg_gen_br(block_header_interrupted_label);
     }
+
+    gen_set_label(execute_block_label);
+
+    // it looks like we cannot re-use tcg_const in two places - that's why I create a second copy of it here
+    event_size2_arg = gen_opparam_ptr + 1;
+    TCGv_i32 event_size2 = tcg_const_i32(0xFFFF); // bogus value that is to be fixed at later point
+    gen_helper_update_instructions_count(event_size2);
+    tcg_temp_free_i32(event_size2);
+}
+
+static void gen_exit_tb_inner(uintptr_t val, TranslationBlock *tb, uint32_t instructions_count)
+{
+    if(cpu->block_finished_hook_present)
+    {
+        // This line may be missleading - we do not raport exact pc + size,
+        // as the size of the current instruction is not yet taken into account.
+        // Effectively it gives us the PC of the current instruction.
+        TCGv last_instruction = tcg_const_tl(tb->pc + tb->prev_size);
+        TCGv_i32 executed_instructions = tcg_const_i32(instructions_count);
+        gen_helper_block_finished_event(last_instruction, executed_instructions);
+        tcg_temp_free_i32(executed_instructions);
+        tcg_temp_free(last_instruction);
+    }
+    tcg_gen_exit_tb(val);
+}
+
+static void gen_interrupt_tb(uintptr_t val, TranslationBlock *tb)
+{
+    // since the block was interrupted before executing any instruction we return 0
+    gen_exit_tb_inner(val, tb, 0);
+}
+
+void gen_exit_tb(uintptr_t val, TranslationBlock *tb)
+{
+    gen_exit_tb_inner(val, tb, tb->icount);
+}
+
+void gen_exit_tb_no_chaining(TranslationBlock *tb)
+{
+    gen_exit_tb_inner(0, tb, tb->icount);
 }
 
 static inline void gen_block_footer(TranslationBlock *tb)
@@ -85,8 +140,20 @@ static inline void gen_block_footer(TranslationBlock *tb)
     {
       *event_size_arg = tb->icount;
     }
-    gen_set_label(stopflag_label);
+    *event_size2_arg = tb->icount;
+
+    int finish_label = gen_new_label();
+    gen_exit_tb((uintptr_t)tb + 2, tb);
+    tcg_gen_br(finish_label);
+    
+    gen_set_label(block_header_interrupted_label);
+    gen_interrupt_tb((uintptr_t)tb + 2, tb);
+    tcg_gen_br(finish_label);
+
+    gen_set_label(exit_no_hook_label);
     tcg_gen_exit_tb((uintptr_t)tb + 2);
+
+    gen_set_label(finish_label);
     *gen_opc_ptr = INDEX_op_end;
 }
 
@@ -174,10 +241,21 @@ int cpu_restore_state(CPUState *env,
       instructions_executed_so_far += tcg->gen_opc_instr_start[k];
       k--;
     }
-    cpu->instructions_count_value -= (tb->icount - instructions_executed_so_far);
-    cpu->instructions_count_total_value -= (tb->icount - instructions_executed_so_far);
 
     restore_state_to_opc(env, tb, j);
 
-    return 0;
+    return instructions_executed_so_far;
+}
+
+int cpu_restore_state_and_restore_instructions_count(CPUState *env,
+                TranslationBlock *tb, uintptr_t searched_pc)
+{
+    int executed_instructions = cpu_restore_state(env, tb, searched_pc);
+    if(executed_instructions != -1 && tb->instructions_count_dirty)
+    {
+        cpu->instructions_count_value -= (tb->icount - executed_instructions);
+        cpu->instructions_count_total_value -= (tb->icount - executed_instructions);
+        tb->instructions_count_dirty = 0;
+    }
+    return executed_instructions;
 }

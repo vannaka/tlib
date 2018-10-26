@@ -40,6 +40,8 @@ typedef ram_addr_t tb_page_addr_t;
 struct TranslationBlock;
 typedef struct TranslationBlock TranslationBlock;
 
+void gen_exit_tb(uintptr_t, TranslationBlock*);
+void gen_exit_tb_no_chaining(TranslationBlock*);
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc);
 void gen_intermediate_code(CPUState *env, struct TranslationBlock *tb, int max_insn);
 void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb,
@@ -49,12 +51,15 @@ void cpu_gen_code(CPUState *env, struct TranslationBlock *tb,
                  int *gen_code_size_ptr);
 int cpu_restore_state(CPUState *env, struct TranslationBlock *tb,
 		 uintptr_t searched_pc);
+int cpu_restore_state_and_restore_instructions_count(CPUState *env, struct TranslationBlock *tb,
+		 uintptr_t searched_pc);
 TranslationBlock *tb_gen_code(CPUState *env,
                               target_ulong pc, target_ulong cs_base, int flags,
                               int cflags);
 void cpu_exec_init(CPUState *env);
 void cpu_exec_init_all();
 void TLIB_NORETURN cpu_loop_exit(CPUState *env1);
+void TLIB_NORETURN cpu_loop_exit_restore(CPUState *env1, uintptr_t pc, uint32_t call_hook);
 void tb_invalidate_phys_page_range(tb_page_addr_t start, tb_page_addr_t end,
                                    int is_cpu_write_access);
 void tlb_flush_page(CPUState *env, target_ulong addr);
@@ -111,6 +116,16 @@ struct TranslationBlock {
     // this field is necessary when restoring the state of tb (using cpu_restore_state) in order to limit the size of retranslated block not to be bigger than original one;
     // SIGSEGVs have been observed otherwise
     uint16_t original_size;
+    // this field is used to keep track of the previous value of size, i.e., it shows the size of translation block without the last instruction; used by a blockend hook
+    uint16_t prev_size;
+    // signals that the `icount` of this tb has been added to global instructions counters
+    // in case of exiting this tb before the end (e.g., in case of an exception, watchpoint etc.) the value of counters must be rebuilt
+    uint32_t instructions_count_dirty;
+#if DEBUG
+    uint32_t lock_active;
+    char* lock_file;
+    int lock_line;
+#endif
 };
 
 static inline unsigned int tb_jmp_cache_hash_page(target_ulong pc)
@@ -266,6 +281,5 @@ void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t en
 
 extern void unmap_page(target_phys_addr_t address);
 void free_all_page_descriptors(void);
-void cpu_reset_exit_request(CPUState *env);
 void code_gen_free(void);
 #endif

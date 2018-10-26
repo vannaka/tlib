@@ -120,29 +120,39 @@ int32_t tlib_execute(int32_t max_insns)
   return cpu_exec(cpu);
 }
 
-void tlib_restore_context(void);
+int tlib_restore_context(void);
+
+extern void *global_retaddr;
 
 void tlib_restart_translation_block()
 {
   target_ulong pc, cs_base;
   int cpu_flags;
+  TranslationBlock *tb;
+  int executed_instructions = -1;
 
-  tlib_restore_context();
+  tb = tb_find_pc((uintptr_t)global_retaddr);
+  if(tb != 0)
+  {
+    executed_instructions = cpu_restore_state_and_restore_instructions_count(cpu, tb, (uintptr_t)global_retaddr);
+  }
+
   cpu_get_tb_cpu_state(cpu, &pc, &cs_base, &cpu_flags);
   tb_phys_invalidate(cpu->current_tb, -1);
-  tb_gen_code(cpu, pc, cs_base, cpu_flags, 1);
-  longjmp(cpu->jmp_env, 1);
+  tb_gen_code(cpu, pc, cs_base, cpu_flags, 0);
+
+  if(cpu->block_finished_hook_present)
+  {
+      tlib_on_block_finished(pc, executed_instructions);
+  }
+
+  cpu->exception_index = EXCP_WATCHPOINT;
+  longjmp(cpu->jmp_env, 1);  //for watchpoints!
 }
 
-void tlib_set_paused()
+void tlib_set_return_request()
 {
-  cpu_interrupt(cpu, CPU_INTERRUPT_DEBUG);
-}
-
-void tlib_clear_paused()
-{
-  cpu_reset_interrupt(cpu, CPU_INTERRUPT_DEBUG);
-  cpu_reset_exit_request(cpu);
+  cpu->exit_request = 1;
 }
 
 int32_t tlib_is_wfi()
@@ -289,9 +299,7 @@ uint32_t tlib_get_maximum_block_size()
   return maximum_block_size;
 }
 
-extern void *global_retaddr;
-
-void tlib_restore_context()
+int tlib_restore_context()
 {
   uintptr_t pc;
   TranslationBlock *tb;
@@ -301,9 +309,9 @@ void tlib_restore_context()
   if(tb == 0)
   {
     // this happens when PC is outside RAM or ROM
-    return;
+    return -1;
   }
-  cpu_restore_state(cpu, tb, pc);
+  return cpu_restore_state(cpu, tb, pc);
 }
 
 void* tlib_export_state()
@@ -325,12 +333,6 @@ int32_t tlib_get_state_size()
   return (ssize_t)(&((CPUState *) 0)->current_tb);
 }
 
-// this function is used to exit C code and jump back to C# after finishing execution of the current TB
-void tlib_request_exit()
-{
-  cpu->interrupt_request = CPU_INTERRUPT_DEBUG;
-}
-
 void tlib_set_chaining_enabled(uint32_t val)
 {
   cpu->chaining_disabled = !val;
@@ -341,3 +343,17 @@ uint32_t tlib_get_chaining_enabled()
   return !cpu->chaining_disabled;
 }
 
+void tlib_set_tb_cache_enabled(uint32_t val)
+{
+    cpu->tb_cache_disabled = !val;
+}
+
+uint32_t tlib_get_tb_cache_enabled()
+{
+    return !cpu->tb_cache_disabled;
+}
+
+void tlib_set_block_finished_hook_present(uint32_t val)
+{
+  cpu->block_finished_hook_present = !!val;
+}

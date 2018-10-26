@@ -1045,16 +1045,6 @@ void cpu_reset_interrupt(CPUState *env, int mask)
     env->interrupt_request &= ~mask;
 }
 
-void cpu_reset_exit_request(CPUState *env)
-{
-    env->exit_request = 0;
-}
-
-void cpu_exit(CPUState *env)
-{
-    env->exit_request = 1;
-}
-
 static QLIST_HEAD(memory_client_list, CPUPhysMemoryClient) memory_client_list
     = QLIST_HEAD_INITIALIZER(memory_client_list);
 

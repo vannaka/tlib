@@ -1686,7 +1686,7 @@ static void cpu_restore_state2(void *retaddr)
         if (tb) {
             /* the PC is inside the translated code. It means that we have
                a virtual CPU fault */
-            cpu_restore_state(env, tb, pc);
+            cpu_restore_state_and_restore_instructions_count(env, tb, pc);
         }
     }
 }

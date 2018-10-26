@@ -537,9 +537,6 @@ extern CPUState *cpu;
    makes some change to the memory mapping.  E.g. the a20 line change.  */
 #define CPU_INTERRUPT_EXITTB      0x0004
 
-/* Halt the CPU.  */
-#define CPU_INTERRUPT_HALT        0x0020
-
 /* Debug event pending.  */
 #define CPU_INTERRUPT_DEBUG       0x0080
 
@@ -582,7 +579,6 @@ static inline void cpu_interrupt(CPUState *s, int mask)
 
 void cpu_reset_interrupt(CPUState *env, int mask);
 
-void cpu_exit(CPUState *s);
 
 /* Breakpoint flags */
 #define BP_GDB                0x10

@@ -1660,7 +1660,7 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
                 env->cp15.c15_threadid = val & 0xffff;
                 break;
             case 8: /* Wait-for-interrupt (deprecated).  */
-                cpu_interrupt(env, CPU_INTERRUPT_HALT);
+                helper_wfi();
                 break;
             default:
                 goto bad_reg;

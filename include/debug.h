@@ -14,4 +14,17 @@ extern char *msgs[MAX_MSG_COUNT];
 
 void generate_log(uint32_t pc, char *format, ...);
 
+void mark_as_locked(struct TranslationBlock *tb, char* filename, int line_number);
+void check_locked(struct TranslationBlock *tb);
+
+#if DEBUG
+#define LOCK_TB(tb) mark_as_locked(tb, __FILE__, __LINE__);
+#define UNLOCK_TB(tb) tb->lock_active = 0
+#define CHECK_LOCKED(tb) check_locked(tb)
+#else
+#define LOCK_TB(tb)
+#define UNLOCK_TB(tb)
+#define CHECK_LOCKED(tb)
+#endif
+
 #endif // __DEBUG_H__

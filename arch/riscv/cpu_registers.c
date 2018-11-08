@@ -37,6 +37,8 @@ uint64_t* get_reg_pointer_64(int reg)
             return &(cpu->priv);
         case MCAUSE_64:
             return &(cpu->mcause);
+        case MEPC_64:
+            return &(cpu->mepc);
         default:
             return NULL;
     }

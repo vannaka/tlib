@@ -318,7 +318,7 @@ typedef struct CPUState {
 /* helper.c */
 int cpu_init(const char *cpu_model);
 void cpu_sparc_set_id(CPUState *env, unsigned int cpu);
-int cpu_sparc_handle_mmu_fault(CPUState *env1, target_ulong address, int rw,
+int cpu_sparc_handle_mmu_fault(CPUState *env, target_ulong address, int rw,
                                int mmu_idx, int is_softmmu);
 #define cpu_handle_mmu_fault cpu_sparc_handle_mmu_fault
 target_ulong mmu_probe(CPUState *env, target_ulong address, int mmulev);
@@ -327,14 +327,14 @@ target_ulong mmu_probe(CPUState *env, target_ulong address, int mmulev);
 int cpu_exec(CPUState *s);
 
 /* op_helper.c */
-target_ulong cpu_get_psr(CPUState *env1);
-void cpu_put_psr(CPUState *env1, target_ulong val);
-int cpu_cwp_inc(CPUState *env1, int cwp);
-int cpu_cwp_dec(CPUState *env1, int cwp);
-void cpu_set_cwp(CPUState *env1, int new_cwp);
+target_ulong cpu_get_psr(CPUState *env);
+void cpu_put_psr(CPUState *env, target_ulong val);
+int cpu_cwp_inc(CPUState *env, int cwp);
+int cpu_cwp_dec(CPUState *env, int cwp);
+void cpu_set_cwp(CPUState *env, int new_cwp);
 
 /* cpu-exec.c */
-void cpu_unassigned_access(CPUState *env1, target_phys_addr_t addr,
+void cpu_unassigned_access(CPUState *env, target_phys_addr_t addr,
                            int is_write, int is_exec, int is_asi, int size);
 
 /* MMU modes definitions */
@@ -343,23 +343,23 @@ void cpu_unassigned_access(CPUState *env1, target_phys_addr_t addr,
 #define MMU_KERNEL_IDX 1
 #define MMU_MODE1_SUFFIX _kernel
 
-static inline int cpu_mmu_index(CPUState *env1)
+static inline int cpu_mmu_index(CPUState *env)
 {
-    return env1->psrs;
+    return env->psrs;
 }
 
-static inline int cpu_interrupts_enabled(CPUState *env1)
+static inline int cpu_interrupts_enabled(CPUState *env)
 {
-    if (env1->psret != 0)
+    if (env->psret != 0)
         return 1;
 
     return 0;
 }
 
-static inline int cpu_pil_allowed(CPUState *env1, int pil)
+static inline int cpu_pil_allowed(CPUState *env, int pil)
 {
     /* level 15 is non-maskable on sparc v8 */
-    return pil == 15 || pil > env1->psrpil;
+    return pil == 15 || pil > env->psrpil;
 }
 
 #include "cpu-all.h"
@@ -392,10 +392,10 @@ static inline bool tb_am_enabled(int tb_flags)
 /* helper.c */
 void do_interrupt(CPUState *env);
 
-static inline bool cpu_has_work(CPUState *env1)
+static inline bool cpu_has_work(CPUState *env)
 {
-    return (env1->interrupt_request & CPU_INTERRUPT_HARD) &&
-           cpu_interrupts_enabled(env1);
+    return (env->interrupt_request & CPU_INTERRUPT_HARD) &&
+           cpu_interrupts_enabled(env);
 }
 
 #include "exec-all.h"

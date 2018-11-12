@@ -47,11 +47,6 @@ void cpu_reset(CPUState *env)
     set_default_nan_mode(1, &env->fp_status);
 }
 
-int riscv_cpu_mmu_index(CPUState *env)
-{
-    return env->priv;
-}
-
 /*
  * Return RISC-V IRQ number if an interrupt should be taken, else -1.
  * Used in cpu-exec.c

@@ -132,11 +132,15 @@ void helper_raise_exception(CPUState *env, uint32_t exception);
 
 int cpu_riscv_handle_mmu_fault(CPUState *cpu, target_ulong address, int rw,
                               int mmu_idx);
-int riscv_cpu_mmu_index(CPUState *env);
+
+static inline int cpu_mmu_index(CPUState *env)
+{
+    return env->priv;
+}
+
 int riscv_cpu_hw_interrupts_pending(CPUState *env);
 
 #define cpu_handle_mmu_fault cpu_riscv_handle_mmu_fault
-#define cpu_mmu_index riscv_cpu_mmu_index
 
 #include "cpu-all.h"
 #include "exec-all.h"

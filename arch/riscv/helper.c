@@ -31,7 +31,15 @@
 void cpu_reset(CPUState *env)
 {
     tlb_flush(env, 1);
-    cpu_state_reset(env);
+    bool privilege = env->privilege_architecture_1_10;
+    target_ulong mhartid = env->mhartid;
+    target_ulong misa_mask = env->misa_mask;
+    memset(env, 0, offsetof(CPUState, breakpoints));
+
+    env->mhartid = mhartid;
+    env->privilege_architecture_1_10 = privilege;
+    env->misa = misa_mask;
+    env->misa_mask = misa_mask;
     env->priv = PRV_M;
     env->mtvec = DEFAULT_MTVEC;
     env->pc = DEFAULT_RSTVEC;

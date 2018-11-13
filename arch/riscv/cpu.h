@@ -3,8 +3,6 @@
 
 #include <stdbool.h>
 
-#define RISCV_START_PC 0x200
-
 #include "cpu-defs.h"
 #include "softfloat.h"
 #include "host-utils.h"
@@ -127,8 +125,6 @@ struct CPUState {
 
 int cpu_exec(CPUState *s);
 int cpu_init(const char *cpu_model);
-
-void cpu_state_reset(CPUState *s);
 
 void riscv_set_mode(CPUState *env, target_ulong newpriv);
 

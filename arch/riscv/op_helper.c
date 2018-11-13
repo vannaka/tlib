@@ -17,9 +17,9 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 #include "cpu.h"
-#include "arch_callbacks.h"
-
 #define ALIGNED_ONLY
+#include "softmmu_exec.h"
+#include "arch_callbacks.h"
 
 #if defined(TARGET_RISCV32)
 static const char valid_vm_1_09[16] = {
@@ -749,9 +749,7 @@ void helper_tlb_flush(CPUState *env)
     tlb_flush(env, 1);
 }
 
-extern CPUState *env;
-
-static void do_unaligned_access(target_ulong addr, int access_type, int mmu_idx,
+void do_unaligned_access(target_ulong addr, int access_type, int mmu_idx,
                                 void *retaddr)
 {
     switch(access_type) {
@@ -768,9 +766,6 @@ static void do_unaligned_access(target_ulong addr, int access_type, int mmu_idx,
             tlib_abort("Illegal memory access type!");
     }
 }
-
-#include "dyngen-exec.h"
-#include "softmmu_exec.h"
 
 /* called to fill tlb */
 void tlb_fill(CPUState *env, target_ulong addr, int is_write, int mmu_idx,

@@ -1873,6 +1873,9 @@ void stq_phys(target_phys_addr_t addr, uint64_t val)
 }
 
 #define MMUSUFFIX _cmmu
+#ifdef GETPC
+#undef GETPC
+#endif
 #define GETPC() NULL
 #define SOFTMMU_CODE_ACCESS
 

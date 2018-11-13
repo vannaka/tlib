@@ -17,9 +17,8 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 #include "cpu.h"
-#include "dyngen-exec.h"
+#include "softmmu_exec.h"
 #include "helper.h"
-#include "infrastructure.h"
 
 #define SIGNBIT (uint32_t)0x80000000
 #define SIGNBIT64 ((uint64_t)1 << 63)
@@ -45,8 +44,6 @@ uint32_t HELPER(neon_tbl)(uint32_t ireg, uint32_t def,
     }
     return val;
 }
-
-#include "softmmu_exec.h"
 
 /* try to fill the TLB and return an exception if error. If retaddr is
    NULL, it means that the function was called in C code (i.e. not

@@ -3,6 +3,10 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <math.h>
+#include <string.h>
 
 #include <sys/time.h>
 

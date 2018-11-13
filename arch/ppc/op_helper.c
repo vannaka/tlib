@@ -16,16 +16,13 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
-#include <string.h>
 #include "cpu.h"
-#include "dyngen-exec.h"
+#include "softmmu_exec.h"
+#include "arch_callbacks.h"
+
 #include "host-utils.h"
 #include "helper.h"
 #include "helper_regs.h"
-#include "arch_callbacks.h"
-#include "infrastructure.h"
-#include "arch_callbacks.h"
-#include "softmmu_exec.h"
 
 
 /*****************************************************************************/

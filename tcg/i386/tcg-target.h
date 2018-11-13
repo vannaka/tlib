@@ -130,7 +130,7 @@ typedef enum {
 
 #define TCG_TARGET_HAS_GUEST_BASE
 
-/* Note: must be synced with dyngen-exec.h */
+/* Note: must be synced with cpu-defs.h */
 #if TCG_TARGET_REG_BITS == 64
 # define TCG_AREG0 TCG_REG_R14
 #else

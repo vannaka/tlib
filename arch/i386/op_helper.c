@@ -17,15 +17,11 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <math.h>
 #include "cpu.h"
-#include "dyngen-exec.h"
-#include "host-utils.h"
-#include "cpu-defs.h"
-#include "helper.h"
-
 #include "softmmu_exec.h"
 #include "arch_callbacks.h"
+
+#include "helper.h"
 
 /* n must be a constant to be efficient */
 static inline target_long lshift(target_long x, int n)

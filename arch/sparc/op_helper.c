@@ -1,13 +1,11 @@
-#include "dyngen-exec.h"
-#include "host-utils.h"
+#include "cpu.h"
+#define ALIGNED_ONLY
+#include "softmmu_exec.h"
 #include "helper.h"
 #include "arch_callbacks.h"
 
-static void do_unaligned_access(target_ulong addr, int is_write, int is_user,
+void do_unaligned_access(target_ulong addr, int is_write, int is_user,
                                 void *retaddr);
-
-#define ALIGNED_ONLY
-#include "softmmu_exec.h"
 
 #define DT0 (env->dt0)
 #define DT1 (env->dt1)
@@ -1691,7 +1689,7 @@ static void cpu_restore_state2(void *retaddr)
     }
 }
 
-static void do_unaligned_access(target_ulong addr, int is_write, int is_user,
+void do_unaligned_access(target_ulong addr, int is_write, int is_user,
                                 void *retaddr)
 {
     cpu_restore_state2(retaddr);

@@ -28,6 +28,31 @@
 #include "infrastructure.h"
 #include "atomic.h"
 
+#if defined(__i386__)
+#if defined(__linux__)
+#define AREG0 "ebx"
+#else
+#define AREG0 "ebp"
+#endif
+#elif defined(__x86_64__)
+#define AREG0 "r14"
+#elif defined(__arm__)
+#define AREG0 "r7"
+#else
+#error unsupported CPU
+#endif
+
+/* The return address may point to the start of the next instruction.
+   Subtracting one gets us the call instruction itself.  */
+#if defined(__arm__)
+/* Thumb return addresses have the low bit set, so we need to subtract two.
+   This is still safe in ARM mode because instructions are 4 bytes.  */
+# define GETPC() ((void *)((uintptr_t)__builtin_return_address(0) - 2))
+#else
+# define GETPC() ((void *)((uintptr_t)__builtin_return_address(0) - 1))
+#endif
+
+
 #if defined(_WIN64)
 /* This is to avoid longjmp crashing because of stack unwinding. 
  * It is incompatible with the execution of generated code. */

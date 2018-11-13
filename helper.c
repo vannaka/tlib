@@ -1,4 +1,4 @@
-#include "dyngen-exec.h"
+#include "cpu.h"
 #include <global_helper.h>
 #include "callbacks.h"
 #include "debug.h"
@@ -51,7 +51,7 @@ void HELPER(abort)(void) {
 
 void HELPER(log)(uint32_t id, uint32_t pc)
 {
-  tlib_printf(LOG_LEVEL_INFO, "Log @ pc=0x%08X (block start: 0x%08X) : '%s'", pc, CPU_PC(env), msgs[id] == NULL ? "unknown??" : msgs[id]);
+  tlib_printf(LOG_LEVEL_INFO, "Log @ pc=0x%08X (block start: 0x%08X) : '%s'", pc, CPU_PC(cpu), msgs[id] == NULL ? "unknown??" : msgs[id]);
 }
 
 void HELPER(acquire_global_memory_lock)(CPUState *env)

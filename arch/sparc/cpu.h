@@ -1,8 +1,6 @@
 #ifndef CPU_SPARC_H
 #define CPU_SPARC_H
 
-#include <stdbool.h>
-
 #if (TARGET_LONG_BITS == 32)
 #ifdef TARGET_PHYS_ADDR_BITS
 #undef TARGET_PHYS_ADDR_BITS
@@ -337,6 +335,9 @@ void cpu_set_cwp(CPUState *env, int new_cwp);
 void cpu_unassigned_access(CPUState *env, target_phys_addr_t addr,
                            int is_write, int is_exec, int is_asi, int size);
 
+/* helper.c */
+void do_interrupt(CPUState *env);
+
 /* MMU modes definitions */
 #define MMU_USER_IDX   0
 #define MMU_MODE0_SUFFIX _user
@@ -388,9 +389,6 @@ static inline bool tb_am_enabled(int tb_flags)
 {
     return false;
 }
-
-/* helper.c */
-void do_interrupt(CPUState *env);
 
 static inline bool cpu_has_work(CPUState *env)
 {

@@ -18,7 +18,6 @@
  */
 #include "cpu.h"
 #include "tcg.h"
-#include "dyngen-exec.h"
 #include "atomic.h"
 
 target_ulong virt_to_phys(target_ulong virt) {

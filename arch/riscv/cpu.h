@@ -1,8 +1,6 @@
 #if !defined (__RISCV_CPU_H__)
 #define __RISCV_CPU_H__
 
-#include <stdbool.h>
-
 #include "cpu-defs.h"
 #include "softfloat.h"
 #include "host-utils.h"

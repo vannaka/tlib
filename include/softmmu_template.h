@@ -57,6 +57,10 @@ extern void *global_retaddr;
 #define ADDR_READ addr_read
 #endif
 
+#ifdef ALIGNED_ONLY
+void do_unaligned_access(target_ulong addr, int is_write, int is_user, void *retaddr);
+#endif
+
 uint32_t local_ntohl(uint32_t n);
 
 void notdirty_mem_writeb(void *opaque, target_phys_addr_t ram_addr,

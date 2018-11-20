@@ -13,6 +13,7 @@ static inline void ensure_locked_by_me(struct CPUState *env)
 
 static void initialize_atomic_memory_state(atomic_memory_state_t *sm)
 {
+    int i;
     if(!sm->is_mutex_initialized)
     {
         pthread_mutex_init(&sm->global_mutex, NULL);
@@ -27,7 +28,7 @@ static void initialize_atomic_memory_state(atomic_memory_state_t *sm)
     if(!sm->are_reservations_valid)
     {
         sm->reservations_count = 0;
-        for(int i = 0; i < MAX_NUMBER_OF_CPUS; i++)
+        for(i = 0; i < MAX_NUMBER_OF_CPUS; i++)
         {
             sm->reservations[i].id = i;
             sm->reservations[i].active_flag = 0;
@@ -42,7 +43,8 @@ static void initialize_atomic_memory_state(atomic_memory_state_t *sm)
 
 static inline address_reservation_t* find_reservation_on_address(struct CPUState *env, target_phys_addr_t address, int starting_position)
 {
-    for(int i = starting_position; i < env->atomic_memory_state->reservations_count; i++)
+    int i;
+    for(i = starting_position; i < env->atomic_memory_state->reservations_count; i++)
     {
         if(env->atomic_memory_state->reservations[i].address == address)
         {

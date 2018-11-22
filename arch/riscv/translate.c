@@ -793,10 +793,14 @@ static void gen_fp_store(DisasContext *ctx, uint32_t opc, int rs1,
     tcg_temp_free(t1);
 }
 
-static void gen_atomic(DisasContext *ctx, uint32_t opc,
+static void gen_atomic(CPUState *env, DisasContext *ctx, uint32_t opc,
                       int rd, int rs1, int rs2)
 {
     generate_log(ctx->pc, "gen_atomic");
+    if(!riscv_has_ext(env, RISCV_FEATURE_RVA)) {
+        tlib_log(LOG_LEVEL_ERROR, "RISC-V A instruction set is not enabled for this CPU!");
+        kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
+    }
     /* TODO: handle aq, rl bits? - for now just get rid of them: */
     opc = MASK_OP_ATOMIC_NO_AQ_RL(opc);
     TCGv source1, source2, dat;
@@ -1818,7 +1822,7 @@ static void decode_RV32_64G(CPUState *env, DisasContext *ctx)
                      GET_STORE_IMM(ctx->opcode));
         break;
     case OPC_RISC_ATOMIC:
-        gen_atomic(ctx, MASK_OP_ATOMIC(ctx->opcode), rd, rs1, rs2);
+        gen_atomic(env, ctx, MASK_OP_ATOMIC(ctx->opcode), rd, rs1, rs2);
         break;
     case OPC_RISC_FMADD:
         gen_fp_fmadd(ctx, MASK_OP_FP_FMADD(ctx->opcode), rd, rs1, rs2,

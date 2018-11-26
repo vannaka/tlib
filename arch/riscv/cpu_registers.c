@@ -35,10 +35,44 @@ uint64_t* get_reg_pointer_64(int reg)
             return &(cpu->pc);
         case PRIV_64:
             return &(cpu->priv);
-        case MCAUSE_64:
-            return &(cpu->mcause);
+        case SSTATUS_64:
+            return &(cpu->mstatus);
+        case SIE_64:
+            return &(cpu->mie);
+        case STVEC_64:
+            return &(cpu->stvec);
+        case SSCRATCH_64:
+            return &(cpu->sscratch);
+        case SEPC_64:
+            return &(cpu->sepc);
+        case SCAUSE_64:
+            return &(cpu->scause);
+        case STVAL_64:
+            return &(cpu->sbadaddr);
+        case SIP_64:
+            return &(cpu->mip);
+        case MSTATUS_64:
+            return &(cpu->mstatus);
+        case MISA_64:
+            return &(cpu->misa);
+        case MEDELEG_64:
+            return &(cpu->medeleg);
+        case MIDELEG_64:
+            return &(cpu->mideleg);
+        case MIE_64:
+            return &(cpu->mie);
+        case MTVEC_64:
+            return &(cpu->mtvec);
+        case MSCRATCH_64:
+            return &(cpu->mscratch);
         case MEPC_64:
             return &(cpu->mepc);
+        case MCAUSE_64:
+            return &(cpu->mcause);
+        case MTVAL_64:
+            return &(cpu->mbadaddr);
+        case MIP_64:
+            return &(cpu->mip);
         default:
             return NULL;
     }
@@ -59,8 +93,44 @@ uint32_t* get_reg_pointer_32(int reg)
             return &(cpu->pc);
         case PRIV_32:
             return &(cpu->priv);
+        case SSTATUS_32:
+            return &(cpu->mstatus);
+        case SIE_32:
+            return &(cpu->mie);
+        case STVEC_32:
+            return &(cpu->stvec);
+        case SSCRATCH_32:
+            return &(cpu->sscratch);
+        case SEPC_32:
+            return &(cpu->sepc);
+        case SCAUSE_32:
+            return &(cpu->scause);
+        case STVAL_32:
+            return &(cpu->sbadaddr);
+        case SIP_32:
+            return &(cpu->mip);
+        case MSTATUS_32:
+            return &(cpu->mstatus);
+        case MISA_32:
+            return &(cpu->misa);
+        case MEDELEG_32:
+            return &(cpu->medeleg);
+        case MIDELEG_32:
+            return &(cpu->mideleg);
+        case MIE_32:
+            return &(cpu->mie);
+        case MTVEC_32:
+            return &(cpu->mtvec);
+        case MSCRATCH_32:
+            return &(cpu->mscratch);
+        case MEPC_32:
+            return &(cpu->mepc);
         case MCAUSE_32:
             return &(cpu->mcause);
+        case MTVAL_32:
+            return &(cpu->mbadaddr);
+        case MIP_32:
+            return &(cpu->mip);
         default:
             return NULL;
     }

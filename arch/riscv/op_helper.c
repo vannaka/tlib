@@ -619,7 +619,7 @@ void validate_csr(CPUState *env, uint64_t which, uint64_t write)
     unsigned csr_priv = get_field((which), 0x300);
     unsigned csr_read_only = get_field((which), 0xC00) == 3;
     if (((write) && csr_read_only) || (env->priv < csr_priv)) {
-        do_raise_exception_err(env, RISCV_EXCP_ILLEGAL_INST, env->pc, 1);
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
 }
 

@@ -752,6 +752,7 @@ void helper_tlb_flush(CPUState *env)
 void do_unaligned_access(target_ulong addr, int access_type, int mmu_idx,
                                 void *retaddr)
 {
+    env->badaddr = addr;
     switch(access_type) {
         case MMU_DATA_LOAD:
             helper_raise_exception(env, RISCV_EXCP_LOAD_ADDR_MIS);

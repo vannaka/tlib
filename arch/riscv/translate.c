@@ -1954,7 +1954,7 @@ void gen_intermediate_code(CPUState *env,
     	generate_log(ctx.pc, "<--- tcg: we are done executing %s", msg);
 
         if (tcg_check_temp_count()) {
-            tlib_abortf("TCG temps leak detected at PC %08x", ctx.pc);
+            tlib_abortf("TCG temps leak detected at PC %08X", ctx.pc);
         }
 
         if (ctx.bstate != BS_NONE) {

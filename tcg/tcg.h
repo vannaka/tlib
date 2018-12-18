@@ -78,12 +78,12 @@ typedef uint64_t target_ulong __attribute__((aligned(TARGET_LONG_ALIGNMENT)));
 #if TCG_TARGET_REG_BITS == 32
 typedef int32_t tcg_target_long;
 typedef uint32_t tcg_target_ulong;
-#define TCG_PRIlx PRIx32
+#define TCG_PRIlx PRIX32
 #define TCG_PRIld PRId32
 #elif TCG_TARGET_REG_BITS == 64
 typedef int64_t tcg_target_long;
 typedef uint64_t tcg_target_ulong;
-#define TCG_PRIlx PRIx64
+#define TCG_PRIlx PRIX64
 #define TCG_PRIld PRId64
 #else
 #error unsupported

@@ -818,6 +818,8 @@ static void gen_atomic(CPUState *env, DisasContext *ctx, uint32_t opc,
     gen_get_gpr(source1, rs1);
     gen_get_gpr(source2, rs2);
 
+    sync_pc(ctx);
+
     gen_helper_acquire_global_memory_lock(cpu_env);
 
     switch (opc) {

@@ -75,6 +75,11 @@ static const char * const fpr_regnames[] = {
 #define CASE_OP_32_64(X) case X
 #endif
 
+static inline void sync_pc(DisasContext *ctx)
+{
+    tcg_gen_movi_tl(cpu_pc, ctx->pc);
+}
+
 static inline uint32_t extract32(uint32_t value, uint8_t start, uint8_t length)
 {
     return (value >> start) & ((((uint32_t)1) << length) - 1);
@@ -92,7 +97,7 @@ static inline uint64_t sextract64(uint64_t value, uint8_t start, uint8_t length)
 
 static inline void generate_exception(DisasContext *ctx, int excp)
 {
-    tcg_gen_movi_tl(cpu_pc, ctx->pc);
+    sync_pc(ctx);
     TCGv_i32 helper_tmp = tcg_const_i32(excp);
     gen_helper_raise_exception(cpu_env, helper_tmp);
     tcg_temp_free_i32(helper_tmp);
@@ -101,7 +106,7 @@ static inline void generate_exception(DisasContext *ctx, int excp)
 static inline void generate_exception_mbadaddr(DisasContext *ctx, int excp)
 {
     generate_log(ctx->pc, "exception_badaddr");
-    tcg_gen_movi_tl(cpu_pc, ctx->pc);
+    sync_pc(ctx);
     TCGv_i32 helper_tmp = tcg_const_i32(excp);
     gen_helper_raise_exception_mbadaddr(cpu_env, helper_tmp, cpu_pc);
     tcg_temp_free_i32(helper_tmp);
@@ -647,7 +652,7 @@ static void gen_load(DisasContext *ctx, uint32_t opc, int rd, int rs1,
 
     tcg_gen_addi_tl(t0, t0, imm);
 
-    tcg_gen_movi_tl(cpu_pc, ctx->pc);
+    sync_pc(ctx);
     switch (opc) {
 
     case OPC_RISC_LB:
@@ -686,7 +691,7 @@ static void gen_load(DisasContext *ctx, uint32_t opc, int rd, int rs1,
 static void gen_store(DisasContext *ctx, uint32_t opc, int rs1, int rs2,
         target_long imm)
 {
-    tcg_gen_movi_tl(cpu_pc, ctx->pc);
+    sync_pc(ctx);
 
     TCGv t0 = tcg_temp_new();
     TCGv dat = tcg_temp_new();
@@ -1370,7 +1375,7 @@ static void gen_system(DisasContext *ctx, uint32_t opc,
     rs1_pass = tcg_temp_new();
     imm_rs1 = tcg_temp_new();
     gen_get_gpr(source1, rs1);
-    tcg_gen_movi_tl(cpu_pc, ctx->pc);
+    sync_pc(ctx);
     tcg_gen_movi_tl(rs1_pass, rs1);
     tcg_gen_movi_tl(csr_store, csr); /* copy into temp reg to feed to helper */
 
@@ -1983,7 +1988,7 @@ void gen_intermediate_code(CPUState *env,
     }
     if (env->singlestep_enabled && ctx.bstate != BS_BRANCH) {
         if (ctx.bstate == BS_NONE) {
-            tcg_gen_movi_tl(cpu_pc, ctx.pc);
+            sync_pc(&ctx);
         }
         gen_helper_raise_exception_debug(cpu_env);
     } else {
@@ -1992,7 +1997,7 @@ void gen_intermediate_code(CPUState *env,
             gen_goto_tb(&ctx, 0, ctx.pc);
             break;
         case BS_NONE: /* handle end of page - DO NOT CHAIN. See gen_goto_tb. */
-            tcg_gen_movi_tl(cpu_pc, ctx.pc);
+            sync_pc(&ctx);
             gen_exit_tb_no_chaining(ctx.tb);
             break;
         case BS_BRANCH: /* ops using BS_BRANCH generate own exit seq */

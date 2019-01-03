@@ -139,7 +139,7 @@ target_ulong priv_version_csr_filter(CPUState *env, target_ulong csrno)
 inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         target_ulong csrno)
 {
-    uint64_t delegable_ints = MIP_SSIP | MIP_STIP | MIP_SEIP | (1 << IRQ_X_COP);
+    uint64_t delegable_ints = MIP_SSIP | MIP_STIP | MIP_SEIP | (1 << IRQ_X_COP) | ~((1 << 12) - 1);
     uint64_t all_ints = delegable_ints | MIP_MSIP | MIP_MTIP | MIP_MEIP;
 
     csrno = priv_version_csr_filter(env, csrno);

@@ -2114,7 +2114,6 @@ static inline void powerpc_excp(CPUState *env, int excp_model, int excp)
     /* Reset exception state */
     env->exception_index = POWERPC_EXCP_NONE;
     env->error_code = 0;
-    tlib_on_interrupt_complete();
 
     if ((env->mmu_model == POWERPC_MMU_BOOKE) ||
         (env->mmu_model == POWERPC_MMU_BOOKE206)) {

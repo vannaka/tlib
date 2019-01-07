@@ -297,9 +297,6 @@ int cpu_riscv_handle_mmu_fault(CPUState *env, target_ulong address, int access_t
 void do_interrupt(CPUState *env)
 {
     if (env->exception_index == EXCP_NONE) return;
-    if (env->exception_index == RISCV_EXCP_ILLEGAL_INST) {
-    	tlib_abort("Illegal instruction exception!");
-    }
     if (env->exception_index == RISCV_EXCP_BREAKPOINT) {
         env->interrupt_request |= CPU_INTERRUPT_EXITTB;
         return;

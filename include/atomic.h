@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include <stdint.h>
-#include <targphys.h>
+#include "targphys.h"
 
 #define MAX_NUMBER_OF_CPUS 32
 

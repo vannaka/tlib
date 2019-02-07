@@ -219,7 +219,7 @@ int cpu_exec(CPUState *env)
         if (setjmp(env->jmp_env) == 0) {
             /* if an exception is pending, we execute it here */
             if (env->exception_index >= 0) {
-                if (env->exception_index >= EXCP_INTERRUPT) {
+                if (env->return_on_exception || env->exception_index >= EXCP_INTERRUPT) {
                     /* exit request from the cpu execution loop */
                     ret = env->exception_index;
                     if ((ret == EXCP_DEBUG) && debug_excp_handler) {

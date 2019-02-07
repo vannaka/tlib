@@ -154,6 +154,8 @@ typedef struct CPUBreakpoint {
 
 #define CPU_TEMP_BUF_NLONGS 128
 #define CPU_COMMON                                                      \
+    /* when set any exception will force `cpu_exec` to finish immediately */ \
+    int32_t return_on_exception;                                        \
     /* instruction counting is used to execute callback after given     \
        number of instructions */                                        \
     int32_t instructions_count_threshold;                               \

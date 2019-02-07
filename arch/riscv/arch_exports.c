@@ -83,3 +83,9 @@ uint64_t tlib_install_custom_instruction(uint64_t mask, uint64_t pattern, uint64
     return ci->id;
 }
 
+void helper_wfi(CPUState* env);
+void tlib_enter_wfi()
+{
+    helper_wfi(cpu);
+}
+

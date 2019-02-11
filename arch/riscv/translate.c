@@ -1873,24 +1873,61 @@ static void decode_RV32_64G(CPUState *env, DisasContext *ctx)
 
 static int disas_insn(CPUState *env, DisasContext *ctx)
 {
-    /* check for compressed insn */
-    if (extract32(ctx->opcode, 0, 2) != 3) {
-        if (!riscv_has_ext(env, RISCV_FEATURE_RVC)) {
-            tlib_log(LOG_LEVEL_ERROR, "RISC-V C instruction set is not enabled for this CPU!");
-            kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
-            return 0;
-        } else {
-            ctx->next_pc = ctx->pc + 2;
-            decode_RV32_64C(env, ctx);
+    /* handle custom instructions */
+    for(int i = 0; i < env->custom_instructions_count; i++)
+    {
+        custom_instruction_descriptor_t* ci = &env->custom_instructions[i];
+
+        if((ctx->opcode & ci->mask) == ci->pattern)
+        {
+            ctx->next_pc = ctx->pc + ci->length;
+
+            TCGv_i64 id = tcg_const_i64(ci->id);
+            TCGv_i64 opcode = tcg_const_i64(ctx->opcode & ((1ul << (8 * ci->length)) - 1));
+            TCGv_i32 pc_modified = tcg_temp_new_i32();
+
+            sync_pc(ctx);
+            gen_helper_handle_custom_instruction(pc_modified, id, opcode);
+
+            int exit_tb_label = gen_new_label();
+            tcg_gen_brcondi_i64(TCG_COND_EQ, pc_modified, 1, exit_tb_label);
+
+            // this is executed conditionally - only if `handle_custom_instruction` returns 0
+            // otherwise `cpu_pc` points to a proper value and should not be overwritten by `ctx->pc`
             ctx->pc = ctx->next_pc;
-            return 2;
+            sync_pc(ctx);
+
+            gen_set_label(exit_tb_label);
+            gen_exit_tb_no_chaining(ctx->tb);
+            ctx->bstate = BS_BRANCH;
+
+            tcg_temp_free_i64(id); 
+            tcg_temp_free_i64(opcode); 
+            tcg_temp_free_i64(pc_modified); 
+
+            return ci->length;
         }
-    } else {
-        ctx->next_pc = ctx->pc + 4;
-        decode_RV32_64G(env, ctx);
-	    ctx->pc = ctx->next_pc;
-	    return 4;
     }
+
+    int is_compressed = (extract32(ctx->opcode, 0, 2) != 3);
+    if (is_compressed && !riscv_has_ext(env, RISCV_FEATURE_RVC)) {
+        tlib_log(LOG_LEVEL_ERROR, "RISC-V C instruction set is not enabled for this CPU!");
+        kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
+        return 0;
+    }
+
+    /* check for compressed insn */
+    int instruction_length = (is_compressed ? 2 : 4);
+    ctx->next_pc = ctx->pc + instruction_length;
+
+    if (is_compressed) {
+        decode_RV32_64C(env, ctx);
+    } else {
+        decode_RV32_64G(env, ctx);
+    }
+
+    ctx->pc = ctx->next_pc;
+    return instruction_length;
 }
 
 uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {

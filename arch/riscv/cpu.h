@@ -40,6 +40,14 @@
 
 #define assert(x) {if (!(x)) tlib_abortf("Assert not met in %s:%d: %s", __FILE__, __LINE__, #x);}while(0)
 
+typedef struct custom_instruction_descriptor_t {
+    uint64_t id;
+    uint64_t length;
+    uint64_t mask;
+    uint64_t pattern;
+} custom_instruction_descriptor_t;
+#define CPU_CUSTOM_INSTRUCTIONS_LIMIT 64
+
 typedef struct CPUState CPUState;
 
 #include "pmp.h"
@@ -115,6 +123,9 @@ struct CPUState {
 
     /* if privilege architecture v1.10 is not set, we assume 1.09 */
     bool privilege_architecture_1_10;
+
+    int32_t custom_instructions_count;
+    custom_instruction_descriptor_t custom_instructions[CPU_CUSTOM_INSTRUCTIONS_LIMIT];
 
     CPU_COMMON
 };

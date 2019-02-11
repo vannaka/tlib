@@ -64,3 +64,22 @@ void tlib_set_privilege_architecture_1_09(uint32_t enable)
 {
    cpu->privilege_architecture_1_10 = enable ? 0 : 1;
 }
+
+uint64_t tlib_install_custom_instruction(uint64_t mask, uint64_t pattern, uint64_t length)
+{
+    if(cpu->custom_instructions_count == CPU_CUSTOM_INSTRUCTIONS_LIMIT)
+    {
+        // no more empty slots
+        return 0;
+    }
+
+    custom_instruction_descriptor_t *ci = &cpu->custom_instructions[cpu->custom_instructions_count];
+
+    ci->id = ++cpu->custom_instructions_count;
+    ci->mask = mask;
+    ci->pattern = pattern;
+    ci->length = length;
+
+    return ci->id;
+}
+

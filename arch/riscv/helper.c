@@ -18,6 +18,7 @@
  */
 #include "cpu.h"
 
+#include "def-helper.h"
 #include "cpu-common.h"
 #include "arch_callbacks.h"
 
@@ -31,9 +32,14 @@
 void cpu_reset(CPUState *env)
 {
     tlb_flush(env, 1);
+
     bool privilege = env->privilege_architecture_1_10;
     target_ulong mhartid = env->mhartid;
     target_ulong misa_mask = env->misa_mask;
+    int32_t custom_instructions_count = env->custom_instructions_count;
+    custom_instruction_descriptor_t custom_instructions[CPU_CUSTOM_INSTRUCTIONS_LIMIT];
+    memcpy(custom_instructions, env->custom_instructions, sizeof(custom_instruction_descriptor_t) * CPU_CUSTOM_INSTRUCTIONS_LIMIT);
+
     memset(env, 0, offsetof(CPUState, breakpoints));
 
     env->mhartid = mhartid;
@@ -45,6 +51,8 @@ void cpu_reset(CPUState *env)
     env->pc = DEFAULT_RSTVEC;
     env->exception_index = EXCP_NONE;
     set_default_nan_mode(1, &env->fp_status);
+    env->custom_instructions_count = custom_instructions_count;
+    memcpy(env->custom_instructions, custom_instructions, sizeof(custom_instruction_descriptor_t) * CPU_CUSTOM_INSTRUCTIONS_LIMIT);
 }
 
 /*
@@ -403,4 +411,10 @@ int cpu_init(const char *cpu_model)
     cpu_reset(cpu);
 
     return 0;
+}
+
+// returns 1 if the PC has already been modified by the instruction
+uint32_t HELPER(handle_custom_instruction)(uint64_t id, uint64_t opcode)
+{
+    return tlib_handle_custom_instruction(id, opcode);
 }

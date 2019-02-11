@@ -11,4 +11,6 @@ uint64_t tlib_read_csr(uint64_t csr);
 void tlib_write_csr(uint64_t csr, uint64_t value);
 void tlib_mip_changed(uint64_t value);
 
+int32_t tlib_handle_custom_instruction(uint64_t id, uint64_t opcode);
+
 #endif

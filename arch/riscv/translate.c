@@ -75,7 +75,7 @@ static const char * const fpr_regnames[] = {
 #define CASE_OP_32_64(X) case X
 #endif
 
-static inline void sync_pc(DisasContext *ctx)
+static inline void gen_sync_pc(DisasContext *ctx)
 {
     tcg_gen_movi_tl(cpu_pc, ctx->pc);
 }
@@ -97,7 +97,7 @@ static inline uint64_t sextract64(uint64_t value, uint8_t start, uint8_t length)
 
 static inline void generate_exception(DisasContext *ctx, int excp)
 {
-    sync_pc(ctx);
+    gen_sync_pc(ctx);
     TCGv_i32 helper_tmp = tcg_const_i32(excp);
     gen_helper_raise_exception(cpu_env, helper_tmp);
     tcg_temp_free_i32(helper_tmp);
@@ -106,7 +106,7 @@ static inline void generate_exception(DisasContext *ctx, int excp)
 static inline void generate_exception_mbadaddr(DisasContext *ctx, int excp)
 {
     generate_log(ctx->pc, "exception_badaddr");
-    sync_pc(ctx);
+    gen_sync_pc(ctx);
     TCGv_i32 helper_tmp = tcg_const_i32(excp);
     gen_helper_raise_exception_mbadaddr(cpu_env, helper_tmp, cpu_pc);
     tcg_temp_free_i32(helper_tmp);
@@ -652,7 +652,7 @@ static void gen_load(DisasContext *ctx, uint32_t opc, int rd, int rs1,
 
     tcg_gen_addi_tl(t0, t0, imm);
 
-    sync_pc(ctx);
+    gen_sync_pc(ctx);
     switch (opc) {
 
     case OPC_RISC_LB:
@@ -691,7 +691,7 @@ static void gen_load(DisasContext *ctx, uint32_t opc, int rd, int rs1,
 static void gen_store(DisasContext *ctx, uint32_t opc, int rs1, int rs2,
         target_long imm)
 {
-    sync_pc(ctx);
+    gen_sync_pc(ctx);
 
     TCGv t0 = tcg_temp_new();
     TCGv dat = tcg_temp_new();
@@ -818,7 +818,7 @@ static void gen_atomic(CPUState *env, DisasContext *ctx, uint32_t opc,
     gen_get_gpr(source1, rs1);
     gen_get_gpr(source2, rs2);
 
-    sync_pc(ctx);
+    gen_sync_pc(ctx);
 
     gen_helper_acquire_global_memory_lock(cpu_env);
 
@@ -1377,7 +1377,7 @@ static void gen_system(DisasContext *ctx, uint32_t opc,
     rs1_pass = tcg_temp_new();
     imm_rs1 = tcg_temp_new();
     gen_get_gpr(source1, rs1);
-    sync_pc(ctx);
+    gen_sync_pc(ctx);
     tcg_gen_movi_tl(rs1_pass, rs1);
     tcg_gen_movi_tl(csr_store, csr); /* copy into temp reg to feed to helper */
 
@@ -1886,7 +1886,7 @@ static int disas_insn(CPUState *env, DisasContext *ctx)
             TCGv_i64 opcode = tcg_const_i64(ctx->opcode & ((1ul << (8 * ci->length)) - 1));
             TCGv_i32 pc_modified = tcg_temp_new_i32();
 
-            sync_pc(ctx);
+            gen_sync_pc(ctx);
             gen_helper_handle_custom_instruction(pc_modified, id, opcode);
 
             int exit_tb_label = gen_new_label();
@@ -1895,7 +1895,7 @@ static int disas_insn(CPUState *env, DisasContext *ctx)
             // this is executed conditionally - only if `handle_custom_instruction` returns 0
             // otherwise `cpu_pc` points to a proper value and should not be overwritten by `ctx->pc`
             ctx->pc = ctx->next_pc;
-            sync_pc(ctx);
+            gen_sync_pc(ctx);
 
             gen_set_label(exit_tb_label);
             gen_exit_tb_no_chaining(ctx->tb);
@@ -2027,7 +2027,7 @@ void gen_intermediate_code(CPUState *env,
     }
     if (env->singlestep_enabled && ctx.bstate != BS_BRANCH) {
         if (ctx.bstate == BS_NONE) {
-            sync_pc(&ctx);
+            gen_sync_pc(&ctx);
         }
         gen_helper_raise_exception_debug(cpu_env);
     } else {
@@ -2036,7 +2036,7 @@ void gen_intermediate_code(CPUState *env,
             gen_goto_tb(&ctx, 0, ctx.pc);
             break;
         case BS_NONE: /* handle end of page - DO NOT CHAIN. See gen_goto_tb. */
-            sync_pc(&ctx);
+            gen_sync_pc(&ctx);
             gen_exit_tb_no_chaining(ctx.tb);
             break;
         case BS_BRANCH: /* ops using BS_BRANCH generate own exit seq */

@@ -165,7 +165,7 @@ typedef struct CPUBreakpoint {
     /* in order to avoid passing too many arguments to the MMIO         \
        helpers, we store some rarely used information in the CPU        \
        context) */                                                      \
-    uintptr_t mem_io_pc; /* host pc at which the memory was         \
+    uintptr_t mem_io_pc; /* host pc at which the memory was             \
                                 accessed */                             \
     target_ulong mem_io_vaddr; /* target virtual addr at which the      \
                                      memory was accessed */             \
@@ -192,7 +192,7 @@ typedef struct CPUBreakpoint {
                           disabling block chaining */                   \
     int block_finished_hook_present;                                    \
     atomic_memory_state_t* atomic_memory_state;                         \
-    int id; \
+    int id;                                                             \
     /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                  \
     struct TranslationBlock *current_tb; /* currently executing TB  */  \
     CPU_COMMON_TLB                                                      \

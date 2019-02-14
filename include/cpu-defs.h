@@ -153,53 +153,59 @@ typedef struct CPUBreakpoint {
 } CPUBreakpoint;
 
 #define CPU_TEMP_BUF_NLONGS 128
-#define CPU_COMMON                                                      \
+#define CPU_COMMON                                                           \
+    /* --------------------------------------- */                            \
+    /* warning: cleared by CPU reset           */                            \
+    /* --------------------------------------- */                            \
+    /* instruction counting is used to execute callback after given          \
+       number of instructions */                                             \
+    int32_t instructions_count_threshold;                                    \
+    int32_t instructions_count_value;                                        \
+    int32_t instructions_count_total_value;                                  \
+    /* soft mmu support */                                                   \
+    /* in order to avoid passing too many arguments to the MMIO              \
+       helpers, we store some rarely used information in the CPU             \
+       context) */                                                           \
+    uintptr_t mem_io_pc; /* host pc at which the memory was                  \
+                                accessed */                                  \
+    target_ulong mem_io_vaddr; /* target virtual addr at which the           \
+                                     memory was accessed */                  \
+    uint32_t wfi; /* Nonzero if the CPU is in suspend state */               \
+    uint32_t interrupt_request;                                              \
+    volatile sig_atomic_t exit_request;                                      \
+    int tb_restart_request;                                                  \
+                                                                             \
+    /* --------------------------------------- */                            \
+    /* from this point: preserved by CPU reset */                            \
+    /* --------------------------------------- */                            \
+    /* ice debug support */                                                  \
+    QTAILQ_HEAD(breakpoints_head, CPUBreakpoint) breakpoints;                \
+    int singlestep_enabled;                                                  \
+    /* Core interrupt code */                                                \
+    jmp_buf jmp_env;                                                         \
+    int exception_index;                                                     \
+    int nr_cores;  /* number of cores within this CPU package */             \
+    int nr_threads;/* number of threads within this CPU */                   \
+    /* user data */                                                          \
+    void *opaque;                                                            \
+    /* chaining is enabled by default */                                     \
+    int chaining_disabled;                                                   \
+    /* tb cache is enabled by default */                                     \
+    int tb_cache_disabled;                                                   \
+    /* indicates if the block_finished hook is registered, implicitly        \
+                          disabling block chaining */                        \
+    int block_finished_hook_present;                                         \
+    atomic_memory_state_t* atomic_memory_state;                              \
+    int id;                                                                  \
+    /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                       \
+    struct TranslationBlock *current_tb; /* currently executing TB  */       \
+    CPU_COMMON_TLB                                                           \
+    struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];                \
+    /* buffer for temporaries in the code generator */                       \
+    long temp_buf[CPU_TEMP_BUF_NLONGS];                                      \
     /* when set any exception will force `cpu_exec` to finish immediately */ \
-    int32_t return_on_exception;                                        \
-    /* instruction counting is used to execute callback after given     \
-       number of instructions */                                        \
-    int32_t instructions_count_threshold;                               \
-    int32_t instructions_count_value;                                   \
-    int32_t instructions_count_total_value;                             \
-    /* soft mmu support */                                              \
-    /* in order to avoid passing too many arguments to the MMIO         \
-       helpers, we store some rarely used information in the CPU        \
-       context) */                                                      \
-    uintptr_t mem_io_pc; /* host pc at which the memory was             \
-                                accessed */                             \
-    target_ulong mem_io_vaddr; /* target virtual addr at which the      \
-                                     memory was accessed */             \
-    uint32_t wfi; /* Nonzero if the CPU is in suspend state */          \
-    uint32_t interrupt_request;                                         \
-    volatile sig_atomic_t exit_request;                                 \
-    int tb_restart_request;                                             \
-    /* from this point: preserved by CPU reset */                       \
-    /* ice debug support */                                             \
-    QTAILQ_HEAD(breakpoints_head, CPUBreakpoint) breakpoints;           \
-    int singlestep_enabled;                                             \
-    /* Core interrupt code */                                           \
-    jmp_buf jmp_env;                                                    \
-    int exception_index;                                                \
-    int nr_cores;  /* number of cores within this CPU package */        \
-    int nr_threads;/* number of threads within this CPU */              \
-    /* user data */                                                     \
-    void *opaque;                                                       \
-    /* chaining is enabled by default */                                \
-    int chaining_disabled;                                              \
-    /* tb cache is enabled by default */                                \
-    int tb_cache_disabled;                                              \
-    /* indicates if the block_finished hook is registered, implicitly   \
-                          disabling block chaining */                   \
-    int block_finished_hook_present;                                    \
-    atomic_memory_state_t* atomic_memory_state;                         \
-    int id;                                                             \
-    /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                  \
-    struct TranslationBlock *current_tb; /* currently executing TB  */  \
-    CPU_COMMON_TLB                                                      \
-    struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];           \
-    /* buffer for temporaries in the code generator */                  \
-    long temp_buf[CPU_TEMP_BUF_NLONGS];                                 \
-                                                                        \
+    int32_t return_on_exception;                                             \
+                                                                             \
 
 #endif
 

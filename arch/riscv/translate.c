@@ -1874,7 +1874,8 @@ static void decode_RV32_64G(CPUState *env, DisasContext *ctx)
 static int disas_insn(CPUState *env, DisasContext *ctx)
 {
     /* handle custom instructions */
-    for(int i = 0; i < env->custom_instructions_count; i++)
+    int i;
+    for(i = 0; i < env->custom_instructions_count; i++)
     {
         custom_instruction_descriptor_t* ci = &env->custom_instructions[i];
 

@@ -1884,7 +1884,7 @@ static int disas_insn(CPUState *env, DisasContext *ctx)
             ctx->next_pc = ctx->pc + ci->length;
 
             TCGv_i64 id = tcg_const_i64(ci->id);
-            TCGv_i64 opcode = tcg_const_i64(ctx->opcode & ((1ul << (8 * ci->length)) - 1));
+            TCGv_i64 opcode = tcg_const_i64(ctx->opcode & ((1ULL << (8 * ci->length)) - 1));
             TCGv_i32 pc_modified = tcg_temp_new_i32();
 
             gen_sync_pc(ctx);

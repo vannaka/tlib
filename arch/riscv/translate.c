@@ -105,7 +105,6 @@ static inline void generate_exception(DisasContext *ctx, int excp)
 
 static inline void generate_exception_mbadaddr(DisasContext *ctx, int excp)
 {
-    generate_log(ctx->pc, "exception_badaddr");
     gen_sync_pc(ctx);
     TCGv_i32 helper_tmp = tcg_const_i32(excp);
     gen_helper_raise_exception_mbadaddr(cpu_env, helper_tmp, cpu_pc);
@@ -189,8 +188,6 @@ static void gen_fsgnj(DisasContext *ctx, uint32_t rd, uint32_t rs1, uint32_t rs2
     TCGv t0 = tcg_temp_new();
     int fp_ok = gen_new_label();
     int done = gen_new_label();
-
-generate_log(ctx->pc, "gen_fsgnj has some loads, so we should check if it maybe fails!");
 
     // check MSTATUS.FS
     tcg_gen_ld_tl(t0, cpu_env, offsetof(CPUState, mstatus));
@@ -454,7 +451,6 @@ static void gen_arith(DisasContext *ctx, uint32_t opc, int rd, int rs1,
 static void gen_arith_imm(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, target_long imm)
 {
-generate_log(ctx->pc, "we are in gen_arith_imm");
     TCGv source1;
     source1 = tcg_temp_new();
     gen_get_gpr(source1, rs1);
@@ -646,8 +642,6 @@ static void gen_load(DisasContext *ctx, uint32_t opc, int rd, int rs1,
     TCGv t0 = tcg_temp_new();
     TCGv t1 = tcg_temp_new();
 
-    generate_log(ctx->pc, "gen_load");
-
     gen_get_gpr(t0, rs1);
 
     tcg_gen_addi_tl(t0, t0, imm);
@@ -685,7 +679,6 @@ static void gen_load(DisasContext *ctx, uint32_t opc, int rd, int rs1,
     gen_set_gpr(rd, t1);
     tcg_temp_free(t0);
     tcg_temp_free(t1);
-    generate_log(ctx->pc, "after gen_load");
 }
 
 static void gen_store(DisasContext *ctx, uint32_t opc, int rs1, int rs2,
@@ -698,7 +691,6 @@ static void gen_store(DisasContext *ctx, uint32_t opc, int rs1, int rs2,
     gen_get_gpr(t0, rs1);
     tcg_gen_addi_tl(t0, t0, imm);
     gen_get_gpr(dat, rs2);
- generate_log(ctx->pc, "gen_store");
 
     switch (opc) {
     case OPC_RISC_SB:
@@ -718,8 +710,6 @@ static void gen_store(DisasContext *ctx, uint32_t opc, int rs1, int rs2,
         break;
     }
 
- generate_log(ctx->pc, "after gen_store");
-
     tcg_temp_free(t0);
     tcg_temp_free(dat);
 }
@@ -732,7 +722,6 @@ static void gen_fp_load(DisasContext *ctx, uint32_t opc, int rd,
     int done = gen_new_label();
 
     // check MSTATUS.FS
-    generate_log(ctx->pc, "gen_fp_load has some loads so we should check it");
     tcg_gen_ld_tl(t0, cpu_env, offsetof(CPUState, mstatus));
     tcg_gen_andi_tl(t0, t0, MSTATUS_FS);
     tcg_gen_brcondi_tl(TCG_COND_NE, t0, 0x0, fp_ok);
@@ -801,7 +790,6 @@ static void gen_fp_store(DisasContext *ctx, uint32_t opc, int rs1,
 static void gen_atomic(CPUState *env, DisasContext *ctx, uint32_t opc,
                       int rd, int rs1, int rs2)
 {
-    generate_log(ctx->pc, "gen_atomic");
     if(!riscv_has_ext(env, RISCV_FEATURE_RVA)) {
         tlib_log(LOG_LEVEL_ERROR, "RISC-V A instruction set is not enabled for this CPU!");
         kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
@@ -949,7 +937,6 @@ static void gen_atomic(CPUState *env, DisasContext *ctx, uint32_t opc,
     gen_helper_release_global_memory_lock(cpu_env);
 
     gen_set_label(done);
-    generate_log(ctx->pc, "after gen_atomic");
     gen_set_gpr(rd, dat);
     tcg_temp_free(source1);
     tcg_temp_free(source2);
@@ -959,8 +946,6 @@ static void gen_atomic(CPUState *env, DisasContext *ctx, uint32_t opc,
 static void gen_fp_fmadd(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, int rs2, int rs3, int rm)
 {
-    generate_log(ctx->pc,"we are in a floating point op, might be wrong!");
-
     TCGv_i64 rm_reg = tcg_temp_new_i64();
     tcg_gen_movi_i64(rm_reg, rm);
 
@@ -983,7 +968,6 @@ static void gen_fp_fmadd(DisasContext *ctx, uint32_t opc, int rd,
 static void gen_fp_fmsub(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, int rs2, int rs3, int rm)
 {
-    generate_log(ctx->pc, "we are in a floating point op, might be wrong!");
     TCGv_i64 rm_reg = tcg_temp_new_i64();
     tcg_gen_movi_i64(rm_reg, rm);
 
@@ -1006,8 +990,6 @@ static void gen_fp_fmsub(DisasContext *ctx, uint32_t opc, int rd,
 static void gen_fp_fnmsub(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, int rs2, int rs3, int rm)
 {
-    generate_log(ctx->pc, "we are in a floating point op, might be wrong!");
-
     TCGv_i64 rm_reg = tcg_temp_new_i64();
     tcg_gen_movi_i64(rm_reg, rm);
 
@@ -1030,8 +1012,6 @@ static void gen_fp_fnmsub(DisasContext *ctx, uint32_t opc, int rd,
 static void gen_fp_fnmadd(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, int rs2, int rs3, int rm)
 {
-    generate_log(ctx->pc, "we are in a floating point op, might be wrong!");
-
     TCGv_i64 rm_reg = tcg_temp_new_i64();
     tcg_gen_movi_i64(rm_reg, rm);
 
@@ -1057,7 +1037,6 @@ static void gen_fp_arith(DisasContext *ctx, uint32_t opc, int rd,
     TCGv_i64 rm_reg = tcg_temp_new_i64();
     TCGv write_int_rd = tcg_temp_new();
     tcg_gen_movi_i64(rm_reg, rm);
-    generate_log(ctx->pc, "gen_fp_arith: most probably something bad might happen for floats!!!!");
     switch (opc) {
     case OPC_RISC_FADD_S:
         gen_helper_fadd_s(cpu_fpr[rd], cpu_env, cpu_fpr[rs1], cpu_fpr[rs2],
@@ -1754,7 +1733,6 @@ static void decode_RV32_64G(CPUState *env, DisasContext *ctx)
     int rd;
     uint32_t op;
     target_long imm;
-    generate_log(ctx->pc, "decode_RV32_64G, ctx->opcode = 0x%08X at pc=0x%08X", ctx->opcode, ctx->pc);
 
     /* We do not do misaligned address check here: the address should never be
      * misaligned at this point. Instructions that set PC must do the check,
@@ -1766,8 +1744,6 @@ static void decode_RV32_64G(CPUState *env, DisasContext *ctx)
     rs2 = GET_RS2(ctx->opcode);
     rd = GET_RD(ctx->opcode);
     imm = GET_IMM(ctx->opcode);
-
-    generate_log(ctx->pc, "decode_RV32_64G op=0x%X", op);
 
     switch (op) {
     case OPC_RISC_LUI:
@@ -1788,11 +1764,9 @@ static void decode_RV32_64G(CPUState *env, DisasContext *ctx)
         gen_jal(env, ctx, rd, imm);
         break;
     case OPC_RISC_JALR:
-        generate_log(ctx->pc, "going to jalr");
         gen_jalr(env, ctx, MASK_OP_JALR(ctx->opcode), rd, rs1, imm);
         break;
     case OPC_RISC_BRANCH:
-        generate_log(ctx->pc, "going to branch, rs1=%X rs2=%X imm=%lX", rs1, rs2, GET_B_IMM(ctx->opcode));
         gen_branch(env, ctx, MASK_OP_BRANCH(ctx->opcode), rs1, rs2,
                    GET_B_IMM(ctx->opcode));
         break;
@@ -1868,7 +1842,6 @@ static void decode_RV32_64G(CPUState *env, DisasContext *ctx)
         kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
-    generate_log(ctx->pc, "after RV32_64G");
 }
 
 static int disas_insn(CPUState *env, DisasContext *ctx)
@@ -1980,10 +1953,6 @@ void gen_intermediate_code(CPUState *env,
 
         ctx.opcode = ldl_code(ctx.pc);
 
-        char msg[1024];
-        sprintf(msg, "opcode 0x%08X at pc=0x" TARGET_FMT_plx " [tcg id=%d]", ctx.opcode, ctx.pc, (int)(gen_opc_ptr - tcg->gen_opc_buf));
-        generate_log(ctx.pc, "---> tcg: we are executing %s", msg);
-
         tb->prev_size = tb->size;
         tb->size += disas_insn(env, &ctx);
         tb->icount++;
@@ -1995,8 +1964,6 @@ void gen_intermediate_code(CPUState *env,
             // so it can be used later when restoring the block
             tb->original_size = tb->size;
         }
-
-    	generate_log(ctx.pc, "<--- tcg: we are done executing %s", msg);
 
         if (tcg_check_temp_count()) {
             tlib_abortf("TCG temps leak detected at PC %08X", ctx.pc);

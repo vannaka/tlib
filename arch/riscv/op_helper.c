@@ -755,13 +755,14 @@ void do_unaligned_access(target_ulong addr, int access_type, int mmu_idx,
     env->badaddr = addr;
     switch(access_type) {
         case MMU_DATA_LOAD:
-            helper_raise_exception(env, RISCV_EXCP_LOAD_ADDR_MIS);
+           do_raise_exception_err(env,  RISCV_EXCP_LOAD_ADDR_MIS, (uintptr_t)retaddr, 1);
             break;
         case MMU_DATA_STORE:
-            helper_raise_exception(env, RISCV_EXCP_STORE_AMO_ADDR_MIS);
+            do_raise_exception_err(env, RISCV_EXCP_STORE_AMO_ADDR_MIS, (uintptr_t)retaddr, 1);
             break;
         case MMU_INST_FETCH:
-            helper_raise_exception(env, RISCV_EXCP_INST_ADDR_MIS);
+            // we don't restore intructions count / fire block_end hooks on translation
+            do_raise_exception_err(env, RISCV_EXCP_INST_ADDR_MIS, 0, 0);
             break;
         default:
             tlib_abort("Illegal memory access type!");

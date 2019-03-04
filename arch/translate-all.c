@@ -236,7 +236,7 @@ int cpu_restore_state(CPUState *env,
         j--;
 
     k = j;
-    while (k > 0)
+    while (k >= 0)
     {
       instructions_executed_so_far += tcg->gen_opc_instr_start[k];
       k--;

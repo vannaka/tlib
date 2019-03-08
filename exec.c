@@ -704,10 +704,14 @@ TranslationBlock *tb_gen_code(CPUState *env,
     code_gen_ptr = (void *)(((uintptr_t)code_gen_ptr + code_gen_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
 
     /* check next page if needed */
-    virt_page2 = (pc + tb->size - 1) & TARGET_PAGE_MASK;
     phys_page2 = -1;
-    if ((pc & TARGET_PAGE_MASK) != virt_page2) {
-        phys_page2 = get_page_addr_code(env, virt_page2);
+    if(tb->size > 0) 
+    {
+        // size will be 0 when tb contains a breakpoint instruction; in such case no other instructions are generated and there is no page2 at all
+        virt_page2 = (pc + tb->size - 1) & TARGET_PAGE_MASK;
+        if ((pc & TARGET_PAGE_MASK) != virt_page2) {
+            phys_page2 = get_page_addr_code(env, virt_page2);
+        }
     }
     tb_link_page(tb, phys_pc, phys_page2);
     return tb;

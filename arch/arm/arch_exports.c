@@ -144,4 +144,104 @@ uint32_t tlib_get_xpsr()
 
 EXC_INT_0(uint32_t, tlib_get_xpsr)
 
+uint32_t tlib_get_fault_status()
+{
+    return cpu->v7m.fault_status;
+}
+
+EXC_INT_0(uint32_t, tlib_get_fault_status)
+
+void tlib_set_fault_status(uint32_t value)
+{
+    cpu->v7m.fault_status = value;
+}
+
+EXC_VOID_1(tlib_set_fault_status, uint32_t, value)
+
+uint32_t tlib_get_memory_fault_address()
+{
+    return cpu->cp15.c6_data;
+}
+
+EXC_INT_0(uint32_t, tlib_get_memory_fault_address)
+
+uint32_t tlib_is_mpu_enabled()
+{
+    return cpu->cp15.c1_sys & 0x1;
+}
+
+EXC_INT_0(uint32_t, tlib_is_mpu_enabled)
+
+void tlib_enable_mpu(int32_t enabled)
+{
+    cpu->cp15.c1_sys |= enabled ? 1 : 0;
+    tlb_flush(cpu, 1);
+}
+
+EXC_VOID_1(tlib_enable_mpu, int32_t, enabled)
+
+// This function mimics mpu configuration through the "Region Base Address" register
+void tlib_set_mpu_region_base_address(uint32_t value)
+{
+    if (value & 0x10) {
+        /* If VALID (0x10) bit is set, we change the region number to zero-extended value of youngest 4 bits */
+        cpu->cp15.c6_region_number = value & 0xF;
+    }
+    cpu->cp15.c6_base_address[cpu->cp15.c6_region_number] = value & 0xFFFFFFE0;
+    tlib_printf(LOG_LEVEL_DEBUG, "MPU: Set base address 0x%x, for region %lld", value & 0xFFFFFFE0, cpu->cp15.c6_region_number);
+    tlb_flush(cpu, 1);
+}
+
+EXC_VOID_1(tlib_set_mpu_region_base_address, uint32_t, value)
+
+// This function mimics mpu configuration through the "Region Attribute and Size" register
+void tlib_set_mpu_region_size_and_enable(uint32_t value)
+{
+    uint32_t index = cpu->cp15.c6_region_number;
+    cpu->cp15.c6_size_and_enable[index] = value & MPU_SIZE_AND_ENABLE_FIELD_MASK;
+    /* SRD not supported */
+    cpu->cp15.c6_access_control[index] = value >> 16;
+    tlib_printf(LOG_LEVEL_DEBUG, "MPU: Set access control 0x%x, permissions 0x%x, size 0x%x, enable 0x%x, for region %lld", value >> 16, ((value >> 16) & MPU_PERMISSION_FIELD_MASK) >> 8 , (value & MPU_SIZE_FIELD_MASK) >> 1, value & MPU_REGION_ENABLED_BIT, index);
+    tlb_flush(cpu, 1);
+}
+
+EXC_VOID_1(tlib_set_mpu_region_size_and_enable, uint32_t, value)
+
+void tlib_set_mpu_region_number(uint32_t value)
+{
+    if (value >= MAX_MPU_REGIONS) {
+        tlib_printf(LOG_LEVEL_ERROR, "MPU: Trying to use non-existent MPU region. Number of regions: %d, faulting region number: %d", MAX_MPU_REGIONS, value);
+        return;
+    }
+    cpu->cp15.c6_region_number = value;
+    tlb_flush(cpu, 1);
+}
+
+EXC_VOID_1(tlib_set_mpu_region_number, uint32_t, value)
+
+// This function mimics mpu configuration through the "Region Base Address" register
+uint32_t tlib_get_mpu_region_base_address()
+{
+    return cpu->cp15.c6_base_address[cpu->cp15.c6_region_number] | cpu->cp15.c6_region_number;
+}
+
+EXC_INT_0(uint32_t, tlib_get_mpu_region_base_address)
+
+// This function mimics mpu configuration through the "Region Attribute and Size" register
+uint32_t tlib_get_mpu_region_size_and_enable()
+{
+    uint32_t index = cpu->cp15.c6_region_number;
+    /* SRD not supported */
+    return (cpu->cp15.c6_access_control[index] << 16) | cpu->cp15.c6_size_and_enable[index];
+}
+
+EXC_INT_0(uint32_t, tlib_get_mpu_region_size_and_enable)
+
+uint32_t tlib_get_mpu_region_number()
+{
+    return cpu->cp15.c6_region_number;
+}
+
+EXC_INT_0(uint32_t, tlib_get_mpu_region_number)
+
 #endif

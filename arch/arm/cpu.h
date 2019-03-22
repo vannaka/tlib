@@ -47,6 +47,8 @@
 #define EXCP_BKPT           7
 #define EXCP_KERNEL_TRAP    9    /* Jumped to kernel code page.  */
 #define EXCP_STREX          10
+#define EXCP_NOCP           17   /* NOCP usage fault */
+#define EXCP_INVSTATE       18   /* INVSTATE usage fault */
 
 #define ARMV7M_EXCP_RESET   1
 #define ARMV7M_EXCP_NMI     2
@@ -58,6 +60,30 @@
 #define ARMV7M_EXCP_DEBUG   12
 #define ARMV7M_EXCP_PENDSV  14
 #define ARMV7M_EXCP_SYSTICK 15
+
+/* MemManage Fault : bits 0:7 of CFSR */
+#define MEM_FAULT_MMARVALID     1 << 7
+#define MEM_FAULT_MSTKERR       1 << 4
+#define MEM_FAULT_MUNSTKERR     1 << 3
+#define MEM_FAULT_DACCVIOL      1 << 1
+#define MEM_FAULT_IACCVIOL      1 << 0
+/* Usage Fault : bits 16-31 of CFSR */
+#define USAGE_FAULT_OFFSET      16
+#define USAGE_FAULT_DIVBYZERO   (1 << 9) << USAGE_FAULT_OFFSET
+#define USAGE_FAULT_UNALIGNED   (1 << 8) << USAGE_FAULT_OFFSET
+#define USAGE_FAULT_NOPC        (1 << 3) << USAGE_FAULT_OFFSET
+#define USAGE_FAULT_INVPC       (1 << 2) << USAGE_FAULT_OFFSET
+#define USAGE_FAULT_INVSTATE    (1 << 1) << USAGE_FAULT_OFFSET
+#define USAGE_FAULT_UNDEFINSTR  (1 << 0) << USAGE_FAULT_OFFSET
+
+#define in_privileged_mode(ENV) (((ENV)->v7m.control & 0x1) == 0 || (ENV)->v7m.handler_mode)
+
+#define MAX_MPU_REGIONS                 16
+#define MPU_SIZE_FIELD_MASK             0x3E
+#define MPU_REGION_ENABLED_BIT          0x1
+#define MPU_SIZE_AND_ENABLE_FIELD_MASK  (MPU_SIZE_FIELD_MASK | MPU_REGION_ENABLED_BIT)
+#define MPU_NEVER_EXECUTE_BIT           0x1000
+#define MPU_PERMISSION_FIELD_MASK       0x700
 
 typedef struct DisasContext {
     DisasContextBase base;
@@ -165,9 +191,13 @@ typedef struct CPUState {
                                     MPU write buffer control.  */
         uint32_t c5_insn;        /* Fault status registers.  */
         uint32_t c5_data;
-        uint32_t c6_region[8];   /* MPU base/size registers.  */
         uint32_t c6_insn;        /* Fault address registers.  */
         uint32_t c6_data;
+        uint32_t c6_addr;
+        uint32_t c6_base_address[MAX_MPU_REGIONS]; /* MPU base register.  */
+        uint32_t c6_size_and_enable[MAX_MPU_REGIONS]; /* MPU size/enable register.  */
+        uint32_t c6_access_control[MAX_MPU_REGIONS]; /* MPU access control register. */
+        uint32_t c6_region_number;
         uint32_t c7_par;         /* Translation result. */
         uint32_t c9_insn;        /* Cache lockdown registers.  */
         uint32_t c9_data;
@@ -195,6 +225,7 @@ typedef struct CPUState {
         uint32_t vecbase;
         uint32_t basepri;
         uint32_t control;
+        uint32_t fault_status;
         uint32_t current_sp;
         uint32_t exception;
         uint32_t pending_exception;
@@ -205,6 +236,7 @@ typedef struct CPUState {
         /* msplim/psplim are armv8-m specific */
         uint32_t msplim;
         uint32_t psplim;
+        uint32_t handler_mode;
     } v7m;
 #endif
 
@@ -380,6 +412,7 @@ enum arm_cpu_mode {
 #define ARM_EXC_RETURN_NFPCA_MASK  (1 << ARM_EXC_RETURN_NFPCA)
 #define ARM_VFP_FPEXC_FPUEN_MASK   (1 << ARM_VFP_FPEXC_FPUEN)
 #define ARM_FPDSCR_VALUES_MASK     0x07c00000
+#define ARM_EXC_RETURN_HANDLER_MODE_MASK 0x8
 
 #define ARM_CPACR_CP10          20
 #define ARM_CPACR_CP10_MASK     (3 << ARM_CPACR_CP10)

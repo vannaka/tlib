@@ -49,6 +49,10 @@ static uint32_t arm1176_cp15_c0_c2[8] =
 { 0x0140011, 0x12002111, 0x11231121, 0x01102131, 0x01141, 0, 0, 0 };
 
 static uint32_t cpu_arm_find_by_name(const char *name);
+static int get_phys_addr(CPUState *env, uint32_t address,
+                                int access_type, int is_user,
+                                uint32_t *phys_ptr, int *prot,
+                                target_ulong *page_size, int no_page_fault);
 
 static inline void set_feature(CPUState *env, int feature)
 {
@@ -230,6 +234,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_THUMB2);
         set_feature(env, ARM_FEATURE_V7);
         set_feature(env, ARM_FEATURE_THUMB_DIV);
+        set_feature(env, ARM_FEATURE_MPU);
 
         // TODO cortex-m4, check if all should be on
         set_feature(env, ARM_FEATURE_VFP);
@@ -550,10 +555,27 @@ static inline void arm_announce_stack_change()
 }
 
 #ifdef TARGET_PROTO_ARM_M
-static void v7m_push(CPUState *env, uint32_t val)
+static int v7m_push(CPUState *env, uint32_t val)
 {
-    env->regs[13] -= 4;
-    stl_phys(env->regs[13], val);
+    uint32_t phys_ptr = 0;
+    target_ulong page_size = 0;
+    int ret, prot = 0;
+    uint32_t address = env->regs[13] - 4;
+    ret = get_phys_addr(env, address, ACCESS_DATA_STORE, !in_privileged_mode(env), &phys_ptr, &prot, &page_size, false);
+    if(ret == TRANSLATE_SUCCESS) {
+        env->regs[13] = address;
+        stl_phys(env->regs[13], val);
+    } else {
+        // Stacking error - MSTKERR
+        env->cp15.c5_data = ret;
+        if (arm_feature(env, ARM_FEATURE_V6)) {
+            env->cp15.c5_data |= (1 << 11);
+        }
+        env->cp15.c6_data = address;
+        env->v7m.fault_status |= MEM_FAULT_MSTKERR;
+        return 1;
+    }
+    return 0;
 }
 
 static uint32_t v7m_pop(CPUState *env)
@@ -636,6 +658,11 @@ void do_v7m_exception_exit(CPUState *env)
        if there is a mismatch.  */
     /* ??? Likewise for mismatches between the CONTROL register and the stack
        pointer.  */
+    if((type & ARM_EXC_RETURN_HANDLER_MODE_MASK) != 0) {
+        env->v7m.handler_mode = false;
+    } else {
+        env->v7m.handler_mode = true;
+    }
 }
 
 void HELPER(fp_lsp)(CPUState * env)
@@ -661,13 +688,12 @@ static void do_interrupt_v7m(CPUState *env)
     uint32_t lr;
     uint32_t addr;
     int nr;
+    int stack_status = 0;
 
     lr = 0xfffffff1;
-    if (env->v7m.current_sp) {
-        lr |= 4;
-    }
     if (env->v7m.exception == 0) {
-        lr |= 8;
+        lr |= 0x8;
+        lr |= (env->v7m.current_sp != 0) << 2;
     }
     if (env->v7m.control & ARM_CONTROL_FPCA_MASK) {
         lr ^= ARM_EXC_RETURN_NFPCA_MASK;
@@ -680,13 +706,27 @@ static void do_interrupt_v7m(CPUState *env)
     switch (env->exception_index) {
     case EXCP_UDEF:
         tlib_nvic_set_pending_irq(ARMV7M_EXCP_USAGE);
+        env->v7m.fault_status |= USAGE_FAULT_UNDEFINSTR;
+        return;
+    case EXCP_NOCP:
+        tlib_nvic_set_pending_irq(ARMV7M_EXCP_USAGE);
+        env->v7m.fault_status |= USAGE_FAULT_NOPC;
+        return;
+    case EXCP_INVSTATE:
+        tlib_nvic_set_pending_irq(ARMV7M_EXCP_USAGE);
+        env->v7m.fault_status |= USAGE_FAULT_INVSTATE;
         return;
     case EXCP_SWI:
-//	env->regs[15] += 2;
         tlib_nvic_set_pending_irq(ARMV7M_EXCP_SVC);
         return;
     case EXCP_PREFETCH_ABORT:
+        /* Access violation */
+        env->v7m.fault_status |= MEM_FAULT_IACCVIOL;
+        tlib_nvic_set_pending_irq(ARMV7M_EXCP_MEM);
+        return;
     case EXCP_DATA_ABORT:
+        /* ACK faulting address and set Data acces violation */
+        env->v7m.fault_status |= MEM_FAULT_MMARVALID | MEM_FAULT_DACCVIOL;
         tlib_nvic_set_pending_irq(ARMV7M_EXCP_MEM);
         return;
     case EXCP_BKPT:
@@ -706,6 +746,7 @@ static void do_interrupt_v7m(CPUState *env)
         return; /* Never happens.  Keep compiler happy.  */
     }
 
+    env->v7m.handler_mode = true;
     env->condexec_bits = 0;
 
     /* Align stack pointer.  */
@@ -745,15 +786,17 @@ static void do_interrupt_v7m(CPUState *env)
         }
     }
     /* Switch to the handler mode.  */
-    v7m_push(env, xpsr);
-    v7m_push(env, env->regs[15]);
-    v7m_push(env, env->regs[14]);
-    v7m_push(env, env->regs[12]);
-    v7m_push(env, env->regs[3]);
-    v7m_push(env, env->regs[2]);
-    v7m_push(env, env->regs[1]);
-    v7m_push(env, env->regs[0]);
+    stack_status |= v7m_push(env, xpsr);
+    stack_status |= v7m_push(env, env->regs[15]);
+    stack_status |= v7m_push(env, env->regs[14]);
+    stack_status |= v7m_push(env, env->regs[12]);
+    stack_status |= v7m_push(env, env->regs[3]);
+    stack_status |= v7m_push(env, env->regs[2]);
+    stack_status |= v7m_push(env, env->regs[1]);
+    stack_status |= v7m_push(env, env->regs[0]);
+
     switch_v7m_sp(env, 0);
+
     env->uncached_cpsr &= ~CPSR_IT;
 
     find_pending_irq_if_primask_unset(env);
@@ -762,6 +805,11 @@ static void do_interrupt_v7m(CPUState *env)
     addr = ldl_phys(env->v7m.vecbase + env->v7m.exception * 4);
     env->regs[15] = addr & 0xfffffffe;
     env->thumb = addr & 1;
+    if(stack_status) {
+        do_v7m_exception_exit(env);
+        env->exception_index = EXCP_DATA_ABORT;
+        do_interrupt_v7m(env);
+    }
 
     arm_announce_stack_change();
 }
@@ -1150,69 +1198,128 @@ do_fault:
     return code | (domain << 4); //TRANSLATE_FAIL
 }
 
+static int cortexm_check_default_mapping(uint32_t address, int *prot, int access_type)
+{
+    switch (address) {
+    case 0x00000000 ... 0x1FFEFFFF:
+        *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+        break;
+    case 0x1FFF0000 ... 0x1FFF77FF:
+        *prot = PAGE_READ | PAGE_EXEC;
+        break;
+    case 0x1FFF7800 ... 0x1FFFFFFF:
+    case 0x20000000 ... 0x3FFFFFFF:
+    case 0x60000000 ... 0x7FFFFFFF:
+    case 0x80000000 ... 0x9FFFFFFF:
+        *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+        break;
+    case 0x40000000 ... 0x5FFFFFFF:
+    case 0xA0000000 ... 0xBFFFFFFF:
+    case 0xC0000000 ... 0xDFFFFFFF:
+    case 0xE0000000 ... 0xE00FFFFF:
+        *prot = PAGE_READ | PAGE_WRITE;
+        break;
+    case 0xE0100000 ... 0xFFFFFFFF:
+    default:
+        *prot = 0;
+        return PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+    }
+    return !(*prot & (1 << access_type));
+}
+
 static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot)
 {
     int n;
-    uint32_t mask;
     uint32_t base;
+    uint32_t size;
+    uint32_t mask;
+    uint32_t perms;
 
     *phys_ptr = address;
-    for (n = 7; n >= 0; n--) {
-        base = env->cp15.c6_region[n];
-        if ((base & 1) == 0) {
+    *prot = 0;
+
+    tlib_printf(LOG_LEVEL_DEBUG, "MPU: Trying to access address 0x%X", address);
+
+    for (n = MAX_MPU_REGIONS - 1; n >= 0; n--) {
+        if (!(env->cp15.c6_size_and_enable[n] & MPU_REGION_ENABLED_BIT)) {
             continue;
         }
-        mask = 1 << ((base >> 1) & 0x1f);
-        /* Keep this shift separate from the above to avoid an
-           (undefined) << 32.  */
-        mask = (mask << 1) - 1;
-        if (((base ^ address) & ~mask) == 0) {
+        switch((env->cp15.c6_size_and_enable[n] & MPU_SIZE_FIELD_MASK) >> 1) {
+        case 0 ... 3:
+            tlib_printf(LOG_LEVEL_WARNING, "Encountered MPU region size smaller than 32bytes, this is an unpredictable setting!");
+            continue;
+        default:
+            size = ((env->cp15.c6_size_and_enable[n] & MPU_SIZE_FIELD_MASK) >> 1) + 1;
+            break;
+        }
+
+        base = env->cp15.c6_base_address[n];
+        mask = (1ull << size) - 1;
+
+        if (base & mask) {
+            /* Misaligned base addr to region */
+            continue;
+        }
+        /* Check if the region is enabled */
+        if (address >= base && address <= base + mask) {
             break;
         }
     }
+
     if (n < 0) {
-        return 2; //TRANSLATE_FAIL
+        return !is_user ? cortexm_check_default_mapping(address, prot, access_type) : TRANSLATE_FAIL;
     }
 
-    if (access_type == ACCESS_INST_FETCH) {
-        mask = env->cp15.c5_insn;
-    } else {
-        mask = env->cp15.c5_data;
-    }
-    mask = (mask >> (n * 4)) & 0xf;
-    switch (mask) {
+    perms = (env->cp15.c6_access_control[n] & MPU_PERMISSION_FIELD_MASK) >> 8;
+
+    switch (perms) {
     case 0:
         return TRANSLATE_FAIL;
     case 1:
         if (is_user) {
             return TRANSLATE_FAIL;
         }
-        *prot = PAGE_READ | PAGE_WRITE;
+        *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
         break;
     case 2:
-        *prot = PAGE_READ;
+        *prot = PAGE_READ | PAGE_EXEC;
         if (!is_user) {
             *prot |= PAGE_WRITE;
         }
         break;
     case 3:
-        *prot = PAGE_READ | PAGE_WRITE;
+        *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
         break;
     case 5:
         if (is_user) {
             return TRANSLATE_FAIL;
         }
-        *prot = PAGE_READ;
+        *prot = PAGE_READ | PAGE_EXEC;
         break;
     case 6:
-        *prot = PAGE_READ;
+        *prot = PAGE_READ | PAGE_EXEC;
+        break;
+    case 7:
+        if (env->cp15.c0_cpuid == ARM_CPUID_CORTEXM3) {
+            *prot |= PAGE_READ | PAGE_EXEC;
+        } else {
+            break;
+        }
         break;
     default:
         /* Bad permission.  */
-        return TRANSLATE_FAIL;
+        break;
     }
-    *prot |= PAGE_EXEC;
-    return TRANSLATE_SUCCESS;
+
+    /* Check if the region is executable */
+    if ((env->cp15.c6_access_control[n] & MPU_NEVER_EXECUTE_BIT))
+        *prot &= ~PAGE_EXEC;
+
+    /* PAGE_READ  = 1 ; ACCESS_TYPE = 0
+     * PAGE_WRITE = 2 ; ACCESS_TYPE = 1
+     * PAGE_EXEC  = 3 ; ACCESS_TYPE = 2
+     */
+    return !(*prot & (1 << access_type));
 }
 
 static inline int get_phys_addr(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
@@ -1253,6 +1360,7 @@ int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, 
 
     is_user = mmu_idx == MMU_USER_IDX;
     ret = get_phys_addr(env, address, access_type, is_user, &phys_addr, &prot, &page_size, no_page_fault);
+
     if (ret == TRANSLATE_SUCCESS) {
         /* Map a single [sub]page.  */
         phys_addr &= TARGET_PAGE_MASK;
@@ -1484,7 +1592,7 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
             if (crm >= 8) {
                 goto bad_reg;
             }
-            env->cp15.c6_region[crm] = val;
+            env->cp15.c6_addr = val;
         } else {
             if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
                 op2 = 0;
@@ -1962,7 +2070,7 @@ case_6:
             if (crm >= 8) {
                 goto bad_reg;
             }
-            return env->cp15.c6_region[crm];
+            return env->cp15.c6_addr;
         } else {
             if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
                 op2 = 0;
@@ -2210,28 +2318,44 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
 {
     switch (reg) {
     case 0: /* APSR */
+        if(!in_privileged_mode(env))
+            return;
         xpsr_write(env, val, 0xf8000000);
         break;
     case 1: /* IAPSR */
+        if(!in_privileged_mode(env))
+            return;
         xpsr_write(env, val, 0xf8000000);
         break;
     case 2: /* EAPSR */
+        if(!in_privileged_mode(env))
+            return;
         xpsr_write(env, val, 0xfe00fc00);
         break;
     case 3: /* xPSR */
+        if(!in_privileged_mode(env))
+            return;
         xpsr_write(env, val, 0xfe00fc00);
         break;
     case 5: /* IPSR */
+        if(!in_privileged_mode(env))
+            return;
         /* IPSR bits are readonly.  */
         break;
     case 6: /* EPSR */
+        if(!in_privileged_mode(env))
+            return;
         xpsr_write(env, val, 0x0600fc00);
         break;
     case 7: /* IEPSR */
+        if(!in_privileged_mode(env))
+            return;
         xpsr_write(env, val, 0x0600fc00);
         break;
     case 8: /* MSP */
-        if (env->v7m.current_sp) {
+        if(!in_privileged_mode(env)) {
+            return;
+        } else if (env->v7m.current_sp) {
             env->v7m.other_sp = val;
         } else {
             env->regs[13] = val;
@@ -2251,7 +2375,9 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
         env->v7m.psplim = val;
         break;
     case 16: /* PRIMASK */
-        if (val & 1) {
+        if (!in_privileged_mode(env)) {
+            return;
+        } else if (val & 1) {
             env->uncached_cpsr |= CPSR_PRIMASK;
         } else {
             env->uncached_cpsr &= ~CPSR_PRIMASK;
@@ -2259,10 +2385,14 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
         }
         break;
     case 17: /* BASEPRI */
+        if(!in_privileged_mode(env))
+            return;
         env->v7m.basepri = val & 0xff;
         tlib_nvic_write_basepri(val & 0xff);
         break;
     case 18: /* BASEPRI_MAX */
+        if (!in_privileged_mode(env))
+            return;
         val &= 0xff;
         if (val != 0 && (val < env->v7m.basepri || env->v7m.basepri == 0)) {
             env->v7m.basepri = val;
@@ -2270,13 +2400,17 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
         }
         break;
     case 19: /* FAULTMASK */
-        if (val & 1) {
+        if (!in_privileged_mode(env)) {
+            return;
+        } else if (val & 1) {
             env->uncached_cpsr |= CPSR_F;
         } else {
             env->uncached_cpsr &= ~CPSR_F;
         }
         break;
     case 20: /* CONTROL */
+        if(!in_privileged_mode(env))
+            return;
         env->v7m.control = val & 3;
         // only switch the stack if in thread mode (handler mode always uses MSP stack)
         if (env->v7m.exception == 0) {

@@ -489,13 +489,9 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
 #endif
         break;
     case CSR_INSTRET:
-    case CSR_CYCLE:
-        if (ctr_ok) {
-            return cpu_riscv_read_instret(env);
-        }
-        break;
     case CSR_MINSTRET:
         return get_minstret_current(env);
+    case CSR_CYCLE:
     case CSR_MCYCLE:
         return get_mcycles_current(env);
     case CSR_MINSTRETH:
@@ -503,6 +499,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         return get_minstret_current(env) >> 32;
 #endif
         break;
+    case CSR_CYCLEH:
     case CSR_MCYCLEH:
 #if defined(TARGET_RISCV32)
         return get_mcycles_current(env) >> 32;

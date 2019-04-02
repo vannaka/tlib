@@ -159,9 +159,9 @@ typedef struct CPUBreakpoint {
     /* --------------------------------------- */                            \
     /* instruction counting is used to execute callback after given          \
        number of instructions */                                             \
-    int32_t instructions_count_threshold;                                    \
-    int32_t instructions_count_value;                                        \
-    int32_t instructions_count_total_value;                                  \
+    uint64_t instructions_count_threshold;                                   \
+    uint64_t instructions_count_value;                                       \
+    uint64_t instructions_count_total_value;                                 \
     /* soft mmu support */                                                   \
     /* in order to avoid passing too many arguments to the MMIO              \
        helpers, we store some rarely used information in the CPU             \

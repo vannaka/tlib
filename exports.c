@@ -91,9 +91,9 @@ void tlib_dispose()
 
 // this function returns number of instructions executed since the previous call
 // there is `cpu->instructions_count_total_value` that contains the cumulative value
-int32_t tlib_get_executed_instructions()
+uint64_t tlib_get_executed_instructions()
 {
-  int32_t result = cpu->instructions_count_value;
+  uint64_t result = cpu->instructions_count_value;
   cpu->instructions_count_value = 0;
   cpu->instructions_count_threshold -= result;
   return result;
@@ -103,13 +103,13 @@ int32_t tlib_get_executed_instructions()
 // This number is divided by `PerformanceInMIPS` value, but may leave a remainder, that is not reflected in `TranslationCPU` state.
 // To account for that, we have to report this remainder back to tlib, so that the next call to `tlib_get_executed_instructions`
 // includes it in the returned value.
-void tlib_reset_executed_instructions(int32_t val)
+void tlib_reset_executed_instructions(uint64_t val)
 {
   cpu->instructions_count_value = val;
   cpu->instructions_count_threshold += val;
 }
 
-int32_t tlib_get_total_executed_instructions()
+uint64_t tlib_get_total_executed_instructions()
 {
   return cpu->instructions_count_total_value;
 }

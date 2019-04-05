@@ -198,4 +198,19 @@ static inline int riscv_has_ext(CPUState *env, target_ulong ext)
     return (env->misa & ext) != 0;
 }
 
+static inline int riscv_features_to_string(uint32_t features, char* buffer, int size)
+{
+    // features are encoded on the first 26 bits
+    // bit #0: 'A', bit #1: 'B', ..., bit #25: 'Z'
+    int pos = 0;
+    for(int i = 0; i < 26 && pos < size; i++)
+    {
+        if(features & (1 << i))
+        {
+            buffer[pos++] = 'A' + i;
+        }
+    }
+    return pos;
+}
+
 #endif /* !defined (__RISCV_CPU_H__) */

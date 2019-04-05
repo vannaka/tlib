@@ -75,6 +75,28 @@ static const char * const fpr_regnames[] = {
 #define CASE_OP_32_64(X) case X
 #endif
 
+static int ensure_extension(DisasContext *ctx, target_ulong ext)
+{
+    if(!riscv_has_ext(cpu, ext))
+    {
+        char letter;
+        riscv_features_to_string(ext, &letter, 1);
+        
+        tlib_printf(LOG_LEVEL_ERROR, "RISC-V '%c' instruction set is not enabled for this CPU! PC: 0x%llx, opcode: 0x%llx", letter, ctx->pc, ctx->opcode);
+        kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
+        return 0;
+    }
+    return 1;
+}
+
+static int ensure_fp_extension(DisasContext *ctx, int precision_bit)
+{
+    /* distinguish between F/D (i.e., single/double precision) classes
+       by looking at the `precision bit` */
+    int is_double_precision = ctx->opcode & (1 << precision_bit);
+    return ensure_extension(ctx, is_double_precision ? RISCV_FEATURE_RVD : RISCV_FEATURE_RVF);
+}
+
 static inline void gen_sync_pc(DisasContext *ctx)
 {
     tcg_gen_movi_tl(cpu_pc, ctx->pc);
@@ -717,6 +739,11 @@ static void gen_store(DisasContext *ctx, uint32_t opc, int rs1, int rs2,
 static void gen_fp_load(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, target_long imm)
 {
+    if(!ensure_fp_extension(ctx, 12))
+    {
+        return;
+    }
+
     TCGv t0 = tcg_temp_new();
     int fp_ok = gen_new_label();
     int done = gen_new_label();
@@ -752,6 +779,11 @@ static void gen_fp_load(DisasContext *ctx, uint32_t opc, int rd,
 static void gen_fp_store(DisasContext *ctx, uint32_t opc, int rs1,
         int rs2, target_long imm)
 {
+    if(!ensure_fp_extension(ctx, 12))
+    {
+        return;
+    }
+
     TCGv t0 = tcg_temp_new();
     TCGv t1 = tcg_temp_new();
     int fp_ok = gen_new_label();
@@ -790,10 +822,11 @@ static void gen_fp_store(DisasContext *ctx, uint32_t opc, int rs1,
 static void gen_atomic(CPUState *env, DisasContext *ctx, uint32_t opc,
                       int rd, int rs1, int rs2)
 {
-    if(!riscv_has_ext(env, RISCV_FEATURE_RVA)) {
-        tlib_log(LOG_LEVEL_ERROR, "RISC-V A instruction set is not enabled for this CPU!");
-        kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
+    if(!ensure_extension(ctx, RISCV_FEATURE_RVA))
+    {
+        return;
     }
+
     /* TODO: handle aq, rl bits? - for now just get rid of them: */
     opc = MASK_OP_ATOMIC_NO_AQ_RL(opc);
     TCGv source1, source2, dat;
@@ -946,6 +979,11 @@ static void gen_atomic(CPUState *env, DisasContext *ctx, uint32_t opc,
 static void gen_fp_fmadd(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, int rs2, int rs3, int rm)
 {
+    if(!ensure_fp_extension(ctx, 25))
+    {
+        return;
+    }
+
     TCGv_i64 rm_reg = tcg_temp_new_i64();
     tcg_gen_movi_i64(rm_reg, rm);
 
@@ -968,6 +1006,11 @@ static void gen_fp_fmadd(DisasContext *ctx, uint32_t opc, int rd,
 static void gen_fp_fmsub(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, int rs2, int rs3, int rm)
 {
+    if(!ensure_fp_extension(ctx, 25))
+    {
+        return;
+    }
+
     TCGv_i64 rm_reg = tcg_temp_new_i64();
     tcg_gen_movi_i64(rm_reg, rm);
 
@@ -990,6 +1033,11 @@ static void gen_fp_fmsub(DisasContext *ctx, uint32_t opc, int rd,
 static void gen_fp_fnmsub(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, int rs2, int rs3, int rm)
 {
+    if(!ensure_fp_extension(ctx, 25))
+    {
+        return;
+    }
+
     TCGv_i64 rm_reg = tcg_temp_new_i64();
     tcg_gen_movi_i64(rm_reg, rm);
 
@@ -1012,6 +1060,11 @@ static void gen_fp_fnmsub(DisasContext *ctx, uint32_t opc, int rd,
 static void gen_fp_fnmadd(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, int rs2, int rs3, int rm)
 {
+    if(!ensure_fp_extension(ctx, 25))
+    {
+        return;
+    }
+
     TCGv_i64 rm_reg = tcg_temp_new_i64();
     tcg_gen_movi_i64(rm_reg, rm);
 
@@ -1034,6 +1087,11 @@ static void gen_fp_fnmadd(DisasContext *ctx, uint32_t opc, int rd,
 static void gen_fp_arith(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, int rs2, int rm)
 {
+    if(!ensure_fp_extension(ctx, 25))
+    {
+        return;
+    }
+
     TCGv_i64 rm_reg = tcg_temp_new_i64();
     TCGv write_int_rd = tcg_temp_new();
     tcg_gen_movi_i64(rm_reg, rm);
@@ -1884,9 +1942,7 @@ static int disas_insn(CPUState *env, DisasContext *ctx)
     }
 
     int is_compressed = (extract32(ctx->opcode, 0, 2) != 3);
-    if (is_compressed && !riscv_has_ext(env, RISCV_FEATURE_RVC)) {
-        tlib_log(LOG_LEVEL_ERROR, "RISC-V C instruction set is not enabled for this CPU!");
-        kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
+    if (is_compressed && !ensure_extension(ctx, RISCV_FEATURE_RVC)) {
         return 0;
     }
 

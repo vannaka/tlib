@@ -35,11 +35,11 @@ void tlib_set_mip_bit(uint32_t position, uint32_t value)
     // here we might have a race
     if(value)
     {
-        cpu->mip |= (1 << position);
+        cpu->mip |= ((target_ulong)1 << position);
     }
     else
     {
-        cpu->mip &= ~(1 << position);
+        cpu->mip &= ~((target_ulong)1 << position);
     }
     pthread_mutex_unlock(&cpu->mip_lock);
 }

@@ -1936,7 +1936,7 @@ void gen_intermediate_code(CPUState *env,
 
     create_disas_context(&ctx, env, tb);
 
-   tcg_clear_temp_count();
+    tcg_clear_temp_count();
 
     while (1) {
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {

@@ -33,6 +33,7 @@ void cpu_reset(CPUState *env)
 {
     tlb_flush(env, 1);
 
+    bool disable_csr_validation = env->disable_csr_validation;
     bool privilege = env->privilege_architecture_1_10;
     target_ulong mhartid = env->mhartid;
     target_ulong misa_mask = env->misa_mask;
@@ -42,6 +43,7 @@ void cpu_reset(CPUState *env)
 
     memset(env, 0, offsetof(CPUState, breakpoints));
 
+    env->disable_csr_validation = disable_csr_validation;
     env->mhartid = mhartid;
     env->privilege_architecture_1_10 = privilege;
     env->misa = misa_mask;

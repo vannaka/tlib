@@ -89,3 +89,10 @@ void tlib_enter_wfi()
     helper_wfi(cpu);
 }
 
+uint32_t tlib_set_csr_validation(uint32_t value)
+{
+    uint32_t result = !cpu->disable_csr_validation;
+    cpu->disable_csr_validation = !value;
+    return result;
+}
+

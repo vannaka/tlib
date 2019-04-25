@@ -127,6 +127,10 @@ struct CPUState {
     int32_t custom_instructions_count;
     custom_instruction_descriptor_t custom_instructions[CPU_CUSTOM_INSTRUCTIONS_LIMIT];
 
+    /* when set, writing to read-only CSR or accessing CSR from 
+       a wrong privilege level will *not* trigger ILLEGAL INSTRUCTION exception */
+    bool disable_csr_validation;
+
     CPU_COMMON
 };
 

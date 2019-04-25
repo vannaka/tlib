@@ -37,6 +37,7 @@ void cpu_reset(CPUState *env)
     bool privilege = env->privilege_architecture_1_10;
     target_ulong mhartid = env->mhartid;
     target_ulong misa_mask = env->misa_mask;
+    target_ulong silenced_extensions = env->silenced_extensions;
     int32_t custom_instructions_count = env->custom_instructions_count;
     custom_instruction_descriptor_t custom_instructions[CPU_CUSTOM_INSTRUCTIONS_LIMIT];
     memcpy(custom_instructions, env->custom_instructions, sizeof(custom_instruction_descriptor_t) * CPU_CUSTOM_INSTRUCTIONS_LIMIT);
@@ -48,6 +49,7 @@ void cpu_reset(CPUState *env)
     env->privilege_architecture_1_10 = privilege;
     env->misa = misa_mask;
     env->misa_mask = misa_mask;
+    env->silenced_extensions = silenced_extensions;
     env->priv = PRV_M;
     env->mtvec = DEFAULT_MTVEC;
     env->pc = DEFAULT_RSTVEC;

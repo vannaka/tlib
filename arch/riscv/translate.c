@@ -77,16 +77,21 @@ static const char * const fpr_regnames[] = {
 
 static int ensure_extension(DisasContext *ctx, target_ulong ext)
 {
-    if(!riscv_has_ext(cpu, ext))
+    if(riscv_has_ext(cpu, ext))
+    {
+        return 1;
+    }
+    
+    if(!riscv_silent_ext(cpu, ext))
     {
         char letter = 0;
         riscv_features_to_string(ext, &letter, 1);
-        
+
         tlib_printf(LOG_LEVEL_ERROR, "RISC-V '%c' instruction set is not enabled for this CPU! PC: 0x%llx, opcode: 0x%llx", letter, ctx->pc, ctx->opcode);
-        kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
-        return 0;
     }
-    return 1;
+
+    kill_unknown(ctx, RISCV_EXCP_ILLEGAL_INST);
+    return 0;
 }
 
 static int ensure_fp_extension(DisasContext *ctx, int precision_bit)

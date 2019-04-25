@@ -50,6 +50,18 @@ void tlib_allow_feature(uint32_t feature_bit)
    cpu->misa |= (1L << feature_bit);
 }
 
+void tlib_mark_feature_silent(uint32_t feature_bit, uint32_t value)
+{
+    if(value)
+    {
+        cpu->silenced_extensions |= (1L << feature_bit);
+    }
+    else
+    {
+        cpu->silenced_extensions &= ~(1L << feature_bit);
+    }
+}
+
 uint32_t tlib_is_feature_enabled(uint32_t feature_bit)
 {
    return (cpu->misa & (1L << feature_bit)) != 0;

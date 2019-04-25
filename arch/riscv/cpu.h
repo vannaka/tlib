@@ -131,6 +131,13 @@ struct CPUState {
        a wrong privilege level will *not* trigger ILLEGAL INSTRUCTION exception */
     bool disable_csr_validation;
 
+    /* flags indicating extensions from which instructions
+       that are *not* enabled for this CPU should *not* be logged as errors;
+
+       this is useful when some instructions are `software-emulated`, 
+       i.e., the ILLEGAL INSTRUCTION exception is generated and handled by the software */
+    target_ulong silenced_extensions;
+
     CPU_COMMON
 };
 
@@ -200,6 +207,11 @@ enum riscv_features {
 static inline int riscv_has_ext(CPUState *env, target_ulong ext)
 {
     return (env->misa & ext) != 0;
+}
+
+static inline int riscv_silent_ext(CPUState *env, target_ulong ext)
+{
+    return (env->silenced_extensions & ext) != 0;
 }
 
 static inline int riscv_features_to_string(uint32_t features, char* buffer, int size)

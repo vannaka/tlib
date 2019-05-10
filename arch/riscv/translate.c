@@ -141,7 +141,17 @@ static inline void generate_exception_mbadaddr(DisasContext *ctx, int excp)
 /* unknown instruction */
 static inline void kill_unknown(DisasContext *ctx, int excp)
 {
-    generate_exception(ctx, excp);
+    gen_sync_pc(ctx);
+
+    // According to the RISC-V ISA manual,
+    // for Illegal Instruction, mtval/mbadaddr
+    // should contain an opcode of the faulting instruction.
+    TCGv_i32 helper_tmp = tcg_const_i32(excp);
+    TCGv_i32 helper_bdinstr = tcg_const_i32(ctx->opcode);
+    gen_helper_raise_exception_mbadaddr(cpu_env, helper_tmp, helper_bdinstr);
+    tcg_temp_free_i32(helper_tmp);
+    tcg_temp_free_i32(helper_bdinstr);
+
     ctx->bstate = BS_STOP;
 }
 

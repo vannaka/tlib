@@ -350,6 +350,7 @@ void do_interrupt(CPUState *env)
     target_ulong deleg = env->medeleg;
 
     int hasbadaddr =
+        (fixed_cause == RISCV_EXCP_ILLEGAL_INST) ||
         (fixed_cause == RISCV_EXCP_INST_ADDR_MIS) ||
         (fixed_cause == RISCV_EXCP_INST_ACCESS_FAULT) ||
         (fixed_cause == RISCV_EXCP_LOAD_ADDR_MIS) ||

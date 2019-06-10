@@ -144,6 +144,15 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
 
     csrno = priv_version_csr_filter(env, csrno);
 
+    // testing for non-standard CSRs here (i.e., before the switch)
+    // allows us to override existing CSRs with our custom implementation;
+    // this is necessary for RI5CY core
+    if(tlib_has_nonstandard_csr(csrno) != 0)
+    {
+        tlib_write_csr(csrno, val_to_write);
+        return;
+    }
+
     switch (csrno) {
     case CSR_FFLAGS:
         if (riscv_mstatus_fs(env)) {
@@ -411,14 +420,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
        pmpaddr_csr_write(env, csrno - CSR_PMPADDR0, val_to_write);
        break;
     default:
-        if(tlib_has_nonstandard_csr(csrno) != 0)
-        {
-            tlib_write_csr(csrno, val_to_write);
-        }
-        else
-        {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
-        }
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
 }
 
@@ -458,6 +460,14 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     }
     
     csrno = priv_version_csr_filter(env, csrno);
+
+    // testing for non-standard CSRs here (i.e., before the switch)
+    // allows us to override existing CSRs with our custom implementation;
+    // this is necessary for RI5CY core
+    if(tlib_has_nonstandard_csr(csrno) != 0)
+    {
+        return tlib_read_csr(csrno);
+    }
 
     switch (csrno) {
     case CSR_FFLAGS:
@@ -596,10 +606,6 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     case CSR_PMPADDR15:
        return pmpaddr_csr_read(env, csrno - CSR_PMPADDR0);
     default:
-        if(tlib_has_nonstandard_csr(csrno) != 0)
-        {
-            return tlib_read_csr(csrno);
-        }
         /* used by e.g. MTIME read */
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }

@@ -65,7 +65,7 @@ int32_t tlib_init(char *cpu_name)
   return 0;
 }
 
-void tlib_atomic_memory_state_init(int id, ram_addr_t atomic_memory_state_ptr)
+void tlib_atomic_memory_state_init(int id, uintptr_t atomic_memory_state_ptr)
 {
   cpu->id = id;
   cpu->atomic_memory_state = (atomic_memory_state_t*)atomic_memory_state_ptr;

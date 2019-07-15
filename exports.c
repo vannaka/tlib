@@ -19,6 +19,7 @@
  */
 #include <stdint.h>
 #include "cpu.h"
+#include "cpu-defs.h"
 #include "tcg.h"
 #include "tcg-additional.h"
 #include "exec-all.h"
@@ -372,5 +373,59 @@ int32_t tlib_set_return_on_exception(int32_t value)
     int32_t previousValue = cpu->return_on_exception;
     cpu->return_on_exception = !!value;
     return previousValue;
+}
+
+#if TARGET_LONG_BITS == 32
+uint32_t* get_reg_pointer_32(int reg_number);
+#elif TARGET_LONG_BITS == 64
+uint64_t* get_reg_pointer_64(int reg_number);
+#else
+#error "Unknown number of bits"
+#endif
+
+uint64_t tlib_get_register_value(int reg_number)
+{
+#if TARGET_LONG_BITS == 32
+    uint32_t* ptr = get_reg_pointer_32(reg_number);
+    if(ptr == NULL)
+    {
+        tlib_abortf("Write to undefined CPU register number %d detected", reg_number);
+        return 0;
+    }
+    return (uint64_t)*ptr;
+#elif TARGET_LONG_BITS == 64
+    uint64_t* ptr = get_reg_pointer_64(reg_number);
+    if(ptr == NULL)
+    {
+        tlib_abortf("Write to undefined CPU register number %d detected", reg_number);
+        return 0;
+    }
+    return *ptr;
+#else
+#error "Unknown number of bits"
+#endif
+}
+
+void tlib_set_register_value(int reg_number, uint64_t val)
+{
+#if TARGET_LONG_BITS == 32
+    uint32_t* ptr = get_reg_pointer_32(reg_number);
+    if(ptr == NULL)
+    {
+        tlib_abortf("Write to undefined CPU register number %d detected", reg_number);
+        return;
+    }
+    *ptr = val & 0xFFFFFFFF;
+#elif TARGET_LONG_BITS == 64
+    uint64_t* ptr = get_reg_pointer_64(reg_number);
+    if(ptr == NULL)
+    {
+        tlib_abortf("Write to undefined CPU register number %d detected", reg_number);
+        return;
+    }
+    *ptr = val;
+#else
+#error "Unknown number of bits"
+#endif
 }
 

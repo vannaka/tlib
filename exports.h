@@ -35,4 +35,7 @@ int tlib_restore_context(void);
 void* tlib_export_state(void);
 int32_t tlib_get_state_size(void);
 
+uint64_t tlib_get_register_value(int reg_number);
+void tlib_set_register_value(int reg_number, uint64_t val);
+
 #endif

@@ -127,6 +127,11 @@ void register_in_atomic_memory_state(atomic_memory_state_t *sm, int id)
 
 void acquire_global_memory_lock(struct CPUState *env)
 {
+    if(env->atomic_memory_state == NULL)
+    {
+        // no atomic_memory_state so no need for synchronization
+	return;
+    }
     if(env->atomic_memory_state->number_of_registered_cpus == 1)
     {
         // there is no need for synchronization
@@ -148,6 +153,11 @@ void acquire_global_memory_lock(struct CPUState *env)
 
 void release_global_memory_lock(struct CPUState *env)
 {
+    if (env->atomic_memory_state == NULL)
+    {
+        // no atomic_memory_state so no need for synchronization
+        return;
+    }
     if(env->atomic_memory_state->number_of_registered_cpus == 1)
     {
         // there is no need for synchronization
@@ -222,6 +232,11 @@ uint32_t check_address_reservation(struct CPUState *env, target_phys_addr_t addr
 
 void register_address_access(struct CPUState *env, target_phys_addr_t address)
 {
+    if(env->atomic_memory_state == NULL)
+    {
+        // no atomic_memory_state so no registration needed
+	return;
+    }
     if(env->atomic_memory_state->number_of_registered_cpus == 1)
     {
         // this is not need when we have only one cpu

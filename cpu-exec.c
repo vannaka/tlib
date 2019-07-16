@@ -180,6 +180,10 @@ CPUDebugExcpHandler *cpu_set_debug_excp_handler(CPUDebugExcpHandler *handler)
 
 static void verify_state(CPUState *env)
 {
+    if(env->atomic_memory_state == NULL)
+    {
+        return;
+    }
     if(env->atomic_memory_state->locking_cpu_id == env->id)
     {
         clear_global_memory_lock(env);

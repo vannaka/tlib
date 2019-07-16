@@ -375,6 +375,11 @@ int32_t tlib_set_return_on_exception(int32_t value)
     return previousValue;
 }
 
+void tlib_flush_page(uint64_t address)
+{
+    tlb_flush_page(cpu, address);
+}
+
 #if TARGET_LONG_BITS == 32
 uint32_t* get_reg_pointer_32(int reg_number);
 #elif TARGET_LONG_BITS == 64

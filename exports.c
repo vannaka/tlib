@@ -52,6 +52,23 @@ static void init_tcg()
   attach_free(tlib_free);
 }
 
+uint32_t maximum_block_size;
+uint32_t size_of_next_block_to_translate;
+
+uint32_t tlib_set_maximum_block_size(uint32_t size)
+{
+  uint32_t effective_value;
+
+  effective_value = size & CF_COUNT_MASK;
+  maximum_block_size = effective_value;
+  return effective_value;
+}
+
+uint32_t tlib_get_maximum_block_size()
+{
+  return maximum_block_size;
+}
+
 int32_t tlib_init(char *cpu_name)
 {
   init_tcg();
@@ -63,6 +80,7 @@ int32_t tlib_init(char *cpu_name)
       tlib_free(env);
       return -1;
   }
+  tlib_set_maximum_block_size(0x7FF);
   return 0;
 }
 
@@ -290,23 +308,6 @@ void tlib_invalidate_translation_cache()
   {
     tb_flush(cpu);
   }
-}
-
-uint32_t maximum_block_size;
-uint32_t size_of_next_block_to_translate;
-
-uint32_t tlib_set_maximum_block_size(uint32_t size)
-{
-  uint32_t effective_value;
-
-  effective_value = size & CF_COUNT_MASK;
-  maximum_block_size = effective_value;
-  return effective_value;
-}
-
-uint32_t tlib_get_maximum_block_size()
-{
-  return maximum_block_size;
 }
 
 int tlib_restore_context()

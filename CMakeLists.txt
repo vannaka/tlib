@@ -9,6 +9,13 @@ option (HOST_BIG_ENDIAN "Host big endian" OFF)
 set (HOST_ARCH "i386" CACHE STRING "Host architecture")
 set (HOST_WORD_SIZE "64" CACHE STRING "Host word size")
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+	set(CMAKE_BUILD_TYPE "Release" CACHE
+	      STRING "Choose the type of build." FORCE)
+	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+	    "Debug" "Release" "RelWithDebInfo")
+endif()
+
 option (TARGET_BIG_ENDIAN "Target big endian" OFF)
 set (TARGET_ARCH "" CACHE STRING "Target architecture")
 set (TARGET_WORD_SIZE "32" CACHE STRING "Target word size")

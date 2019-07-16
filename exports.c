@@ -81,6 +81,7 @@ int32_t tlib_init(char *cpu_name)
       return -1;
   }
   tlib_set_maximum_block_size(0x7FF);
+  env->atomic_memory_state = NULL;
   return 0;
 }
 

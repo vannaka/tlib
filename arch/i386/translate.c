@@ -7630,7 +7630,6 @@ void translate_init(void)
     cpu_regs[R_EDI] = tcg_global_mem_new_i32(TCG_AREG0,
                                              offsetof(CPUState, regs[R_EDI]), "edi");
 #endif
-    gen_helpers();
 }
 
 uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {

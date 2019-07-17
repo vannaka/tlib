@@ -94,7 +94,6 @@ static const char *regnames[] =
 void translate_init(void)
 {
     int i;
-    gen_helpers();
     cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
 
     for (i = 0; i < 16; i++) {

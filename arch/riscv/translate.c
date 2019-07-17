@@ -2090,7 +2090,6 @@ void gen_intermediate_code(CPUState *env,
 void translate_init(void)
 {
     int i;
-    gen_helpers();
 
     cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
 

@@ -69,12 +69,15 @@ uint32_t tlib_get_maximum_block_size()
   return maximum_block_size;
 }
 
+void gen_helpers(void);
+
 int32_t tlib_init(char *cpu_name)
 {
   init_tcg();
   CPUState *env = tlib_mallocz(sizeof(CPUState));
   cpu_exec_init(env);
   cpu_exec_init_all();
+  gen_helpers();
   translate_init();
   if (cpu_init(cpu_name) != 0) {
       tlib_free(env);

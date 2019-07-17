@@ -2931,7 +2931,6 @@ void translate_init()
     for (i = 0; i < TARGET_FPREGS; i++)
         cpu_fpr[i] = tcg_global_mem_new_i32(TCG_AREG0, offsetof(CPUState, fpr[i]),
                                             fregnames[i]);
-    gen_helpers();
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

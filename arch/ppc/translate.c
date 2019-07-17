@@ -146,7 +146,6 @@ void translate_init(void)
 
     cpu_access_type = tcg_global_mem_new_i32(TCG_AREG0,
                                              offsetof(CPUState, access_type), "access_type");
-     gen_helpers();
 }
 
 /* internal defines */

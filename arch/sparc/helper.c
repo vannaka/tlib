@@ -755,7 +755,7 @@ static int cpu_sparc_find_by_name(sparc_def_t *cpu_def, const char *cpu_model)
 {
     unsigned int i;
     const sparc_def_t *def = NULL;
-    char *s = strdup(cpu_model);
+    char *s = tlib_strdup(cpu_model);
     char *featurestr, *name = strtok(s, ",");
     uint32_t plus_features = 0;
     uint32_t minus_features = 0;
@@ -831,11 +831,11 @@ static int cpu_sparc_find_by_name(sparc_def_t *cpu_def, const char *cpu_model)
     }
     cpu_def->features |= plus_features;
     cpu_def->features &= ~minus_features;
-    free(s);
+    tlib_free(s);
     return 0;
 
  error:
-    free(s);
+    tlib_free(s);
     return -1;
 }
 

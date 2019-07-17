@@ -42,10 +42,10 @@ static uint32_t log_set_msg(char *msg) {
         id++;
     }
     if (id >= MAX_MSG_COUNT) {
-        msgs[0] = strdup("MSG_COUNT_OVERFLOW");
+        msgs[0] = tlib_strdup("MSG_COUNT_OVERFLOW");
         return 0; // overflow
     }
-    msgs[id] = strdup(msg);
+    msgs[id] = tlib_strdup(msg);
     return id;
 }
 #endif

@@ -2075,7 +2075,7 @@ void gen_intermediate_code(CPUState *env,
             break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
-                break;
+            break;
         }
         if (tb->search_pc && tb->size == tb->original_size)
         {

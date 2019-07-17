@@ -36,11 +36,11 @@ static TCGv_i64 cpu_fpr[32]; /* assume F and D extensions */
 typedef struct DisasContext {
     struct TranslationBlock *tb;
     target_ulong pc;
-    target_ulong next_pc;
-    uint32_t opcode;
-    int singlestep_enabled;
+    target_ulong npc;
     int mem_idx;
-    int bstate;
+    int bstate; // TODO: is_jmp in other archs
+    int singlestep_enabled;
+    uint32_t opcode;
 } DisasContext;
 
 void translate_init(void)
@@ -601,7 +601,7 @@ static void gen_jal(CPUState *env, DisasContext *dc, int rd,
         }
     }
     if (rd != 0) {
-        tcg_gen_movi_tl(cpu_gpr[rd], dc->next_pc);
+        tcg_gen_movi_tl(cpu_gpr[rd], dc->npc);
     }
 
     gen_goto_tb(dc, 0, dc->pc + imm); /* must use this for safety */
@@ -629,7 +629,7 @@ static void gen_jalr(CPUState *env, DisasContext *dc, uint32_t opc, int rd, int 
         }
 
         if (rd != 0) {
-            tcg_gen_movi_tl(cpu_gpr[rd], dc->next_pc);
+            tcg_gen_movi_tl(cpu_gpr[rd], dc->npc);
         }
         gen_exit_tb_no_chaining(dc->tb);
 
@@ -679,7 +679,7 @@ static void gen_branch(CPUState *env, DisasContext *dc, uint32_t opc, int rs1, i
         break;
     }
 
-    gen_goto_tb(dc, 1, dc->next_pc);
+    gen_goto_tb(dc, 1, dc->npc);
     gen_set_label(l); /* branch taken */
     if (!riscv_has_ext(env, RISCV_FEATURE_RVC) && ((dc->pc + bimm) & 0x3)) {
         /* misaligned */
@@ -1487,7 +1487,7 @@ static void gen_system(DisasContext *dc, uint32_t opc,
             kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
             break;
         case 0x105: /* WFI */
-            tcg_gen_movi_tl(cpu_pc, dc->next_pc);
+            tcg_gen_movi_tl(cpu_pc, dc->npc);
             gen_helper_wfi(cpu_env);
             gen_exit_tb_no_chaining(dc->tb);
             dc->bstate = BS_BRANCH;
@@ -1531,7 +1531,7 @@ static void gen_system(DisasContext *dc, uint32_t opc,
         }
         gen_set_gpr(rd, dest);
         /* end tb since we may be changing priv modes, to get mmu_index right */
-        tcg_gen_movi_tl(cpu_pc, dc->next_pc);
+        tcg_gen_movi_tl(cpu_pc, dc->npc);
         gen_exit_tb_no_chaining(dc->tb);
         dc->bstate = BS_BRANCH;
         break;
@@ -1922,7 +1922,7 @@ static void decode_RV32_64G(CPUState *env, DisasContext *dc)
         /* standard fence is nop, fence_i flushes TB (like an icache): */
         if (dc->opcode & 0x1000) { /* FENCE_I */
             gen_helper_fence_i(cpu_env);
-            tcg_gen_movi_tl(cpu_pc, dc->next_pc);
+            tcg_gen_movi_tl(cpu_pc, dc->npc);
             gen_exit_tb_no_chaining(dc->tb);
             dc->bstate = BS_BRANCH;
         }
@@ -1948,7 +1948,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
 
         if((dc->opcode & ci->mask) == ci->pattern)
         {
-            dc->next_pc = dc->pc + ci->length;
+            dc->npc = dc->pc + ci->length;
 
             TCGv_i64 id = tcg_const_i64(ci->id);
             TCGv_i64 opcode = tcg_const_i64(dc->opcode & ((1ULL << (8 * ci->length)) - 1));
@@ -1962,7 +1962,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
 
             // this is executed conditionally - only if `handle_custom_instruction` returns 0
             // otherwise `cpu_pc` points to a proper value and should not be overwritten by `dc->pc`
-            dc->pc = dc->next_pc;
+            dc->pc = dc->npc;
             gen_sync_pc(dc);
 
             gen_set_label(exit_tb_label);
@@ -1984,7 +1984,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
 
     /* check for compressed insn */
     int instruction_length = (is_compressed ? 2 : 4);
-    dc->next_pc = dc->pc + instruction_length;
+    dc->npc = dc->pc + instruction_length;
 
     if (is_compressed) {
         decode_RV32_64C(env, dc);
@@ -1992,7 +1992,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         decode_RV32_64G(env, dc);
     }
 
-    dc->pc = dc->next_pc;
+    dc->pc = dc->npc;
     return instruction_length;
 }
 

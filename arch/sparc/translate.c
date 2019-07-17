@@ -60,12 +60,12 @@ static target_ulong gen_opc_jump_pc[2];
 
 typedef struct DisasContext {
     struct TranslationBlock *tb;
-    int singlestep_enabled;
     target_ulong pc;    /* current Program Counter: integer or DYNAMIC_PC */
     target_ulong npc;   /* next PC: integer or DYNAMIC_PC or JUMP_PC */
-    target_ulong jump_pc[2]; /* used when JUMP_PC pc value is used */
-    int is_jmp;
     int mem_idx;
+    int is_jmp;
+    int singlestep_enabled;
+    target_ulong jump_pc[2]; /* used when JUMP_PC pc value is used */
     int fpu_enabled;
     int address_mask_32bit;
     uint32_t cc_op;  /* current CC operation */

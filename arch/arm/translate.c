@@ -51,9 +51,9 @@
 /* internal defines */
 typedef struct DisasContext {
     struct TranslationBlock *tb;
-    int singlestep_enabled;
-    int is_jmp;
     target_ulong pc;
+    int is_jmp;
+    int singlestep_enabled;
     /* Nonzero if this instruction has been conditionally skipped.  */
     int condjmp;
     /* The label that will be jumped to when the instruction is skipped.  */

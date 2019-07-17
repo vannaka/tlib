@@ -60,12 +60,11 @@ static TCGv_i32 cpu_access_type;
 /* internal defines */
 typedef struct DisasContext {
     struct TranslationBlock *tb;
-    int singlestep_enabled;
     target_ulong pc;
+    int mem_idx;
+    int singlestep_enabled;
     uint32_t opcode;
     uint32_t exception;
-    /* Routine used to access memory */
-    int mem_idx;
     int access_type;
     /* Translation flags */
     int le_mode;

@@ -61,7 +61,6 @@ struct CPUState {
     target_ulong gpr[32];
     uint64_t fpr[32]; /* assume both F and D extensions */
     target_ulong pc;
-    target_ulong load_res;
 
     target_ulong frm;
     target_ulong fflags;

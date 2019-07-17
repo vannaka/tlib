@@ -30,8 +30,6 @@
 static TCGv_ptr cpu_env;
 static TCGv cpu_gpr[32], cpu_pc;
 static TCGv_i64 cpu_fpr[32]; /* assume F and D extensions */
-static TCGv load_res;
-
 
 #include "tb-helper.h"
 
@@ -80,9 +78,6 @@ void translate_init(void)
     }
 
     cpu_pc = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, pc), "pc");
-
-    load_res = tcg_global_mem_new(cpu_env, offsetof(CPUState, load_res),
-                             "load_res");
 }
 
 static inline void kill_unknown(DisasContext *dc, int excp);

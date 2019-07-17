@@ -994,9 +994,8 @@ struct mmu_ctx_t {
 /*****************************************************************************/
 int cpu_init (const char *cpu_model);
 int cpu_exec (CPUState *s);
-int cpu_ppc_handle_mmu_fault (CPUState *env, target_ulong address, int rw,
+int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int rw,
                               int mmu_idx);
-#define cpu_handle_mmu_fault cpu_ppc_handle_mmu_fault
 int get_physical_address (CPUState *env, mmu_ctx_t *ctx, target_ulong vaddr,
                           int rw, int access_type);
 void do_interrupt (CPUState *env);

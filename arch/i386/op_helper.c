@@ -4688,7 +4688,7 @@ void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx,
     saved_env = env;
     env = env1;
 
-    ret = cpu_x86_handle_mmu_fault(env, addr, is_write, mmu_idx);
+    ret = cpu_handle_mmu_fault(env, addr, is_write, mmu_idx);
     if (ret) {
         if (retaddr) {
             /* now we have a real cpu fault */

@@ -227,9 +227,8 @@ int cpu_exec(CPUState *s);
 void do_interrupt(CPUState *);
 void switch_mode(CPUState *, int);
 
-int cpu_arm_handle_mmu_fault (CPUState *env, target_ulong address, int rw,
+int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int rw,
                               int mmu_idx);
-#define cpu_handle_mmu_fault cpu_arm_handle_mmu_fault
 
 #define CPSR_M (0x1f)
 #define CPSR_T (1 << 5)

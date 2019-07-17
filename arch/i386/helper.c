@@ -215,7 +215,7 @@ void cpu_x86_update_cr4(CPUState *env, uint32_t new_cr4)
    0  = nothing more to do
    1  = generate PF fault
 */
-int cpu_x86_handle_mmu_fault(CPUState *env, target_ulong addr,
+int cpu_handle_mmu_fault(CPUState *env, target_ulong addr,
                              int is_write1, int mmu_idx)
 {
     uint64_t ptep, pte;

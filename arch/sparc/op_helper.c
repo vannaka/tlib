@@ -1703,7 +1703,7 @@ void do_unaligned_access(target_ulong addr, int is_write, int is_user,
 void tlb_fill(CPUState *env, target_ulong addr, int is_write, int mmu_idx, void *retaddr)
 {
     int ret;
-    ret = cpu_sparc_handle_mmu_fault(env, addr, is_write, mmu_idx, 1);
+    ret = cpu_handle_mmu_fault(env, addr, is_write, mmu_idx, 1);
     if (ret) {
         cpu_restore_state2(retaddr);
         cpu_loop_exit(env);

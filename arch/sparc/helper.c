@@ -187,7 +187,7 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
 }
 
 /* Perform address translation */
-int cpu_sparc_handle_mmu_fault (CPUState *env, target_ulong address, int rw,
+int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int rw,
                               int mmu_idx, int is_softmmu)
 {
     target_phys_addr_t paddr;

@@ -782,7 +782,7 @@ void tlb_fill(CPUState *env, target_ulong addr, int is_write, int mmu_idx,
               void* retaddr)
 {
     int ret;
-    ret = cpu_riscv_handle_mmu_fault(env, addr, is_write, mmu_idx);
+    ret = cpu_handle_mmu_fault(env, addr, is_write, mmu_idx);
     if (ret == TRANSLATE_FAIL) {
         // is_write == 2 ==> CODE ACCESS - do not fire block_end hooks!
         do_raise_exception_err(env, env->exception_index, 0, is_write != 2);

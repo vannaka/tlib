@@ -316,9 +316,8 @@ typedef struct CPUState {
 /* helper.c */
 int cpu_init(const char *cpu_model);
 void cpu_sparc_set_id(CPUState *env, unsigned int cpu);
-int cpu_sparc_handle_mmu_fault(CPUState *env, target_ulong address, int rw,
+int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int rw,
                                int mmu_idx, int is_softmmu);
-#define cpu_handle_mmu_fault cpu_sparc_handle_mmu_fault
 target_ulong mmu_probe(CPUState *env, target_ulong address, int mmulev);
 
 /* cpu-exec.c */

@@ -280,7 +280,7 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
 /*
  * Assuming system mode, only called in tlb_fill
  */
-int cpu_riscv_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, int mmu_idx)
+int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, int mmu_idx)
 {
     target_phys_addr_t pa = 0;
     int prot;

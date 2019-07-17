@@ -862,9 +862,8 @@ int cpu_x86_register (CPUState *env, const char *cpu_model);
 void cpu_clear_apic_feature(CPUState *env);
 
 /* helper.c */
-int cpu_x86_handle_mmu_fault(CPUState *env, target_ulong addr,
+int cpu_handle_mmu_fault(CPUState *env, target_ulong addr,
                              int is_write, int mmu_idx);
-#define cpu_handle_mmu_fault cpu_x86_handle_mmu_fault
 void cpu_x86_set_a20(CPUState *env, int a20_state);
 
 static inline int hw_breakpoint_enabled(uintptr_t dr7, int index)

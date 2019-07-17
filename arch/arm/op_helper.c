@@ -57,7 +57,7 @@ void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx,
 
     saved_env = env;
     env = env1;
-    ret = cpu_arm_handle_mmu_fault(env, addr, is_write, mmu_idx);
+    ret = cpu_handle_mmu_fault(env, addr, is_write, mmu_idx);
     if (unlikely(ret)) {
         // is_write == 2 ==> CODE ACCESS - do not fire block_end hooks!
         cpu_loop_exit_restore(env, (uintptr_t)retaddr, is_write != 2);

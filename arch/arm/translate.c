@@ -68,6 +68,29 @@ typedef struct DisasContext {
     int vec_stride;
 } DisasContext;
 
+/* initialize TCG globals.  */
+void translate_init(void)
+{
+    static const char *regnames[] =
+       { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+         "r8", "r9", "r10", "r11", "r12", "r13", "r14", "pc" };
+
+    int i;
+    cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
+
+    for (i = 0; i < 16; i++) {
+        cpu_R[i] = tcg_global_mem_new_i32(TCG_AREG0,
+                                          offsetof(CPUState, regs[i]),
+                                          regnames[i]);
+    }
+    cpu_exclusive_addr = tcg_global_mem_new_i32(TCG_AREG0,
+        offsetof(CPUState, exclusive_addr), "exclusive_addr");
+    cpu_exclusive_val = tcg_global_mem_new_i32(TCG_AREG0,
+        offsetof(CPUState, exclusive_val), "exclusive_val");
+    cpu_exclusive_high = tcg_global_mem_new_i32(TCG_AREG0,
+        offsetof(CPUState, exclusive_high), "exclusive_high");
+}
+
 static uint32_t gen_opc_condexec_bits[OPC_BUF_SIZE];
 
 /* These instructions trap after executing, so defer them until after the
@@ -85,29 +108,6 @@ static TCGv_i32 cpu_exclusive_high;
 /* FIXME:  These should be removed.  */
 static TCGv cpu_F0s, cpu_F1s;
 static TCGv_i64 cpu_F0d, cpu_F1d;
-
-static const char *regnames[] =
-    { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-      "r8", "r9", "r10", "r11", "r12", "r13", "r14", "pc" };
-
-/* initialize TCG globals.  */
-void translate_init(void)
-{
-    int i;
-    cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
-
-    for (i = 0; i < 16; i++) {
-        cpu_R[i] = tcg_global_mem_new_i32(TCG_AREG0,
-                                          offsetof(CPUState, regs[i]),
-                                          regnames[i]);
-    }
-    cpu_exclusive_addr = tcg_global_mem_new_i32(TCG_AREG0,
-        offsetof(CPUState, exclusive_addr), "exclusive_addr");
-    cpu_exclusive_val = tcg_global_mem_new_i32(TCG_AREG0,
-        offsetof(CPUState, exclusive_val), "exclusive_val");
-    cpu_exclusive_high = tcg_global_mem_new_i32(TCG_AREG0,
-        offsetof(CPUState, exclusive_high), "exclusive_high");
-}
 
 static inline TCGv load_cpu_offset(int offset)
 {

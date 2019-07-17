@@ -43,12 +43,6 @@
 /*****************************************************************************/
 /* Code translation helpers                                                  */
 
-/* global register indexes */
-static char cpu_reg_names[10*3 + 22*4 /* GPR */
-    + 10*4 + 22*5 /* SPE GPRh */
-    + 10*4 + 22*5 /* FPR */
-    + 2*(10*6 + 22*7) /* AVRh, AVRl */
-    + 8*5 /* CRF */];
 static TCGv cpu_gpr[32];
 static TCGv cpu_gprh[32];
 static TCGv_i64 cpu_fpr[32];
@@ -63,11 +57,36 @@ static TCGv cpu_reserve;
 static TCGv_i32 cpu_fpscr;
 static TCGv_i32 cpu_access_type;
 
+/* internal defines */
+typedef struct DisasContext {
+    struct TranslationBlock *tb;
+    int singlestep_enabled;
+    target_ulong pc;
+    uint32_t opcode;
+    uint32_t exception;
+    /* Routine used to access memory */
+    int mem_idx;
+    int access_type;
+    /* Translation flags */
+    int le_mode;
+    int fpu_enabled;
+    int altivec_enabled;
+    int spe_enabled;
+    ppc_spr_t *spr_cb; /* Needed to check rights for mfspr/mtspr */
+    uint32_t vle_enabled;
+} DisasContext;
+
 void translate_init(void)
 {
     int i;
     char* p;
     size_t cpu_reg_names_size;
+
+    static char cpu_reg_names[10*3 + 22*4 /* GPR */
+        + 10*4 + 22*5 /* SPE GPRh */
+        + 10*4 + 22*5 /* FPR */
+        + 2*(10*6 + 22*7) /* AVRh, AVRl */
+        + 8*5 /* CRF */];
 
     cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
 
@@ -149,25 +168,6 @@ void translate_init(void)
     cpu_access_type = tcg_global_mem_new_i32(TCG_AREG0,
                                              offsetof(CPUState, access_type), "access_type");
 }
-
-/* internal defines */
-typedef struct DisasContext {
-    struct TranslationBlock *tb;
-    int singlestep_enabled;
-    target_ulong pc;
-    uint32_t opcode;
-    uint32_t exception;
-    /* Routine used to access memory */
-    int mem_idx;
-    int access_type;
-    /* Translation flags */
-    int le_mode;
-    int fpu_enabled;
-    int altivec_enabled;
-    int spe_enabled;
-    ppc_spr_t *spr_cb; /* Needed to check rights for mfspr/mtspr */
-    uint32_t vle_enabled;
-} DisasContext;
 
 struct opc_handler_t {
     /* invalid bits for instruction 1 (Rc(opcode) == 0) */

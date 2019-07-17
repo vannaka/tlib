@@ -45,6 +45,46 @@ typedef struct DisasContext {
     int bstate;
 } DisasContext;
 
+void translate_init(void)
+{
+    int i;
+
+    static const char * const regnames[] = {
+      "zero", "ra  ", "sp  ", "gp  ", "tp  ", "t0  ",  "t1  ",  "t2  ",
+      "s0  ", "s1  ", "a0  ", "a1  ", "a2  ", "a3  ",  "a4  ",  "a5  ",
+      "a6  ", "a7  ", "s2  ", "s3  ", "s4  ", "s5  ",  "s6  ",  "s7  ",
+      "s8  ", "s9  ", "s10 ", "s11 ", "t3  ", "t4  ",  "t5  ",  "t6  "
+    };
+
+    static const char * const fpr_regnames[] = {
+      "ft0", "ft1", "ft2",  "ft3",  "ft4", "ft5", "ft6",  "ft7",
+      "fs0", "fs1", "fa0",  "fa1",  "fa2", "fa3", "fa4",  "fa5",
+      "fa6", "fa7", "fs2",  "fs3",  "fs4", "fs5", "fs6",  "fs7",
+      "fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11"
+    };
+
+    cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
+
+    /* cpu_gpr[0] is a placeholder for the zero register. Do not use it. */
+    /* Use the gen_set_gpr and gen_get_gpr helper functions when accessing */
+    /* registers, unless you specifically block reads/writes to reg 0 */
+    TCGV_UNUSED(cpu_gpr[0]);
+    for (i = 1; i < 32; i++) {
+        cpu_gpr[i] = tcg_global_mem_new(TCG_AREG0,
+                                        offsetof(CPUState, gpr[i]), regnames[i]);
+    }
+
+    for (i = 0; i < 32; i++) {
+        cpu_fpr[i] = tcg_global_mem_new_i64(TCG_AREG0,
+                                        offsetof(CPUState, fpr[i]), fpr_regnames[i]);
+    }
+
+    cpu_pc = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, pc), "pc");
+
+    load_res = tcg_global_mem_new(cpu_env, offsetof(CPUState, load_res),
+                             "load_res");
+}
+
 static inline void kill_unknown(DisasContext *ctx, int excp);
 
 enum {
@@ -52,21 +92,6 @@ enum {
                      need to exit tb due to end of page. */
     BS_STOP     = 1, /* Need to exit tb for syscall, sret, etc. */
     BS_BRANCH   = 2, /* Need to exit tb for branch, jal, etc. */
-};
-
-
-static const char * const regnames[] = {
-  "zero", "ra  ", "sp  ", "gp  ", "tp  ", "t0  ",  "t1  ",  "t2  ",
-  "s0  ", "s1  ", "a0  ", "a1  ", "a2  ", "a3  ",  "a4  ",  "a5  ",
-  "a6  ", "a7  ", "s2  ", "s3  ", "s4  ", "s5  ",  "s6  ",  "s7  ",
-  "s8  ", "s9  ", "s10 ", "s11 ", "t3  ", "t4  ",  "t5  ",  "t6  "
-};
-
-static const char * const fpr_regnames[] = {
-  "ft0", "ft1", "ft2",  "ft3",  "ft4", "ft5", "ft6",  "ft7",
-  "fs0", "fs1", "fa0",  "fa1",  "fa2", "fa3", "fa4",  "fa5",
-  "fa6", "fa7", "fs2",  "fs3",  "fs4", "fs5", "fs6",  "fs7",
-  "fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11"
 };
 
 #ifdef TARGET_RISCV64
@@ -2087,32 +2112,6 @@ void gen_intermediate_code(CPUState *env,
     }
 
     tb->disas_flags = get_disas_flags(env, &ctx);
-}
-
-void translate_init(void)
-{
-    int i;
-
-    cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
-
-    /* cpu_gpr[0] is a placeholder for the zero register. Do not use it. */
-    /* Use the gen_set_gpr and gen_get_gpr helper functions when accessing */
-    /* registers, unless you specifically block reads/writes to reg 0 */
-    TCGV_UNUSED(cpu_gpr[0]);
-    for (i = 1; i < 32; i++) {
-        cpu_gpr[i] = tcg_global_mem_new(TCG_AREG0,
-                                        offsetof(CPUState, gpr[i]), regnames[i]);
-    }
-
-    for (i = 0; i < 32; i++) {
-        cpu_fpr[i] = tcg_global_mem_new_i64(TCG_AREG0,
-                                        offsetof(CPUState, fpr[i]), fpr_regnames[i]);
-    }
-
-    cpu_pc = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, pc), "pc");
-
-    load_res = tcg_global_mem_new(cpu_env, offsetof(CPUState, load_res),
-                             "load_res");
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

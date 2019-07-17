@@ -2000,14 +2000,14 @@ uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {
     return 0;
 }
 
-void create_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
-    dc->pc = tb->pc;
+void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
+    dc->tb = tb;
+    dc->pc = dc->tb->pc;
 
     /* once we have GDB, the rest of the translate.c implementation should be
        ready for singlestep */
     dc->singlestep_enabled = env->singlestep_enabled;
 
-    dc->tb = tb;
     dc->bstate = BS_NONE;
 
     dc->mem_idx = cpu_mmu_index(env);
@@ -2026,7 +2026,7 @@ void gen_intermediate_code(CPUState *env,
 {
     DisasContext dc;
 
-    create_disas_context(&dc, env, tb);
+    setup_disas_context(&dc, env, tb);
 
     tcg_clear_temp_count();
 

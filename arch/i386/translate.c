@@ -7639,26 +7639,26 @@ uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {
     return !(dc->code32);
 }
 
-void create_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
+void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
+    dc->tb = tb;
     dc->is_jmp = DISAS_NEXT;
-    dc->pc = tb->pc;
-    dc->pe = (tb->flags >> HF_PE_SHIFT) & 1;
-    dc->code32 = (tb->flags >> HF_CS32_SHIFT) & 1;
-    dc->ss32 = (tb->flags >> HF_SS32_SHIFT) & 1;
-    dc->addseg = (tb->flags >> HF_ADDSEG_SHIFT) & 1;
+    dc->pc = dc->tb->pc;
+    dc->pe = (dc->tb->flags >> HF_PE_SHIFT) & 1;
+    dc->code32 = (dc->tb->flags >> HF_CS32_SHIFT) & 1;
+    dc->ss32 = (dc->tb->flags >> HF_SS32_SHIFT) & 1;
+    dc->addseg = (dc->tb->flags >> HF_ADDSEG_SHIFT) & 1;
     dc->f_st = 0;
-    dc->vm86 = (tb->flags >> VM_SHIFT) & 1;
-    dc->cpl = (tb->flags >> HF_CPL_SHIFT) & 3;
-    dc->iopl = (tb->flags >> IOPL_SHIFT) & 3;
-    dc->tf = (tb->flags >> TF_SHIFT) & 1;
+    dc->vm86 = (dc->tb->flags >> VM_SHIFT) & 1;
+    dc->cpl = (dc->tb->flags >> HF_CPL_SHIFT) & 3;
+    dc->iopl = (dc->tb->flags >> IOPL_SHIFT) & 3;
+    dc->tf = (dc->tb->flags >> TF_SHIFT) & 1;
     dc->singlestep_enabled = env->singlestep_enabled;
     dc->cc_op = CC_OP_DYNAMIC;
-    dc->cs_base = tb->cs_base;
-    dc->tb = tb;
+    dc->cs_base = dc->tb->cs_base;
     dc->popl_esp_hack = 0;
     /* select memory access functions */
     dc->mem_index = 0;
-    if (tb->flags & HF_SOFTMMU_MASK) {
+    if (dc->tb->flags & HF_SOFTMMU_MASK) {
         if (dc->cpl == 3)
             dc->mem_index = 2 * 4;
         else
@@ -7669,10 +7669,10 @@ void create_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb)
     dc->cpuid_ext2_features = env->cpuid_ext2_features;
     dc->cpuid_ext3_features = env->cpuid_ext3_features;
 #ifdef TARGET_X86_64
-    dc->lma = (tb->flags >> HF_LMA_SHIFT) & 1;
-    dc->code64 = (tb->flags >> HF_CS64_SHIFT) & 1;
+    dc->lma = (dc->tb->flags >> HF_LMA_SHIFT) & 1;
+    dc->code64 = (dc->tb->flags >> HF_CS64_SHIFT) & 1;
 #endif
-    dc->flags = tb->flags;
+    dc->flags = dc->tb->flags;
     dc->jmp_opt = !(dc->tf || env->singlestep_enabled ||
                     (tb->flags & HF_INHIBIT_IRQ_MASK));
 
@@ -7708,7 +7708,7 @@ void gen_intermediate_code(CPUState *env,
     DisasContext dc;
     CPUBreakpoint *bp;
 
-    create_disas_context(&dc, env, tb);
+    setup_disas_context(&dc, env, tb);
     tcg_clear_temp_count();
 
     UNLOCK_TB(tb);

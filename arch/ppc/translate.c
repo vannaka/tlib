@@ -8052,9 +8052,9 @@ uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {
     return env->bfd_mach | dc->le_mode << 16;
 }
 
-void create_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
-    dc->pc = tb->pc;
+void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
     dc->tb = tb;
+    dc->pc = dc->tb->pc;
     dc->exception = POWERPC_EXCP_NONE;
     dc->spr_cb = env->spr_cb;
     dc->mem_idx = env->mmu_idx;
@@ -8092,7 +8092,7 @@ void gen_intermediate_code(CPUState *env,
     DisasContext dc;
     CPUBreakpoint *bp;
 
-    create_disas_context(&dc, env, tb);
+    setup_disas_context(&dc, env, tb);
     tcg_clear_temp_count();
 
     UNLOCK_TB(tb);

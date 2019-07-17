@@ -2805,16 +2805,16 @@ uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {
     return 0;
 }
 
-void create_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
+void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
     dc->tb = tb;
+    dc->pc = dc->tb->pc;
     dc->is_jmp = DISAS_NEXT;
-    dc->pc = tb->pc;
-    dc->npc = (target_ulong) tb->cs_base;
+    dc->npc = (target_ulong) dc->tb->cs_base;
     dc->cc_op = CC_OP_DYNAMIC;
     dc->mem_idx = cpu_mmu_index(env);
     dc->def = env->def;
-    dc->fpu_enabled = tb_fpu_enabled(tb->flags);
-    dc->address_mask_32bit = tb_am_enabled(tb->flags);
+    dc->fpu_enabled = tb_fpu_enabled(dc->tb->flags);
+    dc->address_mask_32bit = tb_am_enabled(dc->tb->flags);
     dc->singlestep_enabled = (env->singlestep_enabled);
 
     cpu_tmp0 = tcg_temp_new();
@@ -2844,7 +2844,7 @@ void gen_intermediate_code(CPUState *env,
     DisasContext dc;
     CPUBreakpoint *bp;
 
-    create_disas_context(&dc, env, tb);
+    setup_disas_context(&dc, env, tb);
     tcg_clear_temp_count();
 
     UNLOCK_TB(tb);

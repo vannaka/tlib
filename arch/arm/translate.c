@@ -9918,19 +9918,19 @@ uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {
     return dc->thumb;
 }
 
-void create_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
+void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
     dc->tb = tb;
     dc->is_jmp = DISAS_NEXT;
-    dc->pc = tb->pc;
+    dc->pc = dc->tb->pc;
     dc->singlestep_enabled = env->singlestep_enabled;
     dc->condjmp = 0;
-    dc->thumb = ARM_TBFLAG_THUMB(tb->flags);
-    dc->condexec_mask = (ARM_TBFLAG_CONDEXEC(tb->flags) & 0xf) << 1;
-    dc->condexec_cond = ARM_TBFLAG_CONDEXEC(tb->flags) >> 4;
-    dc->user = (ARM_TBFLAG_PRIV(tb->flags) == 0);
-    dc->vfp_enabled = ARM_TBFLAG_VFPEN(tb->flags);
-    dc->vec_len = ARM_TBFLAG_VECLEN(tb->flags);
-    dc->vec_stride = ARM_TBFLAG_VECSTRIDE(tb->flags);
+    dc->thumb = ARM_TBFLAG_THUMB(dc->tb->flags);
+    dc->condexec_mask = (ARM_TBFLAG_CONDEXEC(dc->tb->flags) & 0xf) << 1;
+    dc->condexec_cond = ARM_TBFLAG_CONDEXEC(dc->tb->flags) >> 4;
+    dc->user = (ARM_TBFLAG_PRIV(dc->tb->flags) == 0);
+    dc->vfp_enabled = ARM_TBFLAG_VFPEN(dc->tb->flags);
+    dc->vec_len = ARM_TBFLAG_VECLEN(dc->tb->flags);
+    dc->vec_stride = ARM_TBFLAG_VECSTRIDE(dc->tb->flags);
     cpu_F0s = tcg_temp_new_i32();
     cpu_F1s = tcg_temp_new_i32();
     cpu_F0d = tcg_temp_new_i64();
@@ -10001,7 +10001,7 @@ void gen_intermediate_code(CPUState *env,
     DisasContext dc;
     CPUBreakpoint *bp;
 
-    create_disas_context(&dc, env, tb);
+    setup_disas_context(&dc, env, tb);
     tcg_clear_temp_count();
 
     UNLOCK_TB(tb);

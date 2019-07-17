@@ -265,11 +265,11 @@ static void spr_write_601_rtcl (void *opaque, int sprn, int gprn)
 
 static void spr_write_hid0_601 (void *opaque, int sprn, int gprn)
 {
-    DisasContext *ctx = opaque;
+    DisasContext *dc = opaque;
 
     gen_helper_store_hid0_601(cpu_gpr[gprn]);
     /* Must stop the translation as endianness may have changed */
-    gen_stop_exception(ctx);
+    gen_stop_exception(dc);
 }
 
 /* Unified bats */
@@ -305,11 +305,11 @@ static void spr_write_40x_pit (void *opaque, int sprn, int gprn)
 
 static void spr_write_40x_dbcr0 (void *opaque, int sprn, int gprn)
 {
-    DisasContext *ctx = opaque;
+    DisasContext *dc = opaque;
 
     gen_helper_store_40x_dbcr0(cpu_gpr[gprn]);
     /* We must stop translation as we may have rebooted */
-    gen_stop_exception(ctx);
+    gen_stop_exception(dc);
 }
 
 static void spr_write_40x_sler (void *opaque, int sprn, int gprn)
@@ -379,7 +379,7 @@ static void spr_write_excp_prefix (void *opaque, int sprn, int gprn)
 
 static void spr_write_excp_vector (void *opaque, int sprn, int gprn)
 {
-    DisasContext *ctx = opaque;
+    DisasContext *dc = opaque;
     int sprn_offs;
     if (sprn >= SPR_BOOKE_IVOR0 && sprn <= SPR_BOOKE_IVOR15) {
         sprn_offs = sprn - SPR_BOOKE_IVOR0;
@@ -390,7 +390,7 @@ static void spr_write_excp_vector (void *opaque, int sprn, int gprn)
     } else {
         tlib_printf(LOG_LEVEL_WARNING, "Trying to write an unknown exception vector %d %03x\n",
                sprn, sprn);
-        gen_inval_exception(ctx, POWERPC_EXCP_PRIV_REG);
+        gen_inval_exception(dc, POWERPC_EXCP_PRIV_REG);
         return;
     }
     TCGv t0 = tcg_temp_new();

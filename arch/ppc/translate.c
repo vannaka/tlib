@@ -7208,473 +7208,473 @@ static inline uint32_t LI20_LI20(uint32_t opcode)
 }
 EXTRACT_HELPER(LI20_RD, 21, 5);
 
-static void gen_se_add(DisasContext *ctx)
+static void gen_se_add(DisasContext *dc)
 {
-    gen_op_arith_add(ctx, cpu_gpr[RR_RX(ctx->opcode)], cpu_gpr[RR_RY(ctx->opcode)], cpu_gpr[RR_RX(ctx->opcode)], 0, 0, 0);
+    gen_op_arith_add(dc, cpu_gpr[RR_RX(dc->opcode)], cpu_gpr[RR_RY(dc->opcode)], cpu_gpr[RR_RX(dc->opcode)], 0, 0, 0);
 }
 
-static void gen_se_addi(DisasContext *ctx)
+static void gen_se_addi(DisasContext *dc)
 {
 }
 
-static void gen_e_add16i(DisasContext *ctx)
+static void gen_e_add16i(DisasContext *dc)
 {
-    tcg_gen_addi_tl(cpu_gpr[D_RD(ctx->opcode)], cpu_gpr[D_RA(ctx->opcode)], D_SI(ctx->opcode));
+    tcg_gen_addi_tl(cpu_gpr[D_RD(dc->opcode)], cpu_gpr[D_RA(dc->opcode)], D_SI(dc->opcode));
 }
 
-static void gen_e_add2i(DisasContext *ctx)
+static void gen_e_add2i(DisasContext *dc)
 {
-    tcg_gen_addi_tl(cpu_gpr[I16A_RA(ctx->opcode)], cpu_gpr[I16A_RA(ctx->opcode)], I16A_SI(ctx->opcode));
-    gen_set_Rc0(ctx, cpu_gpr[I16A_RA(ctx->opcode)]);
+    tcg_gen_addi_tl(cpu_gpr[I16A_RA(dc->opcode)], cpu_gpr[I16A_RA(dc->opcode)], I16A_SI(dc->opcode));
+    gen_set_Rc0(dc, cpu_gpr[I16A_RA(dc->opcode)]);
 }
 
-static void gen_e_add2is(DisasContext *ctx)
+static void gen_e_add2is(DisasContext *dc)
 {
-    tcg_gen_addi_tl(cpu_gpr[I16A_RA(ctx->opcode)], cpu_gpr[I16A_RA(ctx->opcode)], I16A_SI(ctx->opcode) << 16);
+    tcg_gen_addi_tl(cpu_gpr[I16A_RA(dc->opcode)], cpu_gpr[I16A_RA(dc->opcode)], I16A_SI(dc->opcode) << 16);
 }
 
-static void gen_e_addic(DisasContext *ctx)
+static void gen_e_addic(DisasContext *dc)
 {
 }
 
-static void gen_se_and(DisasContext *ctx)
+static void gen_se_and(DisasContext *dc)
 {
 }
 
-static void gen_se_andc(DisasContext *ctx)
+static void gen_se_andc(DisasContext *dc)
 {
 }
 
-static void gen_e_andi(DisasContext *ctx)
+static void gen_e_andi(DisasContext *dc)
 {
 }
 
-static void gen_se_andi(DisasContext *ctx)
+static void gen_se_andi(DisasContext *dc)
 {
 }
 
-static void gen_e_and2i(DisasContext *ctx)
+static void gen_e_and2i(DisasContext *dc)
 {
 }
 
-static void gen_e_and2is(DisasContext *ctx)
+static void gen_e_and2is(DisasContext *dc)
 {
 }
 
-static void gen_e_b(DisasContext *ctx)
+static void gen_e_b(DisasContext *dc)
 {
 }
 
-static void gen_se_b(DisasContext *ctx)
+static void gen_se_b(DisasContext *dc)
 {
 }
 
-static void gen_e_bc(DisasContext *ctx)
+static void gen_e_bc(DisasContext *dc)
 {
 }
 
-static void gen_se_bc(DisasContext *ctx)
+static void gen_se_bc(DisasContext *dc)
 {
 }
 
-static void gen_se_bclri(DisasContext *ctx)
+static void gen_se_bclri(DisasContext *dc)
 {
 }
 
-static void gen_se_bctr(DisasContext *ctx)
+static void gen_se_bctr(DisasContext *dc)
 {
 }
 
-static void gen_se_bgeni(DisasContext *ctx)
+static void gen_se_bgeni(DisasContext *dc)
 {
 }
 
-static void gen_se_blr(DisasContext *ctx)
+static void gen_se_blr(DisasContext *dc)
 {
 }
 
-static void gen_se_bmaski(DisasContext *ctx)
+static void gen_se_bmaski(DisasContext *dc)
 {
 }
 
-static void gen_se_bseti(DisasContext *ctx)
+static void gen_se_bseti(DisasContext *dc)
 {
 }
 
-static void gen_se_btsti(DisasContext *ctx)
+static void gen_se_btsti(DisasContext *dc)
 {
 }
 
-static void gen_se_cmp(DisasContext *ctx)
+static void gen_se_cmp(DisasContext *dc)
 {
 }
 
-static void gen_e_cmph(DisasContext *ctx)
+static void gen_e_cmph(DisasContext *dc)
 {
 }
 
-static void gen_se_cmph(DisasContext *ctx)
+static void gen_se_cmph(DisasContext *dc)
 {
 }
 
-static void gen_e_cmphl(DisasContext *ctx)
+static void gen_e_cmphl(DisasContext *dc)
 {
 }
 
-static void gen_se_cmphl(DisasContext *ctx)
+static void gen_se_cmphl(DisasContext *dc)
 {
 }
 
-static void gen_e_cmph16i(DisasContext *ctx)
+static void gen_e_cmph16i(DisasContext *dc)
 {
 }
 
-static void gen_e_cmp16i(DisasContext *ctx)
+static void gen_e_cmp16i(DisasContext *dc)
 {
 }
 
-static void gen_e_cmphl16i(DisasContext *ctx)
+static void gen_e_cmphl16i(DisasContext *dc)
 {
 }
 
-static void gen_e_cmpl16i(DisasContext *ctx)
+static void gen_e_cmpl16i(DisasContext *dc)
 {
 }
 
-static void gen_e_cmpi_or_cmpli(DisasContext *ctx)
+static void gen_e_cmpi_or_cmpli(DisasContext *dc)
 {
 }
 
-static void gen_se_cmpi(DisasContext *ctx)
+static void gen_se_cmpi(DisasContext *dc)
 {
 }
 
-static void gen_se_cmpl(DisasContext *ctx)
+static void gen_se_cmpl(DisasContext *dc)
 {
 }
 
-static void gen_se_cmpli(DisasContext *ctx)
+static void gen_se_cmpli(DisasContext *dc)
 {
 }
 
-static void gen_e_crand(DisasContext *ctx)
+static void gen_e_crand(DisasContext *dc)
 {
 }
 
-static void gen_e_crandc(DisasContext *ctx)
+static void gen_e_crandc(DisasContext *dc)
 {
 }
 
-static void gen_e_creqv(DisasContext *ctx)
+static void gen_e_creqv(DisasContext *dc)
 {
 }
 
-static void gen_e_crnand(DisasContext *ctx)
+static void gen_e_crnand(DisasContext *dc)
 {
 }
 
-static void gen_e_crnor(DisasContext *ctx)
+static void gen_e_crnor(DisasContext *dc)
 {
 }
 
-static void gen_e_cror(DisasContext *ctx)
+static void gen_e_cror(DisasContext *dc)
 {
 }
 
-static void gen_e_crorc(DisasContext *ctx)
+static void gen_e_crorc(DisasContext *dc)
 {
 }
 
-static void gen_e_crxor(DisasContext *ctx)
+static void gen_e_crxor(DisasContext *dc)
 {
 }
 
-static void gen_se_extsb(DisasContext *ctx)
+static void gen_se_extsb(DisasContext *dc)
 {
 }
 
-static void gen_se_extsh(DisasContext *ctx)
+static void gen_se_extsh(DisasContext *dc)
 {
 }
 
-static void gen_se_extzb(DisasContext *ctx)
+static void gen_se_extzb(DisasContext *dc)
 {
 }
 
-static void gen_se_extzh(DisasContext *ctx)
+static void gen_se_extzh(DisasContext *dc)
 {
 }
 
-static void gen_se_illegal(DisasContext *ctx)
+static void gen_se_illegal(DisasContext *dc)
 {
 }
 
-static void gen_se_isync(DisasContext *ctx)
+static void gen_se_isync(DisasContext *dc)
 {
 }
 
-static void gen_e_lbz(DisasContext *ctx)
+static void gen_e_lbz(DisasContext *dc)
 {
 }
 
-static void gen_se_lbz(DisasContext *ctx)
+static void gen_se_lbz(DisasContext *dc)
 {
 }
 
-static void gen_e_lbzu(DisasContext *ctx)
+static void gen_e_lbzu(DisasContext *dc)
 {
 }
 
-static void gen_e_lha(DisasContext *ctx)
+static void gen_e_lha(DisasContext *dc)
 {
 }
 
-static void gen_e_lhau(DisasContext *ctx)
+static void gen_e_lhau(DisasContext *dc)
 {
 }
 
-static void gen_e_lhz(DisasContext *ctx)
+static void gen_e_lhz(DisasContext *dc)
 {
 }
 
-static void gen_se_lhz(DisasContext *ctx)
+static void gen_se_lhz(DisasContext *dc)
 {
 }
 
-static void gen_e_lhzu(DisasContext *ctx)
+static void gen_e_lhzu(DisasContext *dc)
 {
 }
 
-static void gen_e_li(DisasContext *ctx)
+static void gen_e_li(DisasContext *dc)
 {
 }
 
-static void gen_e_lis(DisasContext *ctx)
+static void gen_e_lis(DisasContext *dc)
 {
 }
 
-static void gen_se_li(DisasContext *ctx)
+static void gen_se_li(DisasContext *dc)
 {
 }
 
-static void gen_e_lmw(DisasContext *ctx)
+static void gen_e_lmw(DisasContext *dc)
 {
 }
 
-static void gen_e_lwz(DisasContext *ctx)
+static void gen_e_lwz(DisasContext *dc)
 {
 }
 
-static void gen_se_lwz(DisasContext *ctx)
+static void gen_se_lwz(DisasContext *dc)
 {
 }
 
-static void gen_e_lwzu(DisasContext *ctx)
+static void gen_e_lwzu(DisasContext *dc)
 {
 }
 
-static void gen_e_mcrf(DisasContext *ctx)
+static void gen_e_mcrf(DisasContext *dc)
 {
 }
 
-static void gen_se_mfar(DisasContext *ctx)
+static void gen_se_mfar(DisasContext *dc)
 {
 }
 
-static void gen_se_mfctr(DisasContext *ctx)
+static void gen_se_mfctr(DisasContext *dc)
 {
 }
 
-static void gen_se_mflr(DisasContext *ctx)
+static void gen_se_mflr(DisasContext *dc)
 {
 }
 
-static void gen_se_mr(DisasContext *ctx)
+static void gen_se_mr(DisasContext *dc)
 {
 }
 
-static void gen_se_mtar(DisasContext *ctx)
+static void gen_se_mtar(DisasContext *dc)
 {
 }
 
-static void gen_se_mtctr(DisasContext *ctx)
+static void gen_se_mtctr(DisasContext *dc)
 {
 }
 
-static void gen_se_mtlr(DisasContext *ctx)
+static void gen_se_mtlr(DisasContext *dc)
 {
 }
 
-static void gen_e_mulli(DisasContext *ctx)
+static void gen_e_mulli(DisasContext *dc)
 {
 }
 
-static void gen_e_mull2i(DisasContext *ctx)
+static void gen_e_mull2i(DisasContext *dc)
 {
 }
 
-static void gen_se_mullw(DisasContext *ctx)
+static void gen_se_mullw(DisasContext *dc)
 {
 }
 
-static void gen_se_neg(DisasContext *ctx)
+static void gen_se_neg(DisasContext *dc)
 {
 }
 
-static void gen_se_not(DisasContext *ctx)
+static void gen_se_not(DisasContext *dc)
 {
 }
 
-static void gen_se_or(DisasContext *ctx)
+static void gen_se_or(DisasContext *dc)
 {
 }
 
-static void gen_e_or2i(DisasContext *ctx)
+static void gen_e_or2i(DisasContext *dc)
 {
 }
 
-static void gen_e_or2is(DisasContext *ctx)
+static void gen_e_or2is(DisasContext *dc)
 {
 }
 
-static void gen_e_ori(DisasContext *ctx)
+static void gen_e_ori(DisasContext *dc)
 {
 }
 
-static void gen_se_rfci(DisasContext *ctx)
+static void gen_se_rfci(DisasContext *dc)
 {
 }
 
-static void gen_se_rfdi(DisasContext *ctx)
+static void gen_se_rfdi(DisasContext *dc)
 {
 }
 
-static void gen_se_rfi(DisasContext *ctx)
+static void gen_se_rfi(DisasContext *dc)
 {
 }
 
-static void gen_se_rfmci(DisasContext *ctx)
+static void gen_se_rfmci(DisasContext *dc)
 {
 }
 
-static void gen_e_rlw(DisasContext *ctx)
+static void gen_e_rlw(DisasContext *dc)
 {
 }
 
-static void gen_e_rlwi(DisasContext *ctx)
+static void gen_e_rlwi(DisasContext *dc)
 {
 }
 
-static void gen_e_rlwimi(DisasContext *ctx)
+static void gen_e_rlwimi(DisasContext *dc)
 {
 }
 
-static void gen_e_rlwinm(DisasContext *ctx)
+static void gen_e_rlwinm(DisasContext *dc)
 {
 }
 
-static void gen_se_sc(DisasContext *ctx)
+static void gen_se_sc(DisasContext *dc)
 {
 }
 
-static void gen_e_slwi(DisasContext *ctx)
+static void gen_e_slwi(DisasContext *dc)
 {
 }
 
-static void gen_se_slw(DisasContext *ctx)
+static void gen_se_slw(DisasContext *dc)
 {
 }
 
-static void gen_se_slwi(DisasContext *ctx)
+static void gen_se_slwi(DisasContext *dc)
 {
 }
 
-static void gen_se_sraw(DisasContext *ctx)
+static void gen_se_sraw(DisasContext *dc)
 {
 }
 
-static void gen_se_srawi(DisasContext *ctx)
+static void gen_se_srawi(DisasContext *dc)
 {
 }
 
-static void gen_e_srwi(DisasContext *ctx)
+static void gen_e_srwi(DisasContext *dc)
 {
 }
 
-static void gen_se_srw(DisasContext *ctx)
+static void gen_se_srw(DisasContext *dc)
 {
 }
 
-static void gen_se_srwi(DisasContext *ctx)
+static void gen_se_srwi(DisasContext *dc)
 {
 }
 
-static void gen_e_stb(DisasContext *ctx)
+static void gen_e_stb(DisasContext *dc)
 {
 }
 
-static void gen_se_stb(DisasContext *ctx)
+static void gen_se_stb(DisasContext *dc)
 {
 }
 
-static void gen_e_stbu(DisasContext *ctx)
+static void gen_e_stbu(DisasContext *dc)
 {
 }
 
-static void gen_e_sth(DisasContext *ctx)
+static void gen_e_sth(DisasContext *dc)
 {
 }
 
-static void gen_se_sth(DisasContext *ctx)
+static void gen_se_sth(DisasContext *dc)
 {
 }
 
-static void gen_e_sthu(DisasContext *ctx)
+static void gen_e_sthu(DisasContext *dc)
 {
 }
 
-static void gen_e_stmw(DisasContext *ctx)
+static void gen_e_stmw(DisasContext *dc)
 {
 }
 
-static void gen_e_stw(DisasContext *ctx)
+static void gen_e_stw(DisasContext *dc)
 {
 }
 
-static void gen_se_stw(DisasContext *ctx)
+static void gen_se_stw(DisasContext *dc)
 {
 }
 
-static void gen_e_stwu(DisasContext *ctx)
+static void gen_e_stwu(DisasContext *dc)
 {
 }
 
-static void gen_se_sub(DisasContext *ctx)
+static void gen_se_sub(DisasContext *dc)
 {
 }
 
-static void gen_se_subf(DisasContext *ctx)
+static void gen_se_subf(DisasContext *dc)
 {
 }
 
-static void gen_e_subfic(DisasContext *ctx)
+static void gen_e_subfic(DisasContext *dc)
 {
 }
 
-static void gen_se_subi(DisasContext *ctx)
+static void gen_se_subi(DisasContext *dc)
 {
 }
 
-static void gen_e_xori(DisasContext *ctx)
+static void gen_e_xori(DisasContext *dc)
 {
 }
 
-static void gen_e_addi(DisasContext *ctx)
+static void gen_e_addi(DisasContext *dc)
 {
-    target_long imm = SCI8(ctx->opcode);
-    tcg_gen_addi_tl(cpu_gpr[SCI8_RD(ctx->opcode)], cpu_gpr[SCI8_RA(ctx->opcode)], imm);
-    if (unlikely(SCI8_RC(ctx->opcode))) {
-        gen_set_Rc0(ctx, cpu_gpr[SCI8_RD(ctx->opcode)]);
+    target_long imm = SCI8(dc->opcode);
+    tcg_gen_addi_tl(cpu_gpr[SCI8_RD(dc->opcode)], cpu_gpr[SCI8_RA(dc->opcode)], imm);
+    if (unlikely(SCI8_RC(dc->opcode))) {
+        gen_set_Rc0(dc, cpu_gpr[SCI8_RD(dc->opcode)]);
     }
 }
 
@@ -7928,9 +7928,9 @@ GEN_SHORT_VLE_HANDLER(se_b, 0x3A, 0xFF, 0xFF),
 #include "helper_regs.h"
 
 // This function decodes a VLE instruction and returns its 3 opcodes.
-static void decode_vle_instruction(DisasContext * ctxp, uint32_t *op1, uint32_t *op2, uint32_t *op3)
+static void decode_vle_instruction(DisasContext * dc, uint32_t *op1, uint32_t *op2, uint32_t *op3)
 {
-    uint32_t opcode = ctxp->opcode;;
+    uint32_t opcode = dc->opcode;;
     uint32_t o1 = (opcode >> 26) & ((1 << 6) - 1);
     uint32_t op2_shift = 0, op2_len = 0, op3_shift = 0, op3_len = 0;
 

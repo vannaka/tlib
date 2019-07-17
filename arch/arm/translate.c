@@ -48,6 +48,17 @@
 
 #define ARCH(x) do { if (!ENABLE_ARCH_##x) goto illegal_op; } while(0)
 
+/* We reuse the same 64-bit temporaries for efficiency.  */
+static TCGv_i64 cpu_V0, cpu_V1, cpu_M0;
+static TCGv_i32 cpu_R[16];
+static TCGv_i32 cpu_exclusive_addr;
+static TCGv_i32 cpu_exclusive_val;
+static TCGv_i32 cpu_exclusive_high;
+
+/* FIXME:  These should be removed.  */
+static TCGv cpu_F0s, cpu_F1s;
+static TCGv_i64 cpu_F0d, cpu_F1d;
+
 /* internal defines */
 typedef struct DisasContext {
     struct TranslationBlock *tb;
@@ -97,17 +108,6 @@ static uint32_t gen_opc_condexec_bits[OPC_BUF_SIZE];
    conditional executions state has been updated.  */
 #define DISAS_WFI 4
 #define DISAS_SWI 5
-
-/* We reuse the same 64-bit temporaries for efficiency.  */
-static TCGv_i64 cpu_V0, cpu_V1, cpu_M0;
-static TCGv_i32 cpu_R[16];
-static TCGv_i32 cpu_exclusive_addr;
-static TCGv_i32 cpu_exclusive_val;
-static TCGv_i32 cpu_exclusive_high;
-
-/* FIXME:  These should be removed.  */
-static TCGv cpu_F0s, cpu_F1s;
-static TCGv_i64 cpu_F0d, cpu_F1d;
 
 static inline TCGv load_cpu_offset(int offset)
 {

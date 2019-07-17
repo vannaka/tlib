@@ -1944,6 +1944,7 @@ static void decode_RV32_64G(CPUState *env, DisasContext *dc)
 
 static int disas_insn(CPUState *env, DisasContext *dc)
 {
+    dc->opcode = ldl_code(dc->pc);
     /* handle custom instructions */
     int i;
     for(i = 0; i < env->custom_instructions_count; i++)
@@ -2048,8 +2049,6 @@ void gen_intermediate_code(CPUState *env,
             tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc.pc;
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
-
-        dc.opcode = ldl_code(dc.pc);
 
         tb->prev_size = tb->size;
         tb->size += disas_insn(env, &dc);

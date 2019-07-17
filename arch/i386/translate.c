@@ -54,8 +54,6 @@
 #define REX_B(s) 0
 #endif
 
-//#define MACRO_TEST   1
-
 /* global register indexes */
 static TCGv cpu_A0, cpu_cc_src, cpu_cc_dst, cpu_cc_tmp;
 static TCGv_i32 cpu_cc_op;

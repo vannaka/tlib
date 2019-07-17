@@ -31,6 +31,8 @@
 
 #include "tb-helper.h"
 
+#include "debug.h"
+
 #define DYNAMIC_PC  1 /* dynamic pc value */
 #define JUMP_PC     2 /* dynamic pc value which takes only two values
                          according to jump_pc[T2] */
@@ -2777,7 +2779,9 @@ void gen_intermediate_code(CPUState *env,
     create_disas_context(&dc, env, tb);
     tcg_clear_temp_count();
 
+    UNLOCK_TB(tb);
     while (1) {
+        CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
             bp = process_breakpoints(env, dc.pc);
             if (bp != NULL && gen_breakpoint(&dc, bp)) {

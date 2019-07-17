@@ -2009,7 +2009,9 @@ void gen_intermediate_code(CPUState *env,
 
     tcg_clear_temp_count();
 
+    UNLOCK_TB(tb);
     while (1) {
+        CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
             CPUBreakpoint* bp = process_breakpoints(env, ctx.pc);
             if (bp != NULL && gen_breakpoint(&ctx, bp)) {

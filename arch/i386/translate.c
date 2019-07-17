@@ -28,6 +28,8 @@
 
 #include "tb-helper.h"
 
+#include "debug.h"
+
 #define PREFIX_REPZ   0x01
 #define PREFIX_REPNZ  0x02
 #define PREFIX_LOCK   0x04
@@ -7711,7 +7713,9 @@ void gen_intermediate_code(CPUState *env,
     create_disas_context(&dc, env, tb);
     tcg_clear_temp_count();
 
+    UNLOCK_TB(tb);
     while (1) {
+        CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
             bp = process_breakpoints(env, dc.pc);
             if (bp != NULL && gen_breakpoint(&dc, bp)) {

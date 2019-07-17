@@ -331,10 +331,6 @@ int cpu_cwp_inc(CPUState *env, int cwp);
 int cpu_cwp_dec(CPUState *env, int cwp);
 void cpu_set_cwp(CPUState *env, int new_cwp);
 
-/* cpu-exec.c */
-void cpu_unassigned_access(CPUState *env, target_phys_addr_t addr,
-                           int is_write, int is_exec, int is_asi, int size);
-
 /* helper.c */
 void do_interrupt(CPUState *env);
 

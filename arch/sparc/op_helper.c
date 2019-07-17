@@ -1753,10 +1753,3 @@ static void do_unassigned_access(target_phys_addr_t addr, int is_write,
         tlb_flush(env, 1);
     }
 }
-
-void cpu_unassigned_access(CPUState *env1, target_phys_addr_t addr,
-                           int is_write, int is_exec, int is_asi, int size)
-{
-    env = env1;
-    do_unassigned_access(addr, is_write, is_exec, is_asi, size);
-}

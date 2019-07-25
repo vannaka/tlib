@@ -39,7 +39,6 @@ typedef struct DisasContext {
     target_ulong npc;
     int mem_idx;
     int bstate; // TODO: is_jmp in other archs
-    int singlestep_enabled;
     uint32_t opcode;
 } DisasContext;
 
@@ -177,10 +176,6 @@ static inline void kill_unknown(DisasContext *dc, int excp)
 
 static inline bool use_goto_tb(DisasContext *dc, target_ulong dest)
 {
-    if (unlikely(dc->singlestep_enabled)) {
-        return false;
-    }
-
     return (dc->tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK);
 }
 
@@ -193,9 +188,6 @@ static inline void gen_goto_tb(DisasContext *dc, int n, target_ulong dest)
         gen_exit_tb((uintptr_t)dc->tb + n, dc->tb);
     } else {
         tcg_gen_movi_tl(cpu_pc, dest);
-        if (dc->singlestep_enabled) {
-            gen_helper_raise_exception_debug(cpu_env);
-        }
         gen_exit_tb_no_chaining(dc->tb);
     }
 }
@@ -2004,10 +1996,6 @@ void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) 
     dc->tb = tb;
     dc->pc = dc->tb->pc;
 
-    /* once we have GDB, the rest of the translate.c implementation should be
-       ready for singlestep */
-    dc->singlestep_enabled = env->singlestep_enabled;
-
     dc->bstate = BS_NONE;
 
     dc->mem_idx = cpu_mmu_index(env);
@@ -2064,9 +2052,6 @@ void gen_intermediate_code(CPUState *env,
         if (dc.bstate != BS_NONE) {
             break;
         }
-        if (dc.singlestep_enabled) {
-            break;
-        }
         if ((dc.pc - (tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
             break;
         }
@@ -2085,13 +2070,7 @@ void gen_intermediate_code(CPUState *env,
             break;
         }
     }
-    if (env->singlestep_enabled && dc.bstate != BS_BRANCH) {
-        if (dc.bstate == BS_NONE) {
-            gen_sync_pc(&dc);
-        }
-        gen_helper_raise_exception_debug(cpu_env);
-    } else {
-        switch (dc.bstate) {
+    switch (dc.bstate) {
         case BS_STOP:
             gen_goto_tb(&dc, 0, dc.pc);
             break;
@@ -2102,7 +2081,6 @@ void gen_intermediate_code(CPUState *env,
         case BS_BRANCH: /* ops using BS_BRANCH generate own exit seq */
         default:
             break;
-        }
     }
 
     tb->disas_flags = get_disas_flags(env, &dc);

@@ -34,10 +34,6 @@
 
 #include "debug.h"
 
-#define CPU_SINGLE_STEP 0x1
-#define CPU_BRANCH_STEP 0x2
-#define GDBSTUB_SINGLE_STEP 0x4
-
 /* Include definitions for instructions classes and implementations flags */
 
 /*****************************************************************************/
@@ -62,7 +58,6 @@ typedef struct DisasContext {
     struct TranslationBlock *tb;
     target_ulong pc;
     int mem_idx;
-    int singlestep_enabled;
     uint32_t opcode;
     uint32_t exception;
     int access_type;
@@ -2499,26 +2494,12 @@ static inline void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
 {
     TranslationBlock *tb;
     tb = s->tb;
-    if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK) &&
-        likely(!s->singlestep_enabled)) {
+    if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)) {
         tcg_gen_goto_tb(n);
         tcg_gen_movi_tl(cpu_nip, dest & ~3);
         gen_exit_tb((tcg_target_long)tb + n, tb);
     } else {
         tcg_gen_movi_tl(cpu_nip, dest & ~3);
-        if (unlikely(s->singlestep_enabled)) {
-            if ((s->singlestep_enabled &
-                (CPU_BRANCH_STEP | CPU_SINGLE_STEP)) &&
-                s->exception == POWERPC_EXCP_BRANCH) {
-                target_ulong tmp = s->pc;
-                s->pc = dest;
-                gen_exception(s, POWERPC_EXCP_TRACE);
-                s->pc = tmp;
-            }
-            if (s->singlestep_enabled & GDBSTUB_SINGLE_STEP) {
-                gen_debug_exception(s);
-            }
-        }
         gen_exit_tb_no_chaining(tb);
     }
 }
@@ -8069,14 +8050,6 @@ void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) 
         dc->altivec_enabled = msr_vr;
     else
         dc->altivec_enabled = 0;
-    if ((env->flags & POWERPC_FLAG_SE) && msr_se)
-        dc->singlestep_enabled = CPU_SINGLE_STEP;
-    else
-        dc->singlestep_enabled = 0;
-    if ((env->flags & POWERPC_FLAG_BE) && msr_be)
-        dc->singlestep_enabled |= CPU_BRANCH_STEP;
-    if (unlikely(env->singlestep_enabled))
-        dc->singlestep_enabled |= GDBSTUB_SINGLE_STEP;
 }
 
 int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
@@ -8124,19 +8097,9 @@ void gen_intermediate_code(CPUState *env,
             tb->original_size = tb->size;
         }
 
-        /* Check trace mode exceptions */
-        if (unlikely(dc.singlestep_enabled & CPU_SINGLE_STEP &&
-                     (dc.pc <= 0x100 || dc.pc > 0xF00) &&
-                     dc.exception != POWERPC_SYSCALL &&
-                     dc.exception != POWERPC_EXCP_TRAP &&
-                     dc.exception != POWERPC_EXCP_BRANCH)) {
-            gen_exception(&dc, POWERPC_EXCP_TRACE);
-        } else if (unlikely(((dc.pc & (TARGET_PAGE_SIZE - 1)) == 0) ||
-                            (env->singlestep_enabled) ||
+        if (unlikely(((dc.pc & (TARGET_PAGE_SIZE - 1)) == 0) ||
                             tb->icount >= max_insns)) {
-            /* if we reach a page boundary or are single stepping, stop
-             * generation
-             */
+            /* if we reach a page boundary, stop generation */
             break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
@@ -8155,9 +8118,6 @@ void gen_intermediate_code(CPUState *env,
     if (dc.exception == POWERPC_EXCP_NONE) {
         gen_goto_tb(&dc, 0, dc.pc);
     } else if (dc.exception != POWERPC_EXCP_BRANCH) {
-        if (unlikely(env->singlestep_enabled)) {
-            gen_debug_exception(&dc);
-        }
         /* Generate the return instruction */
         gen_exit_tb_no_chaining(tb);
     }

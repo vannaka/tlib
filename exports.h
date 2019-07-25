@@ -15,7 +15,6 @@ void tlib_clear_paused(void);
 int32_t tlib_is_wfi(void);
 int32_t tlib_get_executed_instructions(void);
 int32_t tlib_get_total_executed_instructions(void);
-void tlib_set_single_step(int32_t enabled);
 
 uint32_t tlib_get_page_size(void);
 void tlib_map_range(uint64_t start_addr, uint64_t length);

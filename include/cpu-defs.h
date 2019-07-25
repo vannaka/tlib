@@ -180,7 +180,6 @@ typedef struct CPUBreakpoint {
     /* --------------------------------------- */                            \
     /* ice debug support */                                                  \
     QTAILQ_HEAD(breakpoints_head, CPUBreakpoint) breakpoints;                \
-    int singlestep_enabled;                                                  \
     /* Core interrupt code */                                                \
     jmp_buf jmp_env;                                                         \
     int exception_index;                                                     \

@@ -79,7 +79,6 @@ typedef struct DisasContext {
     int mem_idx; /* select memory access functions */
     int is_jmp; /* 1 = means jump (stop translation), 2 means CPU
                    static state change (stop translation) */
-    int singlestep_enabled; /* "hardware" single step enabled */
     /* current insn context */
     int override; /* -1 if no override */
     int prefix;
@@ -2750,9 +2749,7 @@ static void gen_eob(DisasContext *s)
     if (s->tb->flags & HF_RF_MASK) {
         gen_helper_reset_rf();
     }
-    if (s->singlestep_enabled) {
-        gen_helper_debug();
-    } else if (s->tf) {
+    if (s->tf) {
         gen_helper_single_step();
     } else {
         gen_exit_tb_no_chaining(s->tb);
@@ -7652,7 +7649,6 @@ void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) 
     dc->cpl = (dc->tb->flags >> HF_CPL_SHIFT) & 3;
     dc->iopl = (dc->tb->flags >> IOPL_SHIFT) & 3;
     dc->tf = (dc->tb->flags >> TF_SHIFT) & 1;
-    dc->singlestep_enabled = env->singlestep_enabled;
     dc->cc_op = CC_OP_DYNAMIC;
     dc->cs_base = dc->tb->cs_base;
     dc->popl_esp_hack = 0;
@@ -7673,7 +7669,7 @@ void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) 
     dc->code64 = (dc->tb->flags >> HF_CS64_SHIFT) & 1;
 #endif
     dc->flags = dc->tb->flags;
-    dc->jmp_opt = !(dc->tf || env->singlestep_enabled ||
+    dc->jmp_opt = !(dc->tf ||
                     (tb->flags & HF_INHIBIT_IRQ_MASK));
 
     cpu_T[0] = tcg_temp_new();
@@ -7747,7 +7743,7 @@ void gen_intermediate_code(CPUState *env,
         /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
            the flag and abort the translation to give the irqs a
            change to be happen */
-        if (dc.tf || dc.singlestep_enabled ||
+        if (dc.tf ||
             (dc.flags & HF_INHIBIT_IRQ_MASK)) {
             break;
         }

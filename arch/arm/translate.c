@@ -64,7 +64,6 @@ typedef struct DisasContext {
     struct TranslationBlock *tb;
     target_ulong pc;
     int is_jmp;
-    int singlestep_enabled;
     /* Nonzero if this instruction has been conditionally skipped.  */
     int condjmp;
     /* The label that will be jumped to when the instruction is skipped.  */
@@ -3604,15 +3603,8 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint32_t dest)
 
 static inline void gen_jmp (DisasContext *s, uint32_t dest)
 {
-    if (unlikely(s->singlestep_enabled)) {
-        /* An indirect jump so that we still trigger the debug exception.  */
-        if (s->thumb)
-            dest |= 1;
-        gen_bx_im(s, dest);
-    } else {
-        gen_goto_tb(s, 0, dest);
-        s->is_jmp = DISAS_TB_JUMP;
-    }
+    gen_goto_tb(s, 0, dest);
+    s->is_jmp = DISAS_TB_JUMP;
 }
 
 static inline void gen_mulxy(TCGv t0, TCGv t1, int x, int y)
@@ -9922,7 +9914,6 @@ void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) 
     dc->tb = tb;
     dc->is_jmp = DISAS_NEXT;
     dc->pc = dc->tb->pc;
-    dc->singlestep_enabled = env->singlestep_enabled;
     dc->condjmp = 0;
     dc->thumb = ARM_TBFLAG_THUMB(dc->tb->flags);
     dc->condexec_mask = (ARM_TBFLAG_CONDEXEC(dc->tb->flags) & 0xf) << 1;
@@ -10048,9 +10039,6 @@ void gen_intermediate_code(CPUState *env,
         if (dc.is_jmp) {
             break;
         }
-        if (env->singlestep_enabled) {
-            break;
-        }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
             break;
         }
@@ -10071,67 +10059,42 @@ void gen_intermediate_code(CPUState *env,
     /* At this stage dc.condjmp will only be set when the skipped
        instruction was a conditional branch or trap, and the PC has
        already been written.  */
-    if (unlikely(env->singlestep_enabled)) {
-        /* Make sure the pc is updated, and raise a debug exception.  */
-        if (dc.condjmp) {
-            gen_set_condexec(&dc);
-            if (dc.is_jmp == DISAS_SWI) {
-                gen_exception(EXCP_SWI);
-            } else {
-                gen_exception(EXCP_DEBUG);
-            }
-            gen_set_label(dc.condlabel);
-        }
-        if (dc.condjmp || !dc.is_jmp) {
-            gen_set_pc_im(dc.pc);
-            dc.condjmp = 0;
-        }
+    /* While branches must always occur at the end of an IT block,
+       there are a few other things that can cause us to terminate
+       the TB in the middle of an IT block:
+        - Exception generating instructions (bkpt, swi, undefined).
+        - Page boundaries.
+        - Hardware watchpoints.
+       Hardware breakpoints have already been handled and skip this code.
+     */
+    gen_set_condexec(&dc);
+    switch(dc.is_jmp) {
+    case DISAS_NEXT:
+        gen_goto_tb(&dc, 1, dc.pc);
+        break;
+    default:
+    case DISAS_JUMP:
+    case DISAS_UPDATE:
+        /* indicate that the hash table must be used to find the next TB */
+        gen_exit_tb_no_chaining(dc.tb);
+        break;
+    case DISAS_TB_JUMP:
+        /* nothing more to generate */
+        break;
+    case DISAS_WFI:
+        gen_helper_wfi();
+        gen_exit_tb_no_chaining(dc.tb);
+        break;
+    case DISAS_SWI:
+        gen_exception(EXCP_SWI);
+        gen_exit_tb_no_chaining(dc.tb);
+        break;
+    }
+    if (dc.condjmp) {
+        gen_set_label(dc.condlabel);
         gen_set_condexec(&dc);
-        if (dc.is_jmp == DISAS_SWI && !dc.condjmp) {
-            gen_exception(EXCP_SWI);
-        } else {
-            /* FIXME: Single stepping a WFI insn will not halt
-               the CPU.  */
-            gen_exception(EXCP_DEBUG);
-        }
-    } else {
-        /* While branches must always occur at the end of an IT block,
-           there are a few other things that can cause us to terminate
-           the TB in the middle of an IT block:
-            - Exception generating instructions (bkpt, swi, undefined).
-            - Page boundaries.
-            - Hardware watchpoints.
-           Hardware breakpoints have already been handled and skip this code.
-         */
-        gen_set_condexec(&dc);
-        switch(dc.is_jmp) {
-        case DISAS_NEXT:
-            gen_goto_tb(&dc, 1, dc.pc);
-            break;
-        default:
-        case DISAS_JUMP:
-        case DISAS_UPDATE:
-            /* indicate that the hash table must be used to find the next TB */
-            gen_exit_tb_no_chaining(dc.tb);
-            break;
-        case DISAS_TB_JUMP:
-            /* nothing more to generate */
-            break;
-        case DISAS_WFI:
-            gen_helper_wfi();
-            gen_exit_tb_no_chaining(dc.tb);
-            break;
-        case DISAS_SWI:
-            gen_exception(EXCP_SWI);
-            gen_exit_tb_no_chaining(dc.tb);
-            break;
-        }
-        if (dc.condjmp) {
-            gen_set_label(dc.condlabel);
-            gen_set_condexec(&dc);
-            gen_goto_tb(&dc, 1, dc.pc);
-            dc.condjmp = 0;
-        }
+        gen_goto_tb(&dc, 1, dc.pc);
+        dc.condjmp = 0;
     }
 
     tb->disas_flags = get_disas_flags(env, &dc);

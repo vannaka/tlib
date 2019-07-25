@@ -559,15 +559,6 @@ extern CPUState *cpu;
 
 /* First unused bit: 0x2000.  */
 
-/* The set of all bits that should be masked when single-stepping.  */
-#define CPU_INTERRUPT_SSTEP_MASK \
-    (CPU_INTERRUPT_HARD          \
-     | CPU_INTERRUPT_TGT_EXT_0   \
-     | CPU_INTERRUPT_TGT_EXT_1   \
-     | CPU_INTERRUPT_TGT_EXT_2   \
-     | CPU_INTERRUPT_TGT_EXT_3   \
-     | CPU_INTERRUPT_TGT_EXT_4)
-
 typedef void (*CPUInterruptHandler)(CPUState *, int);
 
 extern CPUInterruptHandler cpu_interrupt_handler;
@@ -590,11 +581,6 @@ int cpu_breakpoint_remove(CPUState *env, target_ulong pc, int flags);
 void cpu_breakpoint_remove_by_ref(CPUState *env, CPUBreakpoint *breakpoint);
 void cpu_breakpoint_remove_all(CPUState *env, int mask);
 
-#define SSTEP_ENABLE  0x1  /* Enable simulated HW single stepping */
-#define SSTEP_NOIRQ   0x2  /* Do not use IRQ while single stepping */
-#define SSTEP_NOTIMER 0x4  /* Do not Timers while single stepping */
-
-void cpu_single_step(CPUState *env, int enabled);
 void cpu_reset(CPUState *s);
 
 /* Return the physical page corresponding to a virtual one. Use it

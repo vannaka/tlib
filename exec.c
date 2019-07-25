@@ -1023,17 +1023,6 @@ void cpu_breakpoint_remove_all(CPUState *env, int mask)
     }
 }
 
-/* enable or disable single step mode. EXCP_DEBUG is returned by the
-   CPU loop after each instruction */
-void cpu_single_step(CPUState *env, int enabled)
-{
-    if (env->singlestep_enabled != enabled) {
-        env->singlestep_enabled = enabled;
-        /* XXX: only flush what is necessary */
-        tb_flush(env);
-    }
-}
-
 /* mask must never be zero, except for A20 change call */
 static void handle_interrupt(CPUState *env, int mask)
 {

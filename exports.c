@@ -192,11 +192,6 @@ int32_t tlib_is_wfi()
      return cpu->wfi;
 }
 
-void tlib_set_single_step(int32_t enabled)
-{
-  cpu_single_step(cpu, enabled ? SSTEP_ENABLE | SSTEP_NOIRQ | SSTEP_NOTIMER : 0);
-}
-
 uint32_t tlib_get_page_size()
 {
   return TARGET_PAGE_SIZE;

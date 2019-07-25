@@ -2231,11 +2231,6 @@ void cpu_reset(CPUState *env)
     target_ulong msr;
 
     msr = (target_ulong)1 << MSR_EP;
-#if defined (DO_SINGLE_STEP) && 0
-    /* Single step trace mode */
-    msr |= (target_ulong)1 << MSR_SE;
-    msr |= (target_ulong)1 << MSR_BE;
-#endif
     env->excp_prefix = env->hreset_excp_prefix;
     env->nip = env->hreset_vector | env->excp_prefix;
     if (env->mmu_model != POWERPC_MMU_REAL)

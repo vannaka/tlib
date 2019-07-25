@@ -64,7 +64,6 @@ typedef struct DisasContext {
     target_ulong npc;   /* next PC: integer or DYNAMIC_PC or JUMP_PC */
     int mem_idx;
     int is_jmp;
-    int singlestep_enabled;
     target_ulong jump_pc[2]; /* used when JUMP_PC pc value is used */
     int fpu_enabled;
     int address_mask_32bit;
@@ -258,8 +257,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num,
 
     tb = s->tb;
     if ((pc & TARGET_PAGE_MASK) == (tb->pc & TARGET_PAGE_MASK) &&
-        (npc & TARGET_PAGE_MASK) == (tb->pc & TARGET_PAGE_MASK) &&
-        !s->singlestep_enabled) {
+        (npc & TARGET_PAGE_MASK) == (tb->pc & TARGET_PAGE_MASK)) {
         /* jump to same page: we can use a direct jump */
         tcg_gen_goto_tb(tb_num);
         tcg_gen_movi_tl(cpu_pc, pc);
@@ -2815,7 +2813,6 @@ void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) 
     dc->def = env->def;
     dc->fpu_enabled = tb_fpu_enabled(dc->tb->flags);
     dc->address_mask_32bit = tb_am_enabled(dc->tb->flags);
-    dc->singlestep_enabled = (env->singlestep_enabled);
 
     cpu_tmp0 = tcg_temp_new();
     cpu_tmp32 = tcg_temp_new_i32();
@@ -2887,11 +2884,7 @@ void gen_intermediate_code(CPUState *env,
         }
         /* if we reach a page boundary, we stop generation so that the
            PC of a TT_TFAULT exception is always in the right page */
-        if ((dc.pc & (TARGET_PAGE_SIZE - 1)) == 0)
-            break;
-        /* if single step mode, we generate only one instruction and
-           generate an exception */
-        if (dc.singlestep_enabled) {
+        if ((dc.pc & (TARGET_PAGE_SIZE - 1)) == 0) {
             break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {

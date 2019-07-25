@@ -7738,8 +7738,6 @@ void gen_intermediate_code(CPUState *env,
             tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.pc);
         }
 
-        /* if single step mode, we generate only one instruction and
-           generate an exception */
         /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
            the flag and abort the translation to give the irqs a
            change to be happen */

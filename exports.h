@@ -26,6 +26,7 @@ int32_t tlib_is_irq_set(void);
 void tlib_add_breakpoint(uint64_t address);
 void tlib_remove_breakpoint(uint64_t address);
 void tlib_set_translation_cache_size(uintptr_t size);
+void tlib_set_block_begin_hook_present(uint32_t val);
 
 void tlib_invalidate_translation_cache(void);
 uint32_t tlib_set_maximum_block_size(uint32_t size);

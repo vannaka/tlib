@@ -194,6 +194,9 @@ typedef struct CPUBreakpoint {
     /* indicates if the block_finished hook is registered, implicitly        \
                           disabling block chaining */                        \
     int block_finished_hook_present;                                         \
+    /* indicates if the block_begin hook is registered */                    \
+    int block_begin_hook_present;                                            \
+                                                                             \
     atomic_memory_state_t* atomic_memory_state;                              \
     int id;                                                                  \
     /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                       \

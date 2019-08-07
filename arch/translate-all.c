@@ -69,7 +69,7 @@ static inline void gen_block_header(TranslationBlock *tb)
     tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, exit_no_hook_label);
     tcg_temp_free_i32(flag);
 
-    if(tlib_is_block_begin_event_enabled())
+    if(cpu->block_begin_hook_present)
     {
       TCGv event_address = tcg_const_tl(tb->pc);
       event_size_arg = gen_opparam_ptr + 1;
@@ -136,7 +136,7 @@ static inline void gen_block_footer(TranslationBlock *tb)
     if (tlib_is_on_block_translation_enabled) {
         tlib_on_block_translation(tb->pc, tb->size, tb->disas_flags);
     }
-    if(tlib_is_block_begin_event_enabled())
+    if(cpu->block_begin_hook_present)
     {
       *event_size_arg = tb->icount;
     }

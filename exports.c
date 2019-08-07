@@ -368,6 +368,11 @@ void tlib_set_block_finished_hook_present(uint32_t val)
   cpu->block_finished_hook_present = !!val;
 }
 
+void tlib_set_block_begin_hook_present(uint32_t val)
+{
+  cpu->block_begin_hook_present = !!val;
+}
+
 int32_t tlib_set_return_on_exception(int32_t value)
 {
     int32_t previousValue = cpu->return_on_exception;

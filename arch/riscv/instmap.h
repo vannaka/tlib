@@ -30,7 +30,7 @@ enum {
     OPC_RISC_STORE  = (0x23),
     OPC_RISC_ARITH_IMM  = (0x13),
     OPC_RISC_ARITH      = (0x33),
-    OPC_RISC_FENCE      = (0x0F),
+    OPC_RISC_SYNCH      = (0x0F),
     OPC_RISC_SYSTEM     = (0x73),
 
     /* rv64i, rv64m */
@@ -78,6 +78,11 @@ enum {
     OPC_RISC_REMU   = OPC_RISC_ARITH | (0x7 << 12) | (0x01 << 25),
 };
 
+#define MASK_OP_FENCE(op) (MASK_OP_MAJOR(op) | (op & (0x7 << 12)))
+enum {
+    OPC_RISC_FENCE      = OPC_RISC_SYNCH | (0x0 << 12),
+    OPC_RISC_FENCE_I    = OPC_RISC_SYNCH | (0x1 << 12)
+};
 
 #define MASK_OP_ARITH_IMM(op)   (MASK_OP_MAJOR(op) | (op & (0x7 << 12)))
 enum {

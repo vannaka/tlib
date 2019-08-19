@@ -497,6 +497,24 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1,
     tcg_temp_free(source2);
 }
 
+static void gen_synch(DisasContext *dc, uint32_t opc)
+{
+    switch(opc){
+    case OPC_RISC_FENCE:
+        /* standard fence = NOP */
+        break;
+    case OPC_RISC_FENCE_I:
+        gen_helper_fence_i(cpu_env);
+        tcg_gen_movi_tl(cpu_pc, dc->npc);
+        gen_exit_tb_no_chaining(dc->tb);
+        dc->bstate = BS_BRANCH;
+        break;
+    default:
+        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        break;
+    }
+}
+
 static void gen_arith_imm(DisasContext *dc, uint32_t opc, int rd,
         int rs1, target_long imm)
 {
@@ -1910,14 +1928,8 @@ static void decode_RV32_64G(CPUState *env, DisasContext *dc)
         gen_fp_arith(dc, MASK_OP_FP_ARITH(dc->opcode), rd, rs1, rs2,
                      GET_RM(dc->opcode));
         break;
-    case OPC_RISC_FENCE:
-        /* standard fence is nop, fence_i flushes TB (like an icache): */
-        if (dc->opcode & 0x1000) { /* FENCE_I */
-            gen_helper_fence_i(cpu_env);
-            tcg_gen_movi_tl(cpu_pc, dc->npc);
-            gen_exit_tb_no_chaining(dc->tb);
-            dc->bstate = BS_BRANCH;
-        }
+    case OPC_RISC_SYNCH:
+        gen_synch(dc, MASK_OP_FENCE(dc->opcode));
         break;
     case OPC_RISC_SYSTEM:
         gen_system(dc, MASK_OP_SYSTEM(dc->opcode), rd, rs1,

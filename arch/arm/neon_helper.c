@@ -273,7 +273,7 @@ uint32_t HELPER(neon_qabs_s32)(CPUState *env, uint32_t a)
         return INT32_MAX;
     }
 
-    return abs(a);
+    return abs((int32_t)a);
 }
 
 static int8_t qneg_s8(CPUState *env, int8_t a)
@@ -2307,12 +2307,14 @@ uint64_t HELPER(neon_abdl_s32)(uint32_t a, uint32_t b)
 
 uint64_t HELPER(neon_abdl_u64)(uint32_t a, uint32_t b)
 {
-    return llabs((uint64_t)a - (uint64_t)b);
+    return (uint64_t) (a > b ? a - b : b - a);
 }
 
 uint64_t HELPER(neon_abdl_s64)(uint32_t a, uint32_t b)
 {
-    return llabs((int64_t)(int32_t)a - (int64_t)(int32_t)b);
+    int32_t ta = a;
+    int32_t tb = b;
+    return (uint64_t)(ta > tb ? ta - tb : tb - ta);
 }
 
 static uint16_t mul_p8(uint8_t a, uint8_t b)

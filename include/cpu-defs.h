@@ -186,7 +186,6 @@ typedef struct CPUBreakpoint {
     int nr_cores;  /* number of cores within this CPU package */             \
     int nr_threads;/* number of threads within this CPU */                   \
     /* user data */                                                          \
-    void *opaque;                                                            \
     /* chaining is enabled by default */                                     \
     int chaining_disabled;                                                   \
     /* tb cache is enabled by default */                                     \
@@ -197,9 +196,9 @@ typedef struct CPUBreakpoint {
     /* indicates if the block_begin hook is registered */                    \
     int block_begin_hook_present;                                            \
                                                                              \
-    atomic_memory_state_t* atomic_memory_state;                              \
     int id;                                                                  \
     /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                       \
+    atomic_memory_state_t* atomic_memory_state;                              \
     struct TranslationBlock *current_tb; /* currently executing TB  */       \
     CPU_COMMON_TLB                                                           \
     struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];                \

@@ -346,7 +346,6 @@ static inline uint32_t SPR(uint32_t opcode)
     return ((sprn >> 5) & 0x1F) | ((sprn & 0x1F) << 5);
 }
 /***                              Get constants                            ***/
-EXTRACT_HELPER(IMM, 12, 8);
 /* 16 bits signed immediate value */
 EXTRACT_SHELPER(SIMM, 0, 16);
 /* 16 bits unsigned immediate value */
@@ -374,8 +373,6 @@ EXTRACT_HELPER(SR, 16, 4);
 EXTRACT_HELPER(FPIMM, 12, 4);
 
 /***                            Jump target decoding                       ***/
-/* Displacement */
-EXTRACT_SHELPER(d, 0, 16);
 /* Immediate address */
 static inline target_ulong LI(uint32_t opcode)
 {
@@ -1814,11 +1811,6 @@ static inline void gen_check_align(DisasContext *s, TCGv EA, int mask)
 static inline void gen_qemu_ld8u(DisasContext *s, TCGv arg1, TCGv arg2)
 {
     tcg_gen_qemu_ld8u(arg1, arg2, s->mem_idx);
-}
-
-static inline void gen_qemu_ld8s(DisasContext *s, TCGv arg1, TCGv arg2)
-{
-    tcg_gen_qemu_ld8s(arg1, arg2, s->mem_idx);
 }
 
 static inline void gen_qemu_ld16u(DisasContext *s, TCGv arg1, TCGv arg2)
@@ -7093,39 +7085,8 @@ GEN_SPEOP_LDST(evstwwe, 0x1C, 2),
 GEN_SPEOP_LDST(evstwwo, 0x1E, 2),
 };
 
-EXTRACT_HELPER(IM5_UI5, 20, 5);
-EXTRACT_HELPER(IM5_RX, 16, 4);
-
-EXTRACT_HELPER(OIM5_RC, 25, 1);
-EXTRACT_HELPER(OIM5_OIM5, 20, 5);
-EXTRACT_HELPER(OIM5_RX, 16, 4);
-
-
-EXTRACT_HELPER(IM7_UI7, 20, 8);
-EXTRACT_HELPER(IM7_RX, 16, 4);
-
-EXTRACT_HELPER(R_RX, 16, 4);
-
-EXTRACT_HELPER(RR_RC, 24, 1);
 EXTRACT_HELPER(RR_RY, 20, 4);
 EXTRACT_HELPER(RR_RX, 16, 4);
-
-EXTRACT_HELPER(SD4_SD4, 24, 4);
-EXTRACT_HELPER(SD4_RZ, 20, 4);
-EXTRACT_HELPER(SD4_RX, 16, 4);
-
-EXTRACT_HELPER(BD15_BO32, 20, 2);
-EXTRACT_HELPER(BD15_BI32, 16, 4);
-EXTRACT_HELPER(BD15_BD15, 1, 15);
-EXTRACT_HELPER(BD15_LK, 0, 1);
-
-EXTRACT_HELPER(BD24_BD24, 1, 24);
-EXTRACT_HELPER(BD24_LK, 0, 1);
-
-EXTRACT_HELPER(D8_RD, 21, 5);
-EXTRACT_HELPER(D8_RA, 16, 5);
-EXTRACT_HELPER(D8_XO, 8, 8);
-EXTRACT_HELPER(D8_D8, 0, 8);
 
 static inline uint32_t I16A_SI(uint32_t opcode)
 {
@@ -7133,23 +7094,10 @@ static inline uint32_t I16A_SI(uint32_t opcode)
 }
 EXTRACT_HELPER(I16A_RA, 16, 5);
 
-static inline uint32_t I16L_UI(uint32_t opcode)
-{
-    return ((opcode >> 5) & (((1 << 5) - 1) << 11)) | (opcode & ((1 << 11) - 1));
-}
-EXTRACT_HELPER(I16L_RD, 21, 5);
-
-EXTRACT_HELPER(M_RS, 21, 5);
-EXTRACT_HELPER(M_RA, 16, 5);
-EXTRACT_HELPER(M_SH, 11, 5);
-EXTRACT_HELPER(M_MB, 6, 5);
-EXTRACT_HELPER(M_ME, 1, 5);
-
 EXTRACT_HELPER(D_RD, 21, 5);
 EXTRACT_HELPER(D_RA, 16, 5);
 EXTRACT_HELPER(D_SI, 0, 16);
 
-EXTRACT_HELPER(SCI8_BF32, 21, 2);
 EXTRACT_HELPER(SCI8_RD, 21, 5);
 EXTRACT_HELPER(SCI8_RA, 16, 5);
 EXTRACT_HELPER(SCI8_RC, 11, 1);
@@ -7180,13 +7128,6 @@ static target_long SCI8(uint32_t opcode)
     }
     return shift_value;
 }
-
-static inline uint32_t LI20_LI20(uint32_t opcode)
-{
-    return ((opcode << 5) & (((1 << 4) - 1) << 15)) | ((opcode >> 5) & (((1 << 5) - 1) << 11))
-        | (opcode & ((1 << 11) - 1));
-}
-EXTRACT_HELPER(LI20_RD, 21, 5);
 
 static void gen_se_add(DisasContext *dc)
 {

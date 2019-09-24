@@ -43,7 +43,7 @@ static uintptr_t code_gen_buffer_size;
 static uintptr_t code_gen_buffer_max_size;
 static uint8_t *code_gen_ptr;
 
-dirty_ram_t dirty_ram = {0};
+dirty_ram_t dirty_ram = {0, 0};
 
 CPUState *cpu;
 

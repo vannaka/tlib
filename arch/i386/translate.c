@@ -248,11 +248,6 @@ static inline void gen_op_movl_T0_im(int32_t val)
     tcg_gen_movi_tl(cpu_T[0], val);
 }
 
-static inline void gen_op_movl_T0_imu(uint32_t val)
-{
-    tcg_gen_movi_tl(cpu_T[0], val);
-}
-
 static inline void gen_op_movl_T1_im(int32_t val)
 {
     tcg_gen_movi_tl(cpu_T[1], val);

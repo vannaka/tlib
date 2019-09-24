@@ -42,29 +42,6 @@ void do_unaligned_access(target_ulong addr, int is_write, int is_user,
 static void do_unassigned_access(target_phys_addr_t addr, int is_write,
                                  int is_exec, int is_asi, int size);
 
-static inline target_ulong address_mask(CPUState *env1, target_ulong addr)
-{
-    return addr;
-}
-
-/* returns true if access using this ASI is to have address translated by MMU
-   otherwise access is to raw physical address */
-static inline int is_translating_asi(int asi)
-{
-    /* TODO: check sparc32 bits */
-    return 0;
-}
-
-static inline target_ulong asi_address_mask(CPUState *env1,
-                                            int asi, target_ulong addr)
-{
-    if (is_translating_asi(asi)) {
-        return address_mask(env, addr);
-    } else {
-        return addr;
-    }
-}
-
 static void raise_exception(int tt)
 {
     env->exception_index = tt;

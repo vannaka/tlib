@@ -6818,7 +6818,7 @@ static void disas_arm_insn(CPUState * env, DisasContext *s)
             }
         } else if ((insn & 0x0e5fffe0) == 0x084d0500) {
             /* srs */
-            int32_t offset;
+            int32_t offset = 0;
             if (s->user)
                 goto illegal_op;
             ARCH(6);
@@ -6863,7 +6863,7 @@ static void disas_arm_insn(CPUState * env, DisasContext *s)
             return;
         } else if ((insn & 0x0e50ffe0) == 0x08100a00) {
             /* rfe */
-            int32_t offset;
+            int32_t offset = 0;
             if (s->user)
                 goto illegal_op;
             ARCH(6);

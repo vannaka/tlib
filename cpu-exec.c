@@ -35,7 +35,7 @@ target_ulong virt_to_phys(target_ulong virt) {
         int i;
         for (i = 0; i < NB_MMU_MODES; i++) {
           target_ulong addr = (cpu->tlb_table[i][index].addr_code & MASK2) | (virt & (MASK1));
-          if ((virt == addr)) {
+          if (virt == addr) {
             void *p = (void *)(uintptr_t)((cpu->tlb_table[i][index].addr_code & TARGET_PAGE_MASK) + cpu->tlb_table[i][index].addend);
             phys_addr = tlib_host_ptr_to_guest_offset(p);
             if (phys_addr != -1)
@@ -196,9 +196,11 @@ int process_interrupt(int interrupt_request, CPUState *env);
 void cpu_exec_prologue(CPUState *env);
 void cpu_exec_epilogue(CPUState *env);
 
+#ifndef __llvm__
 // it looks like cpu_exec is aware of possible problems and restores `env`, so the warning is not necessary
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wclobbered"
+#endif
 int cpu_exec(CPUState *env)
 {
     int ret, interrupt_request;
@@ -343,5 +345,7 @@ int cpu_exec(CPUState *env)
 
     return ret;
 }
-#pragma GCC diagnostic pop
 
+#ifndef __llvm__
+#pragma GCC diagnostic pop
+#endif

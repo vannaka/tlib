@@ -343,7 +343,7 @@ static float32 roundAndPackFloat32( flag zSign, int16 zExp, uint32_t zSig STATUS
         }
         if ( zExp < 0 ) {
             if (STATUS(flush_to_zero)) {
-                float_raise(float_flag_output_denormal STATUS_VAR);
+                float_raise((int8)float_flag_output_denormal STATUS_VAR);
                 return packFloat32(zSign, 0, 0);
             }
             isTiny =
@@ -525,7 +525,7 @@ static float64 roundAndPackFloat64( flag zSign, int16 zExp, uint64_t zSig STATUS
         }
         if ( zExp < 0 ) {
             if (STATUS(flush_to_zero)) {
-                float_raise(float_flag_output_denormal STATUS_VAR);
+                float_raise((int8)float_flag_output_denormal STATUS_VAR);
                 return packFloat64(zSign, 0, 0);
             }
             isTiny =
@@ -705,7 +705,7 @@ static floatx80
         }
         if ( zExp <= 0 ) {
             if (STATUS(flush_to_zero)) {
-                float_raise(float_flag_output_denormal STATUS_VAR);
+                float_raise((int8)float_flag_output_denormal STATUS_VAR);
                 return packFloatx80(zSign, 0, 0);
             }
             isTiny =
@@ -1035,7 +1035,7 @@ static float128
         }
         if ( zExp < 0 ) {
             if (STATUS(flush_to_zero)) {
-                float_raise(float_flag_output_denormal STATUS_VAR);
+                float_raise((int8)float_flag_output_denormal STATUS_VAR);
                 return packFloat128(zSign, 0, 0, 0);
             }
             isTiny =
@@ -1744,7 +1744,7 @@ static float32 addFloat32Sigs( float32 a, float32 b, flag zSign STATUS_PARAM)
         if ( aExp == 0 ) {
             if (STATUS(flush_to_zero)) {
                 if (aSig | bSig) {
-                    float_raise(float_flag_output_denormal STATUS_VAR);
+                    float_raise((int8)float_flag_output_denormal STATUS_VAR);
                 }
                 return packFloat32(zSign, 0, 0);
             }
@@ -2212,7 +2212,7 @@ float32 float32_muladd(float32 a, float32 b, float32 c, int flags STATUS_PARAM)
             }
             /* Exact zero plus a denorm */
             if (STATUS(flush_to_zero)) {
-                float_raise(float_flag_output_denormal STATUS_VAR);
+                float_raise((int8)float_flag_output_denormal STATUS_VAR);
                 return packFloat32(cSign ^ signflip, 0, 0);
             }
         }
@@ -3307,7 +3307,7 @@ static float64 addFloat64Sigs( float64 a, float64 b, flag zSign STATUS_PARAM )
         if ( aExp == 0 ) {
             if (STATUS(flush_to_zero)) {
                 if (aSig | bSig) {
-                    float_raise(float_flag_output_denormal STATUS_VAR);
+                    float_raise((int8)float_flag_output_denormal STATUS_VAR);
                 }
                 return packFloat64(zSign, 0, 0);
             }
@@ -3765,7 +3765,7 @@ float64 float64_muladd(float64 a, float64 b, float64 c, int flags STATUS_PARAM)
             }
             /* Exact zero plus a denorm */
             if (STATUS(flush_to_zero)) {
-                float_raise(float_flag_output_denormal STATUS_VAR);
+                float_raise((int8)float_flag_output_denormal STATUS_VAR);
                 return packFloat64(cSign ^ signflip, 0, 0);
             }
         }
@@ -5680,7 +5680,7 @@ static float128 addFloat128Sigs( float128 a, float128 b, flag zSign STATUS_PARAM
         if ( aExp == 0 ) {
             if (STATUS(flush_to_zero)) {
                 if (zSig0 | zSig1) {
-                    float_raise(float_flag_output_denormal STATUS_VAR);
+                    float_raise((int8)float_flag_output_denormal STATUS_VAR);
                 }
                 return packFloat128(zSign, 0, 0, 0);
             }

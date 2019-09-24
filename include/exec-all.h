@@ -26,7 +26,7 @@
 #include <limits.h>
 #include "compiler.h"
 
-register CPUState *env asm(AREG0);
+CPUState *env;
 
 /* Page tracking code uses ram addresses in system mode, and virtual
    addresses in userspace mode.  Define tb_page_addr_t to be an appropriate

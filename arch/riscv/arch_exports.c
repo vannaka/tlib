@@ -108,3 +108,26 @@ uint32_t tlib_set_csr_validation(uint32_t value)
     return result;
 }
 
+void tlib_set_nmi_vector(uint64_t nmi_adress, uint32_t nmi_length)
+{
+    if (nmi_adress > (TARGET_ULONG_MAX - nmi_length)) {
+        cpu_abort(cpu, "NMIVectorAddress or NMIVectorLength value invalid. "
+            "Vector defined with these parameters will not fit in memory address space.");
+    } else {
+        cpu->nmi_address = (target_ulong) nmi_adress;
+    }
+    if (nmi_length > 32) {
+        cpu_abort(cpu, "NMIVectorLength %d too big, maximum length supported is 32", nmi_length);
+    } else {
+        cpu->nmi_length = nmi_length;
+    }
+}
+
+void tlib_set_nmi(int32_t nmi, int32_t state)
+{
+    if (state) {
+        cpu_set_nmi(cpu, nmi);
+    } else {
+        cpu_reset_nmi(cpu, nmi);
+    }
+}

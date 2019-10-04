@@ -67,12 +67,6 @@ void cpu_reset(CPUState *env)
  */
 int riscv_cpu_hw_interrupts_pending(CPUState *env)
 {
-    if(tlib_is_in_debug_mode())
-    {
-        //According to the debug spec draft, the debug mode implies all interrupts are masked (even NMI)
-        //and the WFI acts as NOP.
-        return EXCP_NONE;
-    }
     target_ulong pending_interrupts = env->mip & env->mie;
 
     target_ulong mie = get_field(env->mstatus, MSTATUS_MIE);
@@ -308,7 +302,12 @@ int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, i
  */
 void do_interrupt(CPUState *env)
 {
-    if (env->exception_index == EXCP_NONE) return;
+    if (env->nmi_pending > NMI_NONE) {
+        do_nmi(env);
+        return;
+    }
+    if (env->exception_index == EXCP_NONE)
+        return;
     if (env->exception_index == RISCV_EXCP_BREAKPOINT) {
         env->interrupt_request |= CPU_INTERRUPT_EXITTB;
         return;
@@ -402,6 +401,28 @@ void do_interrupt(CPUState *env)
     }
     /* TODO yield load reservation  */
     env->exception_index = EXCP_NONE; /* mark as handled */
+}
+
+void do_nmi(CPUState *env)
+{
+    if (env->nmi_pending == NMI_NONE) {
+        return;
+    }
+    target_ulong s = env->mstatus;
+    s = set_field(s, MSTATUS_MPIE, env->privilege_architecture_1_10 ? get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
+    s = set_field(s, MSTATUS_MPP, env->priv); /* store current priv level */
+    s = set_field(s, MSTATUS_MIE, 0);
+    csr_write_helper(env, s, CSR_MSTATUS);
+
+    riscv_set_mode(env, PRV_M);
+
+    int32_t nmi_index = ctz64(env->nmi_pending);
+
+    csr_write_helper(env, nmi_index, CSR_MCAUSE);
+    env->mepc = env->pc;
+    env->pc = env->nmi_address + (nmi_index << 2);
+
+    env->nmi_pending &= ~(1 << nmi_index); /* mark this nmi as handled */
 }
 
 void tlib_arch_dispose()

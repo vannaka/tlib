@@ -2103,15 +2103,38 @@ void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
     env->pc = tcg->gen_opc_pc[pc_pos];
 }
 
+void cpu_set_nmi(CPUState *env, int number)
+{
+    if (number >= env->nmi_length) {
+        tlib_abortf("NMI index %d not valid in cpu with nmi_length = %d", number, env->nmi_length);
+    } else {
+        env->nmi_pending |= (1 << number);
+        env->interrupt_request = CPU_INTERRUPT_HARD;
+    }
+}
+
+void cpu_reset_nmi(CPUState *env, int number)
+{
+    env->nmi_pending &= ~(1 << number);
+}
+
 int process_interrupt(int interrupt_request, CPUState *env)
 {
+    /*According to the debug spec draft, the debug mode implies all interrupts are masked (even NMI)
+    / and the WFI acts as NOP. */
+    if (tlib_is_in_debug_mode()) {
+        return 0;
+    }
     if (interrupt_request & CPU_INTERRUPT_HARD) {
         int interruptno = riscv_cpu_hw_interrupts_pending(env);
-	    if (interruptno + 1) {
-             env->exception_index = RISCV_EXCP_INT_FLAG | interruptno;
-             do_interrupt(env);
-	     return 1;
-	}
+        if (env->nmi_pending > NMI_NONE) {
+            do_interrupt(env);
+            return 1;
+        } else if (interruptno + 1) {
+            env->exception_index = RISCV_EXCP_INT_FLAG | interruptno;
+            do_interrupt(env);
+            return 1;
+        }
     }
     return 0;
 }

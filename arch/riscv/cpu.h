@@ -118,6 +118,11 @@ struct CPUState {
 
     uint64_t minstret_snapshot_offset;
     uint64_t minstret_snapshot;
+    
+    /* non maskable interrupts */
+    uint32_t nmi_pending;
+    target_ulong nmi_address;
+    uint32_t nmi_length;
 
     /* if privilege architecture v1.10 is not set, we assume 1.09 */
     bool privilege_architecture_1_10;
@@ -179,10 +184,16 @@ static inline int riscv_mstatus_fs(CPUState *env)
     return env->mstatus & MSTATUS_FS;
 }
 
+void cpu_set_nmi(CPUState *env, int number);
+
+void cpu_reset_nmi(CPUState *env, int number);
+
 void csr_write_helper(CPUState *env, target_ulong val_to_write,
         target_ulong csrno);
 
 void do_interrupt(CPUState *env);
+
+void do_nmi(CPUState *env);
 
 static inline void cpu_pc_from_tb(CPUState *cs, TranslationBlock *tb)
 {

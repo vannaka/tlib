@@ -458,7 +458,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
             return 0;
         }
     }
-    
+
     csrno = priv_version_csr_filter(env, csrno);
 
     // testing for non-standard CSRs here (i.e., before the switch)

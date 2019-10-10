@@ -106,6 +106,8 @@ static TCGOpcode op_to_movi(TCGOpcode op)
         fprintf(stderr, "op_to_movi: unexpected return value of "
                 "function op_bits.\n");
         tcg_abort();
+        /* Never reached */
+        return 0;
     }
 }
 
@@ -156,6 +158,8 @@ static TCGOpcode op_to_mov(TCGOpcode op)
         fprintf(stderr, "op_to_mov: unexpected return value of "
                 "function op_bits.\n");
         tcg_abort();
+        /* Never reached */
+        return 0;
     }
 }
 
@@ -257,6 +261,8 @@ static TCGArg do_constant_folding_2(TCGOpcode op, TCGArg x, TCGArg y)
         fprintf(stderr,
                 "Unrecognized operation %d in do_constant_folding.\n", op);
         tcg_abort();
+        /* Never reached */
+        return 0;
     }
 }
 

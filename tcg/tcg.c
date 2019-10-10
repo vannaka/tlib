@@ -1249,6 +1249,8 @@ static int tcg_reg_alloc(TCGContext *s, TCGRegSet reg1, TCGRegSet reg2)
     }
 
     tcg_abort();
+    /* Never reached */
+    return -1;
 }
 
 /* save a temporary to memory. 'allocated_regs' is used in case a
@@ -1834,7 +1836,7 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf, uint
         }
         args += def->nb_args;
     next:
-        if (search_pc >= 0 && search_pc < s->code_ptr - gen_code_buf) {
+        if (search_pc < s->code_ptr - gen_code_buf) {
             return op_index;
         }
         op_index++;

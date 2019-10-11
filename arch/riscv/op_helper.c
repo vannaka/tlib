@@ -298,10 +298,15 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         env->sepc = val_to_write;
         break;
     case CSR_STVEC:
-        if(val_to_write & 1) {
-            tlib_abort("not handling vectored interrupts yet");
+        if ((env->privilege_architecture_1_10 && (val_to_write & 0x2)) || (val_to_write & 0x3)) {
+            tlib_printf(LOG_LEVEL_WARNING,
+                "Trying to set unaligned stvec: 0x{0:X}, aligning to 4-byte boundary.", val_to_write);
         }
-        env->stvec = val_to_write >> 2 << 2;
+        if (env->privilege_architecture_1_10){
+            env->stvec = val_to_write & ~0x2;
+        } else {
+            env->stvec = val_to_write & ~0x3;
+        }
         break;
     case CSR_SCOUNTEREN:
         env->scounteren = val_to_write;
@@ -319,10 +324,15 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         env->mepc = val_to_write;
         break;
     case CSR_MTVEC:
-        if(val_to_write & 1) {
-            tlib_abort("not handling vectored interrupts yet");
+        if ((env->privilege_architecture_1_10 && (val_to_write & 0x2)) || (val_to_write & 0x3)) {
+            tlib_printf(LOG_LEVEL_WARNING,
+                "Trying to set unaligned mtvec: 0x{0:X}, aligning to 4-byte boundary.", val_to_write);
         }
-        env->mtvec = val_to_write >> 2 << 2;
+        if (env->privilege_architecture_1_10){
+            env->mtvec = val_to_write & ~0x2;
+        } else {
+            env->mtvec = val_to_write & ~0x3;
+        }
         break;
     case CSR_MCOUNTEREN:
         env->mcounteren = val_to_write;

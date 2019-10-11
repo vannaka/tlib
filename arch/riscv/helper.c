@@ -316,11 +316,13 @@ void do_interrupt(CPUState *env)
     /* skip dcsr cause check */
 
     target_ulong fixed_cause = 0;
+    char is_interrupt = 0;
     if (env->exception_index & (RISCV_EXCP_INT_FLAG)) {
         /* hacky for now. the MSB (bit 63) indicates interrupt but cs->exception
            index is only 32 bits wide */
         fixed_cause = env->exception_index & RISCV_EXCP_INT_MASK;
         fixed_cause |= ((target_ulong)1) << (TARGET_LONG_BITS - 1);
+        is_interrupt = 1;
     } else {
         /* fixup User ECALL -> correct priv ECALL */
         if (env->exception_index == RISCV_EXCP_U_ECALL) {
@@ -367,8 +369,12 @@ void do_interrupt(CPUState *env)
 
     if (env->priv <= PRV_S && bit < 64 && ((deleg >> bit) & 1)) {
         /* handle the trap in S-mode */
-        /* No need to check STVEC for misaligned - lower 2 bits cannot be set */
-        env->pc = env->stvec;
+        if ((env->stvec & 1) && is_interrupt && env->privilege_architecture_1_10) {
+            env->pc = (env->stvec & ~0x1) + (fixed_cause * 4);
+        } else {
+            env->pc = env->stvec;
+        }
+
         env->scause = fixed_cause;
         env->sepc = backup_epc;
 
@@ -377,14 +383,19 @@ void do_interrupt(CPUState *env)
         }
 
         target_ulong s = env->mstatus;
-        s = set_field(s, MSTATUS_SPIE, env->privilege_architecture_1_10 ? get_field(s, MSTATUS_SIE) : get_field(s, MSTATUS_UIE << env->priv));
+        s = set_field(s, MSTATUS_SPIE,
+            env->privilege_architecture_1_10 ? get_field(s, MSTATUS_SIE) : get_field(s, MSTATUS_UIE << env->priv));
         s = set_field(s, MSTATUS_SPP, env->priv);
         s = set_field(s, MSTATUS_SIE, 0);
         csr_write_helper(env, s, CSR_MSTATUS);
         riscv_set_mode(env, PRV_S);
     } else {
-        /* No need to check MTVEC for misaligned - lower 2 bits cannot be set */
-        env->pc = env->mtvec;
+        /* Lowest bit of MTVEC changes mode to vectored interrupt */
+        if ((env->mtvec & 1) && is_interrupt && env->privilege_architecture_1_10) {
+            env->pc = (env->mtvec & ~0x1) + (fixed_cause * 4);
+        } else {
+            env->pc = env->mtvec;
+        }
         env->mepc = backup_epc;
         env->mcause = fixed_cause;
 

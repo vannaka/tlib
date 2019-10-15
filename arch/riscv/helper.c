@@ -183,7 +183,10 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
 
         if (PTE_TABLE(pte)) { /* next level of page table */
             base = ppn << PGSHIFT;
-        } else if ((pte & PTE_U) ? (mode == PRV_S) && !sum : !(mode == PRV_S)) {
+        } else if ((pte & PTE_U) && (mode == PRV_S) &&
+                (!sum || ((env->privilege_architecture >= RISCV_PRIV1_11) && access_type == MMU_INST_FETCH))) {
+            break;
+        } else if (!(pte & PTE_U) && (mode !=PRV_S)) {
             break;
         } else if (!(pte & PTE_V) || (!(pte & PTE_R) && (pte & PTE_W))) {
             break;

@@ -34,7 +34,7 @@ void cpu_reset(CPUState *env)
     tlb_flush(env, 1);
 
     bool disable_csr_validation = env->disable_csr_validation;
-    bool privilege = env->privilege_architecture_1_10;
+    int privilege = env->privilege_architecture;
     target_ulong mhartid = env->mhartid;
     target_ulong misa_mask = env->misa_mask;
     target_ulong silenced_extensions = env->silenced_extensions;
@@ -46,7 +46,7 @@ void cpu_reset(CPUState *env)
 
     env->disable_csr_validation = disable_csr_validation;
     env->mhartid = mhartid;
-    env->privilege_architecture_1_10 = privilege;
+    env->privilege_architecture = privilege;
     env->misa = misa_mask;
     env->misa_mask = misa_mask;
     env->silenced_extensions = silenced_extensions;
@@ -123,7 +123,7 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
     int levels=0, ptidxbits=0, ptesize=0, vm=0, sum=0;
     int mxr = get_field(env->mstatus, MSTATUS_MXR);
 
-    if (env->privilege_architecture_1_10) {
+    if (env->privilege_architecture >= RISCV_PRIV1_10) {
         base = get_field(env->satp, SATP_PPN) << PGSHIFT;
         sum = get_field(env->mstatus, MSTATUS_SUM);
         vm = get_field(env->satp, SATP_MODE);
@@ -238,7 +238,7 @@ static void raise_mmu_exception(CPUState *env, target_ulong address,
                                 int access_type)
 {
     int page_fault_exceptions =
-        (env->privilege_architecture_1_10) &&
+        (env->privilege_architecture >= RISCV_PRIV1_10) &&
         get_field(env->satp, SATP_MODE) != VM_1_10_MBARE;
     int exception = 0;
     if (access_type == MMU_INST_FETCH) { /* inst access */
@@ -369,7 +369,7 @@ void do_interrupt(CPUState *env)
 
     if (env->priv <= PRV_S && bit < 64 && ((deleg >> bit) & 1)) {
         /* handle the trap in S-mode */
-        if ((env->stvec & 1) && is_interrupt && env->privilege_architecture_1_10) {
+        if ((env->stvec & 1) && is_interrupt && (env->privilege_architecture >= RISCV_PRIV1_10)) {
             env->pc = (env->stvec & ~0x1) + (fixed_cause * 4);
         } else {
             env->pc = env->stvec;
@@ -384,14 +384,14 @@ void do_interrupt(CPUState *env)
 
         target_ulong s = env->mstatus;
         s = set_field(s, MSTATUS_SPIE,
-            env->privilege_architecture_1_10 ? get_field(s, MSTATUS_SIE) : get_field(s, MSTATUS_UIE << env->priv));
+            (env->privilege_architecture >= RISCV_PRIV1_10) ? get_field(s, MSTATUS_SIE) : get_field(s, MSTATUS_UIE << env->priv));
         s = set_field(s, MSTATUS_SPP, env->priv);
         s = set_field(s, MSTATUS_SIE, 0);
         csr_write_helper(env, s, CSR_MSTATUS);
         riscv_set_mode(env, PRV_S);
     } else {
         /* Lowest bit of MTVEC changes mode to vectored interrupt */
-        if ((env->mtvec & 1) && is_interrupt && env->privilege_architecture_1_10) {
+        if ((env->mtvec & 1) && is_interrupt && (env->privilege_architecture >= RISCV_PRIV1_10)) {
             env->pc = (env->mtvec & ~0x1) + (fixed_cause * 4);
         } else {
             env->pc = env->mtvec;
@@ -404,7 +404,7 @@ void do_interrupt(CPUState *env)
         }
 
         target_ulong s = env->mstatus;
-        s = set_field(s, MSTATUS_MPIE, env->privilege_architecture_1_10 ? get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
+        s = set_field(s, MSTATUS_MPIE, (env->privilege_architecture >= RISCV_PRIV1_10) ? get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
         s = set_field(s, MSTATUS_MPP, env->priv);
         s = set_field(s, MSTATUS_MIE, 0);
         csr_write_helper(env, s, CSR_MSTATUS);
@@ -420,7 +420,7 @@ void do_nmi(CPUState *env)
         return;
     }
     target_ulong s = env->mstatus;
-    s = set_field(s, MSTATUS_MPIE, env->privilege_architecture_1_10 ? get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
+    s = set_field(s, MSTATUS_MPIE, (env->privilege_architecture >= RISCV_PRIV1_10) ? get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
     s = set_field(s, MSTATUS_MPP, env->priv); /* store current priv level */
     s = set_field(s, MSTATUS_MIE, 0);
     csr_write_helper(env, s, CSR_MSTATUS);

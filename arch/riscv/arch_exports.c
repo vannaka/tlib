@@ -72,9 +72,9 @@ uint32_t tlib_is_feature_allowed(uint32_t feature_bit)
    return (cpu->misa_mask & (1L << feature_bit)) != 0;
 }
 
-void tlib_set_privilege_architecture_1_09(uint32_t enable)
+void tlib_set_privilege_architecture(int32_t privilege_architecture)
 {
-   cpu->privilege_architecture_1_10 = enable ? 0 : 1;
+   cpu->privilege_architecture = privilege_architecture;
 }
 
 uint64_t tlib_install_custom_instruction(uint64_t mask, uint64_t pattern, uint64_t length)

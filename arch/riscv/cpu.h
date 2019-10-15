@@ -124,8 +124,7 @@ struct CPUState {
     target_ulong nmi_address;
     uint32_t nmi_length;
 
-    /* if privilege architecture v1.10 is not set, we assume 1.09 */
-    bool privilege_architecture_1_10;
+    int privilege_architecture;
 
     int32_t custom_instructions_count;
     custom_instruction_descriptor_t custom_instructions[CPU_CUSTOM_INSTRUCTIONS_LIMIT];
@@ -209,6 +208,12 @@ enum riscv_features {
     RISCV_FEATURE_RVC = RV('C'),
     RISCV_FEATURE_RVS = RV('S'),
     RISCV_FEATURE_RVU = RV('U'),
+};
+
+enum privilege_architecture {
+    RISCV_PRIV1_09,
+    RISCV_PRIV1_10,
+    RISCV_PRIV1_11
 };
 
 static inline int riscv_has_ext(CPUState *env, target_ulong ext)

@@ -238,8 +238,7 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
     return TRANSLATE_FAIL;
 }
 
-static void raise_mmu_exception(CPUState *env, target_ulong address,
-                                int access_type)
+static void raise_mmu_exception(CPUState *env, target_ulong address, int access_type)
 {
     int page_fault_exceptions =
         (env->privilege_architecture >= RISCV_PRIV1_10) &&

@@ -327,8 +327,8 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     case CSR_SCAUSE:
         env->scause = val_to_write;
         break;
-    case CSR_SBADADDR:
-        env->sbadaddr = val_to_write;
+    case CSR_STVAL:
+        env->stval = val_to_write;
         break;
     case CSR_MEPC:
         env->mepc = val_to_write;
@@ -353,8 +353,8 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     case CSR_MCAUSE:
         env->mcause = val_to_write;
         break;
-    case CSR_MBADADDR:
-        env->mbadaddr = val_to_write;
+    case CSR_MTVAL:
+        env->mtval = val_to_write;
         break;
     case CSR_MISA: {
         if (!(val_to_write & RISCV_FEATURE_RVF)) {
@@ -561,8 +561,8 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         return env->mie & env->mideleg;
     case CSR_SEPC:
         return env->sepc;
-    case CSR_SBADADDR:
-        return env->sbadaddr;
+    case CSR_STVAL:
+        return env->stval;
     case CSR_STVEC:
         return env->stvec;
     case CSR_SCOUNTEREN:
@@ -589,8 +589,8 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         return env->mscratch;
     case CSR_MCAUSE:
         return env->mcause;
-    case CSR_MBADADDR:
-        return env->mbadaddr;
+    case CSR_MTVAL:
+        return env->mtval;
     case CSR_MISA:
         env->misa |= 0x00040000; // 'S'
         return env->misa;

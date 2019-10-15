@@ -82,8 +82,7 @@ struct CPUState {
 
     target_ulong sptbr;  /* until: priv-1.9.1 */
     target_ulong satp;   /* since: priv-1.10.0 */
-    target_ulong sbadaddr;
-    target_ulong mbadaddr;
+    target_ulong stval;  /* renamed from sbadaddr since: priv-1.10.0 */
     target_ulong medeleg;
 
     target_ulong stvec;
@@ -93,7 +92,7 @@ struct CPUState {
     target_ulong mtvec;
     target_ulong mepc;
     target_ulong mcause;
-    target_ulong mtval;  /* since: priv-1.10.0 */
+    target_ulong mtval;  /*  renamed from mbadaddr since: priv-1.10.0 */
 
     uint32_t mucounteren; /* until 1.10.0 */
     uint32_t mscounteren; /* until 1.10.0 */

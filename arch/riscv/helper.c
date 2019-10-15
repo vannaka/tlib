@@ -382,7 +382,7 @@ void do_interrupt(CPUState *env)
         env->sepc = backup_epc;
 
         if (hasbadaddr) {
-            env->sbadaddr = env->badaddr;
+            env->stval = env->badaddr;
         }
 
         target_ulong s = env->mstatus;
@@ -403,7 +403,7 @@ void do_interrupt(CPUState *env)
         env->mcause = fixed_cause;
 
         if (hasbadaddr) {
-            env->mbadaddr = env->badaddr;
+            env->mtval = env->badaddr;
         }
 
         target_ulong s = env->mstatus;

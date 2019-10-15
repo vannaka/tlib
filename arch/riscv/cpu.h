@@ -140,6 +140,9 @@ struct CPUState {
        i.e., the ILLEGAL INSTRUCTION exception is generated and handled by the software */
     target_ulong silenced_extensions;
 
+    /* since priv-1.11.0 pmp grain size must be the same across all pmp regions */ 
+    int32_t pmp_napot_grain;
+
     CPU_COMMON
 };
 

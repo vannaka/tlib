@@ -57,6 +57,7 @@ void cpu_reset(CPUState *env)
     set_default_nan_mode(1, &env->fp_status);
     env->custom_instructions_count = custom_instructions_count;
     memcpy(env->custom_instructions, custom_instructions, sizeof(custom_instruction_descriptor_t) * CPU_CUSTOM_INSTRUCTIONS_LIMIT);
+    env->pmp_napot_grain = -1;
 }
 
 /*

@@ -370,7 +370,7 @@ void do_interrupt(CPUState *env)
         bit &= ~((target_ulong)1 << (TARGET_LONG_BITS - 1));
     }
 
-    if (env->priv <= PRV_S && bit < 64 && ((deleg >> bit) & 1)) {
+    if (env->priv <= PRV_S && bit < 64 && ((deleg >> bit) & 1)) {       // DA_FQ ?
         /* handle the trap in S-mode */
         if ((env->stvec & 1) && is_interrupt && (env->privilege_architecture >= RISCV_PRIV1_10)) {
             env->pc = (env->stvec & ~0x1) + (fixed_cause * 4);
@@ -386,11 +386,11 @@ void do_interrupt(CPUState *env)
         }
 
         target_ulong s = env->mstatus;
-        s = set_field(s, MSTATUS_SPIE,
-            (env->privilege_architecture >= RISCV_PRIV1_10) ? get_field(s, MSTATUS_SIE) : get_field(s, MSTATUS_UIE << env->priv));
-        s = set_field(s, MSTATUS_SPP, env->priv);
-        s = set_field(s, MSTATUS_SIE, 0);
-        csr_write_helper(env, s, CSR_MSTATUS);
+        s = set_field(s, SSTATUS_SPIE,
+            (env->privilege_architecture >= RISCV_PRIV1_10) ? get_field(s, SSTATUS_SIE) : get_field(s, 1 << env->priv));
+        s = set_field(s, SSTATUS_SIE, 0);
+        s = set_field(s, SSTATUS_SPP, env->priv);
+        csr_write_helper(env, s, CSR_SSTATUS);
         riscv_set_mode(env, PRV_S);
     } else {
         /* Lowest bit of MTVEC changes mode to vectored interrupt */
@@ -406,11 +406,11 @@ void do_interrupt(CPUState *env)
             env->mtval = env->badaddr;
         }
 
-        target_ulong s = env->mstatus;
-        s = set_field(s, MSTATUS_MPIE, (env->privilege_architecture >= RISCV_PRIV1_10) ? get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
-        s = set_field(s, MSTATUS_MPP, env->priv);
-        s = set_field(s, MSTATUS_MIE, 0);
-        csr_write_helper(env, s, CSR_MSTATUS);
+        target_ulong ms = env->mstatus;
+        ms = set_field(ms, MSTATUS_MPIE, (env->privilege_architecture >= RISCV_PRIV1_10) ? get_field(ms, MSTATUS_MIE) : get_field(ms, 1 << env->priv));
+        ms = set_field(ms, MSTATUS_MIE, 0);
+        ms = set_field(ms, MSTATUS_MPP, env->priv);
+        csr_write_helper(env, ms, CSR_MSTATUS);
         riscv_set_mode(env, PRV_M);
     }
     /* TODO yield load reservation  */

@@ -203,6 +203,9 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
                 MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV | MSTATUS_SUM |
                 MSTATUS_MPP | MSTATUS_MXR;
         }
+#ifdef TARGET_RISCV64
+        mask |= MSTATUS_UXL | MSTATUS_SXL;
+#endif
         mstatus = (mstatus & ~mask) | (val_to_write & mask);
 
         int dirty = (mstatus & MSTATUS_FS) == MSTATUS_FS;
@@ -266,26 +269,29 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         env->mscounteren = val_to_write;
         break;
     case CSR_SSTATUS: {
-        target_ulong ms = env->mstatus;
+        target_ulong s = env->mstatus;
         target_ulong mask = SSTATUS_SIE | SSTATUS_SPIE | SSTATUS_UIE
             | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_FS | SSTATUS_XS
             | SSTATUS_SUM | SSTATUS_MXR | SSTATUS_SD;
-        ms = (ms & ~mask) | (val_to_write & mask);
-        csr_write_helper(env, ms, CSR_MSTATUS);
+#ifdef TARGET_RISCV64
+        mask |= SSTATUS_UXL;
+#endif
+        s = (s & ~mask) | (val_to_write & mask);
+        csr_write_helper(env, s, CSR_MSTATUS);
         break;
     }
     case CSR_SIP: {
-        target_ulong next_mip = (env->mip & ~env->mideleg)
-                                | (val_to_write & env->mideleg);
-        csr_write_helper(env, next_mip, CSR_MIP);
-        /* note: stw_phys should be done by the call to set MIP if necessary, */
-        /* so we don't do it here */
+        target_ulong deleg = env->mideleg;
+        target_ulong s = env->mip;
+        target_ulong mask = MIP_USIP | MIP_SSIP | MIP_UTIP | MIP_STIP | MIP_UEIP | MIP_SEIP;
+        env->mip = (s & ~mask) | ((val_to_write & deleg) & mask);
         break;
     }
     case CSR_SIE: {
-        target_ulong next_mie = (env->mie & ~env->mideleg)
-                                | (val_to_write & env->mideleg);
-        csr_write_helper(env, next_mie, CSR_MIE);
+        target_ulong deleg = env->mideleg;
+        target_ulong s = env->mie;
+        target_ulong mask = MIP_USIP | MIP_SSIP | MIP_UTIP | MIP_STIP | MIP_UEIP | MIP_SEIP;
+        env->mie = (s & ~mask) | ((val_to_write & deleg) & mask);
         break;
     }
     case CSR_SATP: /* CSR_SPTBR */ {
@@ -553,12 +559,19 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         if (env->privilege_architecture >= RISCV_PRIV1_10) {
             mask |= SSTATUS_MXR;
         }
+#ifdef TARGET_RISCV64
+        mask |= SSTATUS_UXL;
+#endif
         return env->mstatus & mask;
     }
-    case CSR_SIP:
-        return env->mip & env->mideleg;
-    case CSR_SIE:
-        return env->mie & env->mideleg;
+    case CSR_SIP: {
+        target_ulong mask = MIP_USIP | MIP_SSIP | MIP_UTIP | MIP_STIP | MIP_UEIP | MIP_SEIP;
+        return env->mip & env->mideleg & mask;
+    }
+    case CSR_SIE: {
+        target_ulong mask = MIP_USIP | MIP_SSIP | MIP_UTIP | MIP_STIP | MIP_UEIP | MIP_SEIP;
+        return env->mie & env->mideleg & mask;
+    }
     case CSR_SEPC:
         return env->sepc;
     case CSR_STVAL:
@@ -704,7 +717,7 @@ void riscv_set_mode(CPUState *env, target_ulong newpriv)
 
 target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
 {
-    if (!(env->priv >= PRV_S)) {
+    if (env->priv != PRV_S) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
 
@@ -713,15 +726,17 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
         helper_raise_exception(env, RISCV_EXCP_INST_ADDR_MIS);
     }
 
-    target_ulong mstatus = env->mstatus;
-    target_ulong prev_priv = get_field(mstatus, MSTATUS_SPP);
-    mstatus = set_field(mstatus,
-        (env->privilege_architecture >= RISCV_PRIV1_10) ? MSTATUS_SIE : MSTATUS_UIE << prev_priv,
-        get_field(mstatus, MSTATUS_SPIE));
-    mstatus = set_field(mstatus, MSTATUS_SPIE, 0);
-    mstatus = set_field(mstatus, MSTATUS_SPP, PRV_U);
+    target_ulong sstatus = env->mstatus;
+    target_ulong prev_priv = get_field(sstatus, SSTATUS_SPP);
+    sstatus = set_field(sstatus,
+        (env->privilege_architecture >= RISCV_PRIV1_10) ? SSTATUS_SIE : SSTATUS_UIE << prev_priv,
+        get_field(sstatus, SSTATUS_SPIE));
+    sstatus = set_field(sstatus, SSTATUS_SPIE, 0);
+    /* TO DO: if U-mode unsupported, change to M */
+    //sstatus = set_field(sstatus, SSTATUS_SPP,  ensure_extension(dc, RISCV_FEATURE_RVU) ? PRV_U : PRV_M);
+    sstatus = set_field(sstatus, SSTATUS_SPP,  PRV_U);
     riscv_set_mode(env, prev_priv);
-    csr_write_helper(env, mstatus, CSR_MSTATUS);
+    csr_write_helper(env, sstatus, CSR_SSTATUS);
 
     acquire_global_memory_lock(env);
     cancel_reservation(env);
@@ -732,7 +747,7 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
 
 target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
 {
-    if (!(env->priv >= PRV_M)) {
+    if (env->priv != PRV_M) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
 
@@ -744,9 +759,11 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
     target_ulong mstatus = env->mstatus;
     target_ulong prev_priv = get_field(mstatus, MSTATUS_MPP);
     mstatus = set_field(mstatus,
-        env->privilege_architecture >= RISCV_PRIV1_10 ? MSTATUS_MIE : MSTATUS_UIE << prev_priv,
+        env->privilege_architecture >= RISCV_PRIV1_10 ? MSTATUS_MIE : 1 << prev_priv,
         get_field(mstatus, MSTATUS_MPIE));
     mstatus = set_field(mstatus, MSTATUS_MPIE, 0);
+    /* TO DO:  if U-mode unsupported, change to M */
+    //mstatus = set_field(mstatus, MSTATUS_MPP, ensure_extension(dc, RISCV_FEATURE_RVU) ? PRV_U : PRV_M);
     mstatus = set_field(mstatus, MSTATUS_MPP, PRV_U);
     riscv_set_mode(env, prev_priv);
     csr_write_helper(env, mstatus, CSR_MSTATUS);

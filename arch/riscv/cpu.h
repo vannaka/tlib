@@ -80,14 +80,16 @@ struct CPUState {
     target_ulong mie;
     target_ulong mideleg;
 
-    target_ulong sptbr;  /* until: priv-1.9.1 */
-    target_ulong satp;   /* since: priv-1.10.0 */
-    target_ulong stval;  /* renamed from sbadaddr since: priv-1.10.0 */
+    target_ulong sptbr;  /* until: priv-1.9.1;  replaced by satp */
     target_ulong medeleg;
 
     target_ulong stvec;
     target_ulong sepc;
     target_ulong scause;
+    target_ulong stval;  /* renamed from sbadaddr since: priv-1.10.0 */
+    target_ulong satp;   /* since: priv-1.10.0 */
+    target_ulong sedeleg;
+    target_ulong sideleg;
 
     target_ulong mtvec;
     target_ulong mepc;

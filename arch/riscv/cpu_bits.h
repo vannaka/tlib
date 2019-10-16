@@ -279,6 +279,8 @@
 #if defined(TARGET_RISCV32)
 #define MSTATUS_SD MSTATUS32_SD
 #elif defined(TARGET_RISCV64)
+#define MSTATUS_UXL MSTATUS64_UXL
+#define MSTATUS_SXL MSTATUS64_SXL
 #define MSTATUS_SD MSTATUS64_SD
 #endif
 
@@ -294,28 +296,37 @@
 #define SSTATUS_SUM         0x00040000 /* since: priv-1.10 */
 #define SSTATUS_MXR         0x00080000
 
+#define SSTATUS64_UXL       0x0000000300000000ULL
+
 #define SSTATUS32_SD        0x80000000
 #define SSTATUS64_SD        0x8000000000000000ULL
 
 #if defined(TARGET_RISCV32)
 #define SSTATUS_SD SSTATUS32_SD
 #elif defined(TARGET_RISCV64)
+#define SSTATUS_UXL SSTATUS64_UXL
 #define SSTATUS_SD SSTATUS64_SD
 #endif
 
 /* irqs */
+#define MIP_USIP            (1 << IRQ_U_SOFT)
 #define MIP_SSIP            (1 << IRQ_S_SOFT)
 #define MIP_HSIP            (1 << IRQ_H_SOFT)
 #define MIP_MSIP            (1 << IRQ_M_SOFT)
+#define MIP_UTIP            (1 << IRQ_U_TIMER)
 #define MIP_STIP            (1 << IRQ_S_TIMER)
 #define MIP_HTIP            (1 << IRQ_H_TIMER)
 #define MIP_MTIP            (1 << IRQ_M_TIMER)
+#define MIP_UEIP            (1 << IRQ_U_EXT)
 #define MIP_SEIP            (1 << IRQ_S_EXT)
 #define MIP_HEIP            (1 << IRQ_H_EXT)
 #define MIP_MEIP            (1 << IRQ_M_EXT)
 
+#define SIP_USIP            MIP_USIP
 #define SIP_SSIP            MIP_SSIP
+#define SUP_UTIP            MIP_UTIP
 #define SIP_STIP            MIP_STIP
+#define SIP_UEIP            MIP_UEIP
 #define SIP_SEIP            MIP_SEIP
 
 #define PRV_U 0

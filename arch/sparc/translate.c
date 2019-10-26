@@ -2799,9 +2799,8 @@ uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
     return 0;
 }
 
-void setup_disas_context(DisasContextBase *base, CPUState *env, TranslationBlock *tb) {
+void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
-    dc->base.tb = tb;
     dc->base.pc = dc->base.tb->pc;
     dc->base.is_jmp = DISAS_NEXT;
     dc->base.npc = (target_ulong) dc->base.tb->cs_base;
@@ -2832,32 +2831,28 @@ int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
     return 1;
 }
 
-void gen_intermediate_code(CPUState *env,
-                           TranslationBlock *tb, int max_insns)
+void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
 {
-    DisasContext dc;
+    DisasContext *dc = (DisasContext*)base;
+    TranslationBlock *tb = base->tb;
     CPUBreakpoint *bp;
 
-    setup_disas_context((DisasContextBase*)&dc, env, tb);
-    tcg_clear_temp_count();
-
-    UNLOCK_TB(tb);
     while (1) {
         CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
-            bp = process_breakpoints(env, dc.base.pc);
-            if (bp != NULL && gen_breakpoint(&dc, bp)) {
+            bp = process_breakpoints(env, dc->base.pc);
+            if (bp != NULL && gen_breakpoint(dc, bp)) {
                 break;
             }
         }
         if (tb->search_pc) {
-            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc.base.pc;
-            gen_opc_npc[gen_opc_ptr - tcg->gen_opc_buf] = dc.base.npc;
+            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
+            gen_opc_npc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.npc;
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
         tb->prev_size = tb->size;
-        tb->size += disas_insn(env, &dc);
+        tb->size += disas_insn(env, dc);
         tb->icount++;
 
         if (!tb->search_pc)
@@ -2869,19 +2864,19 @@ void gen_intermediate_code(CPUState *env,
         }
 
         if (tcg_check_temp_count()) {
-            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.base.pc);
+            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc->base.pc);
         }
 
-        if (dc.base.is_jmp) {
+        if (dc->base.is_jmp) {
             break;
         }
         /* if the next PC is different, we abort now */
-        if ((dc.base.pc - tb->pc) != tb->size) {
+        if ((dc->base.pc - tb->pc) != tb->size) {
             break;
         }
         /* if we reach a page boundary, we stop generation so that the
            PC of a TT_TFAULT exception is always in the right page */
-        if ((dc.base.pc & (TARGET_PAGE_SIZE - 1)) == 0) {
+        if ((dc->base.pc & (TARGET_PAGE_SIZE - 1)) == 0) {
             break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
@@ -2907,24 +2902,22 @@ void gen_intermediate_code(CPUState *env,
     tcg_temp_free_i64(cpu_tmp64);
     tcg_temp_free_i32(cpu_tmp32);
     tcg_temp_free(cpu_tmp0);
-    if (!dc.base.is_jmp) {
-        if (dc.base.pc != DYNAMIC_PC &&
-            (dc.base.npc != DYNAMIC_PC && dc.base.npc != JUMP_PC)) {
+    if (!dc->base.is_jmp) {
+        if (dc->base.pc != DYNAMIC_PC &&
+            (dc->base.npc != DYNAMIC_PC && dc->base.npc != JUMP_PC)) {
             /* static PC and NPC: we can use direct chaining */
-            gen_goto_tb(&dc, 0, dc.base.pc, dc.base.npc);
+            gen_goto_tb(dc, 0, dc->base.pc, dc->base.npc);
         } else {
-            if (dc.base.pc != DYNAMIC_PC)
-                tcg_gen_movi_tl(cpu_pc, dc.base.pc);
-            save_npc(&dc, cpu_cond);
-            gen_exit_tb_no_chaining(dc.base.tb);
+            if (dc->base.pc != DYNAMIC_PC)
+                tcg_gen_movi_tl(cpu_pc, dc->base.pc);
+            save_npc(dc, cpu_cond);
+            gen_exit_tb_no_chaining(dc->base.tb);
         }
     }
     if (tb->search_pc) {
-        gen_opc_jump_pc[0] = dc.jump_pc[0];
-        gen_opc_jump_pc[1] = dc.jump_pc[1];
+        gen_opc_jump_pc[0] = dc->jump_pc[0];
+        gen_opc_jump_pc[1] = dc->jump_pc[1];
     }
-
-    tb->disas_flags = get_disas_flags(env, (DisasContextBase*)&dc);
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

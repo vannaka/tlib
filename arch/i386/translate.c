@@ -7627,9 +7627,8 @@ uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
     return !(((DisasContext*)dc)->code32);
 }
 
-void setup_disas_context(DisasContextBase *base, CPUState *env, TranslationBlock *tb) {
+void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
-    dc->base.tb = tb;
     dc->base.is_jmp = DISAS_NEXT;
     dc->base.pc = dc->base.tb->pc;
     dc->pe = (dc->base.tb->flags >> HF_PE_SHIFT) & 1;
@@ -7662,7 +7661,7 @@ void setup_disas_context(DisasContextBase *base, CPUState *env, TranslationBlock
 #endif
     dc->flags = dc->base.tb->flags;
     dc->jmp_opt = !(dc->tf ||
-                    (tb->flags & HF_INHIBIT_IRQ_MASK));
+                    (dc->base.tb->flags & HF_INHIBIT_IRQ_MASK));
 
     cpu_T[0] = tcg_temp_new();
     cpu_T[1] = tcg_temp_new();
@@ -7690,32 +7689,28 @@ int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
 /* generate intermediate code in gen_opc_buf and gen_opparam_buf for
    basic block 'tb'. If search_pc is TRUE, also generate PC
    information for each intermediate instruction. */
-void gen_intermediate_code(CPUState *env,
-                           TranslationBlock *tb, int max_insns)
+void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
 {
-    DisasContext dc;
+    DisasContext *dc = (DisasContext*)base;
+    TranslationBlock *tb = base->tb;
     CPUBreakpoint *bp;
 
-    setup_disas_context((DisasContextBase*)&dc, env, tb);
-    tcg_clear_temp_count();
-
-    UNLOCK_TB(tb);
     while (1) {
         CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
-            bp = process_breakpoints(env, dc.base.pc);
-            if (bp != NULL && gen_breakpoint(&dc, bp)) {
+            bp = process_breakpoints(env, dc->base.pc);
+            if (bp != NULL && gen_breakpoint(dc, bp)) {
                 break;
             }
         }
         if (tb->search_pc) {
-            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc.base.pc;
-            gen_opc_cc_op[gen_opc_ptr - tcg->gen_opc_buf] = dc.cc_op;
+            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
+            gen_opc_cc_op[gen_opc_ptr - tcg->gen_opc_buf] = dc->cc_op;
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
         tb->prev_size = tb->size;
-        tb->size += disas_insn(env, &dc);
+        tb->size += disas_insn(env, dc);
         tb->icount++;
 
         if (!tb->search_pc)
@@ -7727,14 +7722,14 @@ void gen_intermediate_code(CPUState *env,
         }
 
         if (tcg_check_temp_count()) {
-            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.base.pc);
+            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc->base.pc);
         }
 
         /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
            the flag and abort the translation to give the irqs a
            change to be happen */
-        if (dc.tf ||
-            (dc.flags & HF_INHIBIT_IRQ_MASK)) {
+        if (dc->tf ||
+            (dc->flags & HF_INHIBIT_IRQ_MASK)) {
             break;
         }
         /* if too long translation, stop generation too */
@@ -7743,7 +7738,7 @@ void gen_intermediate_code(CPUState *env,
             tb->icount >= max_insns) {
             break;
         }
-        if (dc.base.is_jmp) {
+        if (dc->base.is_jmp) {
             break;
         }
         if (tb->search_pc && tb->size == tb->original_size)
@@ -7753,10 +7748,8 @@ void gen_intermediate_code(CPUState *env,
             break;
         }
     }
-    gen_jmp_im(dc.base.pc - dc.cs_base);
-    gen_eob(&dc);
-
-    tb->disas_flags = get_disas_flags(env, (DisasContextBase*)&dc);
+    gen_jmp_im(dc->base.pc - dc->cs_base);
+    gen_eob(dc);
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

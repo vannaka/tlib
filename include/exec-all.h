@@ -40,12 +40,16 @@ typedef ram_addr_t tb_page_addr_t;
 #define DISAS_TB_JUMP 3 /* only pc was modified statically */
 
 struct TranslationBlock;
+struct DisasContextBase;
 typedef struct TranslationBlock TranslationBlock;
+typedef struct DisasContextBase DisasContextBase;
 
 void gen_exit_tb(uintptr_t, TranslationBlock*);
 void gen_exit_tb_no_chaining(TranslationBlock*);
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc);
-void gen_intermediate_code(CPUState *env, struct TranslationBlock *tb, int max_insn);
+void gen_intermediate_code(CPUState *env, struct DisasContextBase *base, int max_insn);
+void setup_disas_context(DisasContextBase *dc, CPUState *env);
+uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc);
 void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb,
                           int pc_pos);
 
@@ -130,13 +134,13 @@ struct TranslationBlock {
 #endif
 };
 
-typedef struct DisasContextBase {
+struct DisasContextBase {
     struct TranslationBlock *tb;
     target_ulong pc;
     target_ulong npc;
     int mem_idx;
     int is_jmp;
-} DisasContextBase;
+};
 
 static inline unsigned int tb_jmp_cache_hash_page(target_ulong pc)
 {

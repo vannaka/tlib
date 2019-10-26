@@ -9906,9 +9906,8 @@ uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
     return ((DisasContext*)dc)->thumb;
 }
 
-void setup_disas_context(DisasContextBase *base, CPUState *env, TranslationBlock *tb) {
+void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
-    dc->base.tb = tb;
     dc->base.is_jmp = DISAS_NEXT;
     dc->base.pc = dc->base.tb->pc;
     dc->condjmp = 0;
@@ -9983,32 +9982,28 @@ int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
    information for each intermediate instruction. */
 
 
-void gen_intermediate_code(CPUState *env,
-                           TranslationBlock *tb, int max_insns)
+void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
 {
-    DisasContext dc;
+    DisasContext *dc = (DisasContext*)base;
+    TranslationBlock *tb = base->tb;
     CPUBreakpoint *bp;
 
-    setup_disas_context((DisasContextBase*)&dc, env, tb);
-    tcg_clear_temp_count();
-
-    UNLOCK_TB(tb);
     while (1) {
         CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
-            bp = process_breakpoints(env, dc.base.pc);
-            if (bp != NULL && gen_breakpoint(&dc, bp)) {
+            bp = process_breakpoints(env, dc->base.pc);
+            if (bp != NULL && gen_breakpoint(dc, bp)) {
                 break;
             }
         }
         if (tb->search_pc) {
-            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc.base.pc;
-            gen_opc_condexec_bits[gen_opc_ptr - tcg->gen_opc_buf] = (dc.condexec_cond << 4) | (dc.condexec_mask >> 1);
+            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
+            gen_opc_condexec_bits[gen_opc_ptr - tcg->gen_opc_buf] = (dc->condexec_cond << 4) | (dc->condexec_mask >> 1);
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
         tb->prev_size = tb->size;
-        tb->size += disas_insn(env, &dc);
+        tb->size += disas_insn(env, dc);
         tb->icount++;
 
         if (!tb->search_pc)
@@ -10020,12 +10015,12 @@ void gen_intermediate_code(CPUState *env,
         }
 
         if (tcg_check_temp_count()) {
-            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.base.pc);
+            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc->base.pc);
         }
 
-        if (dc.condjmp && !dc.base.is_jmp) {
-            gen_set_label(dc.condlabel);
-            dc.condjmp = 0;
+        if (dc->condjmp && !dc->base.is_jmp) {
+            gen_set_label(dc->condlabel);
+            dc->condjmp = 0;
         }
 
         /* Translation stops when a conditional branch is encountered.
@@ -10033,13 +10028,13 @@ void gen_intermediate_code(CPUState *env,
          * Also stop translation when a page boundary is reached.  This
          * ensures prefetch aborts occur at the right place.  */
 
-        if (dc.base.is_jmp) {
+        if (dc->base.is_jmp) {
             break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
             break;
         }
-        if (dc.base.pc >= ((tb->pc & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE)) {
+        if (dc->base.pc >= ((tb->pc & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE)) {
             break;
         }
         if (tb->icount >= max_insns) {
@@ -10064,37 +10059,35 @@ void gen_intermediate_code(CPUState *env,
         - Hardware watchpoints.
        Hardware breakpoints have already been handled and skip this code.
      */
-    gen_set_condexec(&dc);
-    switch(dc.base.is_jmp) {
+    gen_set_condexec(dc);
+    switch(dc->base.is_jmp) {
     case DISAS_NEXT:
-        gen_goto_tb(&dc, 1, dc.base.pc);
+        gen_goto_tb(dc, 1, dc->base.pc);
         break;
     default:
     case DISAS_JUMP:
     case DISAS_UPDATE:
         /* indicate that the hash table must be used to find the next TB */
-        gen_exit_tb_no_chaining(dc.base.tb);
+        gen_exit_tb_no_chaining(dc->base.tb);
         break;
     case DISAS_TB_JUMP:
         /* nothing more to generate */
         break;
     case DISAS_WFI:
         gen_helper_wfi();
-        gen_exit_tb_no_chaining(dc.base.tb);;
+        gen_exit_tb_no_chaining(dc->base.tb);;
         break;
     case DISAS_SWI:
         gen_exception(EXCP_SWI);
-        gen_exit_tb_no_chaining(dc.base.tb);
+        gen_exit_tb_no_chaining(dc->base.tb);
         break;
     }
-    if (dc.condjmp) {
-        gen_set_label(dc.condlabel);
-        gen_set_condexec(&dc);
-        gen_goto_tb(&dc, 1, dc.base.pc);
-        dc.condjmp = 0;
+    if (dc->condjmp) {
+        gen_set_label(dc->condlabel);
+        gen_set_condexec(dc);
+        gen_goto_tb(dc, 1, dc->base.pc);
+        dc->condjmp = 0;
     }
-
-    tb->disas_flags = get_disas_flags(env, (DisasContextBase*)&dc);
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

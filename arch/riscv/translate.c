@@ -2000,8 +2000,7 @@ uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
     return 0;
 }
 
-void setup_disas_context(DisasContextBase *dc, CPUState *env, TranslationBlock *tb) {
-    dc->tb = tb;
+void setup_disas_context(DisasContextBase *dc, CPUState *env) {
     dc->pc = dc->tb->pc;
     dc->is_jmp = BS_NONE;
     dc->mem_idx = cpu_mmu_index(env);
@@ -2016,31 +2015,27 @@ int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
 }
 
 void gen_intermediate_code(CPUState *env,
-                           TranslationBlock *tb, int max_insns)
+                           DisasContextBase *base, int max_insns)
 {
-    DisasContext dc;
+    DisasContext *dc = (DisasContext*)base;
+    TranslationBlock *tb = base->tb;
 
-    setup_disas_context((DisasContextBase*)&dc, env, tb);
-
-    tcg_clear_temp_count();
-
-    UNLOCK_TB(tb);
     while (1) {
         CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
-            CPUBreakpoint* bp = process_breakpoints(env, dc.base.pc);
-            if (bp != NULL && gen_breakpoint(&dc, bp)) {
+            CPUBreakpoint* bp = process_breakpoints(env, dc->base.pc);
+            if (bp != NULL && gen_breakpoint(dc, bp)) {
                 break;
             }
         }
 
         if (tb->search_pc) {
-            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc.base.pc;
+            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
         tb->prev_size = tb->size;
-        tb->size += disas_insn(env, &dc);
+        tb->size += disas_insn(env, dc);
         tb->icount++;
 
         if (!tb->search_pc)
@@ -2052,17 +2047,17 @@ void gen_intermediate_code(CPUState *env,
         }
 
         if (tcg_check_temp_count()) {
-            tlib_abortf("TCG temps leak detected at PC %08X", dc.base.pc);
+            tlib_abortf("TCG temps leak detected at PC %08X", dc->base.pc);
         }
 
-        if (dc.base.is_jmp != BS_NONE) {
+        if (dc->base.is_jmp != BS_NONE) {
             break;
         }
-        if ((dc.base.pc - (tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
+        if ((dc->base.pc - (tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
             break;
         }
         if (tb->icount >= max_insns) {
-            dc.base.is_jmp = BS_STOP;
+            dc->base.is_jmp = BS_STOP;
             break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
@@ -2072,24 +2067,22 @@ void gen_intermediate_code(CPUState *env,
         {
             // `search_pc` is set to 1 only when restoring the block;
             // this is to ensure that the size of restored block is not bigger than the size of the original one
-            dc.base.is_jmp = BS_STOP;
+            dc->base.is_jmp = BS_STOP;
             break;
         }
     }
-    switch (dc.base.is_jmp) {
+    switch (dc->base.is_jmp) {
         case BS_STOP:
-            gen_goto_tb(&dc, 0, dc.base.pc);
+            gen_goto_tb(dc, 0, dc->base.pc);
             break;
         case BS_NONE: /* handle end of page - DO NOT CHAIN. See gen_goto_tb. */
-            gen_sync_pc(&dc);
-            gen_exit_tb_no_chaining(dc.base.tb);
+            gen_sync_pc(dc);
+            gen_exit_tb_no_chaining(dc->base.tb);
             break;
         case BS_BRANCH: /* ops using BS_BRANCH generate own exit seq */
         default:
             break;
     }
-
-    tb->disas_flags = get_disas_flags(env, (DisasContextBase*)&dc);
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

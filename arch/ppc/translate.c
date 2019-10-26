@@ -7971,9 +7971,8 @@ uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
     return env->bfd_mach | ((DisasContext*)dc)->le_mode << 16;
 }
 
-void setup_disas_context(DisasContextBase *base, CPUState *env, TranslationBlock *tb) {
+void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
-    dc->base.tb = tb;
     dc->base.pc = dc->base.tb->pc;
     dc->exception = POWERPC_EXCP_NONE;
     dc->spr_cb = env->spr_cb;
@@ -7998,35 +7997,31 @@ int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
 }
 
 /*****************************************************************************/
-void gen_intermediate_code(CPUState *env,
-                           TranslationBlock *tb, int max_insns)
+void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
 {
-    DisasContext dc;
+    DisasContext *dc = (DisasContext*)base;
+    TranslationBlock *tb = base->tb;
     CPUBreakpoint *bp;
 
-    setup_disas_context((DisasContextBase*)&dc, env, tb);
-    tcg_clear_temp_count();
-
-    UNLOCK_TB(tb);
     while (1) {
         CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
-            bp = process_breakpoints(env, dc.base.pc);
-            if (bp != NULL && gen_breakpoint(&dc, bp)) {
+            bp = process_breakpoints(env, dc->base.pc);
+            if (bp != NULL && gen_breakpoint(dc, bp)) {
                 break;
             }
         }
         if (tb->search_pc) {
-            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc.base.pc;
+            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
         tb->prev_size = tb->size;
-        tb->size += disas_insn(env, &dc);
+        tb->size += disas_insn(env, dc);
         tb->icount++;
 
         if (tcg_check_temp_count()) {
-            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.base.pc);
+            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc->base.pc);
         }
 
         if (!tb->search_pc)
@@ -8037,7 +8032,7 @@ void gen_intermediate_code(CPUState *env,
             tb->original_size = tb->size;
         }
 
-        if (unlikely(((dc.base.pc & (TARGET_PAGE_SIZE - 1)) == 0) ||
+        if (unlikely(((dc->base.pc & (TARGET_PAGE_SIZE - 1)) == 0) ||
                             tb->icount >= max_insns)) {
             /* if we reach a page boundary, stop generation */
             break;
@@ -8045,7 +8040,7 @@ void gen_intermediate_code(CPUState *env,
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
             break;
         }
-        if (dc.exception != POWERPC_EXCP_NONE) {
+        if (dc->exception != POWERPC_EXCP_NONE) {
             break;
         }
         if (tb->search_pc && tb->size == tb->original_size)
@@ -8055,14 +8050,12 @@ void gen_intermediate_code(CPUState *env,
             break;
         }
     }
-    if (dc.exception == POWERPC_EXCP_NONE) {
-        gen_goto_tb(&dc, 0, dc.base.pc);
-    } else if (dc.exception != POWERPC_EXCP_BRANCH) {
+    if (dc->exception == POWERPC_EXCP_NONE) {
+        gen_goto_tb(dc, 0, dc->base.pc);
+    } else if (dc->exception != POWERPC_EXCP_BRANCH) {
         /* Generate the return instruction */
         gen_exit_tb_no_chaining(tb);
     }
-
-    tb->disas_flags = get_disas_flags(env, (DisasContextBase*)&dc);
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

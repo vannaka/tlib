@@ -24,6 +24,7 @@
 
 #include "cpu.h"
 #include "tcg-op.h"
+#include "debug.h"
 
 #include <global_helper.h>
 #define GEN_HELPER 1
@@ -176,15 +177,21 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
     TCGContext *s = tcg->ctx;
     uint8_t *gen_code_buf;
     int gen_code_size;
+    DisasContextBase *dc = (DisasContextBase*)malloc(sizeof(DisasContextBase) + 1024);
 
     tcg_func_start(s);
     memset((void*)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);;
     tb->icount = 0;
     tb->size = 0;
     tb->search_pc = 0;
+    dc->tb = tb;
 
     gen_block_header(tb);
-    gen_intermediate_code(env, tb, get_max_instruction_count(env, tb));
+    setup_disas_context(dc, env);
+    tcg_clear_temp_count();
+    UNLOCK_TB(tb);
+    gen_intermediate_code(env, dc, get_max_instruction_count(env, tb));
+    tb->disas_flags = get_disas_flags(env, dc);
     gen_block_footer(tb);
 
     /* generate machine code */
@@ -209,15 +216,21 @@ int cpu_restore_state(CPUState *env,
     int j, k;
     uintptr_t tc_ptr;
     int instructions_executed_so_far = 0;
+    DisasContextBase *dc = (DisasContextBase*)malloc(sizeof(DisasContextBase) + 1024);
 
     tcg_func_start(s);
     memset((void*)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);
     tb->icount = 0;
     tb->size = 0;
     tb->search_pc = 1;
+    dc->tb = tb;
 
     gen_block_header(tb);
-    gen_intermediate_code(env, tb, get_max_instruction_count(env, tb));
+    setup_disas_context(dc, env);
+    tcg_clear_temp_count();
+    UNLOCK_TB(tb);
+    gen_intermediate_code(env, dc, get_max_instruction_count(env, tb));
+    tb->disas_flags = get_disas_flags(env, dc);
     gen_block_footer(tb);
 
     /* find opc index corresponding to search_pc */

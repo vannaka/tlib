@@ -8054,7 +8054,7 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
         gen_goto_tb(dc, 0, dc->base.pc);
     } else if (dc->exception != POWERPC_EXCP_BRANCH) {
         /* Generate the return instruction */
-        gen_exit_tb_no_chaining(tb);
+        gen_exit_tb_no_chaining(dc->base.tb);
     }
     return env->bfd_mach | dc->le_mode << 16;
 }

@@ -48,8 +48,8 @@ void gen_exit_tb(uintptr_t, TranslationBlock*);
 void gen_exit_tb_no_chaining(TranslationBlock*);
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc);
 void gen_intermediate_code(CPUState *env, struct DisasContextBase *base, int max_insn);
+uint32_t gen_intermediate_code_epilogue(CPUState *env, struct DisasContextBase *base);
 void setup_disas_context(DisasContextBase *dc, CPUState *env);
-uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc);
 void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb,
                           int pc_pos);
 

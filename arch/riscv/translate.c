@@ -1996,17 +1996,15 @@ static int disas_insn(CPUState *env, DisasContext *dc)
     return instruction_length;
 }
 
-uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {
+uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
     return 0;
 }
 
-void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
-    dc->base.tb = tb;
-    dc->base.pc = dc->base.tb->pc;
-
-    dc->base.is_jmp = BS_NONE;
-
-    dc->base.mem_idx = cpu_mmu_index(env);
+void setup_disas_context(DisasContextBase *dc, CPUState *env, TranslationBlock *tb) {
+    dc->tb = tb;
+    dc->pc = dc->tb->pc;
+    dc->is_jmp = BS_NONE;
+    dc->mem_idx = cpu_mmu_index(env);
 }
 
 int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
@@ -2022,7 +2020,7 @@ void gen_intermediate_code(CPUState *env,
 {
     DisasContext dc;
 
-    setup_disas_context(&dc, env, tb);
+    setup_disas_context((DisasContextBase*)&dc, env, tb);
 
     tcg_clear_temp_count();
 
@@ -2091,7 +2089,7 @@ void gen_intermediate_code(CPUState *env,
             break;
     }
 
-    tb->disas_flags = get_disas_flags(env, &dc);
+    tb->disas_flags = get_disas_flags(env, (DisasContextBase*)&dc);
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

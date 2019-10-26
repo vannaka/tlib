@@ -9902,11 +9902,12 @@ int disas_insn(CPUState *env, DisasContext *dc) {
     }
 }
 
-uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {
-    return dc->thumb;
+uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
+    return ((DisasContext*)dc)->thumb;
 }
 
-void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
+void setup_disas_context(DisasContextBase *base, CPUState *env, TranslationBlock *tb) {
+    DisasContext *dc = (DisasContext*)base;
     dc->base.tb = tb;
     dc->base.is_jmp = DISAS_NEXT;
     dc->base.pc = dc->base.tb->pc;
@@ -9988,7 +9989,7 @@ void gen_intermediate_code(CPUState *env,
     DisasContext dc;
     CPUBreakpoint *bp;
 
-    setup_disas_context(&dc, env, tb);
+    setup_disas_context((DisasContextBase*)&dc, env, tb);
     tcg_clear_temp_count();
 
     UNLOCK_TB(tb);
@@ -10093,7 +10094,7 @@ void gen_intermediate_code(CPUState *env,
         dc.condjmp = 0;
     }
 
-    tb->disas_flags = get_disas_flags(env, &dc);
+    tb->disas_flags = get_disas_flags(env, (DisasContextBase*)&dc);
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

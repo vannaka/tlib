@@ -7620,14 +7620,15 @@ static int disas_insn(CPUState *env, DisasContext *s)
     return (int)(s->base.pc - pc_start);
 }
 
-uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {
+uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
     #ifdef TARGET_X86_64
-    if (dc->code64) return 2;
+    if (((DisasContext*)dc)->code64) return 2;
     #endif
-    return !(dc->code32);
+    return !(((DisasContext*)dc)->code32);
 }
 
-void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
+void setup_disas_context(DisasContextBase *base, CPUState *env, TranslationBlock *tb) {
+    DisasContext *dc = (DisasContext*)base;
     dc->base.tb = tb;
     dc->base.is_jmp = DISAS_NEXT;
     dc->base.pc = dc->base.tb->pc;
@@ -7695,7 +7696,7 @@ void gen_intermediate_code(CPUState *env,
     DisasContext dc;
     CPUBreakpoint *bp;
 
-    setup_disas_context(&dc, env, tb);
+    setup_disas_context((DisasContextBase*)&dc, env, tb);
     tcg_clear_temp_count();
 
     UNLOCK_TB(tb);
@@ -7755,7 +7756,7 @@ void gen_intermediate_code(CPUState *env,
     gen_jmp_im(dc.base.pc - dc.cs_base);
     gen_eob(&dc);
 
-    tb->disas_flags = get_disas_flags(env, &dc);
+    tb->disas_flags = get_disas_flags(env, (DisasContextBase*)&dc);
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

@@ -8003,7 +8003,7 @@ void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
             bp = process_breakpoints(env, dc->base.pc);
             if (bp != NULL && gen_breakpoint(dc, bp)) {
-                break;
+                return;
             }
         }
         if (tb->search_pc) {
@@ -8030,21 +8030,22 @@ void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
         if (unlikely(((dc->base.pc & (TARGET_PAGE_SIZE - 1)) == 0) ||
                             tb->icount >= max_insns)) {
             /* if we reach a page boundary, stop generation */
-            break;
+            return;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
-            break;
+            return;
         }
         if (dc->exception != POWERPC_EXCP_NONE) {
-            break;
+            return;
         }
         if (tb->search_pc && tb->size == tb->original_size)
         {
             // `search_pc` is set to 1 only when restoring the block;
             // this is to ensure that the size of restored block is not bigger than the size of the original one
-            break;
+            return;
         }
     }
+    return;
 }
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {

@@ -9987,7 +9987,7 @@ void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
             bp = process_breakpoints(env, dc->base.pc);
             if (bp != NULL && gen_breakpoint(dc, bp)) {
-                break;
+                return;
             }
         }
         if (tb->search_pc) {
@@ -10023,24 +10023,25 @@ void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
          * ensures prefetch aborts occur at the right place.  */
 
         if (dc->base.is_jmp) {
-            break;
+            return;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
-            break;
+            return;
         }
         if (dc->base.pc >= ((tb->pc & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE)) {
-            break;
+            return;
         }
         if (tb->icount >= max_insns) {
-            break;
+            return;
         }
         if (tb->search_pc && tb->size == tb->original_size)
         {
             // `search_pc` is set to 1 only when restoring the block;
             // this is to ensure that the size of restored block is not bigger than the size of the original one
-            break;
+            return;
         }
     }
+    return;
 }
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {

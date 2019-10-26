@@ -7669,7 +7669,8 @@ void setup_disas_context(DisasContextBase *base, CPUState *env) {
     cpu_ptr1 = tcg_temp_new_ptr();
 }
 
-int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
+int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
+    DisasContext *dc = (DisasContext*)base;
     if (!((bp->flags & BP_CPU) && (dc->base.tb->flags & HF_RF_MASK))) {
         gen_debug(dc, dc->base.pc - dc->cs_base);
         return 1;
@@ -7680,66 +7681,56 @@ int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
 /* generate intermediate code in gen_opc_buf and gen_opparam_buf for
    basic block 'tb'. If search_pc is TRUE, also generate PC
    information for each intermediate instruction. */
-void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
+int gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
 {
     DisasContext *dc = (DisasContext*)base;
     TranslationBlock *tb = base->tb;
-    CPUBreakpoint *bp;
 
-    while (1) {
-        CHECK_LOCKED(tb);
-        if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
-            bp = process_breakpoints(env, dc->base.pc);
-            if (bp != NULL && gen_breakpoint(dc, bp)) {
-                return;
-            }
-        }
-        if (tb->search_pc) {
-            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
-            gen_opc_cc_op[gen_opc_ptr - tcg->gen_opc_buf] = dc->cc_op;
-            tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
-        }
-
-        tb->prev_size = tb->size;
-        tb->size += disas_insn(env, dc);
-        tb->icount++;
-
-        if (!tb->search_pc)
-        {
-            // it looks like `search_pc` is set to 1 only when restoring the state;
-            // the intention here is to set `original_size` value only during the first block generation
-            // so it can be used later when restoring the block
-            tb->original_size = tb->size;
-        }
-
-        if (tcg_check_temp_count()) {
-            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc->base.pc);
-        }
-
-        /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
-           the flag and abort the translation to give the irqs a
-           change to be happen */
-        if (dc->tf ||
-            (dc->flags & HF_INHIBIT_IRQ_MASK)) {
-            return;
-        }
-        /* if too long translation, stop generation too */
-        if (((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) ||
-            (tb->size >= (TARGET_PAGE_SIZE - 32)) ||
-            tb->icount >= max_insns) {
-            return;
-        }
-        if (dc->base.is_jmp) {
-            return;
-        }
-        if (tb->search_pc && tb->size == tb->original_size)
-        {
-            // `search_pc` is set to 1 only when restoring the block;
-            // this is to ensure that the size of restored block is not bigger than the size of the original one
-            return;
-        }
+    if (tb->search_pc) {
+        tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
+        gen_opc_cc_op[gen_opc_ptr - tcg->gen_opc_buf] = dc->cc_op;
+        tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
     }
-    return;
+
+    tb->prev_size = tb->size;
+    tb->size += disas_insn(env, dc);
+    tb->icount++;
+
+    if (!tb->search_pc)
+    {
+        // it looks like `search_pc` is set to 1 only when restoring the state;
+        // the intention here is to set `original_size` value only during the first block generation
+        // so it can be used later when restoring the block
+        tb->original_size = tb->size;
+    }
+
+    if (tcg_check_temp_count()) {
+        tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc->base.pc);
+    }
+
+    /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
+       the flag and abort the translation to give the irqs a
+       change to be happen */
+    if (dc->tf ||
+        (dc->flags & HF_INHIBIT_IRQ_MASK)) {
+        return 0;
+    }
+    /* if too long translation, stop generation too */
+    if (((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) ||
+        (tb->size >= (TARGET_PAGE_SIZE - 32)) ||
+        tb->icount >= max_insns) {
+        return 0;
+    }
+    if (dc->base.is_jmp) {
+        return 0;
+    }
+    if (tb->search_pc && tb->size == tb->original_size)
+    {
+        // `search_pc` is set to 1 only when restoring the block;
+        // this is to ensure that the size of restored block is not bigger than the size of the original one
+        return 0;
+    }
+    return 1;
 }
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {

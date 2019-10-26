@@ -192,7 +192,9 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
     setup_disas_context(dc, env);
     tcg_clear_temp_count();
     UNLOCK_TB(tb);
-    gen_intermediate_code(env, dc, get_max_instruction_count(env, tb));
+    while (1) {
+        if (!gen_intermediate_code(env, dc, get_max_instruction_count(env, tb))) break;
+    }
     tb->disas_flags = gen_intermediate_code_epilogue(env, dc);
     free(dc);
     gen_block_footer(tb);
@@ -219,6 +221,7 @@ int cpu_restore_state(CPUState *env,
     int j, k;
     uintptr_t tc_ptr;
     int instructions_executed_so_far = 0;
+    CPUBreakpoint *bp;
     DisasContextBase *dc = (DisasContextBase*)malloc(sizeof(DisasContextBase) + 1024);
 
     tcg_func_start(s);
@@ -234,7 +237,16 @@ int cpu_restore_state(CPUState *env,
     setup_disas_context(dc, env);
     tcg_clear_temp_count();
     UNLOCK_TB(tb);
-    gen_intermediate_code(env, dc, get_max_instruction_count(env, tb));
+    while (1) {
+        CHECK_LOCKED(tb);
+        if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
+            bp = process_breakpoints(env, dc->pc);
+            if (bp != NULL && gen_breakpoint(dc, bp)) {
+                break;
+            }
+        }
+        if (!gen_intermediate_code(env, dc, get_max_instruction_count(env, tb))) break;
+    }
     tb->disas_flags = gen_intermediate_code_epilogue(env, dc);
     free(dc);
     gen_block_footer(tb);

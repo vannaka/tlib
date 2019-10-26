@@ -2000,7 +2000,8 @@ void setup_disas_context(DisasContextBase *dc, CPUState *env) {
     dc->mem_idx = cpu_mmu_index(env);
 }
 
-int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
+int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
+    DisasContext *dc = (DisasContext*)base;
     generate_exception(dc, EXCP_DEBUG);
     /* Advance PC so that clearing the breakpoint will
       invalidate this TB.  */
@@ -2008,64 +2009,53 @@ int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
     return 1;
 }
 
-void gen_intermediate_code(CPUState *env,
-                           DisasContextBase *base, int max_insns)
+int gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
 {
     DisasContext *dc = (DisasContext*)base;
     TranslationBlock *tb = base->tb;
 
-    while (1) {
-        CHECK_LOCKED(tb);
-        if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
-            CPUBreakpoint* bp = process_breakpoints(env, dc->base.pc);
-            if (bp != NULL && gen_breakpoint(dc, bp)) {
-                return;
-            }
-        }
-
-        if (tb->search_pc) {
-            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
-            tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
-        }
-
-        tb->prev_size = tb->size;
-        tb->size += disas_insn(env, dc);
-        tb->icount++;
-
-        if (!tb->search_pc)
-        {
-            // it looks like `search_pc` is set to 1 only when restoring the state;
-            // the intention here is to set `original_size` value only during the first block generation
-            // so it can be used later when restoring the block
-            tb->original_size = tb->size;
-        }
-
-        if (tcg_check_temp_count()) {
-            tlib_abortf("TCG temps leak detected at PC %08X", dc->base.pc);
-        }
-
-        if (dc->base.is_jmp != BS_NONE) {
-            return;
-        }
-        if ((dc->base.pc - (tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
-            return;
-        }
-        if (tb->icount >= max_insns) {
-            dc->base.is_jmp = BS_STOP;
-            return;
-        }
-        if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
-            return;
-        }
-        if (tb->search_pc && tb->size == tb->original_size)
-        {
-            // `search_pc` is set to 1 only when restoring the block;
-            // this is to ensure that the size of restored block is not bigger than the size of the original one
-            dc->base.is_jmp = BS_STOP;
-            return;
-        }
+    if (tb->search_pc) {
+        tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
+        tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
     }
-    return;
+
+    tb->prev_size = tb->size;
+    tb->size += disas_insn(env, dc);
+    tb->icount++;
+
+    if (!tb->search_pc)
+    {
+        // it looks like `search_pc` is set to 1 only when restoring the state;
+        // the intention here is to set `original_size` value only during the first block generation
+        // so it can be used later when restoring the block
+        tb->original_size = tb->size;
+    }
+
+    if (tcg_check_temp_count()) {
+        tlib_abortf("TCG temps leak detected at PC %08X", dc->base.pc);
+    }
+
+    if (dc->base.is_jmp != BS_NONE) {
+        return 0;
+    }
+    if ((dc->base.pc - (tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
+        return 0;
+    }
+    if (tb->icount >= max_insns) {
+        dc->base.is_jmp = BS_STOP;
+        return 0;
+    }
+    if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
+        return 0;
+    }
+    if (tb->search_pc && tb->size == tb->original_size)
+    {
+        // `search_pc` is set to 1 only when restoring the block;
+        // this is to ensure that the size of restored block is not bigger than the size of the original one
+        dc->base.is_jmp = BS_STOP;
+        return 0;
+    }
+    return 1;
 }
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {

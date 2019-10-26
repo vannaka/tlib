@@ -7620,13 +7620,6 @@ static int disas_insn(CPUState *env, DisasContext *s)
     return (int)(s->base.pc - pc_start);
 }
 
-uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
-    #ifdef TARGET_X86_64
-    if (((DisasContext*)dc)->code64) return 2;
-    #endif
-    return !(((DisasContext*)dc)->code32);
-}
-
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
     dc->pe = (dc->base.tb->flags >> HF_PE_SHIFT) & 1;
@@ -7746,8 +7739,16 @@ void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
             break;
         }
     }
+}
+
+uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
+    DisasContext *dc = (DisasContext*)base;
     gen_jmp_im(dc->base.pc - dc->cs_base);
     gen_eob(dc);
+    #ifdef TARGET_X86_64
+    if (dc->code64) return 2;
+    #endif
+    return !(dc->code32);
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

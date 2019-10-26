@@ -9902,10 +9902,6 @@ int disas_insn(CPUState *env, DisasContext *dc) {
     }
 }
 
-uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
-    return ((DisasContext*)dc)->thumb;
-}
-
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
     dc->condjmp = 0;
@@ -10045,7 +10041,10 @@ void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
             break;
         }
     }
+}
 
+uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
+    DisasContext *dc = (DisasContext*)base;
     /* At this stage dc.condjmp will only be set when the skipped
        instruction was a conditional branch or trap, and the PC has
        already been written.  */
@@ -10086,6 +10085,8 @@ void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
         gen_goto_tb(dc, 1, dc->base.pc);
         dc->condjmp = 0;
     }
+
+    return dc->thumb;
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

@@ -1996,10 +1996,6 @@ static int disas_insn(CPUState *env, DisasContext *dc)
     return instruction_length;
 }
 
-uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
-    return 0;
-}
-
 void setup_disas_context(DisasContextBase *dc, CPUState *env) {
     dc->mem_idx = cpu_mmu_index(env);
 }
@@ -2069,6 +2065,10 @@ void gen_intermediate_code(CPUState *env,
             break;
         }
     }
+}
+
+uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
+    DisasContext *dc = (DisasContext*)base;
     switch (dc->base.is_jmp) {
         case BS_STOP:
             gen_goto_tb(dc, 0, dc->base.pc);
@@ -2081,6 +2081,7 @@ void gen_intermediate_code(CPUState *env,
         default:
             break;
     }
+    return 0;
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

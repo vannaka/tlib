@@ -2795,10 +2795,6 @@ static int disas_insn(CPUState *env, DisasContext *dc)
     return 4;
 }
 
-uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
-    return 0;
-}
-
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
     dc->base.npc = (target_ulong) dc->base.tb->cs_base;
@@ -2893,7 +2889,10 @@ void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
             break;
         }
     }
+}
 
+uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
+    DisasContext *dc = (DisasContext*)base;
     tcg_temp_free(cpu_addr);
     tcg_temp_free(cpu_val);
     tcg_temp_free(cpu_dst);
@@ -2912,11 +2911,13 @@ void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
             gen_exit_tb_no_chaining(dc->base.tb);
         }
     }
-    if (tb->search_pc) {
+    if (dc->base.tb->search_pc) {
         gen_opc_jump_pc[0] = dc->jump_pc[0];
         gen_opc_jump_pc[1] = dc->jump_pc[1];
     }
+    return 0;
 }
+
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
 {

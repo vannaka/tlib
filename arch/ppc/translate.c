@@ -7967,10 +7967,6 @@ int disas_insn(CPUState *env, DisasContext *dc) {
     return handler->length;
 }
 
-uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
-    return env->bfd_mach | ((DisasContext*)dc)->le_mode << 16;
-}
-
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
     dc->exception = POWERPC_EXCP_NONE;
@@ -8049,12 +8045,17 @@ void gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
             break;
         }
     }
+}
+
+uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
+    DisasContext *dc = (DisasContext*)base;
     if (dc->exception == POWERPC_EXCP_NONE) {
         gen_goto_tb(dc, 0, dc->base.pc);
     } else if (dc->exception != POWERPC_EXCP_BRANCH) {
         /* Generate the return instruction */
         gen_exit_tb_no_chaining(tb);
     }
+    return env->bfd_mach | dc->le_mode << 16;
 }
 
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)

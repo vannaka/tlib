@@ -193,7 +193,7 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
     tcg_clear_temp_count();
     UNLOCK_TB(tb);
     gen_intermediate_code(env, dc, get_max_instruction_count(env, tb));
-    tb->disas_flags = get_disas_flags(env, dc);
+    tb->disas_flags = gen_intermediate_code_epilogue(env, dc);
     free(dc);
     gen_block_footer(tb);
 
@@ -235,7 +235,7 @@ int cpu_restore_state(CPUState *env,
     tcg_clear_temp_count();
     UNLOCK_TB(tb);
     gen_intermediate_code(env, dc, get_max_instruction_count(env, tb));
-    tb->disas_flags = get_disas_flags(env, dc);
+    tb->disas_flags = gen_intermediate_code_epilogue(env, dc);
     free(dc);
     gen_block_footer(tb);
 

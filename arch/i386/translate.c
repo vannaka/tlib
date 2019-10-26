@@ -7687,21 +7687,10 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
     TranslationBlock *tb = base->tb;
 
     if (tb->search_pc) {
-        tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
         gen_opc_cc_op[gen_opc_ptr - tcg->gen_opc_buf] = dc->cc_op;
-        tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
     }
 
     tb->size += disas_insn(env, dc);
-    tb->icount++;
-
-    if (!tb->search_pc)
-    {
-        // it looks like `search_pc` is set to 1 only when restoring the state;
-        // the intention here is to set `original_size` value only during the first block generation
-        // so it can be used later when restoring the block
-        tb->original_size = tb->size;
-    }
 
     /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
        the flag and abort the translation to give the irqs a
@@ -7711,8 +7700,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
         return 0;
     }
     /* if too long translation, stop generation too */
-    if (((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) ||
-        (tb->size >= (TARGET_PAGE_SIZE - 32))) {
+    if (tb->size >= (TARGET_PAGE_SIZE - 32)) {
         return 0;
     }
     return 1;

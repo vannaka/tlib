@@ -169,22 +169,15 @@ static uint64_t get_max_instruction_count(CPUState *env, TranslationBlock *tb)
         : instructions_count;
 }
 
-/* '*gen_code_size_ptr' contains the size of the generated code (host
-   code).
-*/
-void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
-{
-    TCGContext *s = tcg->ctx;
-    uint8_t *gen_code_buf;
-    int gen_code_size;
+static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_pc) {
     CPUBreakpoint *bp;
     DisasContextBase *dc = (DisasContextBase*)malloc(sizeof(DisasContextBase) + 1024);
 
-    tcg_func_start(s);
     memset((void*)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);
+
     tb->icount = 0;
     tb->size = 0;
-    tb->search_pc = 0;
+    tb->search_pc = search_pc;
     dc->tb = tb;
     dc->is_jmp = 0;
     dc->pc = tb->pc;
@@ -202,9 +195,26 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
             }
         }
         tb->prev_size = tb->size;
-        if (!gen_intermediate_code(env, dc)) break;
+
+        if (tb->search_pc) {
+            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->pc;
+            tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
+        }
+        int do_break = 0;
+        if (!gen_intermediate_code(env, dc)) do_break = 1;
+        tb->icount++;
         if (tcg_check_temp_count()) {
             tlib_abortf("TCG temps leak detected at PC %08X", dc->pc);
+        }
+        if (!tb->search_pc)
+        {
+            // it looks like `search_pc` is set to 1 only when restoring the state;
+            // the intention here is to set `original_size` value only during the first block generation
+            // so it can be used later when restoring the block
+            tb->original_size = tb->size;
+        }
+        if (do_break) {
+            break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
             break;
@@ -225,6 +235,19 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
     tb->disas_flags = gen_intermediate_code_epilogue(env, dc);
     free(dc);
     gen_block_footer(tb);
+}
+
+/* '*gen_code_size_ptr' contains the size of the generated code (host
+   code).
+*/
+void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
+{
+    TCGContext *s = tcg->ctx;
+    uint8_t *gen_code_buf;
+    int gen_code_size;
+
+    tcg_func_start(s);
+    cpu_gen_code_inner(env, tb, 0);
 
     /* generate machine code */
     gen_code_buf = tb->tc_ptr;
@@ -248,54 +271,9 @@ int cpu_restore_state(CPUState *env,
     int j, k;
     uintptr_t tc_ptr;
     int instructions_executed_so_far = 0;
-    CPUBreakpoint *bp;
-    DisasContextBase *dc = (DisasContextBase*)malloc(sizeof(DisasContextBase) + 1024);
 
     tcg_func_start(s);
-    memset((void*)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);
-    tb->icount = 0;
-    tb->size = 0;
-    tb->search_pc = 1;
-    dc->tb = tb;
-    dc->is_jmp = 0;
-    dc->pc = tb->pc;
-
-    gen_block_header(tb);
-    setup_disas_context(dc, env);
-    tcg_clear_temp_count();
-    UNLOCK_TB(tb);
-    while (1) {
-        CHECK_LOCKED(tb);
-        if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
-            bp = process_breakpoints(env, dc->pc);
-            if (bp != NULL && gen_breakpoint(dc, bp)) {
-                break;
-            }
-        }
-        tb->prev_size = tb->size;
-        if (!gen_intermediate_code(env, dc)) break;
-        if (tcg_check_temp_count()) {
-            tlib_abortf("TCG temps leak detected at PC %08X", dc->pc);
-        }
-        if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
-            break;
-        }
-        if (tb->icount >= get_max_instruction_count(env, tb)) {
-            break;
-        }
-        if (dc->is_jmp) {
-            break;
-        }
-        if (tb->search_pc && tb->size == tb->original_size)
-        {
-            // `search_pc` is set to 1 only when restoring the block;
-            // this is to ensure that the size of restored block is not bigger than the size of the original one
-            break;
-        }
-    }
-    tb->disas_flags = gen_intermediate_code_epilogue(env, dc);
-    free(dc);
-    gen_block_footer(tb);
+    cpu_gen_code_inner(env, tb, 1);
 
     /* find opc index corresponding to search_pc */
     tc_ptr = (uintptr_t)tb->tc_ptr;

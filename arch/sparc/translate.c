@@ -2832,21 +2832,11 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
     TranslationBlock *tb = base->tb;
 
     if (tb->search_pc) {
-        tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.pc;
         gen_opc_npc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.npc;
-        tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
     }
 
     tb->size += disas_insn(env, dc);
-    tb->icount++;
 
-    if (!tb->search_pc)
-    {
-        // it looks like `search_pc` is set to 1 only when restoring the state;
-        // the intention here is to set `original_size` value only during the first block generation
-        // so it can be used later when restoring the block
-        tb->original_size = tb->size;
-    }
     /* if the next PC is different, we abort now */
     if ((dc->base.pc - tb->pc) != tb->size) {
         return 0;

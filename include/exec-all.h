@@ -47,7 +47,7 @@ typedef struct DisasContextBase DisasContextBase;
 void gen_exit_tb(uintptr_t, TranslationBlock*);
 void gen_exit_tb_no_chaining(TranslationBlock*);
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc);
-int gen_intermediate_code(CPUState *env, struct DisasContextBase *base, int max_insn);
+int gen_intermediate_code(CPUState *env, struct DisasContextBase *base);
 int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp);
 uint32_t gen_intermediate_code_epilogue(CPUState *env, struct DisasContextBase *base);
 void setup_disas_context(DisasContextBase *dc, CPUState *env);

@@ -7992,7 +7992,7 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
 }
 
 /*****************************************************************************/
-int gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
+int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext*)base;
     TranslationBlock *tb = base->tb;
@@ -8002,13 +8002,8 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
         tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
     }
 
-    tb->prev_size = tb->size;
     tb->size += disas_insn(env, dc);
     tb->icount++;
-
-    if (tcg_check_temp_count()) {
-        tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc->base.pc);
-    }
 
     if (!tb->search_pc)
     {
@@ -8018,20 +8013,11 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
         tb->original_size = tb->size;
     }
 
-    if (unlikely(((dc->base.pc & (TARGET_PAGE_SIZE - 1)) == 0) || tb->icount >= max_insns)) {
+    if (unlikely(((dc->base.pc & (TARGET_PAGE_SIZE - 1)) == 0))) {
         /* if we reach a page boundary, stop generation */
         return 0;
     }
-    if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
-        return 0;
-    }
     if (dc->exception != POWERPC_EXCP_NONE) {
-        return 0;
-    }
-    if (tb->search_pc && tb->size == tb->original_size)
-    {
-        // `search_pc` is set to 1 only when restoring the block;
-        // this is to ensure that the size of restored block is not bigger than the size of the original one
         return 0;
     }
     return 1;

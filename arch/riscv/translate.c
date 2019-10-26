@@ -2009,7 +2009,7 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
     return 1;
 }
 
-int gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
+int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext*)base;
     TranslationBlock *tb = base->tb;
@@ -2019,7 +2019,6 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
         tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
     }
 
-    tb->prev_size = tb->size;
     tb->size += disas_insn(env, dc);
     tb->icount++;
 
@@ -2030,22 +2029,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base, int max_insns)
         // so it can be used later when restoring the block
         tb->original_size = tb->size;
     }
-
-    if (tcg_check_temp_count()) {
-        tlib_abortf("TCG temps leak detected at PC %08X", dc->base.pc);
-    }
-
-    if (dc->base.is_jmp != BS_NONE) {
-        return 0;
-    }
     if ((dc->base.pc - (tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
-        return 0;
-    }
-    if (tb->icount >= max_insns) {
-        dc->base.is_jmp = BS_STOP;
-        return 0;
-    }
-    if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
         return 0;
     }
     if (tb->search_pc && tb->size == tb->original_size)

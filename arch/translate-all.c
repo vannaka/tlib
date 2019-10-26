@@ -177,10 +177,11 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
     TCGContext *s = tcg->ctx;
     uint8_t *gen_code_buf;
     int gen_code_size;
+    CPUBreakpoint *bp;
     DisasContextBase *dc = (DisasContextBase*)malloc(sizeof(DisasContextBase) + 1024);
 
     tcg_func_start(s);
-    memset((void*)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);;
+    memset((void*)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);
     tb->icount = 0;
     tb->size = 0;
     tb->search_pc = 0;
@@ -193,7 +194,33 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
     tcg_clear_temp_count();
     UNLOCK_TB(tb);
     while (1) {
-        if (!gen_intermediate_code(env, dc, get_max_instruction_count(env, tb))) break;
+        CHECK_LOCKED(tb);
+        if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
+            bp = process_breakpoints(env, dc->pc);
+            if (bp != NULL && gen_breakpoint(dc, bp)) {
+                break;
+            }
+        }
+        tb->prev_size = tb->size;
+        if (!gen_intermediate_code(env, dc)) break;
+        if (tcg_check_temp_count()) {
+            tlib_abortf("TCG temps leak detected at PC %08X", dc->pc);
+        }
+        if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
+            break;
+        }
+        if (tb->icount >= get_max_instruction_count(env, tb)) {
+            break;
+        }
+        if (dc->is_jmp) {
+            break;
+        }
+        if (tb->search_pc && tb->size == tb->original_size)
+        {
+            // `search_pc` is set to 1 only when restoring the block;
+            // this is to ensure that the size of restored block is not bigger than the size of the original one
+            break;
+        }
     }
     tb->disas_flags = gen_intermediate_code_epilogue(env, dc);
     free(dc);
@@ -245,7 +272,26 @@ int cpu_restore_state(CPUState *env,
                 break;
             }
         }
-        if (!gen_intermediate_code(env, dc, get_max_instruction_count(env, tb))) break;
+        tb->prev_size = tb->size;
+        if (!gen_intermediate_code(env, dc)) break;
+        if (tcg_check_temp_count()) {
+            tlib_abortf("TCG temps leak detected at PC %08X", dc->pc);
+        }
+        if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
+            break;
+        }
+        if (tb->icount >= get_max_instruction_count(env, tb)) {
+            break;
+        }
+        if (dc->is_jmp) {
+            break;
+        }
+        if (tb->search_pc && tb->size == tb->original_size)
+        {
+            // `search_pc` is set to 1 only when restoring the block;
+            // this is to ensure that the size of restored block is not bigger than the size of the original one
+            break;
+        }
     }
     tb->disas_flags = gen_intermediate_code_epilogue(env, dc);
     free(dc);

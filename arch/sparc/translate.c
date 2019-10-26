@@ -59,11 +59,7 @@ static target_ulong gen_opc_npc[OPC_BUF_SIZE];
 static target_ulong gen_opc_jump_pc[2];
 
 typedef struct DisasContext {
-    struct TranslationBlock *tb;
-    target_ulong pc;    /* current Program Counter: integer or DYNAMIC_PC */
-    target_ulong npc;   /* next PC: integer or DYNAMIC_PC or JUMP_PC */
-    int mem_idx;
-    int is_jmp;
+    struct DisasContextBase base;
     target_ulong jump_pc[2]; /* used when JUMP_PC pc value is used */
     int fpu_enabled;
     int address_mask_32bit;
@@ -226,7 +222,7 @@ static void gen_op_store_QT0_fpr(unsigned int dst)
 }
 
 /* moves */
-#define supervisor(dc) (dc->mem_idx >= MMU_KERNEL_IDX)
+#define supervisor(dc) (dc->base.mem_idx >= MMU_KERNEL_IDX)
 
 static inline void gen_movl_reg_TN(int reg, TCGv tn)
 {
@@ -255,7 +251,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num,
 {
     TranslationBlock *tb;
 
-    tb = s->tb;
+    tb = s->base.tb;
     if ((pc & TARGET_PAGE_MASK) == (tb->pc & TARGET_PAGE_MASK) &&
         (npc & TARGET_PAGE_MASK) == (tb->pc & TARGET_PAGE_MASK)) {
         /* jump to same page: we can use a direct jump */
@@ -1053,25 +1049,25 @@ static inline void gen_generic_branch(target_ulong npc1, target_ulong npc2,
    have been set for a jump */
 static inline void flush_cond(DisasContext *dc, TCGv cond)
 {
-    if (dc->npc == JUMP_PC) {
+    if (dc->base.npc == JUMP_PC) {
         gen_generic_branch(dc->jump_pc[0], dc->jump_pc[1], cond);
-        dc->npc = DYNAMIC_PC;
+        dc->base.npc = DYNAMIC_PC;
     }
 }
 
 static inline void save_npc(DisasContext *dc, TCGv cond)
 {
-    if (dc->npc == JUMP_PC) {
+    if (dc->base.npc == JUMP_PC) {
         gen_generic_branch(dc->jump_pc[0], dc->jump_pc[1], cond);
-        dc->npc = DYNAMIC_PC;
-    } else if (dc->npc != DYNAMIC_PC) {
-        tcg_gen_movi_tl(cpu_npc, dc->npc);
+        dc->base.npc = DYNAMIC_PC;
+    } else if (dc->base.npc != DYNAMIC_PC) {
+        tcg_gen_movi_tl(cpu_npc, dc->base.npc);
     }
 }
 
 static inline void save_state(DisasContext *dc, TCGv cond)
 {
-    tcg_gen_movi_tl(cpu_pc, dc->pc);
+    tcg_gen_movi_tl(cpu_pc, dc->base.pc);
     /* flush pending conditional evaluations before exposing cpu state */
     if (dc->cc_op != CC_OP_FLAGS) {
         dc->cc_op = CC_OP_FLAGS;
@@ -1082,15 +1078,15 @@ static inline void save_state(DisasContext *dc, TCGv cond)
 
 static inline void gen_mov_pc_npc(DisasContext *dc, TCGv cond)
 {
-    if (dc->npc == JUMP_PC) {
+    if (dc->base.npc == JUMP_PC) {
         gen_generic_branch(dc->jump_pc[0], dc->jump_pc[1], cond);
         tcg_gen_mov_tl(cpu_pc, cpu_npc);
-        dc->pc = DYNAMIC_PC;
-    } else if (dc->npc == DYNAMIC_PC) {
+        dc->base.pc = DYNAMIC_PC;
+    } else if (dc->base.npc == DYNAMIC_PC) {
         tcg_gen_mov_tl(cpu_pc, cpu_npc);
-        dc->pc = DYNAMIC_PC;
+        dc->base.pc = DYNAMIC_PC;
     } else {
-        dc->pc = dc->npc;
+        dc->base.pc = dc->base.npc;
     }
 }
 
@@ -1243,38 +1239,38 @@ static void do_branch(DisasContext *dc, int32_t offset, uint32_t insn, int cc,
                       TCGv r_cond)
 {
     unsigned int cond = GET_FIELD(insn, 3, 6), a = (insn & (1 << 29));
-    target_ulong target = dc->pc + offset;
+    target_ulong target = dc->base.pc + offset;
 
     if (cond == 0x0) {
         /* unconditional not taken */
         if (a) {
-            dc->pc = dc->npc + 4;
-            dc->npc = dc->pc + 4;
+            dc->base.pc = dc->base.npc + 4;
+            dc->base.npc = dc->base.pc + 4;
         } else {
-            dc->pc = dc->npc;
-            dc->npc = dc->pc + 4;
+            dc->base.pc = dc->base.npc;
+            dc->base.npc = dc->base.pc + 4;
         }
     } else if (cond == 0x8) {
         /* unconditional taken */
         if (a) {
-            dc->pc = target;
-            dc->npc = dc->pc + 4;
+            dc->base.pc = target;
+            dc->base.npc = dc->base.pc + 4;
         } else {
-            dc->pc = dc->npc;
-            dc->npc = target;
+            dc->base.pc = dc->base.npc;
+            dc->base.npc = target;
             tcg_gen_mov_tl(cpu_pc, cpu_npc);
         }
     } else {
         flush_cond(dc, r_cond);
         gen_cond(r_cond, cc, cond, dc);
         if (a) {
-            gen_branch_a(dc, target, dc->npc, r_cond);
-            dc->is_jmp = DISAS_JUMP;
+            gen_branch_a(dc, target, dc->base.npc, r_cond);
+            dc->base.is_jmp = DISAS_JUMP;
         } else {
-            dc->pc = dc->npc;
+            dc->base.pc = dc->base.npc;
             dc->jump_pc[0] = target;
-            dc->jump_pc[1] = dc->npc + 4;
-            dc->npc = JUMP_PC;
+            dc->jump_pc[1] = dc->base.npc + 4;
+            dc->base.npc = JUMP_PC;
         }
     }
 }
@@ -1284,38 +1280,38 @@ static void do_fbranch(DisasContext *dc, int32_t offset, uint32_t insn, int cc,
                       TCGv r_cond)
 {
     unsigned int cond = GET_FIELD(insn, 3, 6), a = (insn & (1 << 29));
-    target_ulong target = dc->pc + offset;
+    target_ulong target = dc->base.pc + offset;
 
     if (cond == 0x0) {
         /* unconditional not taken */
         if (a) {
-            dc->pc = dc->npc + 4;
-            dc->npc = dc->pc + 4;
+            dc->base.pc = dc->base.npc + 4;
+            dc->base.npc = dc->base.pc + 4;
         } else {
-            dc->pc = dc->npc;
-            dc->npc = dc->pc + 4;
+            dc->base.pc = dc->base.npc;
+            dc->base.npc = dc->base.pc + 4;
         }
     } else if (cond == 0x8) {
         /* unconditional taken */
         if (a) {
-            dc->pc = target;
-            dc->npc = dc->pc + 4;
+            dc->base.pc = target;
+            dc->base.npc = dc->base.pc + 4;
         } else {
-            dc->pc = dc->npc;
-            dc->npc = target;
+            dc->base.pc = dc->base.npc;
+            dc->base.npc = target;
             tcg_gen_mov_tl(cpu_pc, cpu_npc);
         }
     } else {
         flush_cond(dc, r_cond);
         gen_fcond(r_cond, cc, cond);
         if (a) {
-            gen_branch_a(dc, target, dc->npc, r_cond);
-            dc->is_jmp = DISAS_JUMP;
+            gen_branch_a(dc, target, dc->base.npc, r_cond);
+            dc->base.is_jmp = DISAS_JUMP;
         } else {
-            dc->pc = dc->npc;
+            dc->base.pc = dc->base.npc;
             dc->jump_pc[0] = target;
-            dc->jump_pc[1] = dc->npc + 4;
-            dc->npc = JUMP_PC;
+            dc->jump_pc[1] = dc->base.npc + 4;
+            dc->base.npc = JUMP_PC;
         }
     }
 }
@@ -1370,7 +1366,7 @@ static int gen_trap_ifnofpu(DisasContext *dc, TCGv r_cond)
         r_const = tcg_const_i32(TT_NFPU_INSN);
         gen_helper_raise_exception(r_const);
         tcg_temp_free_i32(r_const);
-        dc->is_jmp = DISAS_JUMP;
+        dc->base.is_jmp = DISAS_JUMP;
         return 1;
     }
     return 0;
@@ -1523,14 +1519,14 @@ static inline TCGv get_src2(unsigned int insn, TCGv def)
     if (!((dc)->def->features & CPU_FEATURE_ ## FEATURE))  \
         goto nfpu_insn;
 
-/* before an instruction, dc->pc must be static */
+/* before an instruction, dc->base.pc must be static */
 static int disas_insn(CPUState *env, DisasContext *dc)
 {
     unsigned int insn, opc, rs1, rs2, rd;
     TCGv cpu_src1, cpu_src2, cpu_tmp1, cpu_tmp2;
     target_long simm;
 
-    insn = ldl_code(dc->pc);
+    insn = ldl_code(dc->base.pc);
     opc = GET_FIELD(insn, 0, 1);
 
     rd = GET_FIELD(insn, 2, 6);
@@ -1588,12 +1584,12 @@ static int disas_insn(CPUState *env, DisasContext *dc)
             target_long target = GET_FIELDs(insn, 2, 31) << 2;
             TCGv r_const;
 
-            r_const = tcg_const_tl(dc->pc);
+            r_const = tcg_const_tl(dc->base.pc);
             gen_movl_TN_reg(15, r_const);
             tcg_temp_free(r_const);
-            target += dc->pc;
+            target += dc->base.pc;
             gen_mov_pc_npc(dc, cpu_cond);
-            dc->npc = target;
+            dc->base.npc = target;
         }
         goto jmp_insn;
     case 2:                     /* FPU & Logical Operations */
@@ -1649,8 +1645,8 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                     tcg_temp_free(r_cond);
                 }
                 gen_op_next_insn();
-                gen_exit_tb_no_chaining(dc->tb);
-                dc->is_jmp = DISAS_JUMP;
+                gen_exit_tb_no_chaining(dc->base.tb);
+                dc->base.is_jmp = DISAS_JUMP;
                 goto jmp_insn;
             } else if (xop == 0x28) {
                 rs1 = GET_FIELD(insn, 13, 17);
@@ -2304,8 +2300,8 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                             dc->cc_op = CC_OP_FLAGS;
                             save_state(dc, cpu_cond);
                             gen_op_next_insn();
-                            gen_exit_tb_no_chaining(dc->tb);
-                            dc->is_jmp = DISAS_JUMP;
+                            gen_exit_tb_no_chaining(dc->base.tb);
+                            dc->base.is_jmp = DISAS_JUMP;
                         }
                         break;
                     case 0x32: /* wrwim */
@@ -2354,7 +2350,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         TCGv r_pc;
                         TCGv_i32 r_const;
 
-                        r_pc = tcg_const_tl(dc->pc);
+                        r_pc = tcg_const_tl(dc->base.pc);
                         gen_movl_TN_reg(rd, r_pc);
                         tcg_temp_free(r_pc);
                         gen_mov_pc_npc(dc, cpu_cond);
@@ -2362,7 +2358,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         gen_helper_check_align(cpu_dst, r_const);
                         tcg_temp_free_i32(r_const);
                         tcg_gen_mov_tl(cpu_npc, cpu_dst);
-                        dc->npc = DYNAMIC_PC;
+                        dc->base.npc = DYNAMIC_PC;
                     }
                     goto jmp_insn;
                 case 0x39:      /* rett */
@@ -2376,7 +2372,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         gen_helper_check_align(cpu_dst, r_const);
                         tcg_temp_free_i32(r_const);
                         tcg_gen_mov_tl(cpu_npc, cpu_dst);
-                        dc->npc = DYNAMIC_PC;
+                        dc->base.npc = DYNAMIC_PC;
                         gen_helper_rett();
                     }
                     goto jmp_insn;
@@ -2433,13 +2429,13 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                 (xop > 0x2c && xop <= 0x33) || xop == 0x1f || xop == 0x3d) {
                 switch (xop) {
                 case 0x0:       /* ld, load unsigned word */
-                    tcg_gen_qemu_ld32u(cpu_val, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_ld32u(cpu_val, cpu_addr, dc->base.mem_idx);
                     break;
                 case 0x1:       /* ldub, load unsigned byte */
-                    tcg_gen_qemu_ld8u(cpu_val, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_ld8u(cpu_val, cpu_addr, dc->base.mem_idx);
                     break;
                 case 0x2:       /* lduh, load unsigned halfword */
-                    tcg_gen_qemu_ld16u(cpu_val, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_ld16u(cpu_val, cpu_addr, dc->base.mem_idx);
                     break;
                 case 0x3:       /* ldd, load double word */
                     if (rd & 1)
@@ -2451,7 +2447,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         r_const = tcg_const_i32(7);
                         gen_helper_check_align(cpu_addr, r_const); // XXX remove
                         tcg_temp_free_i32(r_const);
-                        tcg_gen_qemu_ld64(cpu_tmp64, cpu_addr, dc->mem_idx);
+                        tcg_gen_qemu_ld64(cpu_tmp64, cpu_addr, dc->base.mem_idx);
                         tcg_gen_trunc_i64_tl(cpu_tmp0, cpu_tmp64);
                         tcg_gen_andi_tl(cpu_tmp0, cpu_tmp0, 0xffffffffULL);
                         gen_movl_TN_reg(rd + 1, cpu_tmp0);
@@ -2461,14 +2457,14 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                     }
                     break;
                 case 0x9:       /* ldsb, load signed byte */
-                    tcg_gen_qemu_ld8s(cpu_val, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_ld8s(cpu_val, cpu_addr, dc->base.mem_idx);
                     break;
                 case 0xa:       /* ldsh, load signed halfword */
-                    tcg_gen_qemu_ld16s(cpu_val, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_ld16s(cpu_val, cpu_addr, dc->base.mem_idx);
                     break;
                 case 0xd:       /* ldstub -- XXX: should be atomically */
                     {
-                        tcg_gen_qemu_ld8s(cpu_val, cpu_addr, dc->mem_idx);
+                        tcg_gen_qemu_ld8s(cpu_val, cpu_addr, dc->base.mem_idx);
                         gen_helper_ldstub(cpu_val, cpu_addr);
                     }
                     break;
@@ -2573,12 +2569,12 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                 save_state(dc, cpu_cond);
                 switch (xop) {
                 case 0x20:      /* ldf, load fpreg */
-                    tcg_gen_qemu_ld32u(cpu_tmp0, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_ld32u(cpu_tmp0, cpu_addr, dc->base.mem_idx);
                     tcg_gen_trunc_tl_i32(cpu_fpr[rd], cpu_tmp0);
                     break;
                 case 0x21:      /* ldfsr */
                     {
-                        tcg_gen_qemu_ld32u(cpu_tmp32, cpu_addr, dc->mem_idx);
+                        tcg_gen_qemu_ld32u(cpu_tmp32, cpu_addr, dc->base.mem_idx);
                         gen_helper_ldfsr(cpu_tmp32);
                     }
                     break;
@@ -2587,7 +2583,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         TCGv_i32 r_const;
 
                         CHECK_FPU_FEATURE(dc, FLOAT128);
-                        r_const = tcg_const_i32(dc->mem_idx);
+                        r_const = tcg_const_i32(dc->base.mem_idx);
                         gen_helper_ldqf(cpu_addr, r_const);
                         tcg_temp_free_i32(r_const);
                         gen_op_store_QT0_fpr(QFPREG(rd));
@@ -2597,7 +2593,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                     {
                         TCGv_i32 r_const;
 
-                        r_const = tcg_const_i32(dc->mem_idx);
+                        r_const = tcg_const_i32(dc->base.mem_idx);
                         gen_helper_lddf(cpu_addr, r_const);
                         tcg_temp_free_i32(r_const);
                         gen_op_store_DT0_fpr(DFPREG(rd));
@@ -2611,13 +2607,13 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                 gen_movl_reg_TN(rd, cpu_val);
                 switch (xop) {
                 case 0x4: /* st, store word */
-                    tcg_gen_qemu_st32(cpu_val, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_st32(cpu_val, cpu_addr, dc->base.mem_idx);
                     break;
                 case 0x5: /* stb, store byte */
-                    tcg_gen_qemu_st8(cpu_val, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_st8(cpu_val, cpu_addr, dc->base.mem_idx);
                     break;
                 case 0x6: /* sth, store halfword */
-                    tcg_gen_qemu_st16(cpu_val, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_st16(cpu_val, cpu_addr, dc->base.mem_idx);
                     break;
                 case 0x7: /* std, store double word */
                     if (rd & 1)
@@ -2631,7 +2627,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         tcg_temp_free_i32(r_const);
                         gen_movl_reg_TN(rd + 1, cpu_tmp0);
                         tcg_gen_concat_tl_i64(cpu_tmp64, cpu_tmp0, cpu_val);
-                        tcg_gen_qemu_st64(cpu_tmp64, cpu_addr, dc->mem_idx);
+                        tcg_gen_qemu_st64(cpu_tmp64, cpu_addr, dc->base.mem_idx);
                     }
                     break;
                 case 0x14: /* sta, store word alternate */
@@ -2641,7 +2637,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         goto priv_insn;
                     save_state(dc, cpu_cond);
                     gen_st_asi(cpu_val, cpu_addr, insn, 4);
-                    dc->npc = DYNAMIC_PC;
+                    dc->base.npc = DYNAMIC_PC;
                     break;
                 case 0x15: /* stba, store byte alternate */
                     if (IS_IMM)
@@ -2650,7 +2646,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         goto priv_insn;
                     save_state(dc, cpu_cond);
                     gen_st_asi(cpu_val, cpu_addr, insn, 1);
-                    dc->npc = DYNAMIC_PC;
+                    dc->base.npc = DYNAMIC_PC;
                     break;
                 case 0x16: /* stha, store halfword alternate */
                     if (IS_IMM)
@@ -2659,7 +2655,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         goto priv_insn;
                     save_state(dc, cpu_cond);
                     gen_st_asi(cpu_val, cpu_addr, insn, 2);
-                    dc->npc = DYNAMIC_PC;
+                    dc->base.npc = DYNAMIC_PC;
                     break;
                 case 0x17: /* stda, store double word alternate */
                     if (IS_IMM)
@@ -2683,11 +2679,11 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                 switch (xop) {
                 case 0x24: /* stf, store fpreg */
                     tcg_gen_ext_i32_tl(cpu_tmp0, cpu_fpr[rd]);
-                    tcg_gen_qemu_st32(cpu_tmp0, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_st32(cpu_tmp0, cpu_addr, dc->base.mem_idx);
                     break;
                 case 0x25: /* stfsr */
                     tcg_gen_ld_i32(cpu_tmp32, cpu_env, offsetof(CPUState, fsr));
-                    tcg_gen_qemu_st32(cpu_tmp32, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_st32(cpu_tmp32, cpu_addr, dc->base.mem_idx);
                     break;
                 case 0x26:
                     /* stdfq, store floating point queue */
@@ -2701,7 +2697,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         TCGv_i32 r_const;
 
                         gen_op_load_fpr_DT0(DFPREG(rd));
-                        r_const = tcg_const_i32(dc->mem_idx);
+                        r_const = tcg_const_i32(dc->base.mem_idx);
                         gen_helper_stdf(cpu_addr, r_const);
                         tcg_temp_free_i32(r_const);
                     }
@@ -2726,16 +2722,16 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         break;
     }
     /* default case for non jump instructions */
-    if (dc->npc == DYNAMIC_PC) {
-        dc->pc = DYNAMIC_PC;
+    if (dc->base.npc == DYNAMIC_PC) {
+        dc->base.pc = DYNAMIC_PC;
         gen_op_next_insn();
-    } else if (dc->npc == JUMP_PC) {
+    } else if (dc->base.npc == JUMP_PC) {
         /* we can do a static jump */
         gen_branch2(dc, dc->jump_pc[0], dc->jump_pc[1], cpu_cond);
-        dc->is_jmp = DISAS_JUMP;
+        dc->base.is_jmp = DISAS_JUMP;
     } else {
-        dc->pc = dc->npc;
-        dc->npc = dc->npc + 4;
+        dc->base.pc = dc->base.npc;
+        dc->base.npc = dc->base.npc + 4;
     }
  jmp_insn:
     goto egress;
@@ -2747,7 +2743,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         r_const = tcg_const_i32(TT_ILL_INSN);
         gen_helper_raise_exception(r_const);
         tcg_temp_free_i32(r_const);
-        dc->is_jmp = DISAS_JUMP;
+        dc->base.is_jmp = DISAS_JUMP;
     }
     goto egress;
  unimp_flush:
@@ -2758,7 +2754,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         r_const = tcg_const_i32(TT_UNIMP_FLUSH);
         gen_helper_raise_exception(r_const);
         tcg_temp_free_i32(r_const);
-        dc->is_jmp = DISAS_JUMP;
+        dc->base.is_jmp = DISAS_JUMP;
     }
     goto egress;
  priv_insn:
@@ -2769,18 +2765,18 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         r_const = tcg_const_i32(TT_PRIV_INSN);
         gen_helper_raise_exception(r_const);
         tcg_temp_free_i32(r_const);
-        dc->is_jmp = DISAS_JUMP;
+        dc->base.is_jmp = DISAS_JUMP;
     }
     goto egress;
  nfpu_insn:
     save_state(dc, cpu_cond);
     gen_op_fpexception_im(FSR_FTT_UNIMPFPOP);
-    dc->is_jmp = DISAS_JUMP;
+    dc->base.is_jmp = DISAS_JUMP;
     goto egress;
  nfq_insn:
     save_state(dc, cpu_cond);
     gen_op_fpexception_im(FSR_FTT_SEQ_ERROR);
-    dc->is_jmp = DISAS_JUMP;
+    dc->base.is_jmp = DISAS_JUMP;
     goto egress;
  ncp_insn:
     {
@@ -2790,7 +2786,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         r_const = tcg_const_i32(TT_NCP_INSN);
         gen_helper_raise_exception(r_const);
         tcg_temp_free(r_const);
-        dc->is_jmp = DISAS_JUMP;
+        dc->base.is_jmp = DISAS_JUMP;
     }
     goto egress;
  egress:
@@ -2804,15 +2800,15 @@ uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {
 }
 
 void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
-    dc->tb = tb;
-    dc->pc = dc->tb->pc;
-    dc->is_jmp = DISAS_NEXT;
-    dc->npc = (target_ulong) dc->tb->cs_base;
+    dc->base.tb = tb;
+    dc->base.pc = dc->base.tb->pc;
+    dc->base.is_jmp = DISAS_NEXT;
+    dc->base.npc = (target_ulong) dc->base.tb->cs_base;
     dc->cc_op = CC_OP_DYNAMIC;
-    dc->mem_idx = cpu_mmu_index(env);
+    dc->base.mem_idx = cpu_mmu_index(env);
     dc->def = env->def;
-    dc->fpu_enabled = tb_fpu_enabled(dc->tb->flags);
-    dc->address_mask_32bit = tb_am_enabled(dc->tb->flags);
+    dc->fpu_enabled = tb_fpu_enabled(dc->base.tb->flags);
+    dc->address_mask_32bit = tb_am_enabled(dc->base.tb->flags);
 
     cpu_tmp0 = tcg_temp_new();
     cpu_tmp32 = tcg_temp_new_i32();
@@ -2826,12 +2822,12 @@ void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) 
 }
 
 int gen_breakpoint(DisasContext *dc, CPUBreakpoint *bp) {
-    if (dc->pc != dc->tb->pc) {
+    if (dc->base.pc != dc->base.tb->pc) {
         save_state(dc, cpu_cond);
     }
     gen_helper_debug();
-    gen_exit_tb_no_chaining(dc->tb);
-    dc->is_jmp = DISAS_JUMP;
+    gen_exit_tb_no_chaining(dc->base.tb);
+    dc->base.is_jmp = DISAS_JUMP;
     return 1;
 }
 
@@ -2848,14 +2844,14 @@ void gen_intermediate_code(CPUState *env,
     while (1) {
         CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
-            bp = process_breakpoints(env, dc.pc);
+            bp = process_breakpoints(env, dc.base.pc);
             if (bp != NULL && gen_breakpoint(&dc, bp)) {
                 break;
             }
         }
         if (tb->search_pc) {
-            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc.pc;
-            gen_opc_npc[gen_opc_ptr - tcg->gen_opc_buf] = dc.npc;
+            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc.base.pc;
+            gen_opc_npc[gen_opc_ptr - tcg->gen_opc_buf] = dc.base.npc;
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
@@ -2872,19 +2868,19 @@ void gen_intermediate_code(CPUState *env,
         }
 
         if (tcg_check_temp_count()) {
-            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.pc);
+            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.base.pc);
         }
 
-        if (dc.is_jmp) {
+        if (dc.base.is_jmp) {
             break;
         }
         /* if the next PC is different, we abort now */
-        if ((dc.pc - tb->pc) != tb->size) {
+        if ((dc.base.pc - tb->pc) != tb->size) {
             break;
         }
         /* if we reach a page boundary, we stop generation so that the
            PC of a TT_TFAULT exception is always in the right page */
-        if ((dc.pc & (TARGET_PAGE_SIZE - 1)) == 0) {
+        if ((dc.base.pc & (TARGET_PAGE_SIZE - 1)) == 0) {
             break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
@@ -2910,16 +2906,16 @@ void gen_intermediate_code(CPUState *env,
     tcg_temp_free_i64(cpu_tmp64);
     tcg_temp_free_i32(cpu_tmp32);
     tcg_temp_free(cpu_tmp0);
-    if (!dc.is_jmp) {
-        if (dc.pc != DYNAMIC_PC &&
-            (dc.npc != DYNAMIC_PC && dc.npc != JUMP_PC)) {
+    if (!dc.base.is_jmp) {
+        if (dc.base.pc != DYNAMIC_PC &&
+            (dc.base.npc != DYNAMIC_PC && dc.base.npc != JUMP_PC)) {
             /* static PC and NPC: we can use direct chaining */
-            gen_goto_tb(&dc, 0, dc.pc, dc.npc);
+            gen_goto_tb(&dc, 0, dc.base.pc, dc.base.npc);
         } else {
-            if (dc.pc != DYNAMIC_PC)
-                tcg_gen_movi_tl(cpu_pc, dc.pc);
+            if (dc.base.pc != DYNAMIC_PC)
+                tcg_gen_movi_tl(cpu_pc, dc.base.pc);
             save_npc(&dc, cpu_cond);
-            gen_exit_tb_no_chaining(dc.tb);
+            gen_exit_tb_no_chaining(dc.base.tb);
         }
     }
     if (tb->search_pc) {

@@ -55,9 +55,7 @@ static TCGv_i32 cpu_access_type;
 
 /* internal defines */
 typedef struct DisasContext {
-    struct TranslationBlock *tb;
-    target_ulong pc;
-    int mem_idx;
+    struct DisasContextBase base;
     uint32_t opcode;
     uint32_t exception;
     int access_type;
@@ -222,7 +220,7 @@ static inline void gen_exception_err(DisasContext *s, uint32_t excp, uint32_t er
 {
     TCGv_i32 t0, t1;
     if (s->exception == POWERPC_EXCP_NONE) {
-        gen_update_nip(s, s->pc);
+        gen_update_nip(s, s->base.pc);
     }
     t0 = tcg_const_i32(excp);
     t1 = tcg_const_i32(error);
@@ -236,7 +234,7 @@ static inline void gen_exception(DisasContext *s, uint32_t excp)
 {
     TCGv_i32 t0;
     if (s->exception == POWERPC_EXCP_NONE) {
-        gen_update_nip(s, s->pc);
+        gen_update_nip(s, s->base.pc);
     }
     t0 = tcg_const_i32(excp);
     gen_helper_raise_exception(t0);
@@ -250,7 +248,7 @@ static inline void gen_debug_exception(DisasContext *s)
 
     if ((s->exception != POWERPC_EXCP_BRANCH) &&
         (s->exception != POWERPC_EXCP_SYNC)) {
-        gen_update_nip(s, s->pc);
+        gen_update_nip(s, s->base.pc);
     }
     t0 = tcg_const_i32(EXCP_DEBUG);
     gen_helper_raise_exception(t0);
@@ -265,7 +263,7 @@ static inline void gen_inval_exception(DisasContext *s, uint32_t error)
 /* Stop translation */
 static inline void gen_stop_exception(DisasContext *s)
 {
-    gen_update_nip(s, s->pc);
+    gen_update_nip(s, s->base.pc);
     s->exception = POWERPC_EXCP_STOP;
 }
 
@@ -1373,7 +1371,7 @@ static void gen_f##name(DisasContext *s)                                    \
         return;                                                               \
     }                                                                         \
     /* NIP cannot be restored if the memory exception comes from an helper */ \
-    gen_update_nip(s, s->pc - 4);                                        \
+    gen_update_nip(s, s->base.pc - 4);                                        \
     gen_reset_fpstatus();                                                     \
     gen_helper_f##op(cpu_fpr[rD(s->opcode)], cpu_fpr[rA(s->opcode)],      \
                      cpu_fpr[rC(s->opcode)], cpu_fpr[rB(s->opcode)]);     \
@@ -1396,7 +1394,7 @@ static void gen_f##name(DisasContext *s)                                    \
         return;                                                               \
     }                                                                         \
     /* NIP cannot be restored if the memory exception comes from an helper */ \
-    gen_update_nip(s, s->pc - 4);                                        \
+    gen_update_nip(s, s->base.pc - 4);                                        \
     gen_reset_fpstatus();                                                     \
     gen_helper_f##op(cpu_fpr[rD(s->opcode)], cpu_fpr[rA(s->opcode)],      \
                      cpu_fpr[rB(s->opcode)]);                               \
@@ -1418,7 +1416,7 @@ static void gen_f##name(DisasContext *s)                                    \
         return;                                                               \
     }                                                                         \
     /* NIP cannot be restored if the memory exception comes from an helper */ \
-    gen_update_nip(s, s->pc - 4);                                        \
+    gen_update_nip(s, s->base.pc - 4);                                        \
     gen_reset_fpstatus();                                                     \
     gen_helper_f##op(cpu_fpr[rD(s->opcode)], cpu_fpr[rA(s->opcode)],      \
                        cpu_fpr[rC(s->opcode)]);                             \
@@ -1440,7 +1438,7 @@ static void gen_f##name(DisasContext *s)                                    \
         return;                                                               \
     }                                                                         \
     /* NIP cannot be restored if the memory exception comes from an helper */ \
-    gen_update_nip(s, s->pc - 4);                                        \
+    gen_update_nip(s, s->base.pc - 4);                                        \
     gen_reset_fpstatus();                                                     \
     gen_helper_f##name(cpu_fpr[rD(s->opcode)], cpu_fpr[rB(s->opcode)]);   \
     gen_compute_fprf(cpu_fpr[rD(s->opcode)],                                \
@@ -1455,7 +1453,7 @@ static void gen_f##name(DisasContext *s)                                    \
         return;                                                               \
     }                                                                         \
     /* NIP cannot be restored if the memory exception comes from an helper */ \
-    gen_update_nip(s, s->pc - 4);                                        \
+    gen_update_nip(s, s->base.pc - 4);                                        \
     gen_reset_fpstatus();                                                     \
     gen_helper_f##name(cpu_fpr[rD(s->opcode)], cpu_fpr[rB(s->opcode)]);   \
     gen_compute_fprf(cpu_fpr[rD(s->opcode)],                                \
@@ -1486,7 +1484,7 @@ static void gen_frsqrtes(DisasContext *s)
         return;
     }
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_reset_fpstatus();
     gen_helper_frsqrte(cpu_fpr[rD(s->opcode)], cpu_fpr[rB(s->opcode)]);
     gen_helper_frsp(cpu_fpr[rD(s->opcode)], cpu_fpr[rD(s->opcode)]);
@@ -1507,7 +1505,7 @@ static void gen_fsqrt(DisasContext *s)
         return;
     }
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_reset_fpstatus();
     gen_helper_fsqrt(cpu_fpr[rD(s->opcode)], cpu_fpr[rB(s->opcode)]);
     gen_compute_fprf(cpu_fpr[rD(s->opcode)], 1, Rc(s->opcode) != 0);
@@ -1520,7 +1518,7 @@ static void gen_fsqrts(DisasContext *s)
         return;
     }
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_reset_fpstatus();
     gen_helper_fsqrt(cpu_fpr[rD(s->opcode)], cpu_fpr[rB(s->opcode)]);
     gen_helper_frsp(cpu_fpr[rD(s->opcode)], cpu_fpr[rD(s->opcode)]);
@@ -1565,7 +1563,7 @@ static void gen_fcmpo(DisasContext *s)
         return;
     }
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_reset_fpstatus();
     crf = tcg_const_i32(crfD(s->opcode));
     gen_helper_fcmpo(cpu_fpr[rA(s->opcode)], cpu_fpr[rB(s->opcode)], crf);
@@ -1582,7 +1580,7 @@ static void gen_fcmpu(DisasContext *s)
         return;
     }
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_reset_fpstatus();
     crf = tcg_const_i32(crfD(s->opcode));
     gen_helper_fcmpu(cpu_fpr[rA(s->opcode)], cpu_fpr[rB(s->opcode)], crf);
@@ -1657,7 +1655,7 @@ static void gen_mtfsb0(DisasContext *s)
     if (likely(crb != FPSCR_FEX && crb != FPSCR_VX)) {
         TCGv_i32 t0;
         /* NIP cannot be restored if the memory exception comes from an helper */
-        gen_update_nip(s, s->pc - 4);
+        gen_update_nip(s, s->base.pc - 4);
         t0 = tcg_const_i32(crb);
         gen_helper_fpscr_clrbit(t0);
         tcg_temp_free_i32(t0);
@@ -1682,7 +1680,7 @@ static void gen_mtfsb1(DisasContext *s)
     if (likely(crb != FPSCR_FEX && crb != FPSCR_VX && crb != FPSCR_NI)) {
         TCGv_i32 t0;
         /* NIP cannot be restored if the memory exception comes from an helper */
-        gen_update_nip(s, s->pc - 4);
+        gen_update_nip(s, s->base.pc - 4);
         t0 = tcg_const_i32(crb);
         gen_helper_fpscr_setbit(t0);
         tcg_temp_free_i32(t0);
@@ -1705,7 +1703,7 @@ static void gen_mtfsf(DisasContext *s)
         return;
     }
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_reset_fpstatus();
     if (L)
         t0 = tcg_const_i32(0xff);
@@ -1734,7 +1732,7 @@ static void gen_mtfsfi(DisasContext *s)
     bf = crbD(s->opcode) >> 2;
     sh = 7 - bf;
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_reset_fpstatus();
     t0 = tcg_const_i64(FPIMM(s->opcode) << (4 * sh));
     t1 = tcg_const_i32(1 << sh);
@@ -1795,7 +1793,7 @@ static inline void gen_check_align(DisasContext *s, TCGv EA, int mask)
     TCGv t0 = tcg_temp_new();
     TCGv_i32 t1, t2;
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     tcg_gen_andi_tl(t0, EA, mask);
     tcg_gen_brcondi_tl(TCG_COND_EQ, t0, 0, l1);
     t1 = tcg_const_i32(POWERPC_EXCP_ALIGN);
@@ -1810,12 +1808,12 @@ static inline void gen_check_align(DisasContext *s, TCGv EA, int mask)
 /***                             Integer load                              ***/
 static inline void gen_qemu_ld8u(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    tcg_gen_qemu_ld8u(arg1, arg2, s->mem_idx);
+    tcg_gen_qemu_ld8u(arg1, arg2, s->base.mem_idx);
 }
 
 static inline void gen_qemu_ld16u(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    tcg_gen_qemu_ld16u(arg1, arg2, s->mem_idx);
+    tcg_gen_qemu_ld16u(arg1, arg2, s->base.mem_idx);
     if (unlikely(s->le_mode)) {
         tcg_gen_bswap16_tl(arg1, arg1);
     }
@@ -1824,17 +1822,17 @@ static inline void gen_qemu_ld16u(DisasContext *s, TCGv arg1, TCGv arg2)
 static inline void gen_qemu_ld16s(DisasContext *s, TCGv arg1, TCGv arg2)
 {
     if (unlikely(s->le_mode)) {
-        tcg_gen_qemu_ld16u(arg1, arg2, s->mem_idx);
+        tcg_gen_qemu_ld16u(arg1, arg2, s->base.mem_idx);
         tcg_gen_bswap16_tl(arg1, arg1);
         tcg_gen_ext16s_tl(arg1, arg1);
     } else {
-        tcg_gen_qemu_ld16s(arg1, arg2, s->mem_idx);
+        tcg_gen_qemu_ld16s(arg1, arg2, s->base.mem_idx);
     }
 }
 
 static inline void gen_qemu_ld32u(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    tcg_gen_qemu_ld32u(arg1, arg2, s->mem_idx);
+    tcg_gen_qemu_ld32u(arg1, arg2, s->base.mem_idx);
     if (unlikely(s->le_mode)) {
         tcg_gen_bswap32_tl(arg1, arg1);
     }
@@ -1842,7 +1840,7 @@ static inline void gen_qemu_ld32u(DisasContext *s, TCGv arg1, TCGv arg2)
 
 static inline void gen_qemu_ld64(DisasContext *s, TCGv_i64 arg1, TCGv arg2)
 {
-    tcg_gen_qemu_ld64(arg1, arg2, s->mem_idx);
+    tcg_gen_qemu_ld64(arg1, arg2, s->base.mem_idx);
     if (unlikely(s->le_mode)) {
         tcg_gen_bswap64_i64(arg1, arg1);
     }
@@ -1850,7 +1848,7 @@ static inline void gen_qemu_ld64(DisasContext *s, TCGv_i64 arg1, TCGv arg2)
 
 static inline void gen_qemu_st8(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    tcg_gen_qemu_st8(arg1, arg2, s->mem_idx);
+    tcg_gen_qemu_st8(arg1, arg2, s->base.mem_idx);
 }
 
 static inline void gen_qemu_st16(DisasContext *s, TCGv arg1, TCGv arg2)
@@ -1859,10 +1857,10 @@ static inline void gen_qemu_st16(DisasContext *s, TCGv arg1, TCGv arg2)
         TCGv t0 = tcg_temp_new();
         tcg_gen_ext16u_tl(t0, arg1);
         tcg_gen_bswap16_tl(t0, t0);
-        tcg_gen_qemu_st16(t0, arg2, s->mem_idx);
+        tcg_gen_qemu_st16(t0, arg2, s->base.mem_idx);
         tcg_temp_free(t0);
     } else {
-        tcg_gen_qemu_st16(arg1, arg2, s->mem_idx);
+        tcg_gen_qemu_st16(arg1, arg2, s->base.mem_idx);
     }
 }
 
@@ -1872,10 +1870,10 @@ static inline void gen_qemu_st32(DisasContext *s, TCGv arg1, TCGv arg2)
         TCGv t0 = tcg_temp_new();
         tcg_gen_ext32u_tl(t0, arg1);
         tcg_gen_bswap32_tl(t0, t0);
-        tcg_gen_qemu_st32(t0, arg2, s->mem_idx);
+        tcg_gen_qemu_st32(t0, arg2, s->base.mem_idx);
         tcg_temp_free(t0);
     } else {
-        tcg_gen_qemu_st32(arg1, arg2, s->mem_idx);
+        tcg_gen_qemu_st32(arg1, arg2, s->base.mem_idx);
     }
 }
 
@@ -1884,10 +1882,10 @@ static inline void gen_qemu_st64(DisasContext *s, TCGv_i64 arg1, TCGv arg2)
     if (unlikely(s->le_mode)) {
         TCGv_i64 t0 = tcg_temp_new_i64();
         tcg_gen_bswap64_i64(t0, arg1);
-        tcg_gen_qemu_st64(t0, arg2, s->mem_idx);
+        tcg_gen_qemu_st64(t0, arg2, s->base.mem_idx);
         tcg_temp_free_i64(t0);
     } else
-        tcg_gen_qemu_st64(arg1, arg2, s->mem_idx);
+        tcg_gen_qemu_st64(arg1, arg2, s->base.mem_idx);
 }
 
 #define GEN_LD(name, ldop, opc, type)                                         \
@@ -2038,7 +2036,7 @@ GEN_STS(stw, st32, 0x04, PPC_INTEGER);
 /* lhbrx */
 static inline void gen_qemu_ld16ur(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    tcg_gen_qemu_ld16u(arg1, arg2, s->mem_idx);
+    tcg_gen_qemu_ld16u(arg1, arg2, s->base.mem_idx);
     if (likely(!s->le_mode)) {
         tcg_gen_bswap16_tl(arg1, arg1);
     }
@@ -2048,7 +2046,7 @@ GEN_LDX(lhbr, ld16ur, 0x16, 0x18, PPC_INTEGER);
 /* lwbrx */
 static inline void gen_qemu_ld32ur(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    tcg_gen_qemu_ld32u(arg1, arg2, s->mem_idx);
+    tcg_gen_qemu_ld32u(arg1, arg2, s->base.mem_idx);
     if (likely(!s->le_mode)) {
         tcg_gen_bswap32_tl(arg1, arg1);
     }
@@ -2062,10 +2060,10 @@ static inline void gen_qemu_st16r(DisasContext *s, TCGv arg1, TCGv arg2)
         TCGv t0 = tcg_temp_new();
         tcg_gen_ext16u_tl(t0, arg1);
         tcg_gen_bswap16_tl(t0, t0);
-        tcg_gen_qemu_st16(t0, arg2, s->mem_idx);
+        tcg_gen_qemu_st16(t0, arg2, s->base.mem_idx);
         tcg_temp_free(t0);
     } else {
-        tcg_gen_qemu_st16(arg1, arg2, s->mem_idx);
+        tcg_gen_qemu_st16(arg1, arg2, s->base.mem_idx);
     }
 }
 GEN_STX(sthbr, st16r, 0x16, 0x1C, PPC_INTEGER);
@@ -2077,10 +2075,10 @@ static inline void gen_qemu_st32r(DisasContext *s, TCGv arg1, TCGv arg2)
         TCGv t0 = tcg_temp_new();
         tcg_gen_ext32u_tl(t0, arg1);
         tcg_gen_bswap32_tl(t0, t0);
-        tcg_gen_qemu_st32(t0, arg2, s->mem_idx);
+        tcg_gen_qemu_st32(t0, arg2, s->base.mem_idx);
         tcg_temp_free(t0);
     } else {
-        tcg_gen_qemu_st32(arg1, arg2, s->mem_idx);
+        tcg_gen_qemu_st32(arg1, arg2, s->base.mem_idx);
     }
 }
 GEN_STX(stwbr, st32r, 0x16, 0x14, PPC_INTEGER);
@@ -2094,7 +2092,7 @@ static void gen_lmw(DisasContext *s)
     TCGv_i32 t1;
     gen_set_access_type(s, ACCESS_INT);
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     t0 = tcg_temp_new();
     t1 = tcg_const_i32(rD(s->opcode));
     gen_addr_imm_index(s, t0, 0);
@@ -2110,7 +2108,7 @@ static void gen_stmw(DisasContext *s)
     TCGv_i32 t1;
     gen_set_access_type(s, ACCESS_INT);
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     t0 = tcg_temp_new();
     t1 = tcg_const_i32(rS(s->opcode));
     gen_addr_imm_index(s, t0, 0);
@@ -2147,7 +2145,7 @@ static void gen_lswi(DisasContext *s)
     }
     gen_set_access_type(s, ACCESS_INT);
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     t0 = tcg_temp_new();
     gen_addr_register(s, t0);
     t1 = tcg_const_i32(nb);
@@ -2165,7 +2163,7 @@ static void gen_lswx(DisasContext *s)
     TCGv_i32 t1, t2, t3;
     gen_set_access_type(s, ACCESS_INT);
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     t0 = tcg_temp_new();
     gen_addr_reg_index(s, t0);
     t1 = tcg_const_i32(rD(s->opcode));
@@ -2186,7 +2184,7 @@ static void gen_stswi(DisasContext *s)
     int nb = NB(s->opcode);
     gen_set_access_type(s, ACCESS_INT);
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     t0 = tcg_temp_new();
     gen_addr_register(s, t0);
     if (nb == 0)
@@ -2206,7 +2204,7 @@ static void gen_stswx(DisasContext *s)
     TCGv_i32 t1, t2;
     gen_set_access_type(s, ACCESS_INT);
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     t0 = tcg_temp_new();
     gen_addr_reg_index(s, t0);
     t1 = tcg_temp_new_i32();
@@ -2485,7 +2483,7 @@ GEN_STXF(stfiw, st32fiw, 0x17, 0x1E, PPC_FLOAT_STFIWX);
 static inline void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
 {
     TranslationBlock *tb;
-    tb = s->tb;
+    tb = s->base.tb;
     if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)) {
         tcg_gen_goto_tb(n);
         tcg_gen_movi_tl(cpu_nip, dest & ~3);
@@ -2510,11 +2508,11 @@ static void gen_b(DisasContext *s)
     /* sign extend LI */
     li = ((int32_t)LI(s->opcode) << 6) >> 6;
     if (likely(AA(s->opcode) == 0))
-        target = s->pc + li - 4;
+        target = s->base.pc + li - 4;
     else
         target = li;
     if (LK(s->opcode))
-        gen_setlr(s, s->pc);
+        gen_setlr(s, s->base.pc);
     gen_goto_tb(s, 0, target);
 }
 
@@ -2539,7 +2537,7 @@ static inline void gen_bcond(DisasContext *s, int type)
         TCGV_UNUSED(target);
     }
     if (LK(s->opcode))
-        gen_setlr(s, s->pc);
+        gen_setlr(s, s->base.pc);
     l1 = gen_new_label();
     if ((bo & 0x4) == 0) {
         /* Decrement and test CTR */
@@ -2575,18 +2573,18 @@ static inline void gen_bcond(DisasContext *s, int type)
     if (type == BCOND_IM) {
         target_ulong li = (target_long)((int16_t)(BD(s->opcode)));
         if (likely(AA(s->opcode) == 0)) {
-            gen_goto_tb(s, 0, s->pc + li - 4);
+            gen_goto_tb(s, 0, s->base.pc + li - 4);
         } else {
             gen_goto_tb(s, 0, li);
         }
         gen_set_label(l1);
-        gen_goto_tb(s, 1, s->pc);
+        gen_goto_tb(s, 1, s->base.pc);
     } else {
         tcg_gen_andi_tl(cpu_nip, target, ~3);
-        gen_exit_tb_no_chaining(s->tb);
+        gen_exit_tb_no_chaining(s->base.tb);
         gen_set_label(l1);
-        tcg_gen_movi_tl(cpu_nip, s->pc);
-        gen_exit_tb_no_chaining(s->tb);
+        tcg_gen_movi_tl(cpu_nip, s->base.pc);
+        gen_exit_tb_no_chaining(s->base.tb);
     }
 }
 
@@ -2666,7 +2664,7 @@ static void gen_mcrf(DisasContext *s)
 static void gen_rfi(DisasContext *s)
 {
     /* Restore CPU state */
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -2691,7 +2689,7 @@ static void gen_tw(DisasContext *s)
 {
     TCGv_i32 t0 = tcg_const_i32(TO(s->opcode));
     /* Update the nip since this might generate a trap exception */
-    gen_update_nip(s, s->pc);
+    gen_update_nip(s, s->base.pc);
     gen_helper_tw(cpu_gpr[rA(s->opcode)], cpu_gpr[rB(s->opcode)], t0);
     tcg_temp_free_i32(t0);
 }
@@ -2702,7 +2700,7 @@ static void gen_twi(DisasContext *s)
     TCGv t0 = tcg_const_tl(SIMM(s->opcode));
     TCGv_i32 t1 = tcg_const_i32(TO(s->opcode));
     /* Update the nip since this might generate a trap exception */
-    gen_update_nip(s, s->pc);
+    gen_update_nip(s, s->base.pc);
     gen_helper_tw(cpu_gpr[rA(s->opcode)], t0, t1);
     tcg_temp_free(t0);
     tcg_temp_free_i32(t1);
@@ -2756,7 +2754,7 @@ static void gen_mfcr(DisasContext *s)
 /* mfmsr */
 static void gen_mfmsr(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_REG);
         return;
     }
@@ -2774,9 +2772,9 @@ static inline void gen_op_mfspr(DisasContext *s)
     void (*read_cb)(void *opaque, int gprn, int sprn);
     uint32_t sprn = SPR(s->opcode);
 
-    if (s->mem_idx == 2)
+    if (s->base.mem_idx == 2)
         read_cb = s->spr_cb[sprn].hea_read;
-    else if (s->mem_idx)
+    else if (s->base.mem_idx)
         read_cb = s->spr_cb[sprn].oea_read;
     else
         read_cb = s->spr_cb[sprn].uea_read;
@@ -2839,7 +2837,7 @@ static void gen_mtcrf(DisasContext *s)
 /* mtmsr */
 static void gen_mtmsr(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_REG);
         return;
     }
@@ -2857,7 +2855,7 @@ static void gen_mtmsr(DisasContext *s)
          *      if we enter power saving mode, we will exit the loop
          *      directly from ppc_store_msr
          */
-        gen_update_nip(s, s->pc);
+        gen_update_nip(s, s->base.pc);
         tcg_gen_mov_tl(msr, cpu_gpr[rS(s->opcode)]);
         gen_helper_store_msr(msr);
         /* Must stop the translation as machine state (may have) changed */
@@ -2872,9 +2870,9 @@ static void gen_mtspr(DisasContext *s)
     void (*write_cb)(void *opaque, int sprn, int gprn);
     uint32_t sprn = SPR(s->opcode);
 
-    if (s->mem_idx == 2)
+    if (s->base.mem_idx == 2)
         write_cb = s->spr_cb[sprn].hea_write;
-    else if (s->mem_idx)
+    else if (s->base.mem_idx)
         write_cb = s->spr_cb[sprn].oea_write;
     else
         write_cb = s->spr_cb[sprn].uea_write;
@@ -2909,7 +2907,7 @@ static void gen_dcbf(DisasContext *s)
 static void gen_dcbi(DisasContext *s)
 {
     TCGv EA, val;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -2960,7 +2958,7 @@ static void gen_dcbz(DisasContext *s)
     TCGv t0;
     gen_set_access_type(s, ACCESS_CACHE);
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     t0 = tcg_temp_new();
     gen_addr_reg_index(s, t0);
     gen_helper_dcbz(t0);
@@ -2972,7 +2970,7 @@ static void gen_dcbz_970(DisasContext *s)
     TCGv t0;
     gen_set_access_type(s, ACCESS_CACHE);
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     t0 = tcg_temp_new();
     gen_addr_reg_index(s, t0);
     if (s->opcode & 0x00200000)
@@ -3015,7 +3013,7 @@ static void gen_icbi(DisasContext *s)
     TCGv t0;
     gen_set_access_type(s, ACCESS_CACHE);
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     t0 = tcg_temp_new();
     gen_addr_reg_index(s, t0);
     gen_helper_icbi(t0);
@@ -3039,7 +3037,7 @@ static void gen_dcba(DisasContext *s)
 static void gen_mfsr(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_REG);
         return;
     }
@@ -3052,7 +3050,7 @@ static void gen_mfsr(DisasContext *s)
 static void gen_mfsrin(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_REG);
         return;
     }
@@ -3067,7 +3065,7 @@ static void gen_mfsrin(DisasContext *s)
 static void gen_mtsr(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_REG);
         return;
     }
@@ -3080,7 +3078,7 @@ static void gen_mtsr(DisasContext *s)
 static void gen_mtsrin(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_REG);
         return;
     }
@@ -3097,7 +3095,7 @@ static void gen_mtsrin(DisasContext *s)
 /* tlbia */
 static void gen_tlbia(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3107,7 +3105,7 @@ static void gen_tlbia(DisasContext *s)
 /* tlbiel */
 static void gen_tlbiel(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3117,7 +3115,7 @@ static void gen_tlbiel(DisasContext *s)
 /* tlbie */
 static void gen_tlbie(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3127,7 +3125,7 @@ static void gen_tlbie(DisasContext *s)
 /* tlbsync */
 static void gen_tlbsync(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3316,7 +3314,7 @@ static void gen_lscbx(DisasContext *s)
 
     gen_addr_reg_index(s, t0);
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_helper_lscbx(t0, t0, t1, t2, t3);
     tcg_temp_free_i32(t1);
     tcg_temp_free_i32(t2);
@@ -3826,7 +3824,7 @@ static void gen_esa(DisasContext *s)
 /* mfrom */
 static void gen_mfrom(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3838,7 +3836,7 @@ static void gen_mfrom(DisasContext *s)
 /* tlbld */
 static void gen_tlbld_6xx(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3848,7 +3846,7 @@ static void gen_tlbld_6xx(DisasContext *s)
 /* tlbli */
 static void gen_tlbli_6xx(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3860,7 +3858,7 @@ static void gen_tlbli_6xx(DisasContext *s)
 /* tlbld */
 static void gen_tlbld_74xx(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3870,7 +3868,7 @@ static void gen_tlbld_74xx(DisasContext *s)
 /* tlbli */
 static void gen_tlbli_74xx(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3889,7 +3887,7 @@ static void gen_clf(DisasContext *s)
 static void gen_cli(DisasContext *s)
 {
     /* Cache line invalidate: privileged and treated as no-op */
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3906,7 +3904,7 @@ static void gen_mfsri(DisasContext *s)
     int ra = rA(s->opcode);
     int rd = rD(s->opcode);
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3923,7 +3921,7 @@ static void gen_mfsri(DisasContext *s)
 static void gen_rac(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -3935,7 +3933,7 @@ static void gen_rac(DisasContext *s)
 
 static void gen_rfsvc(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4093,7 +4091,7 @@ static void gen_mfapidi(DisasContext *s)
 static void gen_tlbiva(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4321,12 +4319,12 @@ GEN_MAC_HANDLER(mullhwu, 0x08, 0x0C);
 static void gen_mfdcr(DisasContext *s)
 {
     TCGv dcrn;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_REG);
         return;
     }
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     dcrn = tcg_const_tl(SPR(s->opcode));
     gen_helper_load_dcr(cpu_gpr[rD(s->opcode)], dcrn);
     tcg_temp_free(dcrn);
@@ -4336,12 +4334,12 @@ static void gen_mfdcr(DisasContext *s)
 static void gen_mtdcr(DisasContext *s)
 {
     TCGv dcrn;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_REG);
         return;
     }
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     dcrn = tcg_const_tl(SPR(s->opcode));
     gen_helper_store_dcr(dcrn, cpu_gpr[rS(s->opcode)]);
     tcg_temp_free(dcrn);
@@ -4351,12 +4349,12 @@ static void gen_mtdcr(DisasContext *s)
 /* XXX: not implemented on 440 ? */
 static void gen_mfdcrx(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_REG);
         return;
     }
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_helper_load_dcr(cpu_gpr[rD(s->opcode)], cpu_gpr[rA(s->opcode)]);
     /* Note: Rc update flag set leads to undefined state of Rc0 */
 }
@@ -4365,12 +4363,12 @@ static void gen_mfdcrx(DisasContext *s)
 /* XXX: not implemented on 440 ? */
 static void gen_mtdcrx(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_REG);
         return;
     }
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_helper_store_dcr(cpu_gpr[rA(s->opcode)], cpu_gpr[rS(s->opcode)]);
     /* Note: Rc update flag set leads to undefined state of Rc0 */
 }
@@ -4379,7 +4377,7 @@ static void gen_mtdcrx(DisasContext *s)
 static void gen_mfdcrux(DisasContext *s)
 {
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_helper_load_dcr(cpu_gpr[rD(s->opcode)], cpu_gpr[rA(s->opcode)]);
     /* Note: Rc update flag set leads to undefined state of Rc0 */
 }
@@ -4388,7 +4386,7 @@ static void gen_mfdcrux(DisasContext *s)
 static void gen_mtdcrux(DisasContext *s)
 {
     /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(s, s->pc - 4);
+    gen_update_nip(s, s->base.pc - 4);
     gen_helper_store_dcr(cpu_gpr[rA(s->opcode)], cpu_gpr[rS(s->opcode)]);
     /* Note: Rc update flag set leads to undefined state of Rc0 */
 }
@@ -4396,7 +4394,7 @@ static void gen_mtdcrux(DisasContext *s)
 /* dccci */
 static void gen_dccci(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4407,7 +4405,7 @@ static void gen_dccci(DisasContext *s)
 static void gen_dcread(DisasContext *s)
 {
     TCGv EA, val;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4433,7 +4431,7 @@ static void gen_icbt_40x(DisasContext *s)
 /* iccci */
 static void gen_iccci(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4443,7 +4441,7 @@ static void gen_iccci(DisasContext *s)
 /* icread */
 static void gen_icread(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4453,7 +4451,7 @@ static void gen_icread(DisasContext *s)
 /* rfci (mem_idx only) */
 static void gen_rfci_40x(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4464,7 +4462,7 @@ static void gen_rfci_40x(DisasContext *s)
 
 static void gen_rfci(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4478,7 +4476,7 @@ static void gen_rfci(DisasContext *s)
 /* XXX: not implemented on 440 ? */
 static void gen_rfdi(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4490,7 +4488,7 @@ static void gen_rfdi(DisasContext *s)
 /* XXX: not implemented on 440 ? */
 static void gen_rfmci(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4504,7 +4502,7 @@ static void gen_rfmci(DisasContext *s)
 /* tlbre */
 static void gen_tlbre_40x(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4525,7 +4523,7 @@ static void gen_tlbre_40x(DisasContext *s)
 static void gen_tlbsx_40x(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4547,7 +4545,7 @@ static void gen_tlbsx_40x(DisasContext *s)
 /* tlbwe */
 static void gen_tlbwe_40x(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4569,7 +4567,7 @@ static void gen_tlbwe_40x(DisasContext *s)
 /* tlbre */
 static void gen_tlbre_440(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4593,7 +4591,7 @@ static void gen_tlbre_440(DisasContext *s)
 static void gen_tlbsx_440(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4615,7 +4613,7 @@ static void gen_tlbsx_440(DisasContext *s)
 /* tlbwe */
 static void gen_tlbwe_440(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4640,7 +4638,7 @@ static void gen_tlbwe_440(DisasContext *s)
 /* tlbre */
 static void gen_tlbre_booke206(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4652,7 +4650,7 @@ static void gen_tlbre_booke206(DisasContext *s)
 static void gen_tlbsx_booke206(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4671,7 +4669,7 @@ static void gen_tlbsx_booke206(DisasContext *s)
 /* tlbwe */
 static void gen_tlbwe_booke206(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4681,7 +4679,7 @@ static void gen_tlbwe_booke206(DisasContext *s)
 static void gen_tlbivax_booke206(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4697,7 +4695,7 @@ static void gen_tlbivax_booke206(DisasContext *s)
 static void gen_wrtee(DisasContext *s)
 {
     TCGv t0;
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -4715,7 +4713,7 @@ static void gen_wrtee(DisasContext *s)
 /* wrteei */
 static void gen_wrteei(DisasContext *s)
 {
-    if (unlikely(!s->mem_idx)) {
+    if (unlikely(!s->base.mem_idx)) {
         gen_inval_exception(s, POWERPC_EXCP_PRIV_OPC);
         return;
     }
@@ -7921,9 +7919,9 @@ int disas_insn(CPUState *env, DisasContext *dc) {
     uint32_t op1, op2, op3;
 
     if (unlikely(dc->le_mode)) {
-        dc->opcode = bswap32(ldl_code(dc->pc));
+        dc->opcode = bswap32(ldl_code(dc->base.pc));
     } else {
-        dc->opcode = ldl_code(dc->pc);
+        dc->opcode = ldl_code(dc->base.pc);
     }
 
     if(dc->vle_enabled) // use the vle decoding function to obtain the opcodes
@@ -7948,7 +7946,7 @@ int disas_insn(CPUState *env, DisasContext *dc) {
             handler = table[op3];
         }
     }
-    dc->pc += handler->length;
+    dc->base.pc += handler->length;
 
     /* Is opcode *REALLY* valid ? */
     if (likely(handler->handler != &gen_invalid)) {
@@ -7974,11 +7972,11 @@ uint32_t get_disas_flags(CPUState *env, DisasContext *dc) {
 }
 
 void setup_disas_context(DisasContext *dc, CPUState *env, TranslationBlock *tb) {
-    dc->tb = tb;
-    dc->pc = dc->tb->pc;
+    dc->base.tb = tb;
+    dc->base.pc = dc->base.tb->pc;
     dc->exception = POWERPC_EXCP_NONE;
     dc->spr_cb = env->spr_cb;
-    dc->mem_idx = env->mmu_idx;
+    dc->base.mem_idx = env->mmu_idx;
     dc->access_type = -1;
     dc->le_mode = env->hflags & (1 << MSR_LE) ? 1 : 0;
     dc->fpu_enabled = msr_fp;
@@ -8012,13 +8010,13 @@ void gen_intermediate_code(CPUState *env,
     while (1) {
         CHECK_LOCKED(tb);
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
-            bp = process_breakpoints(env, dc.pc);
+            bp = process_breakpoints(env, dc.base.pc);
             if (bp != NULL && gen_breakpoint(&dc, bp)) {
                 break;
             }
         }
         if (tb->search_pc) {
-            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc.pc;
+            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc.base.pc;
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
 
@@ -8027,7 +8025,7 @@ void gen_intermediate_code(CPUState *env,
         tb->icount++;
 
         if (tcg_check_temp_count()) {
-            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.pc);
+            tlib_printf(LOG_LEVEL_ERROR, "TCG temporary leak before %08x\n", dc.base.pc);
         }
 
         if (!tb->search_pc)
@@ -8038,7 +8036,7 @@ void gen_intermediate_code(CPUState *env,
             tb->original_size = tb->size;
         }
 
-        if (unlikely(((dc.pc & (TARGET_PAGE_SIZE - 1)) == 0) ||
+        if (unlikely(((dc.base.pc & (TARGET_PAGE_SIZE - 1)) == 0) ||
                             tb->icount >= max_insns)) {
             /* if we reach a page boundary, stop generation */
             break;
@@ -8057,7 +8055,7 @@ void gen_intermediate_code(CPUState *env,
         }
     }
     if (dc.exception == POWERPC_EXCP_NONE) {
-        gen_goto_tb(&dc, 0, dc.pc);
+        gen_goto_tb(&dc, 0, dc.base.pc);
     } else if (dc.exception != POWERPC_EXCP_BRANCH) {
         /* Generate the return instruction */
         gen_exit_tb_no_chaining(tb);

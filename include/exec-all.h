@@ -130,6 +130,14 @@ struct TranslationBlock {
 #endif
 };
 
+typedef struct DisasContextBase {
+    struct TranslationBlock *tb;
+    target_ulong pc;
+    target_ulong npc;
+    int mem_idx;
+    int is_jmp;
+} DisasContextBase;
+
 static inline unsigned int tb_jmp_cache_hash_page(target_ulong pc)
 {
     target_ulong tmp;

@@ -7629,8 +7629,6 @@ uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
 
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
-    dc->base.is_jmp = DISAS_NEXT;
-    dc->base.pc = dc->base.tb->pc;
     dc->pe = (dc->base.tb->flags >> HF_PE_SHIFT) & 1;
     dc->code32 = (dc->base.tb->flags >> HF_CS32_SHIFT) & 1;
     dc->ss32 = (dc->base.tb->flags >> HF_SS32_SHIFT) & 1;

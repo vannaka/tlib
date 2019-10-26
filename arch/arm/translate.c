@@ -9908,8 +9908,6 @@ uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
 
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
-    dc->base.is_jmp = DISAS_NEXT;
-    dc->base.pc = dc->base.tb->pc;
     dc->condjmp = 0;
     dc->thumb = ARM_TBFLAG_THUMB(dc->base.tb->flags);
     dc->condexec_mask = (ARM_TBFLAG_CONDEXEC(dc->base.tb->flags) & 0xf) << 1;

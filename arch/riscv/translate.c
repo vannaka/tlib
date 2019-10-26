@@ -2001,8 +2001,6 @@ uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
 }
 
 void setup_disas_context(DisasContextBase *dc, CPUState *env) {
-    dc->pc = dc->tb->pc;
-    dc->is_jmp = BS_NONE;
     dc->mem_idx = cpu_mmu_index(env);
 }
 

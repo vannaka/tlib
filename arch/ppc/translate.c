@@ -7973,7 +7973,6 @@ uint32_t get_disas_flags(CPUState *env, DisasContextBase *dc) {
 
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
     DisasContext *dc = (DisasContext*)base;
-    dc->base.pc = dc->base.tb->pc;
     dc->exception = POWERPC_EXCP_NONE;
     dc->spr_cb = env->spr_cb;
     dc->base.mem_idx = env->mmu_idx;

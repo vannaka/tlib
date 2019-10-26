@@ -185,6 +185,8 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
     tb->size = 0;
     tb->search_pc = 0;
     dc->tb = tb;
+    dc->is_jmp = 0;
+    dc->pc = tb->pc;
 
     gen_block_header(tb);
     setup_disas_context(dc, env);
@@ -225,6 +227,8 @@ int cpu_restore_state(CPUState *env,
     tb->size = 0;
     tb->search_pc = 1;
     dc->tb = tb;
+    dc->is_jmp = 0;
+    dc->pc = tb->pc;
 
     gen_block_header(tb);
     setup_disas_context(dc, env);

@@ -192,6 +192,7 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
     UNLOCK_TB(tb);
     gen_intermediate_code(env, dc, get_max_instruction_count(env, tb));
     tb->disas_flags = get_disas_flags(env, dc);
+    free(dc);
     gen_block_footer(tb);
 
     /* generate machine code */
@@ -231,6 +232,7 @@ int cpu_restore_state(CPUState *env,
     UNLOCK_TB(tb);
     gen_intermediate_code(env, dc, get_max_instruction_count(env, tb));
     tb->disas_flags = get_disas_flags(env, dc);
+    free(dc);
     gen_block_footer(tb);
 
     /* find opc index corresponding to search_pc */

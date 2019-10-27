@@ -7995,11 +7995,10 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext*)base;
-    TranslationBlock *tb = base->tb;
 
-    tb->size += disas_insn(env, dc);
+    base->tb->size += disas_insn(env, (DisasContext*)base);
 
-    if (unlikely(((dc->base.pc & (TARGET_PAGE_SIZE - 1)) == 0))) {
+    if (unlikely(((base->pc & (TARGET_PAGE_SIZE - 1)) == 0))) {
         /* if we reach a page boundary, stop generation */
         return 0;
     }

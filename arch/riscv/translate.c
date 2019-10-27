@@ -2011,19 +2011,16 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
 
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
-    DisasContext *dc = (DisasContext*)base;
-    TranslationBlock *tb = base->tb;
+    base->tb->size += disas_insn(env, (DisasContext*)base);
 
-    tb->size += disas_insn(env, dc);
-
-    if ((dc->base.pc - (tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
+    if ((base->pc - (base->tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
         return 0;
     }
-    if (tb->search_pc && tb->size == tb->original_size)
+    if (base->tb->search_pc && base->tb->size == base->tb->original_size)
     {
         // `search_pc` is set to 1 only when restoring the block;
         // this is to ensure that the size of restored block is not bigger than the size of the original one
-        dc->base.is_jmp = BS_STOP;
+        base->is_jmp = BS_STOP;
         return 0;
     }
     return 1;

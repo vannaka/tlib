@@ -2829,24 +2829,23 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext*)base;
-    TranslationBlock *tb = base->tb;
 
-    if (tb->search_pc) {
-        gen_opc_npc[gen_opc_ptr - tcg->gen_opc_buf] = dc->base.npc;
+    if (base->tb->search_pc) {
+        gen_opc_npc[gen_opc_ptr - tcg->gen_opc_buf] = base->npc;
     }
 
-    tb->size += disas_insn(env, dc);
+    base->tb->size += disas_insn(env, (DisasContext*)base);
 
     /* if the next PC is different, we abort now */
-    if ((dc->base.pc - tb->pc) != tb->size) {
+    if ((base->pc - base->tb->pc) != base->tb->size) {
         return 0;
     }
     /* if we reach a page boundary, we stop generation so that the
        PC of a TT_TFAULT exception is always in the right page */
-    if ((dc->base.pc & (TARGET_PAGE_SIZE - 1)) == 0) {
+    if ((base->pc & (TARGET_PAGE_SIZE - 1)) == 0) {
         return 0;
     }
-    if (tb->size >= (TARGET_PAGE_SIZE - 32)) {
+    if (base->tb->size >= (TARGET_PAGE_SIZE - 32)) {
         return 0;
     }
     return 1;

@@ -9980,19 +9980,18 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext*)base;
-    TranslationBlock *tb = base->tb;
 
-    if (tb->search_pc) {
+    if (base->tb->search_pc) {
         gen_opc_condexec_bits[gen_opc_ptr - tcg->gen_opc_buf] = (dc->condexec_cond << 4) | (dc->condexec_mask >> 1);
     }
 
-    tb->size += disas_insn(env, dc);
+    base->tb->size += disas_insn(env, (DisasContext*)base);
 
     if (dc->condjmp && !dc->base.is_jmp) {
         gen_set_label(dc->condlabel);
         dc->condjmp = 0;
     }
-    if (dc->base.pc >= ((tb->pc & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE)) {
+    if ((base->pc - (base->tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
         return 0;
     }
     return 1;

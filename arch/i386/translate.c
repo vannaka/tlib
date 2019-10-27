@@ -7684,13 +7684,12 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext*)base;
-    TranslationBlock *tb = base->tb;
 
-    if (tb->search_pc) {
+    if (base->tb->search_pc) {
         gen_opc_cc_op[gen_opc_ptr - tcg->gen_opc_buf] = dc->cc_op;
     }
 
-    tb->size += disas_insn(env, dc);
+    base->tb->size += disas_insn(env, (DisasContext*)base);
 
     /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
        the flag and abort the translation to give the irqs a
@@ -7700,7 +7699,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
         return 0;
     }
     /* if too long translation, stop generation too */
-    if (tb->size >= (TARGET_PAGE_SIZE - 32)) {
+    if (base->tb->size >= (TARGET_PAGE_SIZE - 32)) {
         return 0;
     }
     return 1;

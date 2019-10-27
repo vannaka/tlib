@@ -24,7 +24,6 @@
 #include <signal.h>
 
 #include "cpu.h"
-#include "tcg-op.h"
 
 #include "tb-helper.h"
 

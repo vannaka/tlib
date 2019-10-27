@@ -1,3 +1,5 @@
+#include "tcg-op.h"
+
 #include <infrastructure.h>
 
 #include <global_helper.h>

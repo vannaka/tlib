@@ -23,11 +23,9 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "infrastructure.h"
 #include "arch_callbacks.h"
 
 #include "cpu.h"
-#include "tcg-op.h"
 #include "host-utils.h"
 
 #include "tb-helper.h"

@@ -24,11 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
-#include "infrastructure.h"
 
 #include "cpu.h"
-
-#include "tcg-op.h"
 
 #include "tb-helper.h"
 

@@ -27,7 +27,6 @@
 #include "arch_callbacks.h"
 
 /* global register indices */
-static TCGv_ptr cpu_env;
 static TCGv cpu_gpr[32], cpu_pc;
 static TCGv_i64 cpu_fpr[32]; /* assume F and D extensions */
 

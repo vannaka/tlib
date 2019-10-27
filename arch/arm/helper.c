@@ -681,10 +681,7 @@ static void do_interrupt_v7m(CPUState *env)
     }
 
 #ifndef NO_INTERRUPTS_IN_IT_BLOCK
-    if(env->condexec_bits)
-    {
-      env->condexec_bits = 0;
-    }
+    env->condexec_bits = 0;
 #endif
 
     /* Align stack pointer.  */

@@ -2883,17 +2883,9 @@ void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
     target_ulong npc;
     env->pc = tcg->gen_opc_pc[pc_pos];
     npc = tcg->gen_opc_additional[pc_pos];
-    if (npc == 1) {
-        /* dynamic NPC: already stored */
-    } else if (npc == 2) {
-        /* jump PC: use 'cond' and the jump targets of the translation */
-        if (env->cond) {
-            env->npc = gen_opc_jump_pc[0];
-        } else {
-            env->npc = gen_opc_jump_pc[1];
-        }
-    } else {
-        env->npc = npc;
+    if (npc != 1) {
+        /* 1 -- dynamic NPC: already stored */
+        env->npc = (npc != 2) ? npc : gen_opc_jump_pc[env->cond ? 0 : 1];
     }
 
     /* flush pending conditional evaluations before exposing cpu state */

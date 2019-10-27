@@ -97,7 +97,6 @@ void translate_init()
     };
 
     /* init various static tables */
-    cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
     cpu_regwptr = tcg_global_mem_new_ptr(TCG_AREG0, offsetof(CPUState, regwptr),
                                          "regwptr");
     cpu_wim = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, wim),

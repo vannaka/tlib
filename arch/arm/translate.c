@@ -84,8 +84,6 @@ void translate_init(void)
          "r8", "r9", "r10", "r11", "r12", "r13", "r14", "pc" };
 
     int i;
-    cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
-
     for (i = 0; i < 16; i++) {
         cpu_R[i] = tcg_global_mem_new_i32(TCG_AREG0,
                                           offsetof(CPUState, regs[i]),

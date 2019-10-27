@@ -106,7 +106,6 @@ typedef struct DisasContext {
 
 void translate_init(void)
 {
-    cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
     cpu_cc_op = tcg_global_mem_new_i32(TCG_AREG0,
                                        offsetof(CPUState, cc_op), "cc_op");
     cpu_cc_src = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, cc_src),

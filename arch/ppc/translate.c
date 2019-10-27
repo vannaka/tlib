@@ -80,8 +80,6 @@ void translate_init(void)
         + 2*(10*6 + 22*7) /* AVRh, AVRl */
         + 8*5 /* CRF */];
 
-    cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
-
     p = cpu_reg_names;
     cpu_reg_names_size = sizeof(cpu_reg_names);
 

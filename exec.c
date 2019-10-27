@@ -397,6 +397,8 @@ void code_gen_free(void) {
   tlib_free(tbs);
 }
 
+TCGv_ptr cpu_env;
+
 /* Must be called before using the QEMU cpus.*/
 
 void cpu_exec_init_all()
@@ -408,6 +410,7 @@ void cpu_exec_init_all()
     /* There's no guest base to take into account, so go ahead and
        initialize the prologue now.  */
     tcg_prologue_init();
+    cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
 }
 
 void cpu_exec_init(CPUState *env)

@@ -55,8 +55,6 @@ void translate_init(void)
       "fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11"
     };
 
-    cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
-
     /* cpu_gpr[0] is a placeholder for the zero register. Do not use it. */
     /* Use the gen_set_gpr and gen_get_gpr helper functions when accessing */
     /* registers, unless you specifically block reads/writes to reg 0 */

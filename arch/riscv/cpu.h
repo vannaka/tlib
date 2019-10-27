@@ -144,8 +144,6 @@ struct CPUState {
     CPU_COMMON
 };
 
-#define CPU_PC(x) x->pc
-
 int cpu_exec(CPUState *s);
 int cpu_init(const char *cpu_model);
 

@@ -11,6 +11,10 @@
 #include "bswap.h"
 #include "tlib-queue.h"
 
+#ifndef CPU_PC
+#define CPU_PC(x) x->pc
+#endif
+
 /* address in the RAM (different from a physical address) */
 typedef uintptr_t ram_addr_t;
 

@@ -247,8 +247,6 @@ typedef struct SparcTLBEntry {
     uint64_t tte;
 } SparcTLBEntry;
 
-#define CPU_PC(x) x->pc
-
 // +---------------------------------------+
 // | ALL FIELDS WHICH STATE MUST BE STORED |
 // | DURING SERIALIZATION SHOULD BE PLACED |

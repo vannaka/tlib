@@ -67,8 +67,6 @@ static TCGv_i32 cpu_tmp2_i32, cpu_tmp3_i32;
 static TCGv_i64 cpu_tmp1_i64;
 static TCGv cpu_tmp5;
 
-static uint8_t gen_opc_cc_op[OPC_BUF_SIZE];
-
 #ifdef TARGET_X86_64
 static int x86_64_hregs;
 #endif
@@ -7686,7 +7684,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
     DisasContext *dc = (DisasContext*)base;
 
     if (base->tb->search_pc) {
-        gen_opc_cc_op[gen_opc_ptr - tcg->gen_opc_buf] = dc->cc_op;
+        tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = dc->cc_op;
     }
 
     base->tb->size += disas_insn(env, (DisasContext*)base);
@@ -7719,7 +7717,7 @@ void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
 {
     int cc_op;
     env->eip = tcg->gen_opc_pc[pc_pos] - tb->cs_base;
-    cc_op = gen_opc_cc_op[pc_pos];
+    cc_op = tcg->gen_opc_additional[pc_pos];
     if (cc_op != CC_OP_DYNAMIC)
         env->cc_op = cc_op;
 }

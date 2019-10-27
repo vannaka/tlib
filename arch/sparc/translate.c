@@ -55,7 +55,6 @@ static TCGv_i64 cpu_tmp64;
 /* Floating point registers */
 static TCGv_i32 cpu_fpr[TARGET_FPREGS];
 
-static target_ulong gen_opc_npc[OPC_BUF_SIZE];
 static target_ulong gen_opc_jump_pc[2];
 
 typedef struct DisasContext {
@@ -2831,7 +2830,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
     DisasContext *dc = (DisasContext*)base;
 
     if (base->tb->search_pc) {
-        gen_opc_npc[gen_opc_ptr - tcg->gen_opc_buf] = base->npc;
+        tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = base->npc;
     }
 
     base->tb->size += disas_insn(env, (DisasContext*)base);
@@ -2883,7 +2882,7 @@ void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
 {
     target_ulong npc;
     env->pc = tcg->gen_opc_pc[pc_pos];
-    npc = gen_opc_npc[pc_pos];
+    npc = tcg->gen_opc_additional[pc_pos];
     if (npc == 1) {
         /* dynamic NPC: already stored */
     } else if (npc == 2) {

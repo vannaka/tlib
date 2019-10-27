@@ -412,6 +412,7 @@ typedef struct tcg_t {
    TCGArg *gen_opparam_buf;
    uint8_t *code_gen_prologue;
    target_ulong *gen_opc_pc;
+   target_ulong *gen_opc_additional;
    uint8_t *gen_opc_instr_start;
    void *ldb;
    void *ldw;

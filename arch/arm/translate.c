@@ -99,8 +99,6 @@ void translate_init(void)
         offsetof(CPUState, exclusive_high), "exclusive_high");
 }
 
-static uint32_t gen_opc_condexec_bits[OPC_BUF_SIZE];
-
 /* These instructions trap after executing, so defer them until after the
    conditional executions state has been updated.  */
 #define DISAS_WFI 4
@@ -9943,7 +9941,7 @@ void setup_disas_context(DisasContextBase *base, CPUState *env) {
      * This is handled in the same way as restoration of the
      * PC in these situations: we will be called again with search_pc=1
      * and generate a mapping of the condexec bits for each PC in
-     * gen_opc_condexec_bits[]. restore_state_to_opc() then uses
+     * tcg->gen_opc_additional[]. restore_state_to_opc() then uses
      * this to restore the condexec bits.
      *
      * Note that there are no instructions which can read the condexec
@@ -9982,7 +9980,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
     DisasContext *dc = (DisasContext*)base;
 
     if (base->tb->search_pc) {
-        gen_opc_condexec_bits[gen_opc_ptr - tcg->gen_opc_buf] = (dc->condexec_cond << 4) | (dc->condexec_mask >> 1);
+        tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = (dc->condexec_cond << 4) | (dc->condexec_mask >> 1);
     }
 
     base->tb->size += disas_insn(env, (DisasContext*)base);
@@ -10046,7 +10044,7 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
 void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
 {
     env->regs[15] = tcg->gen_opc_pc[pc_pos];
-    env->condexec_bits = gen_opc_condexec_bits[pc_pos];
+    env->condexec_bits = tcg->gen_opc_additional[pc_pos];
 }
 
 int process_interrupt(int interrupt_request, CPUState *env)

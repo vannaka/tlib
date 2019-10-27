@@ -230,6 +230,7 @@ static TCGContext ctx;
 static TCGArg gen_opparam_buf[OPPARAM_BUF_SIZE];
 static uint16_t gen_opc_buf[OPC_BUF_SIZE];
 static target_ulong gen_opc_pc[OPC_BUF_SIZE];
+static target_ulong gen_opc_additional[OPC_BUF_SIZE];
 static uint8_t gen_opc_instr_start[OPC_BUF_SIZE];
 
 void tcg_attach(tcg_t *c) {
@@ -239,6 +240,7 @@ void tcg_attach(tcg_t *c) {
     tcg->gen_opparam_buf = gen_opparam_buf;
     tcg->gen_opc_buf = gen_opc_buf;
     tcg->gen_opc_pc = gen_opc_pc;
+    tcg->gen_opc_additional = gen_opc_additional;
     tcg->gen_opc_instr_start = gen_opc_instr_start;
 }
 

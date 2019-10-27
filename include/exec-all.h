@@ -50,6 +50,7 @@ CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc);
 int gen_intermediate_code(CPUState *env, struct DisasContextBase *base);
 int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp);
 uint32_t gen_intermediate_code_epilogue(CPUState *env, struct DisasContextBase *base);
+void do_interrupt(CPUState *env);
 void setup_disas_context(DisasContextBase *dc, CPUState *env);
 void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb,
                           int pc_pos);

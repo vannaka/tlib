@@ -996,7 +996,6 @@ void do_cpu_sipi(CPUState *env);
 #define MCE_INJECT_UNCOND_AO    2
 
 /* op_helper.c */
-void do_interrupt(CPUState *env);
 void do_interrupt_x86_hardirq(CPUState *env, int intno, int is_hw);
 void TLIB_NORETURN raise_exception_env(int exception_index, CPUState *nenv);
 void TLIB_NORETURN raise_exception_err_env(CPUState *nenv, int exception_index,

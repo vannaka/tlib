@@ -224,7 +224,6 @@ typedef struct CPUState {
 
 int cpu_init(const char *cpu_model);
 int cpu_exec(CPUState *s);
-void do_interrupt(CPUState *);
 void switch_mode(CPUState *, int);
 
 int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int rw,

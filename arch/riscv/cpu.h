@@ -191,8 +191,6 @@ void cpu_reset_nmi(CPUState *env, int number);
 void csr_write_helper(CPUState *env, target_ulong val_to_write,
         target_ulong csrno);
 
-void do_interrupt(CPUState *env);
-
 void do_nmi(CPUState *env);
 
 static inline void cpu_pc_from_tb(CPUState *cs, TranslationBlock *tb)

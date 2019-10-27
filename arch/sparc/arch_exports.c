@@ -43,18 +43,12 @@ void tlib_set_entry_point(uint32_t entry_point)
 
 void tlib_clear_wfi()
 {
-  if(cpu->wfi == 1)
-  {
-    cpu->wfi = 0;
-  }
+  cpu->wfi = 0;
 }
 
 void tlib_set_wfi()
 {
-  if(cpu->wfi == 0)
-  {
-    cpu->wfi = 1;
-  }
+  cpu->wfi = 1;
 }
 
 void tlib_before_save(CPUState *env)

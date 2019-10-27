@@ -581,7 +581,9 @@ int cpu_breakpoint_remove(CPUState *env, target_ulong pc, int flags);
 void cpu_breakpoint_remove_by_ref(CPUState *env, CPUBreakpoint *breakpoint);
 void cpu_breakpoint_remove_all(CPUState *env, int mask);
 
+int cpu_init(const char *cpu_model);
 void cpu_reset(CPUState *s);
+int cpu_exec(CPUState *env);
 
 /* Return the physical page corresponding to a virtual one. Use it
    only for debugging because no protection checks are done. Return -1

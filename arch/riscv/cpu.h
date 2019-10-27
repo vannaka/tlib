@@ -144,9 +144,6 @@ struct CPUState {
     CPU_COMMON
 };
 
-int cpu_exec(CPUState *s);
-int cpu_init(const char *cpu_model);
-
 void riscv_set_mode(CPUState *env, target_ulong newpriv);
 
 void helper_raise_exception(CPUState *env, uint32_t exception);

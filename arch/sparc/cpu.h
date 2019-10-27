@@ -312,14 +312,10 @@ typedef struct CPUState {
 } CPUState;
 
 /* helper.c */
-int cpu_init(const char *cpu_model);
 void cpu_sparc_set_id(CPUState *env, unsigned int cpu);
 int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int rw,
                                int mmu_idx, int is_softmmu);
 target_ulong mmu_probe(CPUState *env, target_ulong address, int mmulev);
-
-/* cpu-exec.c */
-int cpu_exec(CPUState *s);
 
 /* op_helper.c */
 target_ulong cpu_get_psr(CPUState *env);

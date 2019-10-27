@@ -766,8 +766,6 @@ typedef struct CPUState {
 
 } CPUState;
 
-int cpu_init(const char *cpu_model);
-int cpu_exec(CPUState *s);
 void x86_cpudef_setup(void);
 int cpu_x86_support_mca_broadcast(CPUState *env);
 

@@ -2824,8 +2824,6 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
 
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
-    DisasContext *dc = (DisasContext*)base;
-
     if (base->tb->search_pc) {
         tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = base->npc;
     }

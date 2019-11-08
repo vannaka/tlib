@@ -792,6 +792,20 @@ enum {
 /* The whole PowerPC CPU context */
 #define NB_MMU_MODES 3
 
+typedef struct DisasContext {
+    struct DisasContextBase base;
+    uint32_t opcode;
+    uint32_t exception;
+    int access_type;
+    /* Translation flags */
+    int le_mode;
+    int fpu_enabled;
+    int altivec_enabled;
+    int spe_enabled;
+    ppc_spr_t *spr_cb; /* Needed to check rights for mfspr/mtspr */
+    uint32_t vle_enabled;
+} DisasContext;
+
 struct ppc_def_t {
     const char *name;
     uint32_t pvr;

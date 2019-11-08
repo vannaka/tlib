@@ -56,23 +56,6 @@ static TCGv_i32 cpu_exclusive_high;
 static TCGv cpu_F0s, cpu_F1s;
 static TCGv_i64 cpu_F0d, cpu_F1d;
 
-/* internal defines */
-typedef struct DisasContext {
-    DisasContextBase base;
-    /* Nonzero if this instruction has been conditionally skipped.  */
-    int condjmp;
-    /* The label that will be jumped to when the instruction is skipped.  */
-    int condlabel;
-    /* Thumb-2 condtional execution bits.  */
-    int condexec_mask;
-    int condexec_cond;
-    int thumb;
-    int user;
-    int vfp_enabled;
-    int vec_len;
-    int vec_stride;
-} DisasContext;
-
 /* initialize TCG globals.  */
 void translate_init(void)
 {

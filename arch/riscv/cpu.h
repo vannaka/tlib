@@ -47,6 +47,11 @@ typedef struct custom_instruction_descriptor_t {
 } custom_instruction_descriptor_t;
 #define CPU_CUSTOM_INSTRUCTIONS_LIMIT 64
 
+typedef struct DisasContext {
+    struct DisasContextBase base;
+    uint32_t opcode;
+} DisasContext;
+
 typedef struct CPUState CPUState;
 
 #include "pmp.h"

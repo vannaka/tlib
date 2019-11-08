@@ -52,20 +52,6 @@ static TCGv_i32 cpu_fpscr;
 static TCGv_i32 cpu_access_type;
 
 /* internal defines */
-typedef struct DisasContext {
-    struct DisasContextBase base;
-    uint32_t opcode;
-    uint32_t exception;
-    int access_type;
-    /* Translation flags */
-    int le_mode;
-    int fpu_enabled;
-    int altivec_enabled;
-    int spe_enabled;
-    ppc_spr_t *spr_cb; /* Needed to check rights for mfspr/mtspr */
-    uint32_t vle_enabled;
-} DisasContext;
-
 void translate_init(void)
 {
     int i;

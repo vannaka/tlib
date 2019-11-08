@@ -242,6 +242,15 @@ typedef struct sparc_def_t {
 #define SFSR_CT_NOTRANS     (3ULL <<  4)
 #define SFSR_CT_MASK        (3ULL <<  4)
 
+typedef struct DisasContext {
+    struct DisasContextBase base;
+    target_ulong jump_pc[2]; /* used when JUMP_PC pc value is used */
+    int fpu_enabled;
+    int address_mask_32bit;
+    uint32_t cc_op;  /* current CC operation */
+    sparc_def_t *def;
+} DisasContext;
+
 typedef struct SparcTLBEntry {
     uint64_t tag;
     uint64_t tte;

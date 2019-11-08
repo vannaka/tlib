@@ -55,15 +55,6 @@ static TCGv_i32 cpu_fpr[TARGET_FPREGS];
 
 static target_ulong gen_opc_jump_pc[2];
 
-typedef struct DisasContext {
-    struct DisasContextBase base;
-    target_ulong jump_pc[2]; /* used when JUMP_PC pc value is used */
-    int fpu_enabled;
-    int address_mask_32bit;
-    uint32_t cc_op;  /* current CC operation */
-    sparc_def_t *def;
-} DisasContext;
-
 void translate_init()
 {
     unsigned int i;

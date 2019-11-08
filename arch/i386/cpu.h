@@ -593,6 +593,39 @@ typedef struct {
     uint64_t mask;
 } MTRRVar;
 
+typedef struct DisasContext {
+    struct DisasContextBase base;
+    /* current insn context */
+    int override; /* -1 if no override */
+    int prefix;
+    int aflag, dflag;
+    /* current block context */
+    target_ulong cs_base; /* base of CS segment */
+    int pe;     /* protected mode */
+    int code32; /* 32 bit code segment */
+#ifdef TARGET_X86_64
+    int lma;    /* long mode active */
+    int code64; /* 64 bit code segment */
+    int rex_x, rex_b;
+#endif
+    int ss32;   /* 32 bit stack segment */
+    int cc_op;  /* current CC operation */
+    int addseg; /* non zero if either DS/ES/SS have a non zero base */
+    int f_st;   /* currently unused */
+    int vm86;   /* vm86 mode */
+    int cpl;
+    int iopl;
+    int tf;     /* TF cpu flag */
+    int jmp_opt; /* use direct block chaining for direct jumps */
+    uint64_t flags; /* all execution flags */
+    int popl_esp_hack; /* for correct popl with esp base handling */
+    int rip_offset; /* only used in x86_64, but left for simplicity */
+    int cpuid_features;
+    int cpuid_ext_features;
+    int cpuid_ext2_features;
+    int cpuid_ext3_features;
+} DisasContext;
+
 #define CPU_NB_REGS64 16
 #define CPU_NB_REGS32 8
 

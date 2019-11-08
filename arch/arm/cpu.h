@@ -51,6 +51,22 @@
 #define ARMV7M_EXCP_PENDSV  14
 #define ARMV7M_EXCP_SYSTICK 15
 
+typedef struct DisasContext {
+    DisasContextBase base;
+    /* Nonzero if this instruction has been conditionally skipped.  */
+    int condjmp;
+    /* The label that will be jumped to when the instruction is skipped.  */
+    int condlabel;
+    /* Thumb-2 condtional execution bits.  */
+    int condexec_mask;
+    int condexec_cond;
+    int thumb;
+    int user;
+    int vfp_enabled;
+    int vec_len;
+    int vec_stride;
+} DisasContext;
+
 /* ARM-specific interrupt pending bits.  */
 #define CPU_INTERRUPT_FIQ   CPU_INTERRUPT_TGT_EXT_1
 

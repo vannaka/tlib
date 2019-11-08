@@ -28,11 +28,6 @@ static TCGv_i64 cpu_fpr[32]; /* assume F and D extensions */
 
 #include "tb-helper.h"
 
-typedef struct DisasContext {
-    struct DisasContextBase base;
-    uint32_t opcode;
-} DisasContext;
-
 void translate_init(void)
 {
     int i;

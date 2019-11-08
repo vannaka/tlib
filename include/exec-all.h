@@ -25,6 +25,7 @@
 #include <string.h>
 #include <limits.h>
 #include "compiler.h"
+#include "cpu.h"
 
 CPUState *env;
 
@@ -40,16 +41,14 @@ typedef ram_addr_t tb_page_addr_t;
 #define DISAS_TB_JUMP 3 /* only pc was modified statically */
 
 struct TranslationBlock;
-struct DisasContextBase;
 typedef struct TranslationBlock TranslationBlock;
-typedef struct DisasContextBase DisasContextBase;
 
 void gen_exit_tb(uintptr_t, TranslationBlock*);
 void gen_exit_tb_no_chaining(TranslationBlock*);
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc);
-int gen_intermediate_code(CPUState *env, struct DisasContextBase *base);
+int gen_intermediate_code(CPUState *env, DisasContextBase *base);
 int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp);
-uint32_t gen_intermediate_code_epilogue(CPUState *env, struct DisasContextBase *base);
+uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base);
 void do_interrupt(CPUState *env);
 void setup_disas_context(DisasContextBase *dc, CPUState *env);
 void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb,
@@ -134,14 +133,6 @@ struct TranslationBlock {
     char* lock_file;
     int lock_line;
 #endif
-};
-
-struct DisasContextBase {
-    struct TranslationBlock *tb;
-    target_ulong pc;
-    target_ulong npc;
-    int mem_idx;
-    int is_jmp;
 };
 
 static inline unsigned int tb_jmp_cache_hash_page(target_ulong pc)

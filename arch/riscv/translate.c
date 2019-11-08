@@ -1989,7 +1989,7 @@ void setup_disas_context(DisasContextBase *dc, CPUState *env) {
 }
 
 int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     generate_exception(dc, EXCP_DEBUG);
     /* Advance PC so that clearing the breakpoint will
       invalidate this TB.  */
@@ -1999,7 +1999,7 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
 
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
-    base->tb->size += disas_insn(env, (DisasContext*)base);
+    base->tb->size += disas_insn(env, (DisasContext *) base);
 
     if ((base->pc - (base->tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
         return 0;
@@ -2015,7 +2015,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 }
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     switch (dc->base.is_jmp) {
         case BS_STOP:
             gen_goto_tb(dc, 0, dc->base.pc);

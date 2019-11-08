@@ -2783,7 +2783,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
 }
 
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     dc->base.npc = (target_ulong) dc->base.tb->cs_base;
     dc->cc_op = CC_OP_DYNAMIC;
     dc->base.mem_idx = cpu_mmu_index(env);
@@ -2803,7 +2803,7 @@ void setup_disas_context(DisasContextBase *base, CPUState *env) {
 }
 
 int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     if (dc->base.pc != dc->base.tb->pc) {
         save_state(dc, cpu_cond);
     }
@@ -2819,7 +2819,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
         tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = base->npc;
     }
 
-    base->tb->size += disas_insn(env, (DisasContext*)base);
+    base->tb->size += disas_insn(env, (DisasContext *) base);
 
     /* if the next PC is different, we abort now */
     if ((base->pc - base->tb->pc) != base->tb->size) {
@@ -2837,7 +2837,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 }
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     tcg_temp_free(cpu_addr);
     tcg_temp_free(cpu_val);
     tcg_temp_free(cpu_dst);

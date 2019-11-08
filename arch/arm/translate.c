@@ -9879,7 +9879,7 @@ int disas_insn(CPUState *env, DisasContext *dc) {
 }
 
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     dc->condjmp = 0;
     dc->thumb = ARM_TBFLAG_THUMB(dc->base.tb->flags);
     dc->condexec_mask = (ARM_TBFLAG_CONDEXEC(dc->base.tb->flags) & 0xf) << 1;
@@ -9939,7 +9939,7 @@ void setup_disas_context(DisasContextBase *base, CPUState *env) {
 }
 
 int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     gen_exception_insn(dc, 0, EXCP_DEBUG);
     LOCK_TB(dc->base.tb);
     /* Advance PC so that clearing the breakpoint will
@@ -9955,13 +9955,13 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
 
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
 
     if (base->tb->search_pc) {
         tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = (dc->condexec_cond << 4) | (dc->condexec_mask >> 1);
     }
 
-    base->tb->size += disas_insn(env, (DisasContext*)base);
+    base->tb->size += disas_insn(env, (DisasContext *) base);
 
     if (dc->condjmp && !dc->base.is_jmp) {
         gen_set_label(dc->condlabel);
@@ -9974,7 +9974,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 }
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     /* At this stage dc.condjmp will only be set when the skipped
        instruction was a conditional branch or trap, and the PC has
        already been written.  */

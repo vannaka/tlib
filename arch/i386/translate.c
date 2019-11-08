@@ -7584,7 +7584,7 @@ static int disas_insn(CPUState *env, DisasContext *s)
 }
 
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     dc->pe = (dc->base.tb->flags >> HF_PE_SHIFT) & 1;
     dc->code32 = (dc->base.tb->flags >> HF_CS32_SHIFT) & 1;
     dc->ss32 = (dc->base.tb->flags >> HF_SS32_SHIFT) & 1;
@@ -7633,7 +7633,7 @@ void setup_disas_context(DisasContextBase *base, CPUState *env) {
 }
 
 int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     if (!((bp->flags & BP_CPU) && (dc->base.tb->flags & HF_RF_MASK))) {
         gen_debug(dc, dc->base.pc - dc->cs_base);
         return 1;
@@ -7646,13 +7646,13 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
    information for each intermediate instruction. */
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
 
     if (base->tb->search_pc) {
         tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = dc->cc_op;
     }
 
-    base->tb->size += disas_insn(env, (DisasContext*)base);
+    base->tb->size += disas_insn(env, (DisasContext *) base);
 
     /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
        the flag and abort the translation to give the irqs a
@@ -7669,7 +7669,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 }
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     gen_jmp_im(dc->base.pc - dc->cs_base);
     gen_eob(dc);
     #ifdef TARGET_X86_64

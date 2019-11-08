@@ -7950,7 +7950,7 @@ int disas_insn(CPUState *env, DisasContext *dc) {
 }
 
 void setup_disas_context(DisasContextBase *base, CPUState *env) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     dc->exception = POWERPC_EXCP_NONE;
     dc->spr_cb = env->spr_cb;
     dc->base.mem_idx = env->mmu_idx;
@@ -7969,18 +7969,18 @@ void setup_disas_context(DisasContextBase *base, CPUState *env) {
 }
 
 int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp) {
-    gen_debug_exception((DisasContext*)base);
+    gen_debug_exception((DisasContext *) base);
     return 1;
 }
 
 /*****************************************************************************/
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
 
-    base->tb->size += disas_insn(env, (DisasContext*)base);
+    base->tb->size += disas_insn(env, (DisasContext *) base);
 
-    if (unlikely(((base->pc & (TARGET_PAGE_SIZE - 1)) == 0))) {
+    if (unlikely((base->pc & (TARGET_PAGE_SIZE - 1)) == 0)) {
         /* if we reach a page boundary, stop generation */
         return 0;
     }
@@ -7991,7 +7991,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 }
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base) {
-    DisasContext *dc = (DisasContext*)base;
+    DisasContext *dc = (DisasContext *) base;
     if (dc->exception == POWERPC_EXCP_NONE) {
         gen_goto_tb(dc, 0, dc->base.pc);
     } else if (dc->exception != POWERPC_EXCP_BRANCH) {

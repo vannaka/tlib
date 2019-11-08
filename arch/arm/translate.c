@@ -2595,9 +2595,9 @@ static int disas_cp15_insn(CPUState *env, DisasContext *s, uint32_t insn)
 
     if (cp15_tls_load_store(env, s, insn, rd))
         return 0;
-    
+
     tmp2 = tcg_const_i32(insn);
-    if(((insn & (1 << 25)) == 0)) 
+    if(((insn & (1 << 25)) == 0))
     {
         uint32_t rd2;
         rd = (insn >> 12) & 0xf;
@@ -2605,20 +2605,20 @@ static int disas_cp15_insn(CPUState *env, DisasContext *s, uint32_t insn)
 
         if(insn & (1 << 20))
         {
-            /* mrrc */ 
+            /* mrrc */
             TCGv val, rd_val, rd2_val;
             val = tcg_temp_new_i64();
-            
+
             rd_val = tcg_temp_new_i32();
             rd2_val = tcg_temp_new_i32();
-            
+
             gen_helper_get_cp15_64bit(val, cpu_env, tmp2);
-                        
+
             tcg_gen_trunc_i64_i32(rd_val, val);
             tcg_gen_shri_i64(val, val, 32);
-            tcg_gen_trunc_i64_i32(rd2_val, val); 
-           
-            /* If the destination register is r15 then sets condition codes.  */ 
+            tcg_gen_trunc_i64_i32(rd2_val, val);
+
+            /* If the destination register is r15 then sets condition codes.  */
             if (rd != 15)
             {
                 store_reg(s, rd, rd_val);
@@ -2629,21 +2629,21 @@ static int disas_cp15_insn(CPUState *env, DisasContext *s, uint32_t insn)
                 tcg_temp_free_i32(rd_val);
                 tcg_temp_free_i32(rd2_val);
             }
-             tcg_temp_free_i64(val); 
+             tcg_temp_free_i64(val);
              return 0;
         }
         else
         {
-            /* mcrr */ 
+            /* mcrr */
             TCGv tmp_rd, tmp_rd2;
             tmp_rd = load_reg(s, rd);
             tmp_rd2 = load_reg(s, rd2);
-            
+
             gen_helper_set_cp15_64bit(cpu_env, tmp2, tmp_rd, tmp_rd2);
-            
+
             tcg_temp_free_i32(tmp_rd);
             tcg_temp_free_i32(tmp_rd2);
-            
+
             /* Normally we would always end the TB here, but Linux
              * arch/arm/mach-pxa/sleep.S expects two instructions following
              * an MMU enable to execute from cache.  Imitate this behaviour.  */
@@ -2656,7 +2656,7 @@ static int disas_cp15_insn(CPUState *env, DisasContext *s, uint32_t insn)
         tcg_temp_free_i32(tmp2);
         return 0;
     }
-    
+
     if (insn & ARM_CP_RW_BIT) {
         tmp = tcg_temp_new_i32();
         gen_helper_get_cp15(tmp, cpu_env, tmp2);

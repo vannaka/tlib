@@ -69,22 +69,15 @@ void cpu_reset(CPUState *env)
 int riscv_cpu_hw_interrupts_pending(CPUState *env)
 {
     target_ulong pending_interrupts = env->mip & env->mie;
+    target_ulong priv = env->priv;
+    target_ulong enabled_interrupts = 0;
 
-    target_ulong mie = get_field(env->mstatus, MSTATUS_MIE);
-    target_ulong m_enabled = env->priv < PRV_M || (env->priv == PRV_M && mie);
-    target_ulong enabled_interrupts = pending_interrupts &
-                                      ~env->mideleg & -m_enabled;
+    if (priv < PRV_M || (priv == PRV_M && get_field(env->mstatus, MSTATUS_MIE)))
+        enabled_interrupts |= pending_interrupts & ~env->mideleg;
+    if (priv < PRV_S || (priv == PRV_S && get_field(env->mstatus, MSTATUS_SIE)))
+        enabled_interrupts |=  pending_interrupts & env->mideleg;
 
-    target_ulong sie = get_field(env->mstatus, MSTATUS_SIE);
-    target_ulong s_enabled = env->priv < PRV_S || (env->priv == PRV_S && sie);
-    enabled_interrupts |= pending_interrupts & env->mideleg &
-                          -s_enabled;
-
-    if (enabled_interrupts) {
-        return ctz64(enabled_interrupts); /* since non-zero */
-    } else {
-        return EXCP_NONE; /* indicates no pending interrupt */
-    }
+    return enabled_interrupts ? ctz64(enabled_interrupts) : EXCP_NONE;
 }
 
 /* get_physical_address - get the physical address for this virtual address

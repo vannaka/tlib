@@ -60,6 +60,32 @@ void cpu_reset(CPUState *env)
     env->pmp_napot_grain = -1;
 }
 
+int get_interrupts_in_order(target_ulong pending_interrupts, target_ulong priv)
+{
+    /* Interrupt shoud be taken in order:
+     * External = priv | 0x1000
+     * Software = priv | 0x0000
+     * Timer    = priv | 0x0100
+     * We should take interrupts for priority >= env->priv
+     * If no interrupt should be taken returns -1 */
+    int bit = EXCP_NONE;
+    if (pending_interrupts & 0b1111) {
+        for(int i=PRV_M; i >= priv; i--){
+            if ((1 << (bit = i | 8)) & pending_interrupts) /* external int */
+                break;
+            if ((1 << (bit = i | 0)) & pending_interrupts) /* software int */
+                break;
+            if ((1 << (bit = i | 4)) & pending_interrupts) /* timer int */
+                break;
+            }
+        return bit;
+    } else {
+    /* synchronous exceptions */
+        bit = ctz64(pending_interrupts);
+        return (bit >= TARGET_LONG_BITS - 1) ? EXCP_NONE : bit;
+    }
+}
+
 /*
  * Return RISC-V IRQ number if an interrupt should be taken, else -1.
  * Used in cpu-exec.c
@@ -72,12 +98,29 @@ int riscv_cpu_hw_interrupts_pending(CPUState *env)
     target_ulong priv = env->priv;
     target_ulong enabled_interrupts = 0;
 
+    switch (priv) {
+    /* Disable interrupts with lower privileges, if priv > M, must be M with disabled interrupts */
+    case PRV_M:
+        pending_interrupts &= ~(MIP_HSIP & MIP_HTIP & MIP_HEIP); /* fall through */
+    case PRV_H:
+        pending_interrupts &= ~(MIP_SSIP & MIP_STIP & MIP_SEIP); /* fall through */
+    case PRV_S:
+        pending_interrupts &= ~(MIP_USIP & MIP_UTIP & MIP_UEIP); /* fall through */
+    case PRV_U:
+        break;
+    }
+
     if (priv < PRV_M || (priv == PRV_M && get_field(env->mstatus, MSTATUS_MIE)))
         enabled_interrupts |= pending_interrupts & ~env->mideleg;
     if (priv < PRV_S || (priv == PRV_S && get_field(env->mstatus, MSTATUS_SIE)))
         enabled_interrupts |=  pending_interrupts & env->mideleg;
 
-    return enabled_interrupts ? ctz64(enabled_interrupts) : EXCP_NONE;
+    if (!enabled_interrupts)
+        return EXCP_NONE;
+
+    return (env->privilege_architecture >= RISCV_PRIV1_11) ?
+            get_interrupts_in_order(enabled_interrupts, priv) :
+            ctz64(enabled_interrupts);
 }
 
 /* get_physical_address - get the physical address for this virtual address

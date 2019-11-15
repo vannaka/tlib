@@ -309,21 +309,24 @@ void do_interrupt(CPUState *env)
         do_nmi(env);
         return;
     }
+
     if (env->exception_index == EXCP_NONE)
         return;
+
     if (env->exception_index == RISCV_EXCP_BREAKPOINT) {
         env->interrupt_request |= CPU_INTERRUPT_EXITTB;
         return;
     }
 
-    /* skip dcsr cause check */
-
     target_ulong fixed_cause = 0;
-    char is_interrupt = 0;
+    target_ulong bit = 0;
+    uint8_t is_interrupt = 0;
+
     if (env->exception_index & (RISCV_EXCP_INT_FLAG)) {
         /* hacky for now. the MSB (bit 63) indicates interrupt but cs->exception
            index is only 32 bits wide */
         fixed_cause = env->exception_index & RISCV_EXCP_INT_MASK;
+        bit = fixed_cause;
         fixed_cause |= ((target_ulong)1) << (TARGET_LONG_BITS - 1);
         is_interrupt = 1;
     } else {
@@ -346,14 +349,10 @@ void do_interrupt(CPUState *env)
         } else {
             fixed_cause = env->exception_index;
         }
+        bit = fixed_cause;
     }
 
-    target_ulong backup_epc = env->pc;
-
-    target_ulong bit = fixed_cause;
-    target_ulong deleg = env->medeleg;
-
-    int hasbadaddr =
+    uint8_t hasbadaddr =
         (fixed_cause == RISCV_EXCP_ILLEGAL_INST) ||
         (fixed_cause == RISCV_EXCP_INST_ADDR_MIS) ||
         (fixed_cause == RISCV_EXCP_INST_ACCESS_FAULT) ||
@@ -365,25 +364,38 @@ void do_interrupt(CPUState *env)
         (fixed_cause == RISCV_EXCP_LOAD_PAGE_FAULT) ||
         (fixed_cause == RISCV_EXCP_STORE_PAGE_FAULT);
 
-    if (bit & ((target_ulong)1 << (TARGET_LONG_BITS - 1))) {
-        deleg = env->mideleg;
-        bit &= ~((target_ulong)1 << (TARGET_LONG_BITS - 1));
-    }
+    if (env->priv == PRV_M || !((is_interrupt? env->mideleg : env->medeleg) & (1 << bit))) {
+    /* handle the trap in M-mode */
+        env->mepc = env->pc;
+        env->mcause = fixed_cause;
+        if (hasbadaddr)
+            env->mtval = env->badaddr;
 
-    if (env->priv <= PRV_S && bit < 64 && ((deleg >> bit) & 1)) {       // DA_FQ ?
-        /* handle the trap in S-mode */
-        if ((env->stvec & 1) && is_interrupt && (env->privilege_architecture >= RISCV_PRIV1_10)) {
-            env->pc = (env->stvec & ~0x1) + (fixed_cause * 4);
-        } else {
-            env->pc = env->stvec;
-        }
+        /* Lowest bit of MTVEC changes mode to vectored interrupt */
+        if ((env->mtvec & 1) && is_interrupt && env->privilege_architecture >= RISCV_PRIV1_10)
+            env->pc = (env->mtvec & ~0x1) + (fixed_cause * 4);
+        else
+            env->pc = env->mtvec;
 
+        target_ulong ms = env->mstatus;
+        ms = set_field(ms, MSTATUS_MPIE,
+            (env->privilege_architecture >= RISCV_PRIV1_10) ? get_field(ms, MSTATUS_MIE) : get_field(ms, 1 << env->priv));
+        ms = set_field(ms, MSTATUS_MIE, 0);
+        ms = set_field(ms, MSTATUS_MPP, env->priv);
+        csr_write_helper(env, ms, CSR_MSTATUS);
+        riscv_set_mode(env, PRV_M);
+    } else {
+    /* handle the trap in S-mode */
+        env->sepc = env->pc;
         env->scause = fixed_cause;
-        env->sepc = backup_epc;
-
-        if (hasbadaddr) {
+        if (hasbadaddr)
             env->stval = env->badaddr;
-        }
+
+        /* Lowest bit of STVEC changes mode to vectored interrupt */
+        if ((env->stvec & 1) && is_interrupt && (env->privilege_architecture >= RISCV_PRIV1_10))
+            env->pc = (env->stvec & ~0x1) + (fixed_cause * 4);
+        else
+            env->pc = env->stvec;
 
         target_ulong s = env->mstatus;
         s = set_field(s, SSTATUS_SPIE,
@@ -392,26 +404,6 @@ void do_interrupt(CPUState *env)
         s = set_field(s, SSTATUS_SPP, env->priv);
         csr_write_helper(env, s, CSR_SSTATUS);
         riscv_set_mode(env, PRV_S);
-    } else {
-        /* Lowest bit of MTVEC changes mode to vectored interrupt */
-        if ((env->mtvec & 1) && is_interrupt && (env->privilege_architecture >= RISCV_PRIV1_10)) {
-            env->pc = (env->mtvec & ~0x1) + (fixed_cause * 4);
-        } else {
-            env->pc = env->mtvec;
-        }
-        env->mepc = backup_epc;
-        env->mcause = fixed_cause;
-
-        if (hasbadaddr) {
-            env->mtval = env->badaddr;
-        }
-
-        target_ulong ms = env->mstatus;
-        ms = set_field(ms, MSTATUS_MPIE, (env->privilege_architecture >= RISCV_PRIV1_10) ? get_field(ms, MSTATUS_MIE) : get_field(ms, 1 << env->priv));
-        ms = set_field(ms, MSTATUS_MIE, 0);
-        ms = set_field(ms, MSTATUS_MPP, env->priv);
-        csr_write_helper(env, ms, CSR_MSTATUS);
-        riscv_set_mode(env, PRV_M);
     }
     /* TODO yield load reservation  */
     env->exception_index = EXCP_NONE; /* mark as handled */

@@ -2130,7 +2130,7 @@ int process_interrupt(int interrupt_request, CPUState *env)
         if (env->nmi_pending > NMI_NONE) {
             do_interrupt(env);
             return 1;
-        } else if (interruptno + 1) {
+        } else if (interruptno != EXCP_NONE) {
             env->exception_index = RISCV_EXCP_INT_FLAG | interruptno;
             do_interrupt(env);
             return 1;

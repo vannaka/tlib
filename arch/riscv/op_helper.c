@@ -718,6 +718,7 @@ void riscv_set_mode(CPUState *env, target_ulong newpriv)
 target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
 {
     if (env->priv != PRV_S) {
+        tlib_printf(LOG_LEVEL_ERROR, "Trying to execute Sret from privilege level %u.\n", env->priv);
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
 
@@ -729,7 +730,7 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
     target_ulong sstatus = env->mstatus;
     target_ulong prev_priv = get_field(sstatus, SSTATUS_SPP);
     sstatus = set_field(sstatus,
-        (env->privilege_architecture >= RISCV_PRIV1_10) ? SSTATUS_SIE : SSTATUS_UIE << prev_priv,
+        (env->privilege_architecture >= RISCV_PRIV1_10) ? SSTATUS_SIE : 1 << prev_priv,
         get_field(sstatus, SSTATUS_SPIE));
     sstatus = set_field(sstatus, SSTATUS_SPIE, 0);
     /* TO DO: if U-mode unsupported, change to M */
@@ -748,6 +749,7 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
 target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
 {
     if (env->priv != PRV_M) {
+        tlib_printf(LOG_LEVEL_ERROR, "Trying to execute Mret from privilege level %u.\n", env->priv);
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
 

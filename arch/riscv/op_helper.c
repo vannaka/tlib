@@ -143,8 +143,8 @@ target_ulong priv_version_csr_filter(CPUState *env, target_ulong csrno)
 inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         target_ulong csrno)
 {
-    uint64_t delegable_ints = MIP_SSIP | MIP_STIP | MIP_SEIP | (1 << IRQ_X_COP) | ~((1 << 12) - 1); //all local interrupts are delegable as well
-    uint64_t all_ints = delegable_ints | MIP_MSIP | MIP_MTIP | MIP_MEIP;
+    uint64_t delegable_ints = IRQ_SS | IRQ_ST | IRQ_SE | (1 << IRQ_X_COP) | ~((1 << 12) - 1); //all local interrupts are delegable as well
+    uint64_t all_ints = delegable_ints | IRQ_MS | IRQ_MT | IRQ_ME;
 
     csrno = priv_version_csr_filter(env, csrno);
 
@@ -215,7 +215,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         break;
     }
     case CSR_MIP: {
-        target_ulong mask = MIP_SSIP | MIP_STIP | MIP_SEIP;
+        target_ulong mask = IRQ_SS | IRQ_ST | IRQ_SE;
         pthread_mutex_lock(&env->mip_lock);
         env->mip = (env->mip & ~mask) | (val_to_write & mask);
         pthread_mutex_unlock(&env->mip_lock);
@@ -283,14 +283,14 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     case CSR_SIP: {
         target_ulong deleg = env->mideleg;
         target_ulong s = env->mip;
-        target_ulong mask = MIP_USIP | MIP_SSIP | MIP_UTIP | MIP_STIP | MIP_UEIP | MIP_SEIP;
+        target_ulong mask = IRQ_US | IRQ_SS | IRQ_UT | IRQ_ST | IRQ_UE | IRQ_SE;
         env->mip = (s & ~mask) | ((val_to_write & deleg) & mask);
         break;
     }
     case CSR_SIE: {
         target_ulong deleg = env->mideleg;
         target_ulong s = env->mie;
-        target_ulong mask = MIP_USIP | MIP_SSIP | MIP_UTIP | MIP_STIP | MIP_UEIP | MIP_SEIP;
+        target_ulong mask = IRQ_US | IRQ_SS | IRQ_UT | IRQ_ST | IRQ_UE | IRQ_SE;
         env->mie = (s & ~mask) | ((val_to_write & deleg) & mask);
         break;
     }
@@ -565,11 +565,11 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         return env->mstatus & mask;
     }
     case CSR_SIP: {
-        target_ulong mask = MIP_USIP | MIP_SSIP | MIP_UTIP | MIP_STIP | MIP_UEIP | MIP_SEIP;
+        target_ulong mask = IRQ_US | IRQ_SS | IRQ_UT | IRQ_ST | IRQ_UE | IRQ_SE;
         return env->mip & env->mideleg & mask;
     }
     case CSR_SIE: {
-        target_ulong mask = MIP_USIP | MIP_SSIP | MIP_UTIP | MIP_STIP | MIP_UEIP | MIP_SEIP;
+        target_ulong mask = IRQ_US | IRQ_SS | IRQ_UT | IRQ_ST | IRQ_UE | IRQ_SE;
         return env->mie & env->mideleg & mask;
     }
     case CSR_SEPC:

@@ -101,11 +101,11 @@ int riscv_cpu_hw_interrupts_pending(CPUState *env)
     switch (priv) {
     /* Disable interrupts with lower privileges, if priv > M, must be M with disabled interrupts */
     case PRV_M:
-        pending_interrupts &= ~(MIP_HSIP & MIP_HTIP & MIP_HEIP); /* fall through */
+        pending_interrupts &= ~(IRQ_HS & IRQ_HT & IRQ_HE); /* fall through */
     case PRV_H:
-        pending_interrupts &= ~(MIP_SSIP & MIP_STIP & MIP_SEIP); /* fall through */
+        pending_interrupts &= ~(IRQ_SS & IRQ_ST & IRQ_SE); /* fall through */
     case PRV_S:
-        pending_interrupts &= ~(MIP_USIP & MIP_UTIP & MIP_UEIP); /* fall through */
+        pending_interrupts &= ~(IRQ_US & IRQ_UT & IRQ_UE); /* fall through */
     case PRV_U:
         break;
     }

@@ -309,25 +309,18 @@
 #endif
 
 /* irqs */
-#define MIP_USIP            (1 << IRQ_U_SOFT)
-#define MIP_SSIP            (1 << IRQ_S_SOFT)
-#define MIP_HSIP            (1 << IRQ_H_SOFT)
-#define MIP_MSIP            (1 << IRQ_M_SOFT)
-#define MIP_UTIP            (1 << IRQ_U_TIMER)
-#define MIP_STIP            (1 << IRQ_S_TIMER)
-#define MIP_HTIP            (1 << IRQ_H_TIMER)
-#define MIP_MTIP            (1 << IRQ_M_TIMER)
-#define MIP_UEIP            (1 << IRQ_U_EXT)
-#define MIP_SEIP            (1 << IRQ_S_EXT)
-#define MIP_HEIP            (1 << IRQ_H_EXT)
-#define MIP_MEIP            (1 << IRQ_M_EXT)
-
-#define SIP_USIP            MIP_USIP
-#define SIP_SSIP            MIP_SSIP
-#define SUP_UTIP            MIP_UTIP
-#define SIP_STIP            MIP_STIP
-#define SIP_UEIP            MIP_UEIP
-#define SIP_SEIP            MIP_SEIP
+#define IRQ_US            (1 << IRQ_U_SOFT)
+#define IRQ_SS            (1 << IRQ_S_SOFT)
+#define IRQ_HS            (1 << IRQ_H_SOFT)
+#define IRQ_MS            (1 << IRQ_M_SOFT)
+#define IRQ_UT            (1 << IRQ_U_TIMER)
+#define IRQ_ST            (1 << IRQ_S_TIMER)
+#define IRQ_HT            (1 << IRQ_H_TIMER)
+#define IRQ_MT            (1 << IRQ_M_TIMER)
+#define IRQ_UE            (1 << IRQ_U_EXT)
+#define IRQ_SE            (1 << IRQ_S_EXT)
+#define IRQ_HE            (1 << IRQ_H_EXT)
+#define IRQ_ME            (1 << IRQ_M_EXT)
 
 #define PRV_U 0
 #define PRV_S 1

@@ -66,7 +66,6 @@ struct CPUState {
 
     target_ulong badaddr;
 
-    uint32_t mucounteren;
 
     target_ulong priv;
 
@@ -96,9 +95,11 @@ struct CPUState {
     target_ulong mcause;
     target_ulong mtval;  /* since: priv-1.10.0 */
 
-    uint32_t mscounteren;
+    uint32_t mucounteren; /* until 1.10.0 */
+    uint32_t mscounteren; /* until 1.10.0 */
     target_ulong scounteren; /* since: priv-1.10.0 */
     target_ulong mcounteren; /* since: priv-1.10.0 */
+    uint32_t mcountinhibit; /* since: priv-1.11 */
 
     target_ulong sscratch;
     target_ulong mscratch;

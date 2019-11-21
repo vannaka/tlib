@@ -94,14 +94,18 @@ static inline uint64_t get_mcycles_current(CPUState *env)
 
 target_ulong priv_version_csr_filter(CPUState *env, target_ulong csrno)
 {
-    if (env->privilege_architecture >= RISCV_PRIV1_10) {
+    if (env->privilege_architecture == RISCV_PRIV1_11) {
+        switch (csrno) {
+        case CSR_MSCOUNTEREN:
+            return CSR_UNHANDLED;
+        }
+    }if (env->privilege_architecture == RISCV_PRIV1_10) {
         switch(csrno) {
         case CSR_MUCOUNTEREN:
         case CSR_MSCOUNTEREN:
             return CSR_UNHANDLED;
         }
-        return csrno;
-    } else {
+    } else if (env->privilege_architecture == RISCV_PRIV1_09) {
         switch(csrno) {
         case CSR_SCOUNTEREN:
         case CSR_MCOUNTEREN:
@@ -127,8 +131,8 @@ target_ulong priv_version_csr_filter(CPUState *env, target_ulong csrno)
         case CSR_PMPADDR15:
             return CSR_UNHANDLED;
         }
-        return csrno;
     }
+    return csrno;
 }
 
 /*
@@ -249,8 +253,14 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
                                 | (val_to_write & mask);
         break;
     }
-    case CSR_MUCOUNTEREN:
-        env->mucounteren = val_to_write;
+    case CSR_MCOUNTINHIBIT:
+        /* There are different CSRs under this address in different privilege architecture versions:
+         * - in version 1.9.1 this address is used by mucounteren csr,
+         * - in version 1.11 this address is used by mcountinhibit csr. */
+        if (env->privilege_architecture == RISCV_PRIV1_09)
+            env->mucounteren = val_to_write;
+        else if (env->privilege_architecture >= RISCV_PRIV1_11)
+            env->mcountinhibit = val_to_write;
         break;
     case CSR_MSCOUNTEREN:
         env->mscounteren = val_to_write;
@@ -526,7 +536,14 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
 #endif
         break;
     case CSR_MUCOUNTEREN:
-        return env->mucounteren;
+        /* There are different CSRs under this address on different privilege architecture version:
+         * - in version 1.9.1 this address is used by mucounteren csr,
+         * - since version 1.11 this address is used by mcountinhibit csr. */
+        if (env->privilege_architecture ==  RISCV_PRIV1_09)
+            return env->mucounteren;
+        else if (env->privilege_architecture >= RISCV_PRIV1_11)
+            return env->mcountinhibit;
+        break;
     case CSR_MSCOUNTEREN:
         return env->mscounteren;
     case CSR_SSTATUS: {

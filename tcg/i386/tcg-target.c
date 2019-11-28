@@ -1642,6 +1642,9 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
     OP_32_64(mulu2):
         tcg_out_modrm(s, OPC_GRP3_Ev + rexw, EXT3_MUL, args[3]);
         break;
+    OP_32_64(muls2):
+        tcg_out_modrm(s, OPC_GRP3_Ev + rexw, EXT3_IMUL, args[3]);
+        break;
 #if TCG_TARGET_REG_BITS == 32
     case INDEX_op_brcond2_i32:
         tcg_out_brcond2(s, args, const_args, 0);

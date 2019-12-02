@@ -1304,9 +1304,6 @@ static inline int check_physical(CPUState *env, mmu_ctx_t *mmu_ctx,
     return ret;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
-
 int get_physical_address (CPUState *env, mmu_ctx_t *mmu_ctx, target_ulong eaddr,
                           int rw, int access_type)
 {
@@ -1337,9 +1334,12 @@ int get_physical_address (CPUState *env, mmu_ctx_t *mmu_ctx, target_ulong eaddr,
             if (env->nb_BATs != 0)
                 ret = get_bat(env, mmu_ctx, eaddr, rw, access_type);
 #if defined(TARGET_PPC64)
+                goto gph_nofallthrough;
         case POWERPC_MMU_620:
         case POWERPC_MMU_64B:
         case POWERPC_MMU_2_06:
+
+        gph_nofallthrough:
 #endif
             if (ret < 0) {
                 /* We didn't match any BAT entry or don't have BATs */
@@ -1373,8 +1373,6 @@ int get_physical_address (CPUState *env, mmu_ctx_t *mmu_ctx, target_ulong eaddr,
     }
     return ret;
 }
-
-#pragma GCC diagnostic pop
 
 target_phys_addr_t cpu_get_phys_page_debug (CPUState *env, target_ulong addr)
 {

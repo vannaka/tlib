@@ -73,7 +73,7 @@ void translate_init(void)
     for (i = 0; i < 8; i++) {
         snprintf(p, cpu_reg_names_size, "crf%d", i);
         cpu_crf[i] = tcg_global_mem_new_i32(TCG_AREG0,
-                                            offsetof(CPUState, crf[i]), p);
+                                        offsetof(CPUState, crf[i]), p);
         p += 5;
         cpu_reg_names_size -= 5;
     }
@@ -86,23 +86,23 @@ void translate_init(void)
         cpu_reg_names_size -= (i < 10) ? 3 : 4;
         snprintf(p, cpu_reg_names_size, "r%dH", i);
         cpu_gprh[i] = tcg_global_mem_new_i32(TCG_AREG0,
-                                             offsetof(CPUState, gprh[i]), p);
+                                        offsetof(CPUState, gprh[i]), p);
         p += (i < 10) ? 4 : 5;
         cpu_reg_names_size -= (i < 10) ? 4 : 5;
 
         snprintf(p, cpu_reg_names_size, "fp%d", i);
         cpu_fpr[i] = tcg_global_mem_new_i64(TCG_AREG0,
-                                            offsetof(CPUState, fpr[i]), p);
+                                        offsetof(CPUState, fpr[i]), p);
         p += (i < 10) ? 4 : 5;
         cpu_reg_names_size -= (i < 10) ? 4 : 5;
 
         snprintf(p, cpu_reg_names_size, "avr%dH", i);
 #ifdef HOST_WORDS_BIGENDIAN
         cpu_avrh[i] = tcg_global_mem_new_i64(TCG_AREG0,
-                                             offsetof(CPUState, avr[i].u64[0]), p);
+                                        offsetof(CPUState, avr[i].u64[0]), p);
 #else
         cpu_avrh[i] = tcg_global_mem_new_i64(TCG_AREG0,
-                                             offsetof(CPUState, avr[i].u64[1]), p);
+                                        offsetof(CPUState, avr[i].u64[1]), p);
 #endif
         p += (i < 10) ? 6 : 7;
         cpu_reg_names_size -= (i < 10) ? 6 : 7;
@@ -110,44 +110,44 @@ void translate_init(void)
         snprintf(p, cpu_reg_names_size, "avr%dL", i);
 #ifdef HOST_WORDS_BIGENDIAN
         cpu_avrl[i] = tcg_global_mem_new_i64(TCG_AREG0,
-                                             offsetof(CPUState, avr[i].u64[1]), p);
+                                        offsetof(CPUState, avr[i].u64[1]), p);
 #else
         cpu_avrl[i] = tcg_global_mem_new_i64(TCG_AREG0,
-                                             offsetof(CPUState, avr[i].u64[0]), p);
+                                        offsetof(CPUState, avr[i].u64[0]), p);
 #endif
         p += (i < 10) ? 6 : 7;
         cpu_reg_names_size -= (i < 10) ? 6 : 7;
     }
 
     cpu_nip = tcg_global_mem_new(TCG_AREG0,
-                                 offsetof(CPUState, nip), "nip");
+                                        offsetof(CPUState, nip), "nip");
 
     cpu_msr = tcg_global_mem_new(TCG_AREG0,
-                                 offsetof(CPUState, msr), "msr");
+                                        offsetof(CPUState, msr), "msr");
 
     cpu_ctr = tcg_global_mem_new(TCG_AREG0,
-                                 offsetof(CPUState, ctr), "ctr");
+                                        offsetof(CPUState, ctr), "ctr");
 
     cpu_lr = tcg_global_mem_new(TCG_AREG0,
-                                offsetof(CPUState, lr), "lr");
+                                        offsetof(CPUState, lr), "lr");
 
 #if defined(TARGET_PPC64)
     cpu_cfar = tcg_global_mem_new(TCG_AREG0,
-                                offsetof(CPUState, cfar), "cfar");
+                                        offsetof(CPUState, cfar), "cfar");
 #endif
 
     cpu_xer = tcg_global_mem_new(TCG_AREG0,
-                                 offsetof(CPUState, xer), "xer");
+                                        offsetof(CPUState, xer), "xer");
 
     cpu_reserve = tcg_global_mem_new(TCG_AREG0,
-                                     offsetof(CPUState, reserve_addr),
+                                        offsetof(CPUState, reserve_addr),
                                      "reserve_addr");
 
     cpu_fpscr = tcg_global_mem_new_i32(TCG_AREG0,
-                                       offsetof(CPUState, fpscr), "fpscr");
+                                        offsetof(CPUState, fpscr), "fpscr");
 
     cpu_access_type = tcg_global_mem_new_i32(TCG_AREG0,
-                                             offsetof(CPUState, access_type), "access_type");
+                                        offsetof(CPUState, access_type), "access_type");
 }
 
 struct opc_handler_t {

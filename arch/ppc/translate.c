@@ -387,22 +387,13 @@ EXTRACT_HELPER(LK, 0, 1);
 static inline target_ulong MASK(uint32_t start, uint32_t end)
 {
     target_ulong ret;
-#if defined(TARGET_PPC64)
-    if (likely(start == 0)) {
-        ret = UINT64_MAX << (63 - end);
-    } else if (likely(end == 63)) {
-        ret = UINT64_MAX >> start;
+    if (start == 0) {
+        ret = TARGET_ULONG_MAX << ((TARGET_LONG_BITS -1) - end);
+    } else if (end == (TARGET_LONG_BITS -1)) {
+        ret = TARGET_ULONG_MAX >> start;
     }
-#else
-    if (likely(start == 0)) {
-        ret = UINT32_MAX << (31  - end);
-    } else if (likely(end == 31)) {
-        ret = UINT32_MAX >> start;
-    }
-#endif
     else {
-        ret = (((target_ulong)(-1ULL)) >> (start)) ^
-            (((target_ulong)(-1ULL) >> (end)) >> 1);
+        ret = (TARGET_ULONG_MAX >> (start)) ^ ((TARGET_ULONG_MAX >> (end)) >> 1);
         if (unlikely(start > end))
             return ~ret;
     }

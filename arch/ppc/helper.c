@@ -560,10 +560,8 @@ static inline ppc_slb_t *slb_lookup(CPUState *env, target_ulong eaddr)
         /* We check for 1T matches on all MMUs here - if the MMU
          * doesn't have 1T segment support, we will have prevented 1T
          * entries from being inserted in the slbmte code. */
-        if (((slb->esid == esid_256M) &&
-             ((slb->vsid & SLB_VSID_B) == SLB_VSID_B_256M))
-            || ((slb->esid == esid_1T) &&
-                ((slb->vsid & SLB_VSID_B) == SLB_VSID_B_1T))) {
+        if (((slb->esid == esid_256M) && ((slb->vsid & SLB_VSID_B) == SLB_VSID_B_256M))
+            || ((slb->esid == esid_1T) && ((slb->vsid & SLB_VSID_B) == SLB_VSID_B_1T))) {
             return slb;
         }
     }
@@ -1270,13 +1268,9 @@ static inline int check_physical(CPUState *env, mmu_ctx_t *mmu_ctx,
             /* 403 family add some particular protections,
              * using PBL/PBU registers for accesses with no translation.
              */
-            in_plb =
-                /* Check PLB validity */
-                (env->pb[0] < env->pb[1] &&
-                 /* and address in plb area */
-                 eaddr >= env->pb[0] && eaddr < env->pb[1]) ||
-                (env->pb[2] < env->pb[3] &&
-                 eaddr >= env->pb[2] && eaddr < env->pb[3]) ? 1 : 0;
+            /* Check PLB validity and address in plb area */
+            in_plb = (env->pb[0] < env->pb[1] && eaddr >= env->pb[0] && eaddr < env->pb[1])
+               || (env->pb[2] < env->pb[3] && eaddr >= env->pb[2] && eaddr < env->pb[3]) ? 1 : 0;
             if (in_plb ^ msr_px) {
                 /* Access in protected area */
                 if (rw == 1) {
@@ -1334,7 +1328,7 @@ int get_physical_address (CPUState *env, mmu_ctx_t *mmu_ctx, target_ulong eaddr,
             if (env->nb_BATs != 0)
                 ret = get_bat(env, mmu_ctx, eaddr, rw, access_type);
 #if defined(TARGET_PPC64)
-                goto gph_nofallthrough;
+            goto gph_nofallthrough;
         case POWERPC_MMU_620:
         case POWERPC_MMU_64B:
         case POWERPC_MMU_2_06:

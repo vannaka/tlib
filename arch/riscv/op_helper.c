@@ -733,7 +733,7 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
         (env->privilege_architecture >= RISCV_PRIV1_10) ? SSTATUS_SIE : 1 << prev_priv,
         get_field(sstatus, SSTATUS_SPIE));
     sstatus = set_field(sstatus, SSTATUS_SPIE, 0);
-    sstatus = set_field(sstatus, SSTATUS_SPP,  PRV_U);
+    sstatus = set_field(sstatus, SSTATUS_SPP, prev_priv);
     riscv_set_mode(env, prev_priv);
     csr_write_helper(env, sstatus, CSR_SSTATUS);
 

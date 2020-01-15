@@ -96,27 +96,30 @@ int riscv_cpu_hw_interrupts_pending(CPUState *env)
 {
     target_ulong pending_interrupts = env->mip & env->mie;
     target_ulong priv = env->priv;
-    target_ulong enabled_interrupts = 0;
+    target_ulong enabled_interrupts = (target_ulong) -1UL;
 
     switch (priv) {
-    /* Disable interrupts with lower privileges, if priv > M, must be M with disabled interrupts */
+    /* Disable interrupts for lower privileges, if interrupt is not delegated it is for higher level */
     case PRV_M:
-        pending_interrupts &= ~(IRQ_HS & IRQ_HT & IRQ_HE); /* fall through */
-    case PRV_H:
-        pending_interrupts &= ~(IRQ_SS & IRQ_ST & IRQ_SE); /* fall through */
+        pending_interrupts &= ~((IRQ_SS | IRQ_ST | IRQ_SE) & env->mideleg); /* fall through */
     case PRV_S:
-        pending_interrupts &= ~(IRQ_US & IRQ_UT & IRQ_UE); /* fall through */
+        /* For future use, extension N not implemented yet */
+        pending_interrupts &= ~((IRQ_US | IRQ_UT | IRQ_UE) & env->mideleg & env->sideleg); /* fall through */
     case PRV_U:
         break;
     }
 
-    if (priv < PRV_M || (priv == PRV_M && get_field(env->mstatus, MSTATUS_MIE)))
-        enabled_interrupts |= pending_interrupts & ~env->mideleg;
-    if (priv < PRV_S || (priv == PRV_S && get_field(env->mstatus, MSTATUS_SIE)))
-        enabled_interrupts |=  pending_interrupts & env->mideleg;
+    if (priv == PRV_M && !get_field(env->mstatus, MSTATUS_MIE)) {
+        enabled_interrupts = 0; 
+    } else if (priv == PRV_S && !get_field(env->mstatus, MSTATUS_SIE)) {
+        enabled_interrupts &= ~(env->mideleg); 
+    }
 
-    if (!enabled_interrupts)
+    enabled_interrupts &= pending_interrupts;
+    
+    if (!enabled_interrupts) {
         return EXCP_NONE;
+    }
 
     return (env->privilege_architecture >= RISCV_PRIV1_11) ?
             get_interrupts_in_order(enabled_interrupts, priv) :

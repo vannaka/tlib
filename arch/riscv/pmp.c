@@ -153,7 +153,7 @@ static void pmp_update_rule(CPUState *env, uint32_t pmp_index)
     uint8_t this_cfg = env->pmp_state.pmp[pmp_index].cfg_reg;
     target_ulong this_addr = env->pmp_state.pmp[pmp_index].addr_reg;
     target_ulong prev_addr = 0u;
-    target_ulong napot_grain = ctz64(~this_addr);
+    target_ulong napot_grain = 0u;
     target_ulong sa = 0u;
     target_ulong ea = 0u;
 
@@ -179,6 +179,7 @@ static void pmp_update_rule(CPUState *env, uint32_t pmp_index)
 
     case PMP_AMATCH_NAPOT:
         /*  Since priv-1.11 PMP grain must be the same across all PMP regions */
+        napot_grain = ctz64(~this_addr);
         if (env->privilege_architecture >= RISCV_PRIV1_11) {
             if (cpu->pmp_napot_grain == -1) {
                 cpu->pmp_napot_grain = napot_grain;

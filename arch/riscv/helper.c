@@ -226,7 +226,7 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical,
         } else if ((pte & PTE_U) && (mode == PRV_S) &&
                 (!sum || ((env->privilege_architecture >= RISCV_PRIV1_11) && access_type == MMU_INST_FETCH))) {
             break;
-        } else if (!(pte & PTE_U) && (mode !=PRV_S)) {
+        } else if (!(pte & PTE_U) && (mode != PRV_S)) {
             break;
         } else if (!(pte & PTE_V) || (!(pte & PTE_R) && (pte & PTE_W))) {
             break;
@@ -349,8 +349,9 @@ void do_interrupt(CPUState *env)
         return;
     }
 
-    if (env->exception_index == EXCP_NONE)
+    if (env->exception_index == EXCP_NONE) {
         return;
+    }
 
     if (env->exception_index == RISCV_EXCP_BREAKPOINT) {
         env->interrupt_request |= CPU_INTERRUPT_EXITTB;
@@ -403,18 +404,20 @@ void do_interrupt(CPUState *env)
         (fixed_cause == RISCV_EXCP_LOAD_PAGE_FAULT) ||
         (fixed_cause == RISCV_EXCP_STORE_PAGE_FAULT);
 
-    if (env->priv == PRV_M || !((is_interrupt? env->mideleg : env->medeleg) & (1 << bit))) {
+    if (env->priv == PRV_M || !((is_interrupt ? env->mideleg : env->medeleg) & (1 << bit))) {
     /* handle the trap in M-mode */
         env->mepc = env->pc;
         env->mcause = fixed_cause;
-        if (hasbadaddr)
+        if (hasbadaddr) {
             env->mtval = env->badaddr;
+        }
 
         /* Lowest bit of MTVEC changes mode to vectored interrupt */
-        if ((env->mtvec & 1) && is_interrupt && env->privilege_architecture >= RISCV_PRIV1_10)
+        if ((env->mtvec & 1) && is_interrupt && env->privilege_architecture >= RISCV_PRIV1_10) {
             env->pc = (env->mtvec & ~0x1) + (fixed_cause * 4);
-        else
+        } else {
             env->pc = env->mtvec;
+        }
 
         target_ulong ms = env->mstatus;
         ms = set_field(ms, MSTATUS_MPIE,
@@ -424,17 +427,19 @@ void do_interrupt(CPUState *env)
         csr_write_helper(env, ms, CSR_MSTATUS);
         riscv_set_mode(env, PRV_M);
     } else {
-    /* handle the trap in S-mode */
+        /* handle the trap in S-mode */
         env->sepc = env->pc;
         env->scause = fixed_cause;
-        if (hasbadaddr)
+        if (hasbadaddr) {
             env->stval = env->badaddr;
+        }
 
         /* Lowest bit of STVEC changes mode to vectored interrupt */
-        if ((env->stvec & 1) && is_interrupt && (env->privilege_architecture >= RISCV_PRIV1_10))
+        if ((env->stvec & 1) && is_interrupt && (env->privilege_architecture >= RISCV_PRIV1_10)) {
             env->pc = (env->stvec & ~0x1) + (fixed_cause * 4);
-        else
-            env->pc = env->stvec;
+        } else {
+            env->pc = env->stvec; 
+        }
 
         target_ulong s = env->mstatus;
         s = set_field(s, SSTATUS_SPIE,

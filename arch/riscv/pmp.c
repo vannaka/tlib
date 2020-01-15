@@ -178,7 +178,7 @@ static void pmp_update_rule(CPUState *env, uint32_t pmp_index)
         break;
 
     case PMP_AMATCH_NAPOT:
-        /*  Since priv-1.11 PMP grain must be tha same across all PMP regions */
+        /*  Since priv-1.11 PMP grain must be the same across all PMP regions */
         if (env->privilege_architecture >= RISCV_PRIV1_11) {
             if (cpu->pmp_napot_grain == -1) {
                 cpu->pmp_napot_grain = napot_grain;

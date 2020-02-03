@@ -422,3 +422,7 @@
 #define PTE_PPN_SHIFT 10
 
 #define PTE_TABLE(PTE) (((PTE) & (PTE_V | PTE_R | PTE_W | PTE_X)) == PTE_V)
+
+#define CSR_VALIDATION_FULL 2 /* privilege level + r/w bit */
+#define CSR_VALIDATION_PRIV 1 /* privilege level only */
+#define CSR_VALIDATION_NONE 0 /* non validation */

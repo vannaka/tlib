@@ -33,7 +33,7 @@ void cpu_reset(CPUState *env)
 {
     tlb_flush(env, 1);
 
-    bool disable_csr_validation = env->disable_csr_validation;
+    int32_t csr_validation_level = env->csr_validation_level;
     bool privilege = env->privilege_architecture_1_10;
     target_ulong mhartid = env->mhartid;
     target_ulong misa_mask = env->misa_mask;
@@ -44,7 +44,7 @@ void cpu_reset(CPUState *env)
 
     memset(env, 0, offsetof(CPUState, breakpoints));
 
-    env->disable_csr_validation = disable_csr_validation;
+    env->csr_validation_level = csr_validation_level;
     env->mhartid = mhartid;
     env->privilege_architecture_1_10 = privilege;
     env->misa = misa_mask;
@@ -442,6 +442,7 @@ void tlib_arch_dispose()
 
 int cpu_init(const char *cpu_model)
 {
+    cpu->csr_validation_level = CSR_VALIDATION_FULL;
     cpu->misa_mask = cpu->misa = RVXLEN;
     pthread_mutex_init(&cpu->mip_lock, NULL);
 

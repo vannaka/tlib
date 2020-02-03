@@ -629,15 +629,29 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
  */
 void validate_csr(CPUState *env, uint64_t which, uint64_t write)
 {
-    if(env->disable_csr_validation)
-    {
-        return;
-    }
-
     unsigned csr_priv = get_field((which), 0x300);
     unsigned csr_read_only = get_field((which), 0xC00) == 3;
-    if (((write) && csr_read_only) || (env->priv < csr_priv)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+
+    switch(env->csr_validation_level)
+    {
+        case CSR_VALIDATION_FULL:
+            if (((write) && csr_read_only) || (env->priv < csr_priv)) {
+                helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            }
+            break;
+
+        case CSR_VALIDATION_PRIV:
+            if (env->priv < csr_priv) {
+                helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            }
+            break;
+
+        case CSR_VALIDATION_NONE:
+            break;
+
+        default:
+            tlib_abortf("Unexpected CSR validation level: %d", env->csr_validation_level);
+            break;
     }
 }
 

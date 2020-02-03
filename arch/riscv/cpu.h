@@ -135,9 +135,17 @@ struct CPUState {
     int32_t custom_instructions_count;
     custom_instruction_descriptor_t custom_instructions[CPU_CUSTOM_INSTRUCTIONS_LIMIT];
 
-    /* when set, writing to read-only CSR or accessing CSR from 
-       a wrong privilege level will *not* trigger ILLEGAL INSTRUCTION exception */
-    bool disable_csr_validation;
+    /*
+       Supported CSR validation levels:
+       * 0 - (CSR_VALIDATION_NONE): no validation
+       * 1 - (CSR_VALIDATION_PRIV): privilege level validation only
+       * 2 - (CSR_VALIDATION_FULL): full validation - privilege level and read/write bit validation
+
+       *Illegal Instruction Exception* is generated when validation fails
+
+       Levels are defined in `cpu_bits.h`
+    */
+    int32_t csr_validation_level;
 
     /* flags indicating extensions from which instructions
        that are *not* enabled for this CPU should *not* be logged as errors;

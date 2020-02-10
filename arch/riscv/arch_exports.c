@@ -46,8 +46,8 @@ void tlib_set_mip_bit(uint32_t position, uint32_t value)
 
 void tlib_allow_feature(uint32_t feature_bit)
 {
-   cpu->misa_mask |= (1L << feature_bit);
-   cpu->misa |= (1L << feature_bit);
+    cpu->misa_mask |= (1L << feature_bit);
+    cpu->misa |= (1L << feature_bit);
 }
 
 void tlib_mark_feature_silent(uint32_t feature_bit, uint32_t value)
@@ -64,17 +64,17 @@ void tlib_mark_feature_silent(uint32_t feature_bit, uint32_t value)
 
 uint32_t tlib_is_feature_enabled(uint32_t feature_bit)
 {
-   return (cpu->misa & (1L << feature_bit)) != 0;
+    return (cpu->misa & (1L << feature_bit)) != 0;
 }
 
 uint32_t tlib_is_feature_allowed(uint32_t feature_bit)
 {
-   return (cpu->misa_mask & (1L << feature_bit)) != 0;
+    return (cpu->misa_mask & (1L << feature_bit)) != 0;
 }
 
 void tlib_set_privilege_architecture(int32_t privilege_architecture)
 {
-   cpu->privilege_architecture = privilege_architecture;
+    cpu->privilege_architecture = privilege_architecture;
 }
 
 uint64_t tlib_install_custom_instruction(uint64_t mask, uint64_t pattern, uint64_t length)

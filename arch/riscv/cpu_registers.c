@@ -52,7 +52,7 @@ uint64_t* get_reg_pointer_64(int reg)
         case SIP_64:
             return &(cpu->mip);
         case SPTBR_64: // same index as SATP_64
-            return (cpu->privilege_architecture_1_10)
+            return (cpu->privilege_architecture >= RISCV_PRIV1_10)
                 ? &(cpu->satp)
                 : &(cpu->sptbr);
             return &(cpu->sptbr);
@@ -115,7 +115,7 @@ uint32_t* get_reg_pointer_32(int reg)
         case SIP_32:
             return &(cpu->mip);
         case SPTBR_32: // same index as SATP_32
-            return (cpu->privilege_architecture_1_10)
+            return (cpu->privilege_architecture >= RISCV_PRIV1_10)
                 ? &(cpu->satp)
                 : &(cpu->sptbr);
         case MSTATUS_32:

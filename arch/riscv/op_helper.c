@@ -733,8 +733,6 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
         (env->privilege_architecture >= RISCV_PRIV1_10) ? SSTATUS_SIE : 1 << prev_priv,
         get_field(sstatus, SSTATUS_SPIE));
     sstatus = set_field(sstatus, SSTATUS_SPIE, 0);
-    /* TO DO: if U-mode unsupported, change to M */
-    //sstatus = set_field(sstatus, SSTATUS_SPP,  ensure_extension(dc, RISCV_FEATURE_RVU) ? PRV_U : PRV_M);
     sstatus = set_field(sstatus, SSTATUS_SPP,  PRV_U);
     riscv_set_mode(env, prev_priv);
     csr_write_helper(env, sstatus, CSR_SSTATUS);
@@ -764,8 +762,7 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
         env->privilege_architecture >= RISCV_PRIV1_10 ? MSTATUS_MIE : 1 << prev_priv,
         get_field(mstatus, MSTATUS_MPIE));
     mstatus = set_field(mstatus, MSTATUS_MPIE, 0);
-    /* TO DO:  if U-mode unsupported, change to M */
-    //mstatus = set_field(mstatus, MSTATUS_MPP, ensure_extension(dc, RISCV_FEATURE_RVU) ? PRV_U : PRV_M);
+    mstatus = set_field(mstatus, MSTATUS_MPP, riscv_has_ext(env, RISCV_FEATURE_RVU) ? PRV_U : PRV_M);
     mstatus = set_field(mstatus, MSTATUS_MPP, PRV_U);
     riscv_set_mode(env, prev_priv);
     csr_write_helper(env, mstatus, CSR_MSTATUS);

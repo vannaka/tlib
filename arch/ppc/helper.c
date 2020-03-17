@@ -1959,6 +1959,7 @@ void ppc_store_sdr1 (CPUState *env, target_ulong value)
 target_ulong ppc_load_sr (CPUState *env, int slb_nr)
 {
     // XXX
+    ABORT_UNSUPPORTED_FEATURE;
     return 0;
 }
 #endif

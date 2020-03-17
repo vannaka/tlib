@@ -65,6 +65,7 @@ target_ulong helper_load_atbu (void)
 #if defined(TARGET_PPC64)
 target_ulong helper_load_purr (void)
 {
+    ABORT_UNSUPPORTED_FEATURE;
     return 0;
 }
 #endif
@@ -82,35 +83,43 @@ target_ulong helper_load_601_rtcu (void)
 #if defined (TARGET_PPC64)
 void helper_store_asr (target_ulong val)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 #endif
 
 void helper_store_sdr1 (target_ulong val)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 void helper_store_tbl (target_ulong val)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 void helper_store_tbu (target_ulong val)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 void helper_store_atbl (target_ulong val)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 void helper_store_atbu (target_ulong val)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 void helper_store_601_rtcl (target_ulong val)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 void helper_store_601_rtcu (target_ulong val)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 target_ulong helper_load_decr (void)

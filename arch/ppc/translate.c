@@ -8760,6 +8760,7 @@ static void gen_se_add(DisasContext *dc)
 
 static void gen_se_addi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_add16i(DisasContext *dc)
@@ -8780,442 +8781,547 @@ static void gen_e_add2is(DisasContext *dc)
 
 static void gen_e_addic(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_and(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_andc(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_andi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_andi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_and2i(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_and2is(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_b(DisasContext *dc)
 {
-    tlib_printf(LOG_LEVEL_WARNING, "E_B");
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_b(DisasContext *dc)
 {
-    tlib_printf(LOG_LEVEL_WARNING, "SE_B");
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_bc(DisasContext *dc)
 {
-    tlib_printf(LOG_LEVEL_WARNING, "E_BC");
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_bc(DisasContext *dc)
 {
-    tlib_printf(LOG_LEVEL_WARNING, "SE_BC");
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_bclri(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_bctr(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_bgeni(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_blr(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_bmaski(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_bseti(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_btsti(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_cmp(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_cmph(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_cmph(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_cmphl(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_cmphl(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_cmph16i(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_cmp16i(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_cmphl16i(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_cmpl16i(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_cmpi_or_cmpli(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_cmpi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_cmpl(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_cmpli(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_crand(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_crandc(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_creqv(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_crnand(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_crnor(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_cror(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_crorc(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_crxor(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_extsb(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_extsh(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_extzb(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_extzh(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_illegal(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_isync(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_lbz(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_lbz(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_lbzu(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_lha(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_lhau(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_lhz(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_lhz(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_lhzu(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_li(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_lis(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_li(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_lmw(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_lwz(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_lwz(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_lwzu(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_mcrf(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_mfar(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_mfctr(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_mflr(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_mr(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_mtar(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_mtctr(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_mtlr(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_mulli(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_mull2i(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_mullw(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_neg(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_not(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_or(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_or2i(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_or2is(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_ori(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_rfci(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_rfdi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_rfi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_rfmci(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_rlw(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_rlwi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_rlwimi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_rlwinm(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_sc(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_slwi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_slw(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_slwi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_sraw(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_srawi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_srwi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_srw(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_srwi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_stb(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_stb(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_stbu(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_sth(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_sth(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_sthu(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_stmw(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_stw(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_stw(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_stwu(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_sub(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_subf(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_subfic(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_se_subi(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_xori(DisasContext *dc)
 {
+    ABORT_UNSUPPORTED_FEATURE;
 }
 
 static void gen_e_addi(DisasContext *dc)

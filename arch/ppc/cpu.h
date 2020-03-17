@@ -85,6 +85,8 @@
 #define ffs __builtin_ffs
 #endif
 
+#define ABORT_UNSUPPORTED_FEATURE tlib_abortf("%s is unimplemented." , __func__ )
+
 /*****************************************************************************/
 /* MMU model                                                                 */
 typedef enum powerpc_mmu_t powerpc_mmu_t;

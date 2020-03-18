@@ -1959,8 +1959,9 @@ void ppc_store_sdr1 (CPUState *env, target_ulong value)
 target_ulong ppc_load_sr (CPUState *env, int slb_nr)
 {
     // XXX
-    ABORT_UNSUPPORTED_FEATURE;
-    return 0;
+    int slot = slb_nr & 0xf; //16 first entries into SLB table
+    ppc_slb_t *slb = &env->slb[slot];
+    return slb->vsid;
 }
 #endif
 

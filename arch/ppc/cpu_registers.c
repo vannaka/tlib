@@ -27,6 +27,8 @@ uint64_t* get_reg_pointer_64(int reg)
 {
     switch(reg)
     {
+        case R_0_64 ... R_31_64:
+            return &(cpu->gpr[reg - R_0_64]);
         case NIP_64:
             return &(cpu->nip);
         case MSR_64:
@@ -48,6 +50,8 @@ uint32_t* get_reg_pointer_32(int reg)
 {
     switch(reg)
     {
+        case R_0_32 ... R_31_32:
+            return &(cpu->gpr[reg - R_0_32]);
         case NIP_32:
             return &(cpu->nip);
         case MSR_32:

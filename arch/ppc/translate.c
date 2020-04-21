@@ -2408,14 +2408,14 @@ static inline void gen_qemu_ld8u(DisasContext *s, TCGv arg1, TCGv arg2)
 static inline void gen_qemu_ld16u(DisasContext *s, TCGv arg1, TCGv arg2)
 {
     tcg_gen_qemu_ld16u(arg1, arg2, s->base.mem_idx);
-    if (unlikely(!s->le_mode)) {
+    if (unlikely(s->le_mode)) {
         tcg_gen_bswap16_tl(arg1, arg1);
     }
 }
 
 static inline void gen_qemu_ld16s(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    if (unlikely(!s->le_mode)) {
+    if (unlikely(s->le_mode)) {
         tcg_gen_qemu_ld16u(arg1, arg2, s->base.mem_idx);
         tcg_gen_bswap16_tl(arg1, arg1);
         tcg_gen_ext16s_tl(arg1, arg1);
@@ -2427,7 +2427,7 @@ static inline void gen_qemu_ld16s(DisasContext *s, TCGv arg1, TCGv arg2)
 static inline void gen_qemu_ld32u(DisasContext *s, TCGv arg1, TCGv arg2)
 {
     tcg_gen_qemu_ld32u(arg1, arg2, s->base.mem_idx);
-    if (unlikely(!s->le_mode)) {
+    if (unlikely(s->le_mode)) {
         tcg_gen_bswap32_tl(arg1, arg1);
     }
 }
@@ -2435,7 +2435,7 @@ static inline void gen_qemu_ld32u(DisasContext *s, TCGv arg1, TCGv arg2)
 #if defined(TARGET_PPC64)
 static inline void gen_qemu_ld32s(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    if (unlikely(!s->le_mode)) {
+    if (unlikely(s->le_mode)) {
         tcg_gen_qemu_ld32u(arg1, arg2, s->base.mem_idx);
         tcg_gen_bswap32_tl(arg1, arg1);
         tcg_gen_ext32s_tl(arg1, arg1);
@@ -2447,7 +2447,7 @@ static inline void gen_qemu_ld32s(DisasContext *s, TCGv arg1, TCGv arg2)
 static inline void gen_qemu_ld64(DisasContext *s, TCGv_i64 arg1, TCGv arg2)
 {
     tcg_gen_qemu_ld64(arg1, arg2, s->base.mem_idx);
-    if (unlikely(!s->le_mode)) {
+    if (unlikely(s->le_mode)) {
         tcg_gen_bswap64_i64(arg1, arg1);
     }
 }
@@ -2459,7 +2459,7 @@ static inline void gen_qemu_st8(DisasContext *s, TCGv arg1, TCGv arg2)
 
 static inline void gen_qemu_st16(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    if (unlikely(!s->le_mode)) {
+    if (unlikely(s->le_mode)) {
         TCGv t0 = tcg_temp_new();
         tcg_gen_ext16u_tl(t0, arg1);
         tcg_gen_bswap16_tl(t0, t0);
@@ -2472,7 +2472,7 @@ static inline void gen_qemu_st16(DisasContext *s, TCGv arg1, TCGv arg2)
 
 static inline void gen_qemu_st32(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    if (unlikely(!s->le_mode)) {
+    if (unlikely(s->le_mode)) {
         TCGv t0 = tcg_temp_new();
         tcg_gen_ext32u_tl(t0, arg1);
         tcg_gen_bswap32_tl(t0, t0);
@@ -2485,7 +2485,7 @@ static inline void gen_qemu_st32(DisasContext *s, TCGv arg1, TCGv arg2)
 
 static inline void gen_qemu_st64(DisasContext *s, TCGv_i64 arg1, TCGv arg2)
 {
-    if (unlikely(!s->le_mode)) {
+    if (unlikely(s->le_mode)) {
         TCGv_i64 t0 = tcg_temp_new_i64();
         tcg_gen_bswap64_i64(t0, arg1);
         tcg_gen_qemu_st64(t0, arg2, s->base.mem_idx);
@@ -2770,7 +2770,7 @@ GEN_LDX(lhbr, ld16ur, 0x16, 0x18, PPC_INTEGER);
 static inline void gen_qemu_ld32ur(DisasContext *s, TCGv arg1, TCGv arg2)
 {
     tcg_gen_qemu_ld32u(arg1, arg2, s->base.mem_idx);
-    if (likely(s->le_mode)) {
+    if (likely(!s->le_mode)) {
         tcg_gen_bswap32_tl(arg1, arg1);
     }
 }
@@ -2779,7 +2779,7 @@ GEN_LDX(lwbr, ld32ur, 0x16, 0x10, PPC_INTEGER);
 /* sthbrx */
 static inline void gen_qemu_st16r(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    if (likely(s->le_mode)) {
+    if (likely(!s->le_mode)) {
         TCGv t0 = tcg_temp_new();
         tcg_gen_ext16u_tl(t0, arg1);
         tcg_gen_bswap16_tl(t0, t0);
@@ -2794,7 +2794,7 @@ GEN_STX(sthbr, st16r, 0x16, 0x1C, PPC_INTEGER);
 /* stwbrx */
 static inline void gen_qemu_st32r(DisasContext *s, TCGv arg1, TCGv arg2)
 {
-    if (likely(s->le_mode)) {
+    if (likely(!s->le_mode)) {
         TCGv t0 = tcg_temp_new();
         tcg_gen_ext32u_tl(t0, arg1);
         tcg_gen_bswap32_tl(t0, t0);
@@ -5777,7 +5777,7 @@ static void glue(gen_, name)(DisasContext *s)                      \
     EA = tcg_temp_new();                                           \
     gen_addr_reg_index(s, EA);                                     \
     tcg_gen_andi_tl(EA, EA, ~0xf);                                 \
-    if (!s->le_mode) {                                             \
+    if (s->le_mode) {                                             \
         gen_qemu_ld64(s, cpu_avrl[rD(s->opcode)], EA);             \
         tcg_gen_addi_tl(EA, EA, 8);                                \
         gen_qemu_ld64(s, cpu_avrh[rD(s->opcode)], EA);             \
@@ -5801,7 +5801,7 @@ static void gen_st##name(DisasContext *s)                          \
     EA = tcg_temp_new();                                           \
     gen_addr_reg_index(s, EA);                                     \
     tcg_gen_andi_tl(EA, EA, ~0xf);                                 \
-    if (!s->le_mode) {                                             \
+    if (s->le_mode) {                                             \
         gen_qemu_st64(s, cpu_avrl[rD(s->opcode)], EA);             \
         tcg_gen_addi_tl(EA, EA, 8);                                \
         gen_qemu_st64(s, cpu_avrh[rD(s->opcode)], EA);             \
@@ -9654,7 +9654,7 @@ int disas_insn(CPUState *env, DisasContext *dc) {
     opc_handler_t **table, *handler;
     uint32_t op1, op2, op3;
 
-    if (unlikely(!dc->le_mode)) {
+    if (unlikely(dc->le_mode)) {
         dc->opcode = bswap32(ldl_code(dc->base.pc));
     } else {
         dc->opcode = ldl_code(dc->base.pc);

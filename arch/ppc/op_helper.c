@@ -95,12 +95,10 @@ void helper_store_sdr1 (target_ulong val)
 
 void helper_store_tbl (target_ulong val)
 {
-    ABORT_UNSUPPORTED_FEATURE;
 }
 
 void helper_store_tbu (target_ulong val)
 {
-    ABORT_UNSUPPORTED_FEATURE;
 }
 
 void helper_store_atbl (target_ulong val)

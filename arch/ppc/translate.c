@@ -3240,13 +3240,13 @@ static inline void gen_qemu_st32fiw(DisasContext *s, TCGv_i64 arg1, TCGv arg2)
 /* stfiwx */
 GEN_STXF(stfiw, st32fiw, 0x17, 0x1E, PPC_FLOAT_STFIWX);
 
+#if defined(TARGET_PPC64)
 static inline void gen_update_cfar(DisasContext *s, target_ulong nip)
 {
-#if defined(TARGET_PPC64)
     if (s->has_cfar)
         tcg_gen_movi_tl(cpu_cfar, nip);
-#endif
 }
+#endif
 
 /***                                Branch                                 ***/
 static inline void gen_goto_tb(DisasContext *s, int n, target_ulong dest)

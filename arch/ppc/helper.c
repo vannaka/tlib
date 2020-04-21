@@ -53,6 +53,7 @@ static inline int pte64_is_valid(target_ulong pte0)
     return pte0 & 0x0000000000000001ULL ? 1 : 0;
 }
 
+__attribute__ (( unused ))
 static inline void pte64_invalidate(target_ulong *pte0)
 {
     *pte0 &= ~0x0000000000000001ULL;

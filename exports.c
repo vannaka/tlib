@@ -69,6 +69,16 @@ uint32_t tlib_get_maximum_block_size()
   return maximum_block_size;
 }
 
+void tlib_set_cycles_per_instruction(uint32_t count)
+{
+  env->cycles_per_instruction = count;
+}
+
+uint32_t tlib_get_cycles_per_instruction()
+{
+  return env->cycles_per_instruction;
+}
+
 void gen_helpers(void);
 
 int32_t tlib_init(char *cpu_name)

@@ -191,6 +191,7 @@ typedef struct CPUBreakpoint {
     int block_finished_hook_present;                                         \
     /* indicates if the block_begin hook is registered */                    \
     int block_begin_hook_present;                                            \
+    uint32_t cycles_per_instruction;                                         \
                                                                              \
     int id;                                                                  \
     /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                       \

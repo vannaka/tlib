@@ -6,6 +6,9 @@
 uint32_t tlib_set_maximum_block_size(uint32_t size);
 uint32_t tlib_get_maximum_block_size(void);
 
+void tlib_set_cycles_per_instruction(uint32_t size);
+uint32_t tlib_get_cycles_per_instruction(void);
+
 void gen_helpers(void);
 
 int32_t tlib_init(char *cpu_name);

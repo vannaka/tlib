@@ -89,7 +89,7 @@ static inline uint64_t get_minstret_current(CPUState *env)
 
 static inline uint64_t get_mcycles_current(CPUState *env)
 {
-    return cpu_riscv_read_instret(env) - env->mcycle_snapshot + env->mcycle_snapshot_offset;
+    return (cpu_riscv_read_instret(env) - env->mcycle_snapshot + env->mcycle_snapshot_offset) * env->cycles_per_instruction;
 }
 
 target_ulong priv_version_csr_filter(CPUState *env, target_ulong csrno)

@@ -252,4 +252,9 @@ static inline int riscv_features_to_string(uint32_t features, char* buffer, int 
     return pos;
 }
 
+static inline void mark_fs_dirty()
+{
+    env->mstatus |= (MSTATUS_FS | MSTATUS_XS);
+}
+
 #endif /* !defined (__RISCV_CPU_H__) */

@@ -162,6 +162,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     case CSR_FFLAGS:
         if (riscv_mstatus_fs(env)) {
             env->fflags = val_to_write & (FSR_AEXC >> FSR_AEXC_SHIFT);
+            mark_fs_dirty();
         } else {
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
         }
@@ -169,6 +170,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     case CSR_FRM:
         if (riscv_mstatus_fs(env)) {
             env->frm = val_to_write & (FSR_RD >> FSR_RD_SHIFT);
+            mark_fs_dirty();
         } else {
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
         }
@@ -177,6 +179,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         if (riscv_mstatus_fs(env)) {
             env->fflags = (val_to_write & FSR_AEXC) >> FSR_AEXC_SHIFT;
             env->frm = (val_to_write & FSR_RD) >> FSR_RD_SHIFT;
+            mark_fs_dirty();
         } else {
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
         }

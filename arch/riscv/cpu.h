@@ -257,4 +257,13 @@ static inline void mark_fs_dirty()
     env->mstatus |= (MSTATUS_FS | MSTATUS_XS);
 }
 
+static inline void set_default_mstatus()
+{
+    if(riscv_has_ext(env, RISCV_FEATURE_RVD) || riscv_has_ext(env, RISCV_FEATURE_RVF)) {
+        env->mstatus = (MSTATUS_FS_INITIAL | MSTATUS_XS_INITIAL);
+    } else {
+        env->mstatus = 0;
+    }
+}
+
 #endif /* !defined (__RISCV_CPU_H__) */

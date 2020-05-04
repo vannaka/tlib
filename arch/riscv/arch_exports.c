@@ -48,6 +48,13 @@ void tlib_allow_feature(uint32_t feature_bit)
 {
     cpu->misa_mask |= (1L << feature_bit);
     cpu->misa |= (1L << feature_bit);
+
+    // availability of F/D extensions
+    // is indicated by a bit in MSTATUS
+    if(feature_bit == 'F' - 'A' || feature_bit == 'D' - 'A')
+    {
+        set_default_mstatus();
+    }
 }
 
 void tlib_mark_feature_silent(uint32_t feature_bit, uint32_t value)

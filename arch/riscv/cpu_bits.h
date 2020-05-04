@@ -270,6 +270,9 @@
 #define MSTATUS_TW          0x20000000 /* since: priv-1.10 */
 #define MSTATUS_TSR         0x40000000 /* since: priv-1.10 */
 
+#define MSTATUS_FS_INITIAL  0x00002000
+#define MSTATUS_XS_INITIAL  0x00008000
+
 #define MSTATUS64_UXL       0x0000000300000000ULL
 #define MSTATUS64_SXL       0x0000000C00000000ULL
 

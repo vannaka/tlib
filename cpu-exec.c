@@ -65,7 +65,6 @@ target_ulong virt_to_phys_code(target_ulong virtual) {
     return physical;
 }
 
-#define V2P_INCLUDES_CODE 1
 
 target_ulong virtual_to_phys_read(target_ulong virtual) {
     int mmu_idx, page_index;
@@ -87,15 +86,11 @@ target_ulong virtual_to_phys_read(target_ulong virtual) {
     } else if ((env->tlb_table[mmu_idx][page_index].addr_read & TARGET_PAGE_MASK) == masked_virtual) {
         physical = env->tlb_table[mmu_idx][page_index].addr_read;
         found = 1;
-    }
-
-#ifdef V2P_INCLUDES_CODE
     // check excutable mappings next
-    else if ((env->tlb_table[mmu_idx][page_index].addr_code & TARGET_PAGE_MASK) == masked_virtual) {
+    } else if ((env->tlb_table[mmu_idx][page_index].addr_code & TARGET_PAGE_MASK) == masked_virtual) {
         physical = env->tlb_table[mmu_idx][page_index].addr_code;
         found = 1;
     }
-#endif
     // not mapped in current env mmu, check other modes
     else {
         for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
@@ -107,14 +102,11 @@ target_ulong virtual_to_phys_read(target_ulong virtual) {
                 physical = env->tlb_table[mmu_idx][page_index].addr_read;
                 found = 1;
                 break;
-            }
-#ifdeXXf V2P_INCLUDES_CODE
-            else if ((env->tlb_table[mmu_idx][page_index].addr_code & TARGET_PAGE_MASK) == masked_virtual) {
+            } else if ((env->tlb_table[mmu_idx][page_index].addr_code & TARGET_PAGE_MASK) == masked_virtual) {
                 physical = env->tlb_table[mmu_idx][page_index].addr_code;
                 found = 1;
                 break;
             }
-#endif
         }
     }
 

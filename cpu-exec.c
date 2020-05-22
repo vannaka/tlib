@@ -20,7 +20,7 @@
 #include "tcg.h"
 #include "atomic.h"
 
-target_ulong virtual_to_phys(target_ulong virtual, int access_type, int nofault) {
+target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t nofault) {
     /* Access types :
      *      0 : read
      *      1 : write

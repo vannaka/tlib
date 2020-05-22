@@ -272,14 +272,9 @@ void tlib_invalidate_translation_blocks(uintptr_t start, uintptr_t end)
   tb_invalidate_phys_page_range_inner(start, end, 0, 0);
 }
 
-uint64_t tlib_translate_code_address_to_physical_address(uint64_t address)
+uint64_t tlib_translate_to_physical_address(uint64_t address, uint32_t access_type, uint32_t nofault)
 {
-  return virt_to_phys_code(address);
-}
-
-uint64_t tlib_translate_data_address_to_physical_address(uint64_t address)
-{
-  return virt_to_phys_read(address);
+  return virt_to_phys(address, access_type, nofault);
 }
 
 void tlib_set_irq(int32_t interrupt, int32_t state)

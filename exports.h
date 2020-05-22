@@ -31,6 +31,8 @@ uint32_t tlib_is_range_mapped(uint64_t start, uint64_t end);
 
 void tlib_invalidate_translation_blocks(uintptr_t start, uintptr_t end);
 
+uint64_t tlib_translate_to_physical_address(uint64_t address, uint32_t access_type, uint32_t nofault);
+
 void tlib_set_irq(int32_t interrupt, int32_t state);
 int32_t tlib_is_irq_set(void);
 

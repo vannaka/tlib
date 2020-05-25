@@ -274,7 +274,11 @@ void tlib_invalidate_translation_blocks(uintptr_t start, uintptr_t end)
 
 uint64_t tlib_translate_to_physical_address(uint64_t address, uint32_t access_type, uint32_t nofault)
 {
-  return virt_to_phys(address, access_type, nofault);
+  uint64_t ret = virt_to_phys(address, access_type, nofault);
+  if (ret == TARGET_ULONG_MAX) {
+      ret = (uint64_t) -1;
+  }
+  return ret;
 }
 
 void tlib_set_irq(int32_t interrupt, int32_t state)

@@ -98,7 +98,7 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
             physical = mapped_address;
         } else {
             tlib_printf(LOG_LEVEL_ERROR, "Failed to get physical adress for virtual adress 0x%p", virtual);
-            return -2;
+            return -1;
         }
     }
 
@@ -111,7 +111,7 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
         physical = tlib_host_ptr_to_guest_offset(p);
         if (physical == -1) {
             tlib_printf(LOG_LEVEL_ERROR, "No host mapping for host ptr 0x%p", p);
-            return -2;
+            return -1;
         }
     }
     physical |= (virtual & ~TARGET_PAGE_MASK);

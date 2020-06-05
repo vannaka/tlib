@@ -20,12 +20,12 @@
 #include "tcg.h"
 #include "atomic.h"
 
-target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t nofault) {
+target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t nofault)
+{
     /* Access types :
      *      0 : read
      *      1 : write
      *      2 : instr fetch */
-
     void *p;
     int8_t found_idx = -1;
     uint16_t mmu_idx = cpu_mmu_index(env);
@@ -36,7 +36,7 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
 
     nofault = !!nofault;
 
-    masked_virtual= virtual & TARGET_PAGE_MASK;
+    masked_virtual = virtual & TARGET_PAGE_MASK;
     page_index = (virtual >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
 
     if ((env->tlb_table[mmu_idx][page_index].addr_write & TARGET_PAGE_MASK) == masked_virtual) {
@@ -51,7 +51,7 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
     } else {
         // Not mapped in current env mmu mode, check other modes
         for (int idx = 0; idx < NB_MMU_MODES; idx++) {
-            if (idx == mmu_idx){
+            if (idx == mmu_idx) {
                 // Already checked
                 continue;
             }
@@ -77,7 +77,7 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
             return -1;
         }
         // Not mapped in any mode - referesh page table from h/w tables
-        tlb_fill(env, virtual & TARGET_PAGE_MASK, access_type, mmu_idx, &physical/* not used */);
+        tlb_fill(env, virtual & TARGET_PAGE_MASK, access_type, mmu_idx, &physical /* not used */);
         found_idx = mmu_idx;
         target_ulong mapped_address;
         switch(access_type){
@@ -107,7 +107,7 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
         physical = (target_ulong)env->iotlb[found_idx][page_index];
         physical = (physical + virtual) & TARGET_PAGE_MASK;
     } else {
-        p = (void *) (uintptr_t) masked_virtual + env->tlb_table[found_idx][page_index].addend;
+        p = (void *)(uintptr_t)masked_virtual + env->tlb_table[found_idx][page_index].addend;
         physical = tlib_host_ptr_to_guest_offset(p);
         if (physical == -1) {
             tlib_printf(LOG_LEVEL_ERROR, "No host mapping for host ptr 0x%p", p);

@@ -32,45 +32,45 @@ target_ulong virt_to_phys_code(target_ulong virtual) {
     masked_virtual = virtual & TARGET_PAGE_MASK;
     page_index = (virtual >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
 
-    // look for mapping in (likely) current cpu environment
-    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_code != masked_virtual)) {
+    if (likely(env->tlb_table[mmu_idx][page_index].addr_code == masked_virtual)) {
+        found_idx = mmu_idx;
+    } else {
         // not mapped in current env mmu mode, check other modes
-        for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
-            if (env->tlb_table[mmu_idx][page_index].addr_code == masked_virtual) {
+        for (int idx = 0; idx < NB_MMU_MODES; idx++) {
+            if (env->tlb_table[idx][page_index].addr_code == masked_virtual) {
+                found_idx = idx;
                 break;
             }
         }
-        if (mmu_idx == NB_MMU_MODES) {
+        if (found_idx == -1) {
             // not mapped in any mode - referesh page table from h/w tables to update tlb tables
-            mmu_idx = cpu_mmu_index(env);
-            tlb_fill(env, virtual & TARGET_PAGE_MASK, 2, mmu_idx, &physical/* not used */);
-            found_idx = mmu_idx;
+            tlb_fill(env, masked_virtual, 2, mmu_idx, &physical/* not used */);
             if (unlikely(env->tlb_table[mmu_idx][page_index].addr_code != masked_virtual)) {
                 tlib_printf(LOG_LEVEL_ERROR, "Failed to get pa for code va 0x%p", virtual);
                 return -2;
             }
         }
-    } else {
-        found_idx = mmu_idx;
     }
 
     p = (void *) (uintptr_t) masked_virtual + env->tlb_table[found_idx][page_index].addend;
     physical = tlib_host_ptr_to_guest_offset(p);
-    if (physical != -1) {
-        physical |= (virtual & ~TARGET_PAGE_MASK);
-    } else {
+    if (physical == -1) {
         tlib_printf(LOG_LEVEL_ERROR, "No host mapping for host ptr 0x%p", p);
-        physical = -2;
+        return -2;
     }
+    physical |= (virtual & ~TARGET_PAGE_MASK);
     return physical;
 }
 
 
 target_ulong virtual_to_phys_read(target_ulong virtual) {
-    int mmu_idx, page_index;
-    target_ulong physical, masked_virtual;
-    int found = 0;
     void *p;
+    int8_t found = 0;
+    uint16_t mmu_idx;
+
+    target_ulong page_index;
+    target_ulong physical;
+    target_ulong masked_virtual;
 
 
     page_index = (virtual >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
@@ -78,25 +78,25 @@ target_ulong virtual_to_phys_read(target_ulong virtual) {
     mmu_idx = cpu_mmu_index(env);
     masked_virtual= virtual & TARGET_PAGE_MASK;
 
-    // check writeable mappings first
     if ((env->tlb_table[mmu_idx][page_index].addr_write & TARGET_PAGE_MASK) == masked_virtual) {
         physical = env->tlb_table[mmu_idx][page_index].addr_write;
         found = 1;
-    // check readable mappings next
     } else if ((env->tlb_table[mmu_idx][page_index].addr_read & TARGET_PAGE_MASK) == masked_virtual) {
         physical = env->tlb_table[mmu_idx][page_index].addr_read;
         found = 1;
-    // check excutable mappings next
     } else if ((env->tlb_table[mmu_idx][page_index].addr_code & TARGET_PAGE_MASK) == masked_virtual) {
         physical = env->tlb_table[mmu_idx][page_index].addr_code;
         found = 1;
-    }
-    // not mapped in current env mmu, check other modes
-    else {
-        for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
-            if ((env->tlb_table[mmu_idx][page_index].addr_write & TARGET_PAGE_MASK) == masked_virtual) {
-                physical = env->tlb_table[mmu_idx][page_index].addr_write;
-                found = 1;
+    } else {
+        // Not mapped in current env mmu, check other modes
+        for (int idx = 0; idx < NB_MMU_MODES; idx++) {
+            if (idx == mmu_idx){
+                // Already checked
+                continue;
+            }
+            if ((env->tlb_table[idx][page_index].addr_write & TARGET_PAGE_MASK) == masked_virtual) {
+                physical = env->tlb_table[idx][page_index].addr_write;
+                found_idx = idx;
                 break;
             } else if ((env->tlb_table[mmu_idx][page_index].addr_read & TARGET_PAGE_MASK) == masked_virtual) {
                 physical = env->tlb_table[mmu_idx][page_index].addr_read;
@@ -120,27 +120,23 @@ target_ulong virtual_to_phys_read(target_ulong virtual) {
             found = 1;
         } else {
             tlib_printf(LOG_LEVEL_ERROR, "Failed to get pa for data va 0x%p after tlib_fill", virtual);
+            return -2;
         }
     }
-    if (! found || physical == -1) {
-        tlib_printf(LOG_LEVEL_ERROR, "No pa for data vs 0x%p\n", virtual);
-        return -2;
-    }
+
     if (physical & TLB_MMIO) {
         // the va is mapping IO mem, not ram, so just use the io page table
         physical = (target_ulong)env->iotlb[mmu_idx][page_index];
         physical = (physical + virtual) & TARGET_PAGE_MASK;
-        physical |= (virtual & ~TARGET_PAGE_MASK);
     } else {
         p = (void *) (uintptr_t) masked_virtual + env->tlb_table[mmu_idx][page_index].addend;
         physical = tlib_host_ptr_to_guest_offset(p);
-        if (physical != -1)
-            physical |= (virtual & ~TARGET_PAGE_MASK);
-        else {
+        if (physical == -1) {
             tlib_printf(3, "No host mapping for host ptr %p", p);
             return -2;
         }
     }
+    physical |= (virtual & ~TARGET_PAGE_MASK);
     return physical;
 }
 

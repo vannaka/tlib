@@ -20,7 +20,7 @@
 #include "tcg.h"
 #include "atomic.h"
 
-target_ulong virtual_to_phys(target_ulong virtual, int access_type) {
+target_ulong virtual_to_phys(target_ulong virtual, int access_type, int nofault) {
     /* Access types :
      *      0 : read
      *      1 : write
@@ -33,6 +33,8 @@ target_ulong virtual_to_phys(target_ulong virtual, int access_type) {
     target_ulong masked_virtual;
     target_ulong page_index;
     target_ulong physical;
+
+    nofault = !!nofault;
 
     masked_virtual= virtual & TARGET_PAGE_MASK;
     page_index = (virtual >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
@@ -70,6 +72,10 @@ target_ulong virtual_to_phys(target_ulong virtual, int access_type) {
     }
 
     if (found_idx == -1) {
+        if (nofault == 1) {
+            // Don't update tlb to avoid fault
+            return -1;
+        }
         // Not mapped in any mode - referesh page table from h/w tables
         tlb_fill(env, virtual & TARGET_PAGE_MASK, access_type, mmu_idx, &physical/* not used */);
         found_idx = mmu_idx;

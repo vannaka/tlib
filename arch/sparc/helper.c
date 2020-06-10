@@ -412,6 +412,8 @@ void cpu_sparc_set_id(CPUState *env, unsigned int cpu)
     env->mxccregs[7] = ((cpu + 8) & 0xf) << 24;
 }
 
+/* *INDENT-OFF* */
+
 static const sparc_def_t sparc_defs[] = {
     {
         .name = "Fujitsu MB86900",
@@ -721,6 +723,8 @@ static const sparc_def_t sparc_defs[] = {
         CPU_FEATURE_ASR | CPU_FEATURE_CACHE_CTRL,
     },
 };
+
+/* *INDENT-ON* */
 
 static const char * const feature_name[] = {
     "float",

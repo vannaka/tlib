@@ -298,6 +298,8 @@ enum arm_cond_code_e {
     COND_AL = 0xe,
 };
 
+/* *INDENT-OFF* */
+
 static const uint8_t tcg_cond_to_arm_cond[10] = {
     [TCG_COND_EQ] = COND_EQ,
     [TCG_COND_NE] = COND_NE,
@@ -311,6 +313,8 @@ static const uint8_t tcg_cond_to_arm_cond[10] = {
     [TCG_COND_LEU] = COND_LS,
     [TCG_COND_GTU] = COND_HI,
 };
+
+/* *INDENT-ON* */
 
 static inline void tcg_out_bx(TCGContext *s, int cond, int rn)
 {
@@ -1562,6 +1566,8 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
     }
 }
 
+/* *INDENT-OFF* */
+
 static const TCGTargetOpDef arm_op_defs[] = {
     { INDEX_op_exit_tb, { } },
     { INDEX_op_goto_tb, { } },
@@ -1644,6 +1650,8 @@ static const TCGTargetOpDef arm_op_defs[] = {
 
     { -1 },
 };
+
+/* *INDENT-ON* */
 
 static void tcg_target_init(TCGContext *s)
 {

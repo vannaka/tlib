@@ -360,6 +360,7 @@ uint_fast16_t float32_classify(uint32_t a, float_status *status)
     uint_fast16_t subnormalOrZero = expF32UI(uiA) == 0;
     bool sign = signF32UI(uiA);
 
+/* *INDENT-OFF* */
     return
         (sign && infOrNaN && fracF32UI(uiA) == 0)           << 0 |
         (sign && !infOrNaN && !subnormalOrZero)             << 1 |
@@ -371,6 +372,7 @@ uint_fast16_t float32_classify(uint32_t a, float_status *status)
         (!sign && subnormalOrZero && fracF32UI(uiA) == 0)   << 4 |
         (isNaNF32UI(uiA) &&  float32_is_signaling_nan(uiA)) << 8 |
         (isNaNF32UI(uiA) && !float32_is_signaling_nan(uiA)) << 9;
+/* *INDENT-ON* */
 }
 
 target_ulong helper_fclass_s(CPUState *env, uint64_t frs1)

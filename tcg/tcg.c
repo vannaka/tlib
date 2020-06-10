@@ -859,6 +859,8 @@ static TCGHelperInfo *tcg_find_helper(TCGContext *s, tcg_target_ulong val)
     return NULL;
 }
 
+/* *INDENT-OFF* */
+
 static const char * const cond_name[] =
 {
     [TCG_COND_EQ] = "eq",
@@ -872,6 +874,8 @@ static const char * const cond_name[] =
     [TCG_COND_LEU] = "leu",
     [TCG_COND_GTU] = "gtu"
 };
+
+/* *INDENT-ON* */
 
 /* we give more priority to constraints with less registers */
 static int get_constraint_priority(const TCGOpDef *def, int k)

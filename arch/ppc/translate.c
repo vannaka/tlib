@@ -7839,6 +7839,8 @@ GEN_SPE(efdctsiz,  speundef,  0x1D, 0x0B, 0x00180000, 0xFFFFFFFF, PPC_SPE_DOUBLE
 GEN_SPE(efdtstgt,  efdtstlt,  0x1E, 0x0B, 0x00600000, 0x00600000, PPC_SPE_DOUBLE);
 GEN_SPE(efdtsteq,  speundef,  0x1F, 0x0B, 0x00600000, 0xFFFFFFFF, PPC_SPE_DOUBLE);
 
+/* *INDENT-OFF* */
+
 static opcode_t opcodes[] = {
 GEN_HANDLER(invalid, 0x00, 0x00, 0x00, 0xFFFFFFFF, PPC_NONE),
 GEN_HANDLER(cmp, 0x1F, 0x00, 0x00, 0x00400000, PPC_INTEGER),
@@ -8709,6 +8711,8 @@ GEN_SPEOP_LDST(evstwwe, 0x1C, 2),
 GEN_SPEOP_LDST(evstwwo, 0x1E, 2),
 };
 
+/* *INDENT-ON* */
+
 EXTRACT_HELPER(RR_RY, 20, 4);
 EXTRACT_HELPER(RR_RX, 16, 4);
 
@@ -9339,6 +9343,8 @@ GEN_HANDLER(name, opc1, opc2, opc3, 0, PPC_VLE)
 #define GEN_SHORT_VLE_HANDLER(name, opc1, opc2, opc3)                          \
 GEN_OPCODE(name, opc1, opc2, opc3, 0, PPC_VLE, PPC_NONE, 2)
 
+/* *INDENT-OFF* */
+
 static opcode_t vle_opcodes[] = {
 GEN_SHORT_VLE_HANDLER(se_illegal, 0x0, 0x0, 0x0),
 GEN_SHORT_VLE_HANDLER(se_isync, 0x0, 0x0, 0x1),
@@ -9578,6 +9584,8 @@ GEN_SHORT_VLE_HANDLER(se_bc, 0x39, 0xFF, 0xFF),
 
 GEN_SHORT_VLE_HANDLER(se_b, 0x3A, 0xFF, 0xFF),
 };
+
+/* *INDENT-ON* */
 
 #include "translate_init.inc"
 #include "helper_regs.h"

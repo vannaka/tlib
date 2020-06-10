@@ -1093,7 +1093,6 @@ static inline void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, int opc)
     int addr_reg2;
 # endif
     uint32_t *label_ptr;
-#endif
 
 #ifdef TARGET_WORDS_BIGENDIAN
     bswap = 1;

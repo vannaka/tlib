@@ -20,30 +20,102 @@
 #include "tcg.h"
 #include "atomic.h"
 
-target_ulong virt_to_phys(target_ulong virt) {
-#if (TARGET_LONG_BITS == 32)
-        #define MASK2 (0xFFFFFFFF - MASK1)
-        #define MASK1 (0xFFFFFFFF >> (32-TARGET_PAGE_BITS))
-#elif (TARGET_LONG_BITS == 64)
-        #define MASK2 (0xFFFFFFFFFFFFFFFF - MASK1)
-        #define MASK1 (0xFFFFFFFFFFFFFFFF >> (64-TARGET_PAGE_BITS))
-#else
-    #error Unsupported TARGET_LONG_BITS
-#endif
-        target_ulong phys_addr = -1;
-        int index = (virt >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-        int i;
-        for (i = 0; i < NB_MMU_MODES; i++) {
-          target_ulong addr = (cpu->tlb_table[i][index].addr_code & MASK2) | (virt & (MASK1));
-          if (virt == addr) {
-            void *p = (void *)(uintptr_t)((cpu->tlb_table[i][index].addr_code & TARGET_PAGE_MASK) + cpu->tlb_table[i][index].addend);
-            phys_addr = tlib_host_ptr_to_guest_offset(p);
-            if (phys_addr != -1)
-              phys_addr += (virt & MASK1);
-            break;
-          }
+target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t nofault)
+{
+    /* Access types :
+     *      0 : read
+     *      1 : write
+     *      2 : instr fetch */
+    void *p;
+    int8_t found_idx = -1;
+    uint16_t mmu_idx = cpu_mmu_index(env);
+
+    target_ulong masked_virtual;
+    target_ulong page_index;
+    target_ulong physical;
+
+    nofault = !!nofault;
+
+    masked_virtual = virtual & TARGET_PAGE_MASK;
+    page_index = (virtual >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+
+    if ((env->tlb_table[mmu_idx][page_index].addr_write & TARGET_PAGE_MASK) == masked_virtual) {
+        physical = env->tlb_table[mmu_idx][page_index].addr_write;
+        found_idx = mmu_idx;
+    } else if ((env->tlb_table[mmu_idx][page_index].addr_read & TARGET_PAGE_MASK) == masked_virtual) {
+        physical = env->tlb_table[mmu_idx][page_index].addr_read;
+        found_idx = mmu_idx;
+    } else if ((env->tlb_table[mmu_idx][page_index].addr_code & TARGET_PAGE_MASK) == masked_virtual) {
+        physical = env->tlb_table[mmu_idx][page_index].addr_code;
+        found_idx = mmu_idx;
+    } else {
+        // Not mapped in current env mmu mode, check other modes
+        for (int idx = 0; idx < NB_MMU_MODES; idx++) {
+            if (idx == mmu_idx) {
+                // Already checked
+                continue;
+            }
+            if ((env->tlb_table[idx][page_index].addr_write & TARGET_PAGE_MASK) == masked_virtual) {
+                physical = env->tlb_table[idx][page_index].addr_write;
+                found_idx = idx;
+                break;
+            } else if ((env->tlb_table[idx][page_index].addr_read & TARGET_PAGE_MASK) == masked_virtual) {
+                physical = env->tlb_table[idx][page_index].addr_read;
+                found_idx = idx;
+                break;
+            } else if ((env->tlb_table[idx][page_index].addr_code & TARGET_PAGE_MASK) == masked_virtual) {
+                physical = env->tlb_table[idx][page_index].addr_code;
+                found_idx = idx;
+                break;
+            }
         }
-        return phys_addr;
+    }
+
+    if (found_idx == -1) {
+        if (nofault == 1) {
+            // Don't update tlb to avoid fault
+            return -1;
+        }
+        // Not mapped in any mode - referesh page table from h/w tables
+        tlb_fill(env, virtual & TARGET_PAGE_MASK, access_type, mmu_idx, &physical /* not used */);
+        found_idx = mmu_idx;
+        target_ulong mapped_address;
+        switch(access_type){
+        case 0:    // DATA_LOAD
+            mapped_address = env->tlb_table[mmu_idx][page_index].addr_read;
+            break;
+        case 1:    //DATA_STORE
+            mapped_address = env->tlb_table[mmu_idx][page_index].addr_write;
+            break;
+        case 2:    //INST_FETCH
+            mapped_address = env->tlb_table[mmu_idx][page_index].addr_code;
+            break;
+        default:
+            mapped_address = ~masked_virtual; // Mapping should fail
+        }
+
+        if (likely((mapped_address & TARGET_PAGE_MASK) == masked_virtual)) {
+            physical = mapped_address;
+        } else {
+            tlib_printf(LOG_LEVEL_ERROR, "Failed to get physical adress for virtual adress 0x%p", virtual);
+            return -1;
+        }
+    }
+
+    if (physical & TLB_MMIO) {
+        // The virtual address is mapping IO mem, not ram - use the IO page table
+        physical = (target_ulong)env->iotlb[found_idx][page_index];
+        physical = (physical + virtual) & TARGET_PAGE_MASK;
+    } else {
+        p = (void *)(uintptr_t)masked_virtual + env->tlb_table[found_idx][page_index].addend;
+        physical = tlib_host_ptr_to_guest_offset(p);
+        if (physical == -1) {
+            tlib_printf(LOG_LEVEL_ERROR, "No host mapping for host ptr 0x%p", p);
+            return -1;
+        }
+    }
+    physical |= (virtual & ~TARGET_PAGE_MASK);
+    return physical;
 }
 
 int tb_invalidated_flag;

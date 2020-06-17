@@ -115,7 +115,7 @@ typedef struct PhysPageDesc {
   ram_addr_t region_offset;
 } PhysPageDesc;
 
-target_ulong virt_to_phys(target_ulong virt);
+target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t nofault);
 
 void tlib_arch_dispose(void);
 void translate_init(void);

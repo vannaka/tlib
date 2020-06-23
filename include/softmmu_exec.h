@@ -11,34 +11,34 @@
 
 #include "softmmu_defs.h"
 
-#define ACCESS_TYPE 0
-#define MEMSUFFIX MMU_MODE0_SUFFIX
-#define DATA_SIZE 1
+#define ACCESS_TYPE     0
+#define MEMSUFFIX       MMU_MODE0_SUFFIX
+#define DATA_SIZE       1
 #include "softmmu_header.h"
 
-#define DATA_SIZE 2
+#define DATA_SIZE       2
 #include "softmmu_header.h"
 
-#define DATA_SIZE 4
+#define DATA_SIZE       4
 #include "softmmu_header.h"
 
-#define DATA_SIZE 8
+#define DATA_SIZE       8
 #include "softmmu_header.h"
 #undef ACCESS_TYPE
 #undef MEMSUFFIX
 
 #define ACCESS_TYPE 1
-#define MEMSUFFIX MMU_MODE1_SUFFIX
-#define DATA_SIZE 1
+#define MEMSUFFIX   MMU_MODE1_SUFFIX
+#define DATA_SIZE   1
 #include "softmmu_header.h"
 
-#define DATA_SIZE 2
+#define DATA_SIZE   2
 #include "softmmu_header.h"
 
-#define DATA_SIZE 4
+#define DATA_SIZE   4
 #include "softmmu_header.h"
 
-#define DATA_SIZE 8
+#define DATA_SIZE   8
 #include "softmmu_header.h"
 #undef ACCESS_TYPE
 #undef MEMSUFFIX
@@ -46,17 +46,17 @@
 #if (NB_MMU_MODES >= 3)
 
 #define ACCESS_TYPE 2
-#define MEMSUFFIX MMU_MODE2_SUFFIX
-#define DATA_SIZE 1
+#define MEMSUFFIX   MMU_MODE2_SUFFIX
+#define DATA_SIZE   1
 #include "softmmu_header.h"
 
-#define DATA_SIZE 2
+#define DATA_SIZE   2
 #include "softmmu_header.h"
 
-#define DATA_SIZE 4
+#define DATA_SIZE   4
 #include "softmmu_header.h"
 
-#define DATA_SIZE 8
+#define DATA_SIZE   8
 #include "softmmu_header.h"
 #undef ACCESS_TYPE
 #undef MEMSUFFIX
@@ -65,17 +65,17 @@
 #if (NB_MMU_MODES >= 4)
 
 #define ACCESS_TYPE 3
-#define MEMSUFFIX MMU_MODE3_SUFFIX
-#define DATA_SIZE 1
+#define MEMSUFFIX   MMU_MODE3_SUFFIX
+#define DATA_SIZE   1
 #include "softmmu_header.h"
 
-#define DATA_SIZE 2
+#define DATA_SIZE   2
 #include "softmmu_header.h"
 
-#define DATA_SIZE 4
+#define DATA_SIZE   4
 #include "softmmu_header.h"
 
-#define DATA_SIZE 8
+#define DATA_SIZE   8
 #include "softmmu_header.h"
 #undef ACCESS_TYPE
 #undef MEMSUFFIX
@@ -84,17 +84,17 @@
 #if (NB_MMU_MODES >= 5)
 
 #define ACCESS_TYPE 4
-#define MEMSUFFIX MMU_MODE4_SUFFIX
-#define DATA_SIZE 1
+#define MEMSUFFIX   MMU_MODE4_SUFFIX
+#define DATA_SIZE   1
 #include "softmmu_header.h"
 
-#define DATA_SIZE 2
+#define DATA_SIZE   2
 #include "softmmu_header.h"
 
-#define DATA_SIZE 4
+#define DATA_SIZE   4
 #include "softmmu_header.h"
 
-#define DATA_SIZE 8
+#define DATA_SIZE   8
 #include "softmmu_header.h"
 #undef ACCESS_TYPE
 #undef MEMSUFFIX
@@ -103,17 +103,17 @@
 #if (NB_MMU_MODES >= 6)
 
 #define ACCESS_TYPE 5
-#define MEMSUFFIX MMU_MODE5_SUFFIX
-#define DATA_SIZE 1
+#define MEMSUFFIX   MMU_MODE5_SUFFIX
+#define DATA_SIZE   1
 #include "softmmu_header.h"
 
-#define DATA_SIZE 2
+#define DATA_SIZE   2
 #include "softmmu_header.h"
 
-#define DATA_SIZE 4
+#define DATA_SIZE   4
 #include "softmmu_header.h"
 
-#define DATA_SIZE 8
+#define DATA_SIZE   8
 #include "softmmu_header.h"
 #undef ACCESS_TYPE
 #undef MEMSUFFIX
@@ -125,27 +125,27 @@
 
 /* these access are slower, they must be as rare as possible */
 #define ACCESS_TYPE (NB_MMU_MODES)
-#define MEMSUFFIX _data
-#define DATA_SIZE 1
+#define MEMSUFFIX   _data
+#define DATA_SIZE   1
 #include "softmmu_header.h"
 
-#define DATA_SIZE 2
+#define DATA_SIZE   2
 #include "softmmu_header.h"
 
-#define DATA_SIZE 4
+#define DATA_SIZE   4
 #include "softmmu_header.h"
 
-#define DATA_SIZE 8
+#define DATA_SIZE   8
 #include "softmmu_header.h"
 #undef ACCESS_TYPE
 #undef MEMSUFFIX
 
-#define ldub(p) ldub_data(p)
-#define ldsb(p) ldsb_data(p)
-#define lduw(p) lduw_data(p)
-#define ldsw(p) ldsw_data(p)
-#define ldl(p) ldl_data(p)
-#define ldq(p) ldq_data(p)
+#define ldub(p)   ldub_data(p)
+#define ldsb(p)   ldsb_data(p)
+#define lduw(p)   lduw_data(p)
+#define ldsw(p)   ldsw_data(p)
+#define ldl(p)    ldl_data(p)
+#define ldq(p)    ldq_data(p)
 
 #define stb(p, v) stb_data(p, v)
 #define stw(p, v) stw_data(p, v)
@@ -154,14 +154,14 @@
 
 #define MMUSUFFIX _mmu
 
-#define SHIFT 0
+#define SHIFT     0
 #include "softmmu_template.h"
 
-#define SHIFT 1
+#define SHIFT     1
 #include "softmmu_template.h"
 
-#define SHIFT 2
+#define SHIFT     2
 #include "softmmu_template.h"
 
-#define SHIFT 3
+#define SHIFT     3
 #include "softmmu_template.h"

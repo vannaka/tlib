@@ -42,7 +42,7 @@ void *tlib_mallocz(size_t size)
     return ret;
 }
 
-char *tlib_strdup(const char * str)
+char *tlib_strdup(const char *str)
 {
     int length = strlen(str);
     char *ret = tlib_malloc(length + 1);

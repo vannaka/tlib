@@ -23,52 +23,63 @@
 
 #ifdef TARGET_I386
 
-int cpu_is_bsp(void *env) {
+int cpu_is_bsp(void *env)
+{
     tlib_printf(LOG_LEVEL_WARNING, "%s(...)", __FUNCTION__);
     return 0;
 }
 
-uint64_t cpu_get_apic_base(void *s) {
+uint64_t cpu_get_apic_base(void *s)
+{
     tlib_printf(LOG_LEVEL_WARNING, "%s(...)", __FUNCTION__);
     return 0;
 }
 
-void apic_init_reset(void *s) {
+void apic_init_reset(void *s)
+{
     tlib_printf(LOG_LEVEL_WARNING, "%s(...)", __FUNCTION__);
 }
 
-void cpu_smm_update(void *env) {
+void cpu_smm_update(void *env)
+{
     tlib_printf(LOG_LEVEL_WARNING, "%s(...)", __FUNCTION__);
 }
 
-void cpu_set_ferr(void *s) {
+void cpu_set_ferr(void *s)
+{
     tlib_printf(LOG_LEVEL_WARNING, "%s(...)", __FUNCTION__);
 }
 
 //task priority register
-void cpu_set_apic_tpr(void *s, uint8_t val) {
-    tlib_printf(LOG_LEVEL_WARNING, "%s(%X)", __FUNCTION__,val);
+void cpu_set_apic_tpr(void *s, uint8_t val)
+{
+    tlib_printf(LOG_LEVEL_WARNING, "%s(%X)", __FUNCTION__, val);
 }
 
-void cpu_set_apic_base(void *d, uint64_t val) {
-    tlib_printf(LOG_LEVEL_WARNING, "%s(%X) is currently not supported", __FUNCTION__,val);
+void cpu_set_apic_base(void *d, uint64_t val)
+{
+    tlib_printf(LOG_LEVEL_WARNING, "%s(%X) is currently not supported", __FUNCTION__, val);
 }
 
-int cpu_get_pic_interrupt(void *env) {
+int cpu_get_pic_interrupt(void *env)
+{
     return tlib_get_pending_interrupt();
 }
 
 //task priority register
-uint8_t cpu_get_apic_tpr(void *d) {
+uint8_t cpu_get_apic_tpr(void *d)
+{
     tlib_printf(LOG_LEVEL_WARNING, "%s(...)", __FUNCTION__);
     return 0;
 }
 
-void apic_sipi(void *s) {
+void apic_sipi(void *s)
+{
     tlib_printf(LOG_LEVEL_WARNING, "%s(...)", __FUNCTION__);
 }
 
-uint64_t cpu_get_tsc(void *env) {
+uint64_t cpu_get_tsc(void *env)
+{
     return tlib_get_instruction_count();
 }
 

@@ -46,7 +46,7 @@ void tlib_set_translation_cache_size(uintptr_t size);
 void tlib_invalidate_translation_cache(void);
 
 int tlib_restore_context(void);
-void* tlib_export_state(void);
+void *tlib_export_state(void);
 int32_t tlib_get_state_size(void);
 
 void tlib_set_chaining_enabled(uint32_t val);

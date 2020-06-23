@@ -24,42 +24,39 @@
 /* bit field [31:28] is for processor index */
 void tlib_set_slot(uint32_t slot)
 {
-  unsigned int asr17;
-  /* Default value is set for core 0, */
-  /* only update ASR17 for slave cores 1-15 */
-  if((slot > 0) && slot < 16)
-  {
-    asr17 = (unsigned int)((cpu->asr[1] & 0xFFFFFFF) +
-        ((slot << 28) & 0xF0000000));
-    cpu->asr[1] = asr17;
-  }
+    unsigned int asr17;
+    /* Default value is set for core 0, */
+    /* only update ASR17 for slave cores 1-15 */
+    if ((slot > 0) && slot < 16) {
+        asr17 = (unsigned int)((cpu->asr[1] & 0xFFFFFFF) + ((slot << 28) & 0xF0000000));
+        cpu->asr[1] = asr17;
+    }
 }
 
 void tlib_set_entry_point(uint32_t entry_point)
 {
-  cpu->pc = entry_point;
-  cpu->npc = cpu->pc + 4;
+    cpu->pc = entry_point;
+    cpu->npc = cpu->pc + 4;
 }
 
 void tlib_clear_wfi()
 {
-  cpu->wfi = 0;
+    cpu->wfi = 0;
 }
 
 void tlib_set_wfi()
 {
-  cpu->wfi = 1;
+    cpu->wfi = 1;
 }
 
 void tlib_before_save(CPUState *env)
 {
-  cpu_set_cwp(env, env->cwp);
-  env->psr = cpu_get_psr(env);
+    cpu_set_cwp(env, env->cwp);
+    env->psr = cpu_get_psr(env);
 }
 
 void tlib_after_load(CPUState *env)
 {
-  env->cwp = 0;
-  cpu_put_psr(env, env->psr);
+    env->cwp = 0;
+    cpu_put_psr(env, env->psr);
 }
-

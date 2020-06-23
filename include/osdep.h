@@ -11,10 +11,10 @@
 #include <sys/time.h>
 
 #ifndef glue
-#define xglue(x, y) x ## y
-#define glue(x, y) xglue(x, y)
-#define stringify(s)	tostring(s)
-#define tostring(s)	#s
+#define xglue(x, y)  x ## y
+#define glue(x, y)   xglue(x, y)
+#define stringify(s) tostring(s)
+#define tostring(s)  #s
 #endif
 
 #ifndef likely
@@ -22,8 +22,8 @@
 #define __builtin_expect(x, n) (x)
 #endif
 
-#define likely(x)   __builtin_expect(!!(x), 1)
-#define unlikely(x)   __builtin_expect(!!(x), 0)
+#define likely(x)              __builtin_expect(!!(x), 1)
+#define unlikely(x)            __builtin_expect(!!(x), 0)
 #endif
 
 #ifdef CONFIG_NEED_OFFSETOF

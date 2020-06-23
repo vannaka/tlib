@@ -43,64 +43,55 @@ typedef ram_addr_t tb_page_addr_t;
 struct TranslationBlock;
 typedef struct TranslationBlock TranslationBlock;
 
-void gen_exit_tb(uintptr_t, TranslationBlock*);
-void gen_exit_tb_no_chaining(TranslationBlock*);
+void gen_exit_tb(uintptr_t, TranslationBlock *);
+void gen_exit_tb_no_chaining(TranslationBlock *);
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc);
 int gen_intermediate_code(CPUState *env, DisasContextBase *base);
 int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp);
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base);
 void do_interrupt(CPUState *env);
 void setup_disas_context(DisasContextBase *dc, CPUState *env);
-void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb,
-                          int pc_pos);
+void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb, int pc_pos);
 
-void cpu_gen_code(CPUState *env, struct TranslationBlock *tb,
-                 int *gen_code_size_ptr);
-int cpu_restore_state(CPUState *env, struct TranslationBlock *tb,
-		 uintptr_t searched_pc);
-int cpu_restore_state_and_restore_instructions_count(CPUState *env, struct TranslationBlock *tb,
-		 uintptr_t searched_pc);
-TranslationBlock *tb_gen_code(CPUState *env,
-                              target_ulong pc, target_ulong cs_base, int flags,
-                              int cflags);
+void cpu_gen_code(CPUState *env, struct TranslationBlock *tb, int *gen_code_size_ptr);
+int cpu_restore_state(CPUState *env, struct TranslationBlock *tb, uintptr_t searched_pc);
+int cpu_restore_state_and_restore_instructions_count(CPUState *env, struct TranslationBlock *tb, uintptr_t searched_pc);
+TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_base, int flags, int cflags);
 void cpu_exec_init(CPUState *env);
 void cpu_exec_init_all();
 void TLIB_NORETURN cpu_loop_exit(CPUState *env1);
 void TLIB_NORETURN cpu_loop_exit_restore(CPUState *env1, uintptr_t pc, uint32_t call_hook);
-void tb_invalidate_phys_page_range(tb_page_addr_t start, tb_page_addr_t end,
-                                   int is_cpu_write_access);
+void tb_invalidate_phys_page_range(tb_page_addr_t start, tb_page_addr_t end, int is_cpu_write_access);
 void tlb_flush_page(CPUState *env, target_ulong addr);
 void tlb_flush(CPUState *env, int flush_global);
-void tlb_set_page(CPUState *env, target_ulong vaddr,
-                  target_phys_addr_t paddr, int prot,
-                  int mmu_idx, target_ulong size);
+void tlb_set_page(CPUState *env, target_ulong vaddr, target_phys_addr_t paddr, int prot, int mmu_idx, target_ulong size);
 
 #define CODE_GEN_ALIGN           16 /* must be >= of the size of a icache line */
 
-#define CODE_GEN_PHYS_HASH_BITS     15
-#define CODE_GEN_PHYS_HASH_SIZE     (1 << CODE_GEN_PHYS_HASH_BITS)
+#define CODE_GEN_PHYS_HASH_BITS  15
+#define CODE_GEN_PHYS_HASH_SIZE  (1 << CODE_GEN_PHYS_HASH_BITS)
 
-#define MIN_CODE_GEN_BUFFER_SIZE     (1024 * 1024)
+#define MIN_CODE_GEN_BUFFER_SIZE (1024 * 1024)
 
 /* estimated block size for TB allocation */
 /* XXX: use a per code average code fragment size and modulate it
    according to the host CPU */
-#define CODE_GEN_AVG_BLOCK_SIZE 128
+#define CODE_GEN_AVG_BLOCK_SIZE  128
 
 extern uint32_t size_of_next_block_to_translate;
 uint32_t maximum_block_size;
 
 struct TranslationBlock {
-    target_ulong pc;   /* simulated PC corresponding to this block (EIP + CS base) */
+    target_ulong pc;      /* simulated PC corresponding to this block (EIP + CS base) */
     target_ulong cs_base; /* CS base for this block */
-    uint64_t flags; /* flags defining in which context the code was generated */
+    uint64_t flags;       /* flags defining in which context the code was generated */
     uint32_t disas_flags;
-    uint16_t size;      /* size of target code for this block (1 <=
-                           size <= TARGET_PAGE_SIZE) */
-    uint16_t cflags;    /* compile flags */
-#define CF_COUNT_MASK  0x7fff
+    uint16_t size;        /* size of target code for this block (1 <=
+                             size <= TARGET_PAGE_SIZE) */
+    uint16_t cflags;      /* compile flags */
+#define CF_COUNT_MASK 0x7fff
 
-    uint8_t *tc_ptr;    /* pointer to the translated code */
+    uint8_t *tc_ptr;      /* pointer to the translated code */
     /* next matching tb for physical address. */
     struct TranslationBlock *phys_hash_next;
     /* first and second physical page containing code. The lower bit
@@ -111,7 +102,7 @@ struct TranslationBlock {
     /* the following data are used to directly call another TB from
        the code of this one. */
     uint16_t tb_next_offset[2]; /* offset of original jump target */
-    uint16_t tb_jmp_offset[2]; /* offset of jump instruction */
+    uint16_t tb_jmp_offset[2];  /* offset of jump instruction */
     /* list of TBs jumping to this one. This is a circular list using
        the two least significant bits of the pointers to tell what is
        the next pointer: 0 = jmp_next[0], 1 = jmp_next[1], 2 =
@@ -130,7 +121,7 @@ struct TranslationBlock {
     uint32_t instructions_count_dirty;
 #if DEBUG
     uint32_t lock_active;
-    char* lock_file;
+    char *lock_file;
     int lock_line;
 #endif
 };
@@ -146,8 +137,7 @@ static inline unsigned int tb_jmp_cache_hash_func(target_ulong pc)
 {
     target_ulong tmp;
     tmp = pc ^ (pc >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS));
-    return (((tmp >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS)) & TB_JMP_PAGE_MASK)
-	    | (tmp & TB_JMP_ADDR_MASK));
+    return (((tmp >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS)) & TB_JMP_PAGE_MASK) | (tmp & TB_JMP_ADDR_MASK));
 }
 
 static inline unsigned int tb_phys_hash_func(tb_page_addr_t pc)
@@ -157,8 +147,7 @@ static inline unsigned int tb_phys_hash_func(tb_page_addr_t pc)
 
 void tb_free(TranslationBlock *tb);
 void tb_flush(CPUState *env);
-void tb_link_page(TranslationBlock *tb,
-                  tb_page_addr_t phys_pc, tb_page_addr_t phys_page2);
+void tb_link_page(TranslationBlock *tb, tb_page_addr_t phys_pc, tb_page_addr_t phys_page2);
 void tb_phys_invalidate(TranslationBlock *tb, tb_page_addr_t page_addr);
 
 extern TranslationBlock *tb_phys_hash[CODE_GEN_PHYS_HASH_SIZE];
@@ -181,11 +170,10 @@ static inline void tb_set_jmp_target1(uintptr_t jmp_addr, uintptr_t addr)
 
     /* we could use a ldr pc, [pc, #-4] kind of branch and avoid the flush */
     *(uint32_t *)jmp_addr =
-        (*(uint32_t *)jmp_addr & ~0xffffff)
-        | (((addr - (jmp_addr + 8)) >> 2) & 0xffffff);
+        (*(uint32_t *)jmp_addr & ~0xffffff) | (((addr - (jmp_addr + 8)) >> 2) & 0xffffff);
 
 #if defined(__GNUC__)
-    __builtin___clear_cache((char *) jmp_addr, (char *) jmp_addr + 4);
+    __builtin___clear_cache((char *)jmp_addr, (char *)jmp_addr + 4);
 #else
     /* flush icache */
     _beg = jmp_addr;
@@ -198,8 +186,7 @@ static inline void tb_set_jmp_target1(uintptr_t jmp_addr, uintptr_t addr)
 #error tb_set_jmp_target1 is missing
 #endif
 
-static inline void tb_set_jmp_target(TranslationBlock *tb,
-                                     int n, uintptr_t addr)
+static inline void tb_set_jmp_target(TranslationBlock *tb, int n, uintptr_t addr)
 {
     uintptr_t offset;
 
@@ -207,8 +194,7 @@ static inline void tb_set_jmp_target(TranslationBlock *tb,
     tb_set_jmp_target1((uintptr_t)(tb->tc_ptr + offset), addr);
 }
 
-static inline void tb_add_jump(TranslationBlock *tb, int n,
-                               TranslationBlock *tb_next)
+static inline void tb_add_jump(TranslationBlock *tb, int n, TranslationBlock *tb_next)
 {
     /* NOTE: this test is only needed for thread safety */
     if (!tb->jmp_next[n]) {
@@ -229,25 +215,24 @@ extern CPUWriteMemoryFunc *io_mem_write[IO_MEM_NB_ENTRIES][4];
 extern CPUReadMemoryFunc *io_mem_read[IO_MEM_NB_ENTRIES][4];
 extern void *io_mem_opaque[IO_MEM_NB_ENTRIES];
 
-void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx,
-              void *retaddr);
+void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx, void *retaddr);
 
 #include "softmmu_defs.h"
 
 #define ACCESS_TYPE (NB_MMU_MODES + 1)
-#define MEMSUFFIX _code
-#define env cpu
+#define MEMSUFFIX   _code
+#define env         cpu
 
-#define DATA_SIZE 1
+#define DATA_SIZE   1
 #include "softmmu_header.h"
 
-#define DATA_SIZE 2
+#define DATA_SIZE   2
 #include "softmmu_header.h"
 
-#define DATA_SIZE 4
+#define DATA_SIZE   4
 #include "softmmu_header.h"
 
-#define DATA_SIZE 8
+#define DATA_SIZE   8
 #include "softmmu_header.h"
 
 #undef ACCESS_TYPE
@@ -264,8 +249,7 @@ static inline tb_page_addr_t get_page_addr_code(CPUState *env1, target_ulong add
 
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = cpu_mmu_index(env1);
-    if (unlikely(env1->tlb_table[mmu_idx][page_index].addr_code !=
-                 (addr & TARGET_PAGE_MASK))) {
+    if (unlikely(env1->tlb_table[mmu_idx][page_index].addr_code != (addr & TARGET_PAGE_MASK))) {
         ldub_code(addr);
     }
     pd = env1->tlb_table[mmu_idx][page_index].addr_code & ~TARGET_PAGE_MASK;
@@ -283,8 +267,7 @@ CPUDebugExcpHandler *cpu_set_debug_excp_handler(CPUDebugExcpHandler *handler);
 /* cpu-exec.c */
 PhysPageDesc *phys_page_find(target_phys_addr_t index);
 
-void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t end,
-                                         int is_cpu_write_access, int broadcast);
+void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t end, int is_cpu_write_access, int broadcast);
 
 extern void unmap_page(target_phys_addr_t address);
 void free_all_page_descriptors(void);

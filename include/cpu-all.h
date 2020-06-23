@@ -86,11 +86,11 @@ typedef union {
 } CPU_DoubleU;
 
 typedef union {
-     floatx80 d;
-     struct {
-         uint64_t lower;
-         uint16_t upper;
-     } l;
+    floatx80 d;
+    struct {
+        uint64_t lower;
+        uint16_t upper;
+    } l;
 } CPU_LDoubleU;
 
 typedef union {
@@ -321,7 +321,6 @@ static inline int ldsw_be_p(const void *ptr)
 #endif
 }
 
-
 static inline int ldl_be_p(const void *ptr)
 {
 #if defined(__i386__) || defined(__x86_64__)
@@ -339,10 +338,10 @@ static inline int ldl_be_p(const void *ptr)
 
 static inline uint64_t ldq_be_p(const void *ptr)
 {
-    uint32_t a,b;
+    uint32_t a, b;
     a = ldl_be_p(ptr);
     b = ldl_be_p((uint8_t *)ptr + 4);
-    return (((uint64_t)a<<32)|b);
+    return (((uint64_t)a << 32) | b);
 }
 
 static inline void stw_be_p(void *ptr, int v)
@@ -353,7 +352,7 @@ static inline void stw_be_p(void *ptr, int v)
                   : "=q" (v)
                   : "m" (*(uint16_t *)ptr), "0" (v));
 #else
-    uint8_t *d = (uint8_t *) ptr;
+    uint8_t *d = (uint8_t *)ptr;
     d[0] = v >> 8;
     d[1] = v;
 #endif
@@ -367,7 +366,7 @@ static inline void stl_be_p(void *ptr, int v)
                   : "=r" (v)
                   : "m" (*(uint32_t *)ptr), "0" (v));
 #else
-    uint8_t *d = (uint8_t *) ptr;
+    uint8_t *d = (uint8_t *)ptr;
     d[0] = v >> 24;
     d[1] = v >> 16;
     d[2] = v >> 8;
@@ -411,7 +410,6 @@ static inline int ldsw_be_p(const void *ptr)
     return *(int16_t *)ptr;
 }
 
-
 static inline int ldl_be_p(const void *ptr)
 {
     return *(uint32_t *)ptr;
@@ -453,24 +451,24 @@ static inline void stfq_be_p(void *ptr, float64 v)
 
 /* target CPU memory access functions */
 #if defined(TARGET_WORDS_BIGENDIAN)
-#define lduw_p(p) lduw_be_p(p)
-#define ldsw_p(p) ldsw_be_p(p)
-#define ldl_p(p) ldl_be_p(p)
-#define ldq_p(p) ldq_be_p(p)
-#define ldfq_p(p) ldfq_be_p(p)
-#define stw_p(p, v) stw_be_p(p, v)
-#define stl_p(p, v) stl_be_p(p, v)
-#define stq_p(p, v) stq_be_p(p, v)
+#define lduw_p(p)    lduw_be_p(p)
+#define ldsw_p(p)    ldsw_be_p(p)
+#define ldl_p(p)     ldl_be_p(p)
+#define ldq_p(p)     ldq_be_p(p)
+#define ldfq_p(p)    ldfq_be_p(p)
+#define stw_p(p, v)  stw_be_p(p, v)
+#define stl_p(p, v)  stl_be_p(p, v)
+#define stq_p(p, v)  stq_be_p(p, v)
 #define stfq_p(p, v) stfq_be_p(p, v)
 #else
-#define lduw_p(p) lduw_le_p(p)
-#define ldsw_p(p) ldsw_le_p(p)
-#define ldl_p(p) ldl_le_p(p)
-#define ldq_p(p) ldq_le_p(p)
-#define ldfq_p(p) ldfq_le_p(p)
-#define stw_p(p, v) stw_le_p(p, v)
-#define stl_p(p, v) stl_le_p(p, v)
-#define stq_p(p, v) stq_le_p(p, v)
+#define lduw_p(p)    lduw_le_p(p)
+#define ldsw_p(p)    ldsw_le_p(p)
+#define ldl_p(p)     ldl_le_p(p)
+#define ldq_p(p)     ldq_le_p(p)
+#define ldfq_p(p)    ldfq_le_p(p)
+#define stw_p(p, v)  stw_le_p(p, v)
+#define stl_p(p, v)  stl_le_p(p, v)
+#define stq_p(p, v)  stq_le_p(p, v)
 #define stfq_p(p, v) stfq_le_p(p, v)
 #endif
 
@@ -478,19 +476,19 @@ static inline void stfq_be_p(void *ptr, float64 v)
 
 /* NOTE: we use double casts if pointers and target_ulong have
    different sizes */
-#define saddr(x) (uint8_t *)(uintptr_t)(x)
-#define laddr(x) (uint8_t *)(uintptr_t)(x)
+#define saddr(x)       (uint8_t *)(uintptr_t)(x)
+#define laddr(x)       (uint8_t *)(uintptr_t)(x)
 
-#define ldub_raw(p) ldub_p(laddr((p)))
-#define ldsb_raw(p) ldsb_p(laddr((p)))
-#define lduw_raw(p) lduw_p(laddr((p)))
-#define ldl_raw(p) ldl_p(laddr((p)))
-#define ldsw_raw(p) ldsw_p(laddr((p)))
-#define ldq_raw(p) ldq_p(laddr((p)))
-#define stb_raw(p, v) stb_p(saddr((p)), v)
-#define stw_raw(p, v) stw_p(saddr((p)), v)
-#define stl_raw(p, v) stl_p(saddr((p)), v)
-#define stq_raw(p, v) stq_p(saddr((p)), v)
+#define ldub_raw(p)    ldub_p(laddr((p)))
+#define ldsb_raw(p)    ldsb_p(laddr((p)))
+#define lduw_raw(p)    lduw_p(laddr((p)))
+#define ldl_raw(p)     ldl_p(laddr((p)))
+#define ldsw_raw(p)    ldsw_p(laddr((p)))
+#define ldq_raw(p)     ldq_p(laddr((p)))
+#define stb_raw(p, v)  stb_p(saddr((p)), v)
+#define stw_raw(p, v)  stw_p(saddr((p)), v)
+#define stl_raw(p, v)  stl_p(saddr((p)), v)
+#define stq_raw(p, v)  stq_p(saddr((p)), v)
 #define stfq_raw(p, v) stfq_p(saddr((p)), v)
 
 /* page related stuff */
@@ -517,7 +515,7 @@ extern uintptr_t tlib_host_page_mask;
    code */
 #define PAGE_WRITE_ORG 0x0010
 
-#define CPU_DUMP_CODE 0x00010000
+#define CPU_DUMP_CODE  0x00010000
 
 void cpu_abort(CPUState *env, const char *fmt, ...);
 extern CPUState *cpu;
@@ -531,31 +529,31 @@ extern CPUState *cpu;
 
 /* External hardware interrupt pending.  This is typically used for
    interrupts from devices.  */
-#define CPU_INTERRUPT_HARD        0x0002
+#define CPU_INTERRUPT_HARD      0x0002
 
 /* Exit the current TB.  This is typically used when some system-level device
    makes some change to the memory mapping.  E.g. the a20 line change.  */
-#define CPU_INTERRUPT_EXITTB      0x0004
+#define CPU_INTERRUPT_EXITTB    0x0004
 
 /* Debug event pending.  */
-#define CPU_INTERRUPT_DEBUG       0x0080
+#define CPU_INTERRUPT_DEBUG     0x0080
 
 /* Several target-specific external hardware interrupts.  Each target/cpu.h
    should define proper names based on these defines.  */
-#define CPU_INTERRUPT_TGT_EXT_0   0x0008
-#define CPU_INTERRUPT_TGT_EXT_1   0x0010
-#define CPU_INTERRUPT_TGT_EXT_2   0x0040
-#define CPU_INTERRUPT_TGT_EXT_3   0x0200
-#define CPU_INTERRUPT_TGT_EXT_4   0x1000
+#define CPU_INTERRUPT_TGT_EXT_0 0x0008
+#define CPU_INTERRUPT_TGT_EXT_1 0x0010
+#define CPU_INTERRUPT_TGT_EXT_2 0x0040
+#define CPU_INTERRUPT_TGT_EXT_3 0x0200
+#define CPU_INTERRUPT_TGT_EXT_4 0x1000
 
 /* Several target-specific internal interrupts.  These differ from the
    preceeding target-specific interrupts in that they are intended to
    originate from within the cpu itself, typically in response to some
    instruction being executed.  These, therefore, are not masked while
    single-stepping within the debugger.  */
-#define CPU_INTERRUPT_TGT_INT_0   0x0100
-#define CPU_INTERRUPT_TGT_INT_1   0x0400
-#define CPU_INTERRUPT_TGT_INT_2   0x0800
+#define CPU_INTERRUPT_TGT_INT_0 0x0100
+#define CPU_INTERRUPT_TGT_INT_1 0x0400
+#define CPU_INTERRUPT_TGT_INT_2 0x0800
 
 /* First unused bit: 0x2000.  */
 
@@ -570,13 +568,11 @@ static inline void cpu_interrupt(CPUState *s, int mask)
 
 void cpu_reset_interrupt(CPUState *env, int mask);
 
-
 /* Breakpoint flags */
-#define BP_GDB                0x10
-#define BP_CPU                0x20
+#define BP_GDB 0x10
+#define BP_CPU 0x20
 
-int cpu_breakpoint_insert(CPUState *env, target_ulong pc, int flags,
-                          CPUBreakpoint **breakpoint);
+int cpu_breakpoint_insert(CPUState *env, target_ulong pc, int flags, CPUBreakpoint **breakpoint);
 int cpu_breakpoint_remove(CPUState *env, target_ulong pc, int flags);
 void cpu_breakpoint_remove_by_ref(CPUState *env, CPUBreakpoint *breakpoint);
 void cpu_breakpoint_remove_all(CPUState *env, int mask);
@@ -603,22 +599,22 @@ extern dirty_ram_t dirty_ram;
 /* physical memory access */
 
 /* MMIO pages are identified by a combination of an IO device index and
-   3 flags.  The ROMD code stores the page ram offset in iotlb entry, 
+   3 flags.  The ROMD code stores the page ram offset in iotlb entry,
    so only a limited number of ids are avaiable.  */
 
-#define IO_MEM_NB_ENTRIES  (1 << (TARGET_PAGE_BITS  - IO_MEM_SHIFT))
+#define IO_MEM_NB_ENTRIES (1 << (TARGET_PAGE_BITS  - IO_MEM_SHIFT))
 
 /* Flags stored in the low bits of the TLB virtual address.  These are
    defined so that fast path ram access is all zeros.  */
 /* Zero if TLB entry is valid.  */
-#define TLB_INVALID_MASK   (1 << 3)
+#define TLB_INVALID_MASK  (1 << 3)
 /* Set if TLB entry references a clean RAM page.  The iotlb entry will
    contain the page physical address.  */
-#define TLB_NOTDIRTY    (1 << 4)
+#define TLB_NOTDIRTY      (1 << 4)
 /* Set if TLB entry is an IO callback.  */
-#define TLB_MMIO        (1 << 5)
+#define TLB_MMIO          (1 << 5)
 
-#define CODE_DIRTY_FLAG      0x02
+#define CODE_DIRTY_FLAG   0x02
 
 /* read dirty bit (return 0 or 1) */
 static inline int cpu_physical_memory_is_dirty(ram_addr_t addr)
@@ -631,8 +627,7 @@ static inline int cpu_physical_memory_get_dirty_flags(ram_addr_t addr)
     return dirty_ram.phys_dirty[addr >> TARGET_PAGE_BITS];
 }
 
-static inline int cpu_physical_memory_get_dirty(ram_addr_t addr,
-                                                int dirty_flags)
+static inline int cpu_physical_memory_get_dirty(ram_addr_t addr, int dirty_flags)
 {
     return dirty_ram.phys_dirty[addr >> TARGET_PAGE_BITS] & dirty_flags;
 }
@@ -642,15 +637,12 @@ static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
     dirty_ram.phys_dirty[addr >> TARGET_PAGE_BITS] = 0xff;
 }
 
-static inline int cpu_physical_memory_set_dirty_flags(ram_addr_t addr,
-                                                      int dirty_flags)
+static inline int cpu_physical_memory_set_dirty_flags(ram_addr_t addr, int dirty_flags)
 {
     return dirty_ram.phys_dirty[addr >> TARGET_PAGE_BITS] |= dirty_flags;
 }
 
-static inline void cpu_physical_memory_mask_dirty_range(ram_addr_t start,
-                                                        int length,
-                                                        int dirty_flags)
+static inline void cpu_physical_memory_mask_dirty_range(ram_addr_t start, int length, int dirty_flags)
 {
     int i, mask, len;
     uint8_t *p;
@@ -663,6 +655,5 @@ static inline void cpu_physical_memory_mask_dirty_range(ram_addr_t start,
     }
 }
 
-void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
-                                     int dirty_flags);
+void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end, int dirty_flags);
 #endif /* CPU_ALL_H */

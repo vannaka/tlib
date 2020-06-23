@@ -26,10 +26,10 @@ void tlib_abort(char *message) __attribute__((weak));
 
 void tlib_abort(char *message)
 {
-  abort();
+    abort();
 }
 
-DEFAULT_VOID_HANDLER2(void tlib_log, enum log_level level, char* message)
+DEFAULT_VOID_HANDLER2(void tlib_log, enum log_level level, char *message)
 
 DEFAULT_INT_HANDLER1(uint32_t tlib_read_byte, uint64_t address)
 
@@ -53,21 +53,21 @@ void *tlib_malloc(size_t size) __attribute__((weak));
 
 void *tlib_malloc(size_t size)
 {
-  return malloc(size);
+    return malloc(size);
 }
 
 void *tlib_realloc(void *ptr, size_t size) __attribute__((weak));
 
 void *tlib_realloc(void *ptr, size_t size)
 {
-  return realloc(ptr, size);
+    return realloc(ptr, size);
 }
 
 void tlib_free(void *ptr) __attribute__((weak));
 
 void tlib_free(void *ptr)
 {
-  free(ptr);
+    free(ptr);
 }
 
 DEFAULT_VOID_HANDLER1(void tlib_on_translation_cache_size_change, uint64_t new_size)
@@ -80,7 +80,7 @@ int32_t tlib_is_on_block_translation_enabled;
 
 void tlib_set_on_block_translation_enabled(int32_t value)
 {
-  tlib_is_on_block_translation_enabled = value;
+    tlib_is_on_block_translation_enabled = value;
 }
 
 void tlib_on_block_translation(uint64_t start, uint32_t size, uint32_t flags) __attribute__((weak));

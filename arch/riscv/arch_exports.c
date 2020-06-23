@@ -33,12 +33,9 @@ void tlib_set_mip_bit(uint32_t position, uint32_t value)
 {
     pthread_mutex_lock(&cpu->mip_lock);
     // here we might have a race
-    if(value)
-    {
+    if (value) {
         cpu->mip |= ((target_ulong)1 << position);
-    }
-    else
-    {
+    } else {
         cpu->mip &= ~((target_ulong)1 << position);
     }
     pthread_mutex_unlock(&cpu->mip_lock);
@@ -51,20 +48,16 @@ void tlib_allow_feature(uint32_t feature_bit)
 
     // availability of F/D extensions
     // is indicated by a bit in MSTATUS
-    if(feature_bit == 'F' - 'A' || feature_bit == 'D' - 'A')
-    {
+    if (feature_bit == 'F' - 'A' || feature_bit == 'D' - 'A') {
         set_default_mstatus();
     }
 }
 
 void tlib_mark_feature_silent(uint32_t feature_bit, uint32_t value)
 {
-    if(value)
-    {
+    if (value) {
         cpu->silenced_extensions |= (1L << feature_bit);
-    }
-    else
-    {
+    } else {
         cpu->silenced_extensions &= ~(1L << feature_bit);
     }
 }
@@ -89,8 +82,7 @@ void tlib_set_privilege_architecture(int32_t privilege_architecture)
 
 uint64_t tlib_install_custom_instruction(uint64_t mask, uint64_t pattern, uint64_t length)
 {
-    if(cpu->custom_instructions_count == CPU_CUSTOM_INSTRUCTIONS_LIMIT)
-    {
+    if (cpu->custom_instructions_count == CPU_CUSTOM_INSTRUCTIONS_LIMIT) {
         // no more empty slots
         return 0;
     }
@@ -105,7 +97,7 @@ uint64_t tlib_install_custom_instruction(uint64_t mask, uint64_t pattern, uint64
     return ci->id;
 }
 
-void helper_wfi(CPUState* env);
+void helper_wfi(CPUState *env);
 void tlib_enter_wfi()
 {
     helper_wfi(cpu);
@@ -113,20 +105,19 @@ void tlib_enter_wfi()
 
 uint32_t tlib_set_csr_validation_level(uint32_t value)
 {
-    switch(value)
+    switch (value) {
+    case CSR_VALIDATION_FULL:
+    case CSR_VALIDATION_PRIV:
+    case CSR_VALIDATION_NONE:
     {
-        case CSR_VALIDATION_FULL:
-        case CSR_VALIDATION_PRIV:
-        case CSR_VALIDATION_NONE:
-            {
-                uint32_t result = cpu->csr_validation_level;
-                cpu->csr_validation_level = value;
-                return result;
-            }
+        uint32_t result = cpu->csr_validation_level;
+        cpu->csr_validation_level = value;
+        return result;
+    }
 
-        default:
-            tlib_abortf("Unexpected CSR validation level: %d", value);
-            return cpu->csr_validation_level;
+    default:
+        tlib_abortf("Unexpected CSR validation level: %d", value);
+        return cpu->csr_validation_level;
     }
 }
 
@@ -134,9 +125,9 @@ void tlib_set_nmi_vector(uint64_t nmi_adress, uint32_t nmi_length)
 {
     if (nmi_adress > (TARGET_ULONG_MAX - nmi_length)) {
         cpu_abort(cpu, "NMIVectorAddress or NMIVectorLength value invalid. "
-            "Vector defined with these parameters will not fit in memory address space.");
+                  "Vector defined with these parameters will not fit in memory address space.");
     } else {
-        cpu->nmi_address = (target_ulong) nmi_adress;
+        cpu->nmi_address = (target_ulong)nmi_adress;
     }
     if (nmi_length > 32) {
         cpu_abort(cpu, "NMIVectorLength %d too big, maximum length supported is 32", nmi_length);

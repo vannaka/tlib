@@ -17,22 +17,22 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 #if DATA_SIZE == 8
-#define SUFFIX q
-#define USUFFIX q
-#define DATA_TYPE uint64_t
+#define SUFFIX     q
+#define USUFFIX    q
+#define DATA_TYPE  uint64_t
 #elif DATA_SIZE == 4
-#define SUFFIX l
-#define USUFFIX l
-#define DATA_TYPE uint32_t
+#define SUFFIX     l
+#define USUFFIX    l
+#define DATA_TYPE  uint32_t
 #elif DATA_SIZE == 2
-#define SUFFIX w
-#define USUFFIX uw
-#define DATA_TYPE uint16_t
+#define SUFFIX     w
+#define USUFFIX    uw
+#define DATA_TYPE  uint16_t
 #define DATA_STYPE int16_t
 #elif DATA_SIZE == 1
-#define SUFFIX b
-#define USUFFIX ub
-#define DATA_TYPE uint8_t
+#define SUFFIX     b
+#define USUFFIX    ub
+#define DATA_TYPE  uint8_t
 #define DATA_STYPE int8_t
 #else
 #error unsupported data size
@@ -41,26 +41,26 @@
 #if ACCESS_TYPE < (NB_MMU_MODES)
 
 #define CPU_MMU_INDEX ACCESS_TYPE
-#define MMUSUFFIX _mmu
+#define MMUSUFFIX     _mmu
 
 #elif ACCESS_TYPE == (NB_MMU_MODES)
 
 #define CPU_MMU_INDEX (cpu_mmu_index(env))
-#define MMUSUFFIX _mmu
+#define MMUSUFFIX     _mmu
 
 #elif ACCESS_TYPE == (NB_MMU_MODES + 1)
 
 #define CPU_MMU_INDEX (cpu_mmu_index(env))
-#define MMUSUFFIX _cmmu
+#define MMUSUFFIX     _cmmu
 
 #else
 #error invalid ACCESS_TYPE
 #endif
 
 #if DATA_SIZE == 8
-#define RES_TYPE uint64_t
+#define RES_TYPE  uint64_t
 #else
-#define RES_TYPE uint32_t
+#define RES_TYPE  uint32_t
 #endif
 
 #if ACCESS_TYPE == (NB_MMU_MODES + 1)
@@ -82,8 +82,7 @@ static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
     addr = ptr;
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = CPU_MMU_INDEX;
-    if (unlikely(env->tlb_table[mmu_idx][page_index].ADDR_READ !=
-                 (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
+    if (unlikely(env->tlb_table[mmu_idx][page_index].ADDR_READ != (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
         res = glue(glue(__ld, SUFFIX), MMUSUFFIX)(addr, mmu_idx);
     } else {
         physaddr = addr + env->tlb_table[mmu_idx][page_index].addend;
@@ -103,8 +102,7 @@ static inline int glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
     addr = ptr;
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = CPU_MMU_INDEX;
-    if (unlikely(env->tlb_table[mmu_idx][page_index].ADDR_READ !=
-                 (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
+    if (unlikely(env->tlb_table[mmu_idx][page_index].ADDR_READ != (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
         res = (DATA_STYPE)glue(glue(__ld, SUFFIX), MMUSUFFIX)(addr, mmu_idx);
     } else {
         physaddr = addr + env->tlb_table[mmu_idx][page_index].addend;
@@ -128,8 +126,7 @@ static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE 
     addr = ptr;
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = CPU_MMU_INDEX;
-    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_write !=
-                 (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
+    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_write != (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
         glue(glue(__st, SUFFIX), MMUSUFFIX)(addr, v, mmu_idx);
     } else {
         physaddr = addr + env->tlb_table[mmu_idx][page_index].addend;

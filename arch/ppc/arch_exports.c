@@ -26,9 +26,8 @@ int32_t tlib_set_pending_interrupt(int32_t interruptNo, int32_t level)
         cpu->pending_interrupts |= 1 << interruptNo;
     } else {
         cpu->pending_interrupts &= ~(1 << interruptNo);
-        if (cpu->pending_interrupts == 0)
-        {
-          return 1;
+        if (cpu->pending_interrupts == 0) {
+            return 1;
         }
     }
     return 0;
@@ -36,7 +35,7 @@ int32_t tlib_set_pending_interrupt(int32_t interruptNo, int32_t level)
 
 void tlib_set_little_endian_mode(bool mode)
 {
-    if(mode) {
+    if (mode) {
         cpu->hflags |= 1 << MSR_LE;
         cpu->msr |= 1 << MSR_LE;
     } else {

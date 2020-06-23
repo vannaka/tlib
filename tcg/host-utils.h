@@ -27,10 +27,10 @@
 #include <stddef.h>
 
 #ifndef glue
-#define xglue(x, y) x ## y
-#define glue(x, y) xglue(x, y)
-#define stringify(s)    tostring(s)
-#define tostring(s)     #s
+#define xglue(x, y)   x ## y
+#define glue(x, y)    xglue(x, y)
+#define stringify(s)  tostring(s)
+#define tostring(s)   #s
 #endif
 
 #ifndef ARRAY_SIZE
@@ -45,16 +45,14 @@
 
 #if defined(TCG_TARGET_I386) && HOST_LONG_BITS == 64
 #define __HAVE_FAST_MULU64__
-static inline void mulu64(uint64_t *plow, uint64_t *phigh,
-                          uint64_t a, uint64_t b)
+static inline void mulu64(uint64_t *plow, uint64_t *phigh, uint64_t a, uint64_t b)
 {
     __asm__ ("mul %0\n\t"
              : "=d" (*phigh), "=a" (*plow)
              : "a" (a), "0" (b));
 }
 #define __HAVE_FAST_MULS64__
-static inline void muls64(uint64_t *plow, uint64_t *phigh,
-                          int64_t a, int64_t b)
+static inline void muls64(uint64_t *plow, uint64_t *phigh, int64_t a, int64_t b)
 {
     __asm__ ("imul %0\n\t"
              : "=d" (*phigh), "=a" (*plow)
@@ -70,10 +68,11 @@ void mulu64(uint64_t *phigh, uint64_t *plow, uint64_t a, uint64_t b);
 static inline int clz32(uint32_t val)
 {
 #if defined(__GNUC__)
-    if (val)
+    if (val) {
         return __builtin_clz(val);
-    else
+    } else {
         return 32;
+    }
 #else
     int cnt = 0;
 
@@ -107,10 +106,11 @@ static inline int clz32(uint32_t val)
 static inline int clz64(uint64_t val)
 {
 #if defined(__GNUC__)
-    if (val)
+    if (val) {
         return __builtin_clzll(val);
-    else
+    } else {
         return 64;
+    }
 #else
     int cnt = 0;
 
@@ -127,10 +127,11 @@ static inline int clz64(uint64_t val)
 static inline int ctz32(uint32_t val)
 {
 #if defined(__GNUC__)
-    if (val)
+    if (val) {
         return __builtin_ctz(val);
-    else
+    } else {
         return 32;
+    }
 #else
     int cnt;
 
@@ -166,10 +167,11 @@ static inline int ctz32(uint32_t val)
 static inline int ctz64(uint64_t val)
 {
 #if defined(__GNUC__)
-    if (val)
+    if (val) {
         return __builtin_ctzll(val);
-    else
+    } else {
         return 64;
+    }
 #else
     int cnt;
 

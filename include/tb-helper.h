@@ -17,4 +17,3 @@ void gen_helpers(void)
 #define GEN_HELPER 2
 #include "helper.h"
 }
-

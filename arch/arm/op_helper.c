@@ -20,11 +20,10 @@
 #include "softmmu_exec.h"
 #include "helper.h"
 
-#define SIGNBIT (uint32_t)0x80000000
+#define SIGNBIT   (uint32_t)0x80000000
 #define SIGNBIT64 ((uint64_t)1 << 63)
 
-uint32_t HELPER(neon_tbl)(uint32_t ireg, uint32_t def,
-                          uint32_t rn, uint32_t maxindex)
+uint32_t HELPER(neon_tbl)(uint32_t ireg, uint32_t def, uint32_t rn, uint32_t maxindex)
 {
     uint32_t val;
     uint32_t tmp;
@@ -49,8 +48,7 @@ uint32_t HELPER(neon_tbl)(uint32_t ireg, uint32_t def,
    NULL, it means that the function was called in C code (i.e. not
    from generated code or from helper.c) */
 /* XXX: fix it to restore all registers */
-void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx,
-              void *retaddr)
+void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx, void *retaddr)
 {
     CPUState *saved_env;
     int ret;
@@ -70,8 +68,9 @@ void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx,
 uint32_t HELPER(add_setq)(uint32_t a, uint32_t b)
 {
     uint32_t res = a + b;
-    if (((res ^ a) & SIGNBIT) && !((a ^ b) & SIGNBIT))
+    if (((res ^ a) & SIGNBIT) && !((a ^ b) & SIGNBIT)) {
         env->QF = 1;
+    }
     return res;
 }
 
@@ -226,8 +225,7 @@ uint32_t HELPER(get_user_reg)(uint32_t regno)
         val = env->banked_r13[0];
     } else if (regno == 14) {
         val = env->banked_r14[0];
-    } else if (regno >= 8
-               && (env->uncached_cpsr & 0x1f) == ARM_CPU_MODE_FIQ) {
+    } else if (regno >= 8 && (env->uncached_cpsr & 0x1f) == ARM_CPU_MODE_FIQ) {
         val = env->usr_regs[regno - 8];
     } else {
         val = env->regs[regno];
@@ -241,8 +239,7 @@ void HELPER(set_user_reg)(uint32_t regno, uint32_t val)
         env->banked_r13[0] = val;
     } else if (regno == 14) {
         env->banked_r14[0] = val;
-    } else if (regno >= 8
-               && (env->uncached_cpsr & 0x1f) == ARM_CPU_MODE_FIQ) {
+    } else if (regno >= 8 && (env->uncached_cpsr & 0x1f) == ARM_CPU_MODE_FIQ) {
         env->usr_regs[regno - 8] = val;
     } else {
         env->regs[regno] = val;
@@ -308,24 +305,27 @@ uint32_t HELPER(sbc_cc)(uint32_t a, uint32_t b)
 uint32_t HELPER(shl)(uint32_t x, uint32_t i)
 {
     int shift = i & 0xff;
-    if (shift >= 32)
+    if (shift >= 32) {
         return 0;
+    }
     return x << shift;
 }
 
 uint32_t HELPER(shr)(uint32_t x, uint32_t i)
 {
     int shift = i & 0xff;
-    if (shift >= 32)
+    if (shift >= 32) {
         return 0;
+    }
     return (uint32_t)x >> shift;
 }
 
 uint32_t HELPER(sar)(uint32_t x, uint32_t i)
 {
     int shift = i & 0xff;
-    if (shift >= 32)
+    if (shift >= 32) {
         shift = 31;
+    }
     return (int32_t)x >> shift;
 }
 
@@ -333,10 +333,11 @@ uint32_t HELPER(shl_cc)(uint32_t x, uint32_t i)
 {
     int shift = i & 0xff;
     if (shift >= 32) {
-        if (shift == 32)
+        if (shift == 32) {
             env->CF = x & 1;
-        else
+        } else {
             env->CF = 0;
+        }
         return 0;
     } else if (shift != 0) {
         env->CF = (x >> (32 - shift)) & 1;
@@ -349,10 +350,11 @@ uint32_t HELPER(shr_cc)(uint32_t x, uint32_t i)
 {
     int shift = i & 0xff;
     if (shift >= 32) {
-        if (shift == 32)
+        if (shift == 32) {
             env->CF = (x >> 31) & 1;
-        else
+        } else {
             env->CF = 0;
+        }
         return 0;
     } else if (shift != 0) {
         env->CF = (x >> (shift - 1)) & 1;
@@ -380,8 +382,9 @@ uint32_t HELPER(ror_cc)(uint32_t x, uint32_t i)
     shift1 = i & 0xff;
     shift = shift1 & 0x1f;
     if (shift == 0) {
-        if (shift1 != 0)
+        if (shift1 != 0) {
             env->CF = (x >> 31) & 1;
+        }
         return x;
     } else {
         env->CF = (x >> (shift - 1)) & 1;

@@ -16,85 +16,85 @@
  */
 
 #ifndef DEF_HELPER_H
-#define DEF_HELPER_H 1
+#define DEF_HELPER_H         1
 
 #define HELPER(name) glue(helper_, name)
 
-#define GET_TCGV_i32 GET_TCGV_I32
-#define GET_TCGV_i64 GET_TCGV_I64
-#define GET_TCGV_ptr GET_TCGV_PTR
+#define GET_TCGV_i32         GET_TCGV_I32
+#define GET_TCGV_i64         GET_TCGV_I64
+#define GET_TCGV_ptr         GET_TCGV_PTR
 
 /* Some types that make sense in C, but not for TCG.  */
-#define dh_alias_i32 i32
-#define dh_alias_s32 i32
-#define dh_alias_int i32
-#define dh_alias_i64 i64
-#define dh_alias_s64 i64
-#define dh_alias_f32 i32
-#define dh_alias_f64 i64
+#define dh_alias_i32         i32
+#define dh_alias_s32         i32
+#define dh_alias_int         i32
+#define dh_alias_i64         i64
+#define dh_alias_s64         i64
+#define dh_alias_f32         i32
+#define dh_alias_f64         i64
 #if TARGET_LONG_BITS == 32
-#define dh_alias_tl i32
+#define dh_alias_tl          i32
 #else
-#define dh_alias_tl i64
+#define dh_alias_tl          i64
 #endif
-#define dh_alias_ptr ptr
-#define dh_alias_void void
-#define dh_alias_env ptr
+#define dh_alias_ptr         ptr
+#define dh_alias_void        void
+#define dh_alias_env         ptr
 #define dh_alias(t) glue(dh_alias_, t)
 
-#define dh_ctype_i32 uint32_t
-#define dh_ctype_s32 int32_t
-#define dh_ctype_int int
-#define dh_ctype_i64 uint64_t
-#define dh_ctype_s64 int64_t
-#define dh_ctype_f32 float32
-#define dh_ctype_f64 float64
-#define dh_ctype_tl target_ulong
-#define dh_ctype_ptr void *
-#define dh_ctype_void void
-#define dh_ctype_env CPUState *
+#define dh_ctype_i32         uint32_t
+#define dh_ctype_s32         int32_t
+#define dh_ctype_int         int
+#define dh_ctype_i64         uint64_t
+#define dh_ctype_s64         int64_t
+#define dh_ctype_f32         float32
+#define dh_ctype_f64         float64
+#define dh_ctype_tl          target_ulong
+#define dh_ctype_ptr         void *
+#define dh_ctype_void        void
+#define dh_ctype_env         CPUState *
 #define dh_ctype(t) dh_ctype_##t
 
 /* We can't use glue() here because it falls foul of C preprocessor
    recursive expansion rules.  */
 #define dh_retvar_decl0_void void
-#define dh_retvar_decl0_i32 TCGv_i32 retval
-#define dh_retvar_decl0_i64 TCGv_i64 retval
-#define dh_retvar_decl0_ptr TCGv_ptr retval
+#define dh_retvar_decl0_i32  TCGv_i32 retval
+#define dh_retvar_decl0_i64  TCGv_i64 retval
+#define dh_retvar_decl0_ptr  TCGv_ptr retval
 #define dh_retvar_decl0(t) glue(dh_retvar_decl0_, dh_alias(t))
 
 #define dh_retvar_decl_void
-#define dh_retvar_decl_i32 TCGv_i32 retval,
-#define dh_retvar_decl_i64 TCGv_i64 retval,
-#define dh_retvar_decl_ptr TCGv_ptr retval,
+#define dh_retvar_decl_i32   TCGv_i32 retval,
+#define dh_retvar_decl_i64   TCGv_i64 retval,
+#define dh_retvar_decl_ptr   TCGv_ptr retval,
 #define dh_retvar_decl(t) glue(dh_retvar_decl_, dh_alias(t))
 
-#define dh_retvar_void TCG_CALL_DUMMY_ARG
-#define dh_retvar_i32 GET_TCGV_i32(retval)
-#define dh_retvar_i64 GET_TCGV_i64(retval)
-#define dh_retvar_ptr GET_TCGV_ptr(retval)
+#define dh_retvar_void       TCG_CALL_DUMMY_ARG
+#define dh_retvar_i32        GET_TCGV_i32(retval)
+#define dh_retvar_i64        GET_TCGV_i64(retval)
+#define dh_retvar_ptr        GET_TCGV_ptr(retval)
 #define dh_retvar(t) glue(dh_retvar_, dh_alias(t))
 
-#define dh_is_64bit_void 0
-#define dh_is_64bit_i32 0
-#define dh_is_64bit_i64 1
-#define dh_is_64bit_ptr (TCG_TARGET_REG_BITS == 64)
+#define dh_is_64bit_void     0
+#define dh_is_64bit_i32      0
+#define dh_is_64bit_i64      1
+#define dh_is_64bit_ptr      (TCG_TARGET_REG_BITS == 64)
 #define dh_is_64bit(t) glue(dh_is_64bit_, dh_alias(t))
 
-#define dh_is_signed_void 0
-#define dh_is_signed_i32 0
-#define dh_is_signed_s32 1
-#define dh_is_signed_i64 0
-#define dh_is_signed_s64 1
-#define dh_is_signed_f32 0
-#define dh_is_signed_f64 0
-#define dh_is_signed_tl  0
-#define dh_is_signed_int 1
+#define dh_is_signed_void    0
+#define dh_is_signed_i32     0
+#define dh_is_signed_s32     1
+#define dh_is_signed_i64     0
+#define dh_is_signed_s64     1
+#define dh_is_signed_f32     0
+#define dh_is_signed_f64     0
+#define dh_is_signed_tl      0
+#define dh_is_signed_int     1
 /* ??? This is highly specific to the host cpu.  There are even special
    extension instructions that may be required, e.g. ia64's addp4.  But
    for now we don't support any 64-bit targets with 32-bit pointers.  */
-#define dh_is_signed_ptr 0
-#define dh_is_signed_env dh_is_signed_ptr
+#define dh_is_signed_ptr     0
+#define dh_is_signed_env     dh_is_signed_ptr
 #define dh_is_signed(t) dh_is_signed_##t
 
 #define dh_sizemask(t, n) \
@@ -106,7 +106,6 @@
   dh_sizemask(t, n)
 
 #define dh_arg_decl(t, n) glue(TCGv_, dh_alias(t)) glue(arg, n)
-
 
 #define DEF_HELPER_0(name, ret) \
     DEF_HELPER_FLAGS_0(name, 0, ret)

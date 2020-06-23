@@ -17,20 +17,20 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 #if SHIFT == 0
-#define Reg MMXReg
-#define SUFFIX _mmx
+#define Reg                 MMXReg
+#define SUFFIX              _mmx
 #else
-#define Reg XMMReg
-#define SUFFIX _xmm
+#define Reg                 XMMReg
+#define SUFFIX              _xmm
 #endif
 
-#define dh_alias_Reg ptr
-#define dh_alias_XMMReg ptr
-#define dh_alias_MMXReg ptr
-#define dh_ctype_Reg Reg *
-#define dh_ctype_XMMReg XMMReg *
-#define dh_ctype_MMXReg MMXReg *
-#define dh_is_signed_Reg dh_is_signed_ptr
+#define dh_alias_Reg        ptr
+#define dh_alias_XMMReg     ptr
+#define dh_alias_MMXReg     ptr
+#define dh_ctype_Reg        Reg *
+#define dh_ctype_XMMReg     XMMReg *
+#define dh_ctype_MMXReg     MMXReg *
+#define dh_is_signed_Reg    dh_is_signed_ptr
 #define dh_is_signed_XMMReg dh_is_signed_ptr
 #define dh_is_signed_MMXReg dh_is_signed_ptr
 
@@ -48,16 +48,16 @@ DEF_HELPER_2(glue(psrldq, SUFFIX), void, Reg, Reg)
 DEF_HELPER_2(glue(pslldq, SUFFIX), void, Reg, Reg)
 #endif
 
-#define SSE_HELPER_B(name, F)\
+#define SSE_HELPER_B(name, F) \
     DEF_HELPER_2(glue(name, SUFFIX), void, Reg, Reg)
 
-#define SSE_HELPER_W(name, F)\
+#define SSE_HELPER_W(name, F) \
     DEF_HELPER_2(glue(name, SUFFIX), void, Reg, Reg)
 
-#define SSE_HELPER_L(name, F)\
+#define SSE_HELPER_L(name, F) \
     DEF_HELPER_2(glue(name, SUFFIX), void, Reg, Reg)
 
-#define SSE_HELPER_Q(name, F)\
+#define SSE_HELPER_Q(name, F) \
     DEF_HELPER_2(glue(name, SUFFIX), void, Reg, Reg)
 
 SSE_HELPER_B(paddb, FADD)
@@ -133,7 +133,7 @@ DEF_HELPER_3(glue(pshufhw, SUFFIX), void, Reg, Reg, int)
 /* FPU ops */
 /* XXX: not accurate */
 
-#define SSE_HELPER_S(name, F)\
+#define SSE_HELPER_S(name, F) \
     DEF_HELPER_2(name ## ps , void, Reg, Reg)        \
     DEF_HELPER_2(name ## ss , void, Reg, Reg)        \
     DEF_HELPER_2(name ## pd , void, Reg, Reg)        \
@@ -146,7 +146,6 @@ SSE_HELPER_S(div, FPU_DIV)
 SSE_HELPER_S(min, FPU_MIN)
 SSE_HELPER_S(max, FPU_MAX)
 SSE_HELPER_S(sqrt, FPU_SQRT)
-
 
 DEF_HELPER_2(cvtps2pd, void, Reg, Reg)
 DEF_HELPER_2(cvtpd2ps, void, Reg, Reg)
@@ -201,7 +200,7 @@ DEF_HELPER_2(hsubpd, void, XMMReg, XMMReg)
 DEF_HELPER_2(addsubps, void, XMMReg, XMMReg)
 DEF_HELPER_2(addsubpd, void, XMMReg, XMMReg)
 
-#define SSE_HELPER_CMP(name, F)\
+#define SSE_HELPER_CMP(name, F) \
     DEF_HELPER_2( name ## ps , void, Reg, Reg)        \
     DEF_HELPER_2( name ## ss , void, Reg, Reg)        \
     DEF_HELPER_2( name ## pd , void, Reg, Reg)        \

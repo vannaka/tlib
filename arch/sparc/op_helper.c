@@ -4,8 +4,7 @@
 #include "helper.h"
 #include "arch_callbacks.h"
 
-void do_unaligned_access(target_ulong addr, int is_write, int is_user,
-                                void *retaddr);
+void do_unaligned_access(target_ulong addr, int is_write, int is_user, void *retaddr);
 
 #define DT0 (env->dt0)
 #define DT1 (env->dt1)
@@ -30,24 +29,22 @@ void do_unaligned_access(target_ulong addr, int is_write, int is_user,
 
 /* Cache Control register fields */
 
-#define CACHE_CTRL_IF (1 <<  4)  /* Instruction Cache Freeze on Interrupt */
-#define CACHE_CTRL_DF (1 <<  5)  /* Data Cache Freeze on Interrupt */
-#define CACHE_CTRL_DP (1 << 14)  /* Data cache flush pending */
-#define CACHE_CTRL_IP (1 << 15)  /* Instruction cache flush pending */
-#define CACHE_CTRL_IB (1 << 16)  /* Instruction burst fetch */
-#define CACHE_CTRL_FI (1 << 21)  /* Flush Instruction cache (Write only) */
-#define CACHE_CTRL_FD (1 << 22)  /* Flush Data cache (Write only) */
-#define CACHE_CTRL_DS (1 << 23)  /* Data cache snoop enable */
+#define CACHE_CTRL_IF    (1 <<  4) /* Instruction Cache Freeze on Interrupt */
+#define CACHE_CTRL_DF    (1 <<  5) /* Data Cache Freeze on Interrupt */
+#define CACHE_CTRL_DP    (1 << 14) /* Data cache flush pending */
+#define CACHE_CTRL_IP    (1 << 15) /* Instruction cache flush pending */
+#define CACHE_CTRL_IB    (1 << 16) /* Instruction burst fetch */
+#define CACHE_CTRL_FI    (1 << 21) /* Flush Instruction cache (Write only) */
+#define CACHE_CTRL_FD    (1 << 22) /* Flush Data cache (Write only) */
+#define CACHE_CTRL_DS    (1 << 23) /* Data cache snoop enable */
 
-static void do_unassigned_access(target_phys_addr_t addr, int is_write,
-                                 int is_exec, int is_asi, int size);
+static void do_unassigned_access(target_phys_addr_t addr, int is_write, int is_exec, int is_asi, int size);
 
 static void raise_exception(int tt)
 {
     env->exception_index = tt;
     cpu_loop_exit(env);
 }
-
 
 void HELPER(raise_exception)(int tt)
 {
@@ -66,14 +63,12 @@ target_ulong HELPER(ldstub)(uint32_t addr)
     retaddr = GETPC();
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = env->psrs;
-    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_write !=
-                 (addr & (TARGET_PAGE_MASK)))) {
+    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_write != (addr & (TARGET_PAGE_MASK)))) {
         /* the page is not in the TLB : fill it */
         tlb_fill(env, addr, 1, mmu_idx, retaddr);
     }
 
-    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_read !=
-                 (addr & (TARGET_PAGE_MASK)))) {
+    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_read != (addr & (TARGET_PAGE_MASK)))) {
         /* the page is not in the TLB : fill it */
         tlb_fill(env, addr, 0, mmu_idx, retaddr);
     }
@@ -82,7 +77,7 @@ target_ulong HELPER(ldstub)(uint32_t addr)
 
     __atomic_exchange((uint8_t *)physaddr, &value, &ret, __ATOMIC_SEQ_CST);
 
-    return (target_ulong) ret;
+    return (target_ulong)ret;
 }
 
 target_ulong HELPER(swap)(target_ulong value, uint32_t addr)
@@ -96,14 +91,12 @@ target_ulong HELPER(swap)(target_ulong value, uint32_t addr)
     retaddr = GETPC();
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = env->psrs;
-    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_write !=
-                 (addr & (TARGET_PAGE_MASK)))) {
+    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_write != (addr & (TARGET_PAGE_MASK)))) {
         /* the page is not in the TLB : fill it */
         tlb_fill(env, addr, 1, mmu_idx, retaddr);
     }
 
-    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_read !=
-                 (addr & (TARGET_PAGE_MASK)))) {
+    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_read != (addr & (TARGET_PAGE_MASK)))) {
         /* the page is not in the TLB : fill it */
         tlb_fill(env, addr, 0, mmu_idx, retaddr);
     }
@@ -119,7 +112,7 @@ target_ulong HELPER(swap)(target_ulong value, uint32_t addr)
     ret = BIG_ENDIAN_CONVERT(ret);
 #endif
 
-    return (target_ulong) ret;
+    return (target_ulong)ret;
 }
 
 void HELPER(power_down)(void)
@@ -172,16 +165,12 @@ F_BINOP(div);
 
 void helper_fsmuld(float32 src1, float32 src2)
 {
-    DT0 = float64_mul(float32_to_float64(src1, &env->fp_status),
-                      float32_to_float64(src2, &env->fp_status),
-                      &env->fp_status);
+    DT0 = float64_mul(float32_to_float64(src1, &env->fp_status), float32_to_float64(src2, &env->fp_status), &env->fp_status);
 }
 
 void helper_fdmulq(void)
 {
-    QT0 = float128_mul(float64_to_float128(DT0, &env->fp_status),
-                       float64_to_float128(DT1, &env->fp_status),
-                       &env->fp_status);
+    QT0 = float128_mul(float64_to_float128(DT0, &env->fp_status), float64_to_float128(DT1, &env->fp_status), &env->fp_status);
 }
 
 float32 helper_fnegs(float32 src)
@@ -261,16 +250,21 @@ void helper_check_ieee_exceptions(void)
     status = get_float_exception_flags(&env->fp_status);
     if (status) {
         /* Copy IEEE 754 flags into FSR */
-        if (status & float_flag_invalid)
+        if (status & float_flag_invalid) {
             env->fsr |= FSR_NVC;
-        if (status & float_flag_overflow)
+        }
+        if (status & float_flag_overflow) {
             env->fsr |= FSR_OFC;
-        if (status & float_flag_underflow)
+        }
+        if (status & float_flag_underflow) {
             env->fsr |= FSR_UFC;
-        if (status & float_flag_divbyzero)
+        }
+        if (status & float_flag_divbyzero) {
             env->fsr |= FSR_DZC;
-        if (status & float_flag_inexact)
+        }
+        if (status & float_flag_inexact) {
             env->fsr |= FSR_NXC;
+        }
 
         if ((env->fsr & FSR_CEXC_MASK) & ((env->fsr & FSR_TEM_MASK) >> 23)) {
             /* Unmasked exception, generate a trap */
@@ -446,8 +440,7 @@ static inline uint32_t get_C_add_icc(uint32_t dst, uint32_t src1)
     return ret;
 }
 
-static inline uint32_t get_C_addx_icc(uint32_t dst, uint32_t src1,
-                                      uint32_t src2)
+static inline uint32_t get_C_addx_icc(uint32_t dst, uint32_t src1, uint32_t src2)
 {
     uint32_t ret = 0;
 
@@ -457,8 +450,7 @@ static inline uint32_t get_C_addx_icc(uint32_t dst, uint32_t src1,
     return ret;
 }
 
-static inline uint32_t get_V_add_icc(uint32_t dst, uint32_t src1,
-                                     uint32_t src2)
+static inline uint32_t get_V_add_icc(uint32_t dst, uint32_t src1, uint32_t src2)
 {
     uint32_t ret = 0;
 
@@ -541,8 +533,7 @@ static inline uint32_t get_C_sub_icc(uint32_t src1, uint32_t src2)
     return ret;
 }
 
-static inline uint32_t get_C_subx_icc(uint32_t dst, uint32_t src1,
-                                      uint32_t src2)
+static inline uint32_t get_C_subx_icc(uint32_t dst, uint32_t src1, uint32_t src2)
 {
     uint32_t ret = 0;
 
@@ -552,8 +543,7 @@ static inline uint32_t get_C_subx_icc(uint32_t dst, uint32_t src1,
     return ret;
 }
 
-static inline uint32_t get_V_sub_icc(uint32_t dst, uint32_t src1,
-                                     uint32_t src2)
+static inline uint32_t get_V_sub_icc(uint32_t dst, uint32_t src1, uint32_t src2)
 {
     uint32_t ret = 0;
 
@@ -628,21 +618,16 @@ static uint32_t compute_C_logic(void)
 
 typedef struct CCTable {
     uint32_t (*compute_all)(void); /* return all the flags */
-    uint32_t (*compute_c)(void);  /* return the C flag */
+    uint32_t (*compute_c)(void);   /* return the C flag */
 } CCTable;
 
 static const CCTable icc_table[CC_OP_NB] = {
     /* CC_OP_DYNAMIC should never happen */
-    [CC_OP_FLAGS] = { compute_all_flags, compute_C_flags },
-    [CC_OP_DIV] = { compute_all_div, compute_C_div },
-    [CC_OP_ADD] = { compute_all_add, compute_C_add },
-    [CC_OP_ADDX] = { compute_all_addx, compute_C_addx },
-    [CC_OP_TADD] = { compute_all_tadd, compute_C_add },
-    [CC_OP_TADDTV] = { compute_all_taddtv, compute_C_add },
-    [CC_OP_SUB] = { compute_all_sub, compute_C_sub },
-    [CC_OP_SUBX] = { compute_all_subx, compute_C_subx },
-    [CC_OP_TSUB] = { compute_all_tsub, compute_C_sub },
-    [CC_OP_TSUBTV] = { compute_all_tsubtv, compute_C_sub },
+    [CC_OP_FLAGS] = { compute_all_flags, compute_C_flags }, [CC_OP_DIV] = { compute_all_div, compute_C_div },
+    [CC_OP_ADD] = { compute_all_add, compute_C_add }, [CC_OP_ADDX] = { compute_all_addx, compute_C_addx },
+    [CC_OP_TADD] = { compute_all_tadd, compute_C_add }, [CC_OP_TADDTV] = { compute_all_taddtv, compute_C_add },
+    [CC_OP_SUB] = { compute_all_sub, compute_C_sub }, [CC_OP_SUBX] = { compute_all_subx, compute_C_subx },
+    [CC_OP_TSUB] = { compute_all_tsub, compute_C_sub }, [CC_OP_TSUBTV] = { compute_all_tsubtv, compute_C_sub },
     [CC_OP_LOGIC] = { compute_all_logic, compute_C_logic },
 };
 
@@ -704,12 +689,8 @@ static target_ulong get_psr(void)
 {
     helper_compute_psr();
 
-    return env->version | (env->psr & PSR_ICC) |
-        (env->psref? PSR_EF : 0) |
-        (env->psrpil << 8) |
-        (env->psrs? PSR_S : 0) |
-        (env->psrps? PSR_PS : 0) |
-        (env->psret? PSR_ET : 0) | env->cwp;
+    return env->version | (env->psr & PSR_ICC) | (env->psref ? PSR_EF : 0) | (env->psrpil << 8) | (env->psrs ? PSR_S : 0) |
+           (env->psrps ? PSR_PS : 0) | (env->psret ? PSR_ET : 0) | env->cwp;
 }
 
 target_ulong cpu_get_psr(CPUState *env1)
@@ -727,11 +708,11 @@ target_ulong cpu_get_psr(CPUState *env1)
 static void put_psr(target_ulong val)
 {
     env->psr = val & PSR_ICC;
-    env->psref = (val & PSR_EF)? 1 : 0;
+    env->psref = (val & PSR_EF) ? 1 : 0;
     env->psrpil = (val & PSR_PIL) >> 8;
-    env->psrs = (val & PSR_S)? 1 : 0;
-    env->psrps = (val & PSR_PS)? 1 : 0;
-    env->psret = (val & PSR_ET)? 1 : 0;
+    env->psrs = (val & PSR_S) ? 1 : 0;
+    env->psrps = (val & PSR_PS) ? 1 : 0;
+    env->psret = (val & PSR_ET) ? 1 : 0;
     set_cwp(val & PSR_CWP);
     env->cc_op = CC_OP_FLAGS;
 }
@@ -814,7 +795,8 @@ static void leon3_cache_control_st(target_ulong addr, uint64_t val, int size)
         break;
     default:
         break;
-    };
+    }
+    ;
 }
 
 static uint64_t leon3_cache_control_ld(target_ulong addr, int size)
@@ -830,8 +812,8 @@ static uint64_t leon3_cache_control_ld(target_ulong addr, int size)
         ret = env->cache_control;
         break;
 
-        /* Configuration registers are read and only always keep those
-           predefined values */
+    /* Configuration registers are read and only always keep those
+       predefined values */
 
     case 0x08:              /* Instruction cache configuration */
         ret = 0x10220000;
@@ -841,7 +823,8 @@ static uint64_t leon3_cache_control_ld(target_ulong addr, int size)
         break;
     default:
         break;
-    };
+    }
+    ;
     return ret;
 }
 
@@ -854,42 +837,44 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
     case 1:
         /* XXX: hack
            copied from case 20
-        */
-        {
-            switch (size) {
-            case 1:
-                ret = ldub_kernel(addr);
-                break;
-            case 2:
-                ret = lduw_kernel(addr);
-                break;
-            default:
-            case 4:
-                ret = ldl_kernel(addr);
-                break;
-            case 8:
-                ret = ldq_kernel(addr);
-                break;
-            }
+         */
+    {
+        switch (size) {
+        case 1:
+            ret = ldub_kernel(addr);
+            break;
+        case 2:
+            ret = lduw_kernel(addr);
+            break;
+        default:
+        case 4:
+            ret = ldl_kernel(addr);
+            break;
+        case 8:
+            ret = ldq_kernel(addr);
             break;
         }
+        break;
+    }
 
-    case 2: /* SuperSparc MXCC registers and Leon3 cache control */
+    case 2:        /* SuperSparc MXCC registers and Leon3 cache control */
         switch (addr) {
-        case 0x00:          /* Leon3 Cache Control */
-        case 0x08:          /* Leon3 Instruction Cache config */
-        case 0x0C:          /* Leon3 Date Cache config */
+        case 0x00: /* Leon3 Cache Control */
+        case 0x08: /* Leon3 Instruction Cache config */
+        case 0x0C: /* Leon3 Date Cache config */
             if (env->def->features & CPU_FEATURE_CACHE_CTRL) {
                 ret = leon3_cache_control_ld(addr, size);
             }
             break;
         case 0x01c00a00: /* MXCC control register */
-            if (size == 8)
+            if (size == 8) {
                 ret = env->mxccregs[3];
+            }
             break;
         case 0x01c00a04: /* MXCC control register */
-            if (size == 4)
+            if (size == 4) {
                 ret = env->mxccregs[3];
+            }
             break;
         case 0x01c00c00: /* Module reset register */
             if (size == 8) {
@@ -898,43 +883,46 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
             }
             break;
         case 0x01c00f00: /* MBus port address register */
-            if (size == 8)
+            if (size == 8) {
                 ret = env->mxccregs[7];
+            }
             break;
         }
         break;
-    case 3: /* MMU probe */
+    case 3:    /* MMU probe */
     case 0x18: /* LEON3 MMU probe */
-        {
-            int mmulev;
+    {
+        int mmulev;
 
-            mmulev = (addr >> 8) & 15;
-            if (mmulev > 4)
-                ret = 0;
-            else
-                ret = mmu_probe(env, addr, mmulev);
+        mmulev = (addr >> 8) & 15;
+        if (mmulev > 4) {
+            ret = 0;
+        } else {
+            ret = mmu_probe(env, addr, mmulev);
         }
-        break;
-    case 4: /* read MMU regs */
+    }
+    break;
+    case 4:    /* read MMU regs */
     case 0x19: /* LEON3 MMU regs */
-        {
-            int reg = (addr >> 8) & 0x1f;
+    {
+        int reg = (addr >> 8) & 0x1f;
 
-            ret = env->mmuregs[reg];
-            if (reg == 3) /* Fault status cleared on read */
-                env->mmuregs[3] = 0;
-            else if (reg == 0x13) /* Fault status read */
-                ret = env->mmuregs[3];
-            else if (reg == 0x14) /* Fault address read */
-                ret = env->mmuregs[4];
+        ret = env->mmuregs[reg];
+        if (reg == 3) {           /* Fault status cleared on read */
+            env->mmuregs[3] = 0;
+        } else if (reg == 0x13) { /* Fault status read */
+            ret = env->mmuregs[3];
+        } else if (reg == 0x14) { /* Fault address read */
+            ret = env->mmuregs[4];
         }
-        break;
+    }
+    break;
     case 5: // Turbosparc ITLB Diagnostic
     case 6: // Turbosparc DTLB Diagnostic
     case 7: // Turbosparc IOTLB Diagnostic
         break;
     case 9: /* Supervisor code access */
-        switch(size) {
+        switch (size) {
         case 1:
             ret = ldub_code(addr);
             break;
@@ -951,7 +939,7 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
         }
         break;
     case 0xa: /* User data access */
-        switch(size) {
+        switch (size) {
         case 1:
             ret = ldub_user(addr);
             break;
@@ -968,7 +956,7 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
         }
         break;
     case 0xb: /* Supervisor data access */
-        switch(size) {
+        switch (size) {
         case 1:
             ret = ldub_kernel(addr);
             break;
@@ -984,14 +972,14 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
             break;
         }
         break;
-    case 0xc: /* I-cache tag */
-    case 0xd: /* I-cache data */
-    case 0xe: /* D-cache tag */
-    case 0xf: /* D-cache data */
+    case 0xc:  /* I-cache tag */
+    case 0xd:  /* I-cache data */
+    case 0xe:  /* D-cache tag */
+    case 0xf:  /* D-cache data */
         break;
     case 0x20: /* MMU passthrough */
     case 0x1c: /* LEON3 MMU passthrougth */
-        switch(size) {
+        switch (size) {
         case 1:
             ret = ldub_phys(addr);
             break;
@@ -1008,23 +996,19 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
         }
         break;
     case 0x21 ... 0x2f: /* MMU passthrough, 0x100000000 to 0xfffffffff */
-        switch(size) {
+        switch (size) {
         case 1:
-            ret = ldub_phys((target_phys_addr_t)addr
-                            | ((target_phys_addr_t)(asi & 0xf) << 32));
+            ret = ldub_phys((target_phys_addr_t)addr | ((target_phys_addr_t)(asi & 0xf) << 32));
             break;
         case 2:
-            ret = lduw_phys((target_phys_addr_t)addr
-                            | ((target_phys_addr_t)(asi & 0xf) << 32));
+            ret = lduw_phys((target_phys_addr_t)addr | ((target_phys_addr_t)(asi & 0xf) << 32));
             break;
         default:
         case 4:
-            ret = ldl_phys((target_phys_addr_t)addr
-                           | ((target_phys_addr_t)(asi & 0xf) << 32));
+            ret = ldl_phys((target_phys_addr_t)addr | ((target_phys_addr_t)(asi & 0xf) << 32));
             break;
         case 8:
-            ret = ldq_phys((target_phys_addr_t)addr
-                           | ((target_phys_addr_t)(asi & 0xf) << 32));
+            ret = ldq_phys((target_phys_addr_t)addr | ((target_phys_addr_t)(asi & 0xf) << 32));
             break;
         }
         break;
@@ -1035,26 +1019,26 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
         ret = 0;
         break;
     case 0x38: /* SuperSPARC MMU Breakpoint Control Registers */
-        {
-            int reg = (addr >> 8) & 3;
+    {
+        int reg = (addr >> 8) & 3;
 
-            switch(reg) {
-            case 0: /* Breakpoint Value (Addr) */
-                ret = env->mmubpregs[reg];
-                break;
-            case 1: /* Breakpoint Mask */
-                ret = env->mmubpregs[reg];
-                break;
-            case 2: /* Breakpoint Control */
-                ret = env->mmubpregs[reg];
-                break;
-            case 3: /* Breakpoint Status */
-                ret = env->mmubpregs[reg];
-                env->mmubpregs[reg] = 0ULL;
-                break;
-            }
+        switch (reg) {
+        case 0:     /* Breakpoint Value (Addr) */
+            ret = env->mmubpregs[reg];
+            break;
+        case 1:     /* Breakpoint Mask */
+            ret = env->mmubpregs[reg];
+            break;
+        case 2:     /* Breakpoint Control */
+            ret = env->mmubpregs[reg];
+            break;
+        case 3:     /* Breakpoint Status */
+            ret = env->mmubpregs[reg];
+            env->mmubpregs[reg] = 0ULL;
+            break;
         }
-        break;
+    }
+    break;
     case 0x49: /* SuperSPARC MMU Counter Breakpoint Value */
         ret = env->mmubpctrv;
         break;
@@ -1067,22 +1051,22 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
     case 0x4c: /* SuperSPARC MMU Breakpoint Action */
         ret = env->mmubpaction;
         break;
-    case 8: /* User code access, XXX */
+    case 8:    /* User code access, XXX */
     default:
         do_unassigned_access(addr, 0, 0, asi, size);
         ret = 0;
         break;
     }
     if (sign) {
-        switch(size) {
+        switch (size) {
         case 1:
-            ret = (int8_t) ret;
+            ret = (int8_t)ret;
             break;
         case 2:
-            ret = (int16_t) ret;
+            ret = (int16_t)ret;
             break;
         case 4:
-            ret = (int32_t) ret;
+            ret = (int32_t)ret;
             break;
         default:
             break;
@@ -1094,152 +1078,152 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
 void helper_st_asi(target_ulong addr, uint64_t val, int asi, int size)
 {
     helper_check_align(addr, size - 1);
-    switch(asi) {
-    case 2: /* SuperSparc MXCC registers and Leon3 cache control */
+    switch (asi) {
+    case 2:        /* SuperSparc MXCC registers and Leon3 cache control */
         switch (addr) {
-        case 0x00:          /* Leon3 Cache Control */
-        case 0x08:          /* Leon3 Instruction Cache config */
-        case 0x0C:          /* Leon3 Date Cache config */
+        case 0x00: /* Leon3 Cache Control */
+        case 0x08: /* Leon3 Instruction Cache config */
+        case 0x0C: /* Leon3 Date Cache config */
             if (env->def->features & CPU_FEATURE_CACHE_CTRL) {
                 leon3_cache_control_st(addr, val, size);
             }
             break;
 
         case 0x01c00000: /* MXCC stream data register 0 */
-            if (size == 8)
+            if (size == 8) {
                 env->mxccdata[0] = val;
+            }
             break;
         case 0x01c00008: /* MXCC stream data register 1 */
-            if (size == 8)
+            if (size == 8) {
                 env->mxccdata[1] = val;
+            }
             break;
         case 0x01c00010: /* MXCC stream data register 2 */
-            if (size == 8)
+            if (size == 8) {
                 env->mxccdata[2] = val;
+            }
             break;
         case 0x01c00018: /* MXCC stream data register 3 */
-            if (size == 8)
+            if (size == 8) {
                 env->mxccdata[3] = val;
+            }
             break;
         case 0x01c00100: /* MXCC stream source */
-            if (size == 8)
+            if (size == 8) {
                 env->mxccregs[0] = val;
-            env->mxccdata[0] = ldq_phys((env->mxccregs[0] & 0xffffffffULL) +
-                                        0);
-            env->mxccdata[1] = ldq_phys((env->mxccregs[0] & 0xffffffffULL) +
-                                        8);
-            env->mxccdata[2] = ldq_phys((env->mxccregs[0] & 0xffffffffULL) +
-                                        16);
-            env->mxccdata[3] = ldq_phys((env->mxccregs[0] & 0xffffffffULL) +
-                                        24);
+            }
+            env->mxccdata[0] = ldq_phys((env->mxccregs[0] & 0xffffffffULL) + 0);
+            env->mxccdata[1] = ldq_phys((env->mxccregs[0] & 0xffffffffULL) + 8);
+            env->mxccdata[2] = ldq_phys((env->mxccregs[0] & 0xffffffffULL) + 16);
+            env->mxccdata[3] = ldq_phys((env->mxccregs[0] & 0xffffffffULL) + 24);
             break;
         case 0x01c00200: /* MXCC stream destination */
-            if (size == 8)
+            if (size == 8) {
                 env->mxccregs[1] = val;
-            stq_phys((env->mxccregs[1] & 0xffffffffULL) +  0,
-                     env->mxccdata[0]);
-            stq_phys((env->mxccregs[1] & 0xffffffffULL) +  8,
-                     env->mxccdata[1]);
-            stq_phys((env->mxccregs[1] & 0xffffffffULL) + 16,
-                     env->mxccdata[2]);
-            stq_phys((env->mxccregs[1] & 0xffffffffULL) + 24,
-                     env->mxccdata[3]);
+            }
+            stq_phys((env->mxccregs[1] & 0xffffffffULL) +  0, env->mxccdata[0]);
+            stq_phys((env->mxccregs[1] & 0xffffffffULL) +  8, env->mxccdata[1]);
+            stq_phys((env->mxccregs[1] & 0xffffffffULL) + 16, env->mxccdata[2]);
+            stq_phys((env->mxccregs[1] & 0xffffffffULL) + 24, env->mxccdata[3]);
             break;
         case 0x01c00a00: /* MXCC control register */
-            if (size == 8)
+            if (size == 8) {
                 env->mxccregs[3] = val;
+            }
             break;
         case 0x01c00a04: /* MXCC control register */
-            if (size == 4)
-                env->mxccregs[3] = (env->mxccregs[3] & 0xffffffff00000000ULL)
-                    | val;
+            if (size == 4) {
+                env->mxccregs[3] = (env->mxccregs[3] & 0xffffffff00000000ULL) | val;
+            }
             break;
         case 0x01c00e00: /* MXCC error register  */
             // writing a 1 bit clears the error
-            if (size == 8)
+            if (size == 8) {
                 env->mxccregs[6] &= ~val;
+            }
             break;
         case 0x01c00f00: /* MBus port address register */
-            if (size == 8)
+            if (size == 8) {
                 env->mxccregs[7] = val;
+            }
             break;
         }
         break;
-    case 3: /* MMU flush */
+    case 3:    /* MMU flush */
     case 0x18: /*LEON3 MMU flush*/
-        {
-            int mmulev;
+    {
+        int mmulev;
 
-            mmulev = (addr >> 8) & 15;
-            switch (mmulev) {
-            case 0: // flush page
-                tlb_flush_page(env, addr & 0xfffff000);
-                break;
-            case 1: // flush segment (256k)
-            case 2: // flush region (16M)
-            case 3: // flush context (4G)
-            case 4: // flush entire
-                tlb_flush(env, 1);
-                break;
-            default:
-                break;
-            }
+        mmulev = (addr >> 8) & 15;
+        switch (mmulev) {
+        case 0:     // flush page
+            tlb_flush_page(env, addr & 0xfffff000);
+            break;
+        case 1:     // flush segment (256k)
+        case 2:     // flush region (16M)
+        case 3:     // flush context (4G)
+        case 4:     // flush entire
+            tlb_flush(env, 1);
+            break;
+        default:
+            break;
         }
-        break;
-    case 4: /* write MMU regs */
+    }
+    break;
+    case 4:    /* write MMU regs */
     case 0x19: /*LEON3 write MMU regs */
-        {
-            int reg = (addr >> 8) & 0x1f;
-            uint32_t oldreg;
+    {
+        int reg = (addr >> 8) & 0x1f;
+        uint32_t oldreg;
 
-            oldreg = env->mmuregs[reg];
-            switch(reg) {
-            case 0: // Control Register
-                env->mmuregs[reg] = (env->mmuregs[reg] & 0xff000000) |
-                                    (val & 0x00ffffff);
-                // Mappings generated during no-fault mode or MMU
-                // disabled mode are invalid in normal mode
-                if ((oldreg & (MMU_E | MMU_NF | env->def->mmu_bm)) !=
-                    (env->mmuregs[reg] & (MMU_E | MMU_NF | env->def->mmu_bm)))
-                    tlb_flush(env, 1);
-                break;
-            case 1: // Context Table Pointer Register
-                env->mmuregs[reg] = val & env->def->mmu_ctpr_mask;
-                break;
-            case 2: // Context Register
-                env->mmuregs[reg] = val & env->def->mmu_cxr_mask;
-                if (oldreg != env->mmuregs[reg]) {
-                    /* we flush when the MMU context changes because
-                       QEMU has no MMU context support */
-                    tlb_flush(env, 1);
-                }
-                break;
-            case 3: // Synchronous Fault Status Register with Clear
-            case 4: // Synchronous Fault Address Register
-                break;
-            case 0x10: // TLB Replacement Control Register
-                env->mmuregs[reg] = val & env->def->mmu_trcr_mask;
-                break;
-            case 0x13: // Synchronous Fault Status Register with Read and Clear
-                env->mmuregs[3] = val & env->def->mmu_sfsr_mask;
-                break;
-            case 0x14: // Synchronous Fault Address Register
-                env->mmuregs[4] = val;
-                break;
-            default:
-                env->mmuregs[reg] = val;
-                break;
+        oldreg = env->mmuregs[reg];
+        switch (reg) {
+        case 0:     // Control Register
+            env->mmuregs[reg] = (env->mmuregs[reg] & 0xff000000) | (val & 0x00ffffff);
+            // Mappings generated during no-fault mode or MMU
+            // disabled mode are invalid in normal mode
+            if ((oldreg & (MMU_E | MMU_NF | env->def->mmu_bm)) != (env->mmuregs[reg] & (MMU_E | MMU_NF | env->def->mmu_bm))) {
+                tlb_flush(env, 1);
             }
+            break;
+        case 1:     // Context Table Pointer Register
+            env->mmuregs[reg] = val & env->def->mmu_ctpr_mask;
+            break;
+        case 2:     // Context Register
+            env->mmuregs[reg] = val & env->def->mmu_cxr_mask;
             if (oldreg != env->mmuregs[reg]) {
+                /* we flush when the MMU context changes because
+                   QEMU has no MMU context support */
+                tlb_flush(env, 1);
             }
+            break;
+        case 3:     // Synchronous Fault Status Register with Clear
+        case 4:     // Synchronous Fault Address Register
+            break;
+        case 0x10:  // TLB Replacement Control Register
+            env->mmuregs[reg] = val & env->def->mmu_trcr_mask;
+            break;
+        case 0x13:  // Synchronous Fault Status Register with Read and Clear
+            env->mmuregs[3] = val & env->def->mmu_sfsr_mask;
+            break;
+        case 0x14:  // Synchronous Fault Address Register
+            env->mmuregs[4] = val;
+            break;
+        default:
+            env->mmuregs[reg] = val;
+            break;
         }
-        break;
-    case 5: // Turbosparc ITLB Diagnostic
-    case 6: // Turbosparc DTLB Diagnostic
-    case 7: // Turbosparc IOTLB Diagnostic
+        if (oldreg != env->mmuregs[reg]) {
+        }
+    }
+    break;
+    case 5:   // Turbosparc ITLB Diagnostic
+    case 6:   // Turbosparc DTLB Diagnostic
+    case 7:   // Turbosparc IOTLB Diagnostic
         break;
     case 0xa: /* User data access */
-        switch(size) {
+        switch (size) {
         case 1:
             stb_user(addr, val);
             break;
@@ -1256,7 +1240,7 @@ void helper_st_asi(target_ulong addr, uint64_t val, int asi, int size)
         }
         break;
     case 0xb: /* Supervisor data access */
-        switch(size) {
+        switch (size) {
         case 1:
             stb_kernel(addr, val);
             break;
@@ -1272,10 +1256,10 @@ void helper_st_asi(target_ulong addr, uint64_t val, int asi, int size)
             break;
         }
         break;
-    case 0xc: /* I-cache tag */
-    case 0xd: /* I-cache data */
-    case 0xe: /* D-cache tag */
-    case 0xf: /* D-cache data */
+    case 0xc:  /* I-cache tag */
+    case 0xd:  /* I-cache data */
+    case 0xe:  /* D-cache tag */
+    case 0xf:  /* D-cache data */
     case 0x10: /* I/D-cache flush page */
     case 0x11: /* I/D-cache flush segment */
     case 0x12: /* I/D-cache flush region */
@@ -1283,123 +1267,120 @@ void helper_st_asi(target_ulong addr, uint64_t val, int asi, int size)
     case 0x14: /* I/D-cache flush user */
         break;
     case 0x17: /* Block copy, sta access */
-        {
-            // val = src
-            // addr = dst
-            // copy 32 bytes
-            unsigned int i;
-            uint32_t src = val & ~3, dst = addr & ~3, temp;
+    {
+        // val = src
+        // addr = dst
+        // copy 32 bytes
+        unsigned int i;
+        uint32_t src = val & ~3, dst = addr & ~3, temp;
 
-            for (i = 0; i < 32; i += 4, src += 4, dst += 4) {
-                temp = ldl_kernel(src);
-                stl_kernel(dst, temp);
-            }
+        for (i = 0; i < 32; i += 4, src += 4, dst += 4) {
+            temp = ldl_kernel(src);
+            stl_kernel(dst, temp);
         }
-        break;
+    }
+    break;
     case 0x1f: /* Block fill, stda access */
-        {
-            // addr = dst
-            // fill 32 bytes with val
-            unsigned int i;
-            uint32_t dst = addr & 7;
+    {
+        // addr = dst
+        // fill 32 bytes with val
+        unsigned int i;
+        uint32_t dst = addr & 7;
 
-            for (i = 0; i < 32; i += 8, dst += 8)
-                stq_kernel(dst, val);
+        for (i = 0; i < 32; i += 8, dst += 8) {
+            stq_kernel(dst, val);
         }
-        break;
+    }
+    break;
     case 0x1:
-        {
-            /* The default case in the switch below just follows the coding
-             * convention in this function meaning that no other values on
-             * size are expected than 1, 2, 4 and 8 */
-            switch(size) {
-            case 1:
-                stb_kernel(addr, val);
-                break;
-            case 2:
-                stw_kernel(addr, val);
-                break;
-            default:
-            case 4:
-                stl_kernel(addr, val);
-                break;
-            case 8:
-                stq_kernel(addr, val);
-                break;
-            }
+    {
+        /* The default case in the switch below just follows the coding
+         * convention in this function meaning that no other values on
+         * size are expected than 1, 2, 4 and 8 */
+        switch (size) {
+        case 1:
+            stb_kernel(addr, val);
+            break;
+        case 2:
+            stw_kernel(addr, val);
+            break;
+        default:
+        case 4:
+            stl_kernel(addr, val);
+            break;
+        case 8:
+            stq_kernel(addr, val);
+            break;
         }
-        break;
+    }
+    break;
     case 0x20: /* MMU passthrough */
     case 0x1c: /* LEON3 MMU passthrougth */
-        {
-            switch(size) {
-            case 1:
-                stb_phys(addr, val);
-                break;
-            case 2:
-                stw_phys(addr, val);
-                break;
-            case 4:
-            default:
-                stl_phys(addr, val);
-                break;
-            case 8:
-                stq_phys(addr, val);
-                break;
-            }
+    {
+        switch (size) {
+        case 1:
+            stb_phys(addr, val);
+            break;
+        case 2:
+            stw_phys(addr, val);
+            break;
+        case 4:
+        default:
+            stl_phys(addr, val);
+            break;
+        case 8:
+            stq_phys(addr, val);
+            break;
         }
-        break;
+    }
+    break;
     case 0x21 ... 0x2f: /* MMU passthrough, 0x100000000 to 0xfffffffff */
-        {
-            switch(size) {
-            case 1:
-                stb_phys((target_phys_addr_t)addr
-                         | ((target_phys_addr_t)(asi & 0xf) << 32), val);
-                break;
-            case 2:
-                stw_phys((target_phys_addr_t)addr
-                         | ((target_phys_addr_t)(asi & 0xf) << 32), val);
-                break;
-            case 4:
-            default:
-                stl_phys((target_phys_addr_t)addr
-                         | ((target_phys_addr_t)(asi & 0xf) << 32), val);
-                break;
-            case 8:
-                stq_phys((target_phys_addr_t)addr
-                         | ((target_phys_addr_t)(asi & 0xf) << 32), val);
-                break;
-            }
+    {
+        switch (size) {
+        case 1:
+            stb_phys((target_phys_addr_t)addr | ((target_phys_addr_t)(asi & 0xf) << 32), val);
+            break;
+        case 2:
+            stw_phys((target_phys_addr_t)addr | ((target_phys_addr_t)(asi & 0xf) << 32), val);
+            break;
+        case 4:
+        default:
+            stl_phys((target_phys_addr_t)addr | ((target_phys_addr_t)(asi & 0xf) << 32), val);
+            break;
+        case 8:
+            stq_phys((target_phys_addr_t)addr | ((target_phys_addr_t)(asi & 0xf) << 32), val);
+            break;
         }
-        break;
+    }
+    break;
     case 0x30: // store buffer tags or Turbosparc secondary cache diagnostic
     case 0x31: // store buffer data, Ross RT620 I-cache flush or
-               // Turbosparc snoop RAM
+    // Turbosparc snoop RAM
     case 0x32: // store buffer control or Turbosparc page table
-               // descriptor diagnostic
+    // descriptor diagnostic
     case 0x36: /* I-cache flash clear */
     case 0x37: /* D-cache flash clear */
         break;
     case 0x38: /* SuperSPARC MMU Breakpoint Control Registers*/
-        {
-            int reg = (addr >> 8) & 3;
+    {
+        int reg = (addr >> 8) & 3;
 
-            switch(reg) {
-            case 0: /* Breakpoint Value (Addr) */
-                env->mmubpregs[reg] = (val & 0xfffffffffULL);
-                break;
-            case 1: /* Breakpoint Mask */
-                env->mmubpregs[reg] = (val & 0xfffffffffULL);
-                break;
-            case 2: /* Breakpoint Control */
-                env->mmubpregs[reg] = (val & 0x7fULL);
-                break;
-            case 3: /* Breakpoint Status */
-                env->mmubpregs[reg] = (val & 0xfULL);
-                break;
-            }
+        switch (reg) {
+        case 0:     /* Breakpoint Value (Addr) */
+            env->mmubpregs[reg] = (val & 0xfffffffffULL);
+            break;
+        case 1:     /* Breakpoint Mask */
+            env->mmubpregs[reg] = (val & 0xfffffffffULL);
+            break;
+        case 2:     /* Breakpoint Control */
+            env->mmubpregs[reg] = (val & 0x7fULL);
+            break;
+        case 3:     /* Breakpoint Status */
+            env->mmubpregs[reg] = (val & 0xfULL);
+            break;
         }
-        break;
+    }
+    break;
     case 0x49: /* SuperSPARC MMU Counter Breakpoint Value */
         env->mmubpctrv = val & 0xffffffff;
         break;
@@ -1412,8 +1393,8 @@ void helper_st_asi(target_ulong addr, uint64_t val, int asi, int size)
     case 0x4c: /* SuperSPARC MMU Breakpoint Action */
         env->mmubpaction = val & 0x1fff;
         break;
-    case 8: /* User code access, XXX */
-    case 9: /* Supervisor code access, XXX */
+    case 8:    /* User code access, XXX */
+    case 9:    /* Supervisor code access, XXX */
     default:
         do_unassigned_access(addr, 1, 0, asi, size);
         break;
@@ -1424,11 +1405,12 @@ void helper_rett(void)
 {
     unsigned int cwp;
 
-    if (env->psret == 1)
+    if (env->psret == 1) {
         raise_exception(TT_ILL_INSN);
+    }
 
     env->psret = 1;
-    cwp = cwp_inc(env->cwp + 1) ;
+    cwp = cwp_inc(env->cwp + 1);
     if (env->wim & (1 << cwp)) {
         raise_exception(TT_WIN_UNF);
     }
@@ -1442,7 +1424,7 @@ static target_ulong helper_udiv_common(target_ulong a, target_ulong b, int cc)
     uint64_t x0;
     uint32_t x1;
 
-    x0 = (a & 0xffffffff) | ((int64_t) (env->y) << 32);
+    x0 = (a & 0xffffffff) | ((int64_t)(env->y) << 32);
     x1 = (b & 0xffffffff);
 
     if (x1 == 0) {
@@ -1479,7 +1461,7 @@ static target_ulong helper_sdiv_common(target_ulong a, target_ulong b, int cc)
     int64_t x0;
     int32_t x1;
 
-    x0 = (a & 0xffffffff) | ((int64_t) (env->y) << 32);
+    x0 = (a & 0xffffffff) | ((int64_t)(env->y) << 32);
     x1 = (b & 0xffffffff);
 
     if (x1 == 0) {
@@ -1487,8 +1469,8 @@ static target_ulong helper_sdiv_common(target_ulong a, target_ulong b, int cc)
     }
 
     x0 = x0 / x1;
-    if ((int32_t) x0 != x0) {
-        x0 = x0 < 0 ? 0x80000000: 0x7fffffff;
+    if ((int32_t)x0 != x0) {
+        x0 = x0 < 0 ? 0x80000000 : 0x7fffffff;
         overflow = 1;
     }
 
@@ -1666,8 +1648,7 @@ static void cpu_restore_state2(void *retaddr)
     }
 }
 
-void do_unaligned_access(target_ulong addr, int is_write, int is_user,
-                                void *retaddr)
+void do_unaligned_access(target_ulong addr, int is_write, int is_user, void *retaddr)
 {
     cpu_restore_state2(retaddr);
     raise_exception(TT_UNALIGNED);
@@ -1687,8 +1668,7 @@ void tlb_fill(CPUState *env, target_ulong addr, int is_write, int mmu_idx, void 
     }
 }
 
-static void do_unassigned_access(target_phys_addr_t addr, int is_write,
-                                 int is_exec, int is_asi, int size)
+static void do_unassigned_access(target_phys_addr_t addr, int is_write, int is_exec, int is_asi, int size)
 {
     int fault_type;
 
@@ -1698,14 +1678,18 @@ static void do_unassigned_access(target_phys_addr_t addr, int is_write,
     fault_type = (env->mmuregs[3] & 0x1c) >> 2;
     if ((fault_type > 4) || (fault_type == 0)) {
         env->mmuregs[3] = 0; /* Fault status register */
-        if (is_asi)
+        if (is_asi) {
             env->mmuregs[3] |= 1 << 16;
-        if (env->psrs)
+        }
+        if (env->psrs) {
             env->mmuregs[3] |= 1 << 5;
-        if (is_exec)
+        }
+        if (is_exec) {
             env->mmuregs[3] |= 1 << 6;
-        if (is_write)
+        }
+        if (is_write) {
             env->mmuregs[3] |= 1 << 7;
+        }
         env->mmuregs[3] |= (5 << 2) | 2;
         /* SuperSPARC will never place instruction fault addresses in the FAR */
         if (!is_exec) {
@@ -1718,10 +1702,11 @@ static void do_unassigned_access(target_phys_addr_t addr, int is_write,
     }
 
     if ((env->mmuregs[0] & MMU_E) && !(env->mmuregs[0] & MMU_NF)) {
-        if (is_exec)
+        if (is_exec) {
             raise_exception(TT_CODE_ACCESS);
-        else
+        } else {
             raise_exception(TT_DATA_ACCESS);
+        }
     }
 
     /* flush neverland mappings created during no-fault mode,

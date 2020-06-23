@@ -23,31 +23,23 @@
 
 #if defined(TARGET_RISCV32)
 static const char valid_vm_1_09[16] = {
-    [VM_1_09_MBARE] = 1,
-    [VM_1_09_SV32] = 1,
+    [VM_1_09_MBARE] = 1, [VM_1_09_SV32] = 1,
 };
 static const char valid_vm_1_10[16] = {
-    [VM_1_10_MBARE] = 1,
-    [VM_1_10_SV32] = 1
+    [VM_1_10_MBARE] = 1, [VM_1_10_SV32] = 1
 };
 #elif defined(TARGET_RISCV64)
 static const char valid_vm_1_09[16] = {
-    [VM_1_09_MBARE] = 1,
-    [VM_1_09_SV39] = 1,
-    [VM_1_09_SV48] = 1,
+    [VM_1_09_MBARE] = 1, [VM_1_09_SV39] = 1, [VM_1_09_SV48] = 1,
 };
 static const char valid_vm_1_10[16] = {
-    [VM_1_10_MBARE] = 1,
-    [VM_1_10_SV39] = 1,
-    [VM_1_10_SV48] = 1,
-    [VM_1_10_SV57] = 1
+    [VM_1_10_MBARE] = 1, [VM_1_10_SV39] = 1, [VM_1_10_SV48] = 1, [VM_1_10_SV57] = 1
 };
 #endif
 
 static int validate_vm(CPUState *env, target_ulong vm)
 {
-    return (env->privilege_architecture >= RISCV_PRIV1_10) ?
-        valid_vm_1_10[vm & 0xf] : valid_vm_1_09[vm & 0xf];
+    return (env->privilege_architecture >= RISCV_PRIV1_10) ? valid_vm_1_10[vm & 0xf] : valid_vm_1_09[vm & 0xf];
 }
 
 static inline uint64_t cpu_riscv_read_instret(CPUState *env)
@@ -57,8 +49,8 @@ static inline uint64_t cpu_riscv_read_instret(CPUState *env)
 }
 
 /* Exceptions processing helpers */
-static inline void __attribute__ ((__noreturn__)) do_raise_exception_err(CPUState *env,
-                                          uint32_t exception, uintptr_t pc, uint32_t call_hook)
+static inline void __attribute__ ((__noreturn__)) do_raise_exception_err(CPUState *env, uint32_t exception, uintptr_t pc,
+                                                                         uint32_t call_hook)
 {
     env->exception_index = exception;
     cpu_loop_exit_restore(env, pc, call_hook);
@@ -74,8 +66,8 @@ void helper_raise_exception_debug(CPUState *env)
     do_raise_exception_err(env, EXCP_DEBUG, 0, 1);
 }
 
-void helper_raise_exception_mbadaddr(CPUState *env, uint32_t exception,
-        target_ulong bad_pc) {
+void helper_raise_exception_mbadaddr(CPUState *env, uint32_t exception, target_ulong bad_pc)
+{
     env->badaddr = bad_pc;
     do_raise_exception_err(env, exception, 0, 1);
 }
@@ -101,13 +93,13 @@ target_ulong priv_version_csr_filter(CPUState *env, target_ulong csrno)
             return CSR_UNHANDLED;
         }
     } else if (env->privilege_architecture == RISCV_PRIV1_10) {
-        switch(csrno) {
+        switch (csrno) {
         case CSR_MUCOUNTEREN:
         case CSR_MSCOUNTEREN:
             return CSR_UNHANDLED;
         }
     } else if (env->privilege_architecture == RISCV_PRIV1_09) {
-        switch(csrno) {
+        switch (csrno) {
         case CSR_SCOUNTEREN:
         case CSR_MCOUNTEREN:
         case CSR_PMPCFG0:
@@ -141,8 +133,7 @@ target_ulong priv_version_csr_filter(CPUState *env, target_ulong csrno)
  *
  * Adapted from Spike's processor_t::set_csr
  */
-inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
-        target_ulong csrno)
+inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ulong csrno)
 {
     uint64_t delegable_ints = IRQ_SS | IRQ_ST | IRQ_SE | (1 << IRQ_X_COP) | ~((1 << 12) - 1); //all local interrupts are delegable as well
     uint64_t all_ints = delegable_ints | IRQ_MS | IRQ_MT | IRQ_ME;
@@ -152,8 +143,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     // testing for non-standard CSRs here (i.e., before the switch)
     // allows us to override existing CSRs with our custom implementation;
     // this is necessary for RI5CY core
-    if(tlib_has_nonstandard_csr(csrno) != 0)
-    {
+    if (tlib_has_nonstandard_csr(csrno) != 0) {
         tlib_write_csr(csrno, val_to_write);
         return;
     }
@@ -188,24 +178,19 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         target_ulong mstatus = env->mstatus;
         target_ulong mask = 0;
         if (env->privilege_architecture < RISCV_PRIV1_10) {
-            if ((val_to_write ^ mstatus) & (MSTATUS_MXR | MSTATUS_MPP |
-                    MSTATUS_MPRV | MSTATUS_SUM | MSTATUS_VM)) {
+            if ((val_to_write ^ mstatus) & (MSTATUS_MXR | MSTATUS_MPP | MSTATUS_MPRV | MSTATUS_SUM | MSTATUS_VM)) {
                 helper_tlb_flush(env);
             }
-            mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE |
-                MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV | MSTATUS_SUM |
-                MSTATUS_MPP | MSTATUS_MXR |
-                (validate_vm(env, get_field(val_to_write, MSTATUS_VM)) ?
-                    MSTATUS_VM : 0);
+            mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV |
+                   MSTATUS_SUM | MSTATUS_MPP | MSTATUS_MXR |
+                   (validate_vm(env, get_field(val_to_write, MSTATUS_VM)) ? MSTATUS_VM : 0);
         }
         if (env->privilege_architecture >= RISCV_PRIV1_10) {
-           if ((val_to_write ^ mstatus) & (MSTATUS_MXR | MSTATUS_MPP |
-                   MSTATUS_MPRV | MSTATUS_SUM)) {
+            if ((val_to_write ^ mstatus) & (MSTATUS_MXR | MSTATUS_MPP | MSTATUS_MPRV | MSTATUS_SUM)) {
                 helper_tlb_flush(env);
             }
-            mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE |
-                MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV | MSTATUS_SUM |
-                MSTATUS_MPP | MSTATUS_MXR;
+            mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV |
+                   MSTATUS_SUM | MSTATUS_MPP | MSTATUS_MXR;
         }
 #ifdef TARGET_RISCV64
         mask |= MSTATUS_UXL | MSTATUS_SXL;
@@ -224,20 +209,17 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         env->mip = (env->mip & ~mask) | (val_to_write & mask);
         pthread_mutex_unlock(&env->mip_lock);
         tlib_mip_changed(env->mip);
-        if(env->mip != 0)
-        {
+        if (env->mip != 0) {
             env->interrupt_request = CPU_INTERRUPT_HARD;
         }
         break;
     }
     case CSR_MIE: {
-        env->mie = (env->mie & ~all_ints) |
-            (val_to_write & all_ints);
+        env->mie = (env->mie & ~all_ints) | (val_to_write & all_ints);
         break;
     }
     case CSR_MIDELEG:
-        env->mideleg = (env->mideleg & ~delegable_ints)
-                                | (val_to_write & delegable_ints);
+        env->mideleg = (env->mideleg & ~delegable_ints) | (val_to_write & delegable_ints);
         break;
     case CSR_MEDELEG: {
         target_ulong mask = 0;
@@ -256,8 +238,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         mask |= 1ULL << (RISCV_EXCP_INST_PAGE_FAULT);
         mask |= 1ULL << (RISCV_EXCP_LOAD_PAGE_FAULT);
         mask |= 1ULL << (RISCV_EXCP_STORE_PAGE_FAULT);
-        env->medeleg = (env->medeleg & ~mask)
-                                | (val_to_write & mask);
+        env->medeleg = (env->medeleg & ~mask) | (val_to_write & mask);
         break;
     }
     case CSR_MCOUNTINHIBIT:
@@ -265,19 +246,19 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
          * - version 1.9.1: this address is used by mucounteren csr,
          * - version 1.10: this address is not used, and all calls are filtered by priv_version_csr_filter()
          * - since version 1.11: this address is used by mcountinhibit csr. */
-        if (env->privilege_architecture == RISCV_PRIV1_09)
+        if (env->privilege_architecture == RISCV_PRIV1_09) {
             env->mucounteren = val_to_write;
-        else if (env->privilege_architecture >= RISCV_PRIV1_11)
+        } else if (env->privilege_architecture >= RISCV_PRIV1_11) {
             env->mcountinhibit = val_to_write;
+        }
         break;
     case CSR_MSCOUNTEREN:
         env->mscounteren = val_to_write;
         break;
     case CSR_SSTATUS: {
         target_ulong s = env->mstatus;
-        target_ulong mask = SSTATUS_SIE | SSTATUS_SPIE | SSTATUS_UIE
-            | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_FS | SSTATUS_XS
-            | SSTATUS_SUM | SSTATUS_MXR | SSTATUS_SD;
+        target_ulong mask = SSTATUS_SIE | SSTATUS_SPIE | SSTATUS_UIE | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_FS | SSTATUS_XS |
+                            SSTATUS_SUM | SSTATUS_MXR | SSTATUS_SD;
 #ifdef TARGET_RISCV64
         mask |= SSTATUS_UXL;
 #endif
@@ -300,16 +281,15 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         break;
     }
     case CSR_SATP: /* CSR_SPTBR */ {
-        if ((env->privilege_architecture < RISCV_PRIV1_10) && (val_to_write ^ env->sptbr))
-        {
+        if ((env->privilege_architecture < RISCV_PRIV1_10) && (val_to_write ^ env->sptbr)) {
             helper_tlb_flush(env);
             env->sptbr = val_to_write & (((target_ulong)
-                1 << (TARGET_PHYS_ADDR_SPACE_BITS - PGSHIFT)) - 1);
+                                          1 << (TARGET_PHYS_ADDR_SPACE_BITS - PGSHIFT)) - 1);
         }
         if (env->privilege_architecture >= RISCV_PRIV1_10 &&
-            validate_vm(env, get_field(val_to_write, SATP_MODE)) &&
-            ((val_to_write ^ env->satp) & (SATP_MODE | SATP_ASID | SATP_PPN)))
-        {
+            validate_vm(env,
+                        get_field(val_to_write,
+                                  SATP_MODE)) && ((val_to_write ^ env->satp) & (SATP_MODE | SATP_ASID | SATP_PPN))) {
             helper_tlb_flush(env);
             env->satp = val_to_write;
         }
@@ -320,10 +300,9 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         break;
     case CSR_STVEC:
         if (((env->privilege_architecture >= RISCV_PRIV1_10) && (val_to_write & 0x2)) || (val_to_write & 0x3)) {
-            tlib_printf(LOG_LEVEL_WARNING,
-                "Trying to set unaligned stvec: 0x{0:X}, aligning to 4-byte boundary.", val_to_write);
+            tlib_printf(LOG_LEVEL_WARNING, "Trying to set unaligned stvec: 0x{0:X}, aligning to 4-byte boundary.", val_to_write);
         }
-        if (env->privilege_architecture >= RISCV_PRIV1_10){
+        if (env->privilege_architecture >= RISCV_PRIV1_10) {
             env->stvec = val_to_write & ~0x2;
         } else {
             env->stvec = val_to_write & ~0x3;
@@ -346,10 +325,9 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
         break;
     case CSR_MTVEC:
         if (((env->privilege_architecture >= RISCV_PRIV1_10) && (val_to_write & 0x2)) || (val_to_write & 0x3)) {
-            tlib_printf(LOG_LEVEL_WARNING,
-                "Trying to set unaligned mtvec: 0x{0:X}, aligning to 4-byte boundary.", val_to_write);
+            tlib_printf(LOG_LEVEL_WARNING, "Trying to set unaligned mtvec: 0x{0:X}, aligning to 4-byte boundary.", val_to_write);
         }
-        if (env->privilege_architecture >= RISCV_PRIV1_10){
+        if (env->privilege_architecture >= RISCV_PRIV1_10) {
             env->mtvec = val_to_write & ~0x2;
         } else {
             env->mtvec = val_to_write & ~0x3;
@@ -430,8 +408,8 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     case CSR_PMPCFG1:
     case CSR_PMPCFG2:
     case CSR_PMPCFG3:
-       pmpcfg_csr_write(env, csrno - CSR_PMPCFG0, val_to_write);
-       break;
+        pmpcfg_csr_write(env, csrno - CSR_PMPCFG0, val_to_write);
+        break;
     case CSR_PMPADDR0:
     case CSR_PMPADDR1:
     case CSR_PMPADDR2:
@@ -448,8 +426,8 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
     case CSR_PMPADDR13:
     case CSR_PMPADDR14:
     case CSR_PMPADDR15:
-       pmpaddr_csr_write(env, csrno - CSR_PMPADDR0, val_to_write);
-       break;
+        pmpaddr_csr_write(env, csrno - CSR_PMPADDR0, val_to_write);
+        break;
     default:
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
@@ -462,8 +440,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write,
  */
 static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
 {
-    target_ulong ctr_en = env->priv == PRV_U ? env->mucounteren :
-                   env->priv == PRV_S ? env->mscounteren : -1U;
+    target_ulong ctr_en = env->priv == PRV_U ? env->mucounteren : env->priv == PRV_S ? env->mscounteren : -1U;
     target_ulong ctr_ok = (ctr_en >> (csrno & 31)) & 1;
 
     if (ctr_ok) {
@@ -495,8 +472,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     // testing for non-standard CSRs here (i.e., before the switch)
     // allows us to override existing CSRs with our custom implementation;
     // this is necessary for RI5CY core
-    if(tlib_has_nonstandard_csr(csrno) != 0)
-    {
+    if (tlib_has_nonstandard_csr(csrno) != 0) {
         return tlib_read_csr(csrno);
     }
 
@@ -551,17 +527,17 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
          * - version 1.9.1: this address is used by mucounteren csr,
          * - version 1.10: this address is not used, and all calls are filtered by priv_version_csr_filter()
          * - since version 1.11: this address is used by mcountinhibit csr. */
-        if (env->privilege_architecture ==  RISCV_PRIV1_09)
+        if (env->privilege_architecture ==  RISCV_PRIV1_09) {
             return env->mucounteren;
-        else if (env->privilege_architecture >= RISCV_PRIV1_11)
+        } else if (env->privilege_architecture >= RISCV_PRIV1_11) {
             return env->mcountinhibit;
+        }
         break;
     case CSR_MSCOUNTEREN:
         return env->mscounteren;
     case CSR_SSTATUS: {
-        target_ulong mask = SSTATUS_SIE | SSTATUS_SPIE | SSTATUS_UIE
-            | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_FS | SSTATUS_XS
-            | SSTATUS_SUM |  SSTATUS_SD;
+        target_ulong mask = SSTATUS_SIE | SSTATUS_SPIE | SSTATUS_UIE | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_FS | SSTATUS_XS |
+                            SSTATUS_SUM |  SSTATUS_SD;
         if (env->privilege_architecture >= RISCV_PRIV1_10) {
             mask |= SSTATUS_MXR;
         }
@@ -614,11 +590,11 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         env->misa |= 0x00040000; // 'S'
         return env->misa;
     case CSR_MARCHID:
-        return 0; /* as spike does */
+        return 0;                /* as spike does */
     case CSR_MIMPID:
-        return 0; /* as spike does */
+        return 0;                /* as spike does */
     case CSR_MVENDORID:
-        return 0; /* as spike does */
+        return 0;                /* as spike does */
     case CSR_MHARTID:
         return env->mhartid;
     case CSR_MTVEC:
@@ -633,7 +609,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     case CSR_PMPCFG1:
     case CSR_PMPCFG2:
     case CSR_PMPCFG3:
-       return pmpcfg_csr_read(env, csrno - CSR_PMPCFG0);
+        return pmpcfg_csr_read(env, csrno - CSR_PMPCFG0);
     case CSR_PMPADDR0:
     case CSR_PMPADDR1:
     case CSR_PMPADDR2:
@@ -650,7 +626,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     case CSR_PMPADDR13:
     case CSR_PMPADDR14:
     case CSR_PMPADDR15:
-       return pmpaddr_csr_read(env, csrno - CSR_PMPADDR0);
+        return pmpaddr_csr_read(env, csrno - CSR_PMPADDR0);
     default:
         /* used by e.g. MTIME read */
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
@@ -668,31 +644,29 @@ void validate_csr(CPUState *env, uint64_t which, uint64_t write)
     unsigned csr_priv = get_field((which), 0x300);
     unsigned csr_read_only = get_field((which), 0xC00) == 3;
 
-    switch(env->csr_validation_level)
-    {
-        case CSR_VALIDATION_FULL:
-            if (((write) && csr_read_only) || (env->priv < csr_priv)) {
-                helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
-            }
-            break;
+    switch (env->csr_validation_level) {
+    case CSR_VALIDATION_FULL:
+        if (((write) && csr_read_only) || (env->priv < csr_priv)) {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        }
+        break;
 
-        case CSR_VALIDATION_PRIV:
-            if (env->priv < csr_priv) {
-                helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
-            }
-            break;
+    case CSR_VALIDATION_PRIV:
+        if (env->priv < csr_priv) {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        }
+        break;
 
-        case CSR_VALIDATION_NONE:
-            break;
+    case CSR_VALIDATION_NONE:
+        break;
 
-        default:
-            tlib_abortf("Unexpected CSR validation level: %d", env->csr_validation_level);
-            break;
+    default:
+        tlib_abortf("Unexpected CSR validation level: %d", env->csr_validation_level);
+        break;
     }
 }
 
-target_ulong helper_csrrw(CPUState *env, target_ulong src,
-        target_ulong csr)
+target_ulong helper_csrrw(CPUState *env, target_ulong src, target_ulong csr)
 {
     validate_csr(env, csr, 1);
     uint64_t csr_backup = csr_read_helper(env, csr);
@@ -700,8 +674,7 @@ target_ulong helper_csrrw(CPUState *env, target_ulong src,
     return csr_backup;
 }
 
-target_ulong helper_csrrs(CPUState *env, target_ulong src,
-        target_ulong csr, target_ulong rs1_pass)
+target_ulong helper_csrrs(CPUState *env, target_ulong src, target_ulong csr, target_ulong rs1_pass)
 {
     validate_csr(env, csr, rs1_pass != 0);
     uint64_t csr_backup = csr_read_helper(env, csr);
@@ -711,8 +684,7 @@ target_ulong helper_csrrs(CPUState *env, target_ulong src,
     return csr_backup;
 }
 
-target_ulong helper_csrrc(CPUState *env, target_ulong src,
-        target_ulong csr, target_ulong rs1_pass)
+target_ulong helper_csrrc(CPUState *env, target_ulong src, target_ulong csr, target_ulong rs1_pass)
 {
     validate_csr(env, csr, rs1_pass != 0);
     uint64_t csr_backup = csr_read_helper(env, csr);
@@ -721,7 +693,6 @@ target_ulong helper_csrrc(CPUState *env, target_ulong src,
     }
     return csr_backup;
 }
-
 
 void riscv_set_mode(CPUState *env, target_ulong newpriv)
 {
@@ -749,9 +720,9 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
 
     target_ulong sstatus = env->mstatus;
     target_ulong prev_priv = get_field(sstatus, SSTATUS_SPP);
-    sstatus = set_field(sstatus,
-        (env->privilege_architecture >= RISCV_PRIV1_10) ? SSTATUS_SIE : 1 << prev_priv,
-        get_field(sstatus, SSTATUS_SPIE));
+    sstatus =
+        set_field(sstatus, (env->privilege_architecture >= RISCV_PRIV1_10) ? SSTATUS_SIE : 1 << prev_priv,
+            get_field(sstatus, SSTATUS_SPIE));
     sstatus = set_field(sstatus, SSTATUS_SPIE, 0);
     sstatus = set_field(sstatus, SSTATUS_SPP, prev_priv);
     riscv_set_mode(env, prev_priv);
@@ -778,9 +749,9 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
 
     target_ulong mstatus = env->mstatus;
     target_ulong prev_priv = get_field(mstatus, MSTATUS_MPP);
-    mstatus = set_field(mstatus,
-        env->privilege_architecture >= RISCV_PRIV1_10 ? MSTATUS_MIE : 1 << prev_priv,
-        get_field(mstatus, MSTATUS_MPIE));
+    mstatus =
+        set_field(mstatus, env->privilege_architecture >= RISCV_PRIV1_10 ? MSTATUS_MIE : 1 << prev_priv,
+            get_field(mstatus, MSTATUS_MPIE));
     mstatus = set_field(mstatus, MSTATUS_MPIE, 0);
     mstatus = set_field(mstatus, MSTATUS_MPP, riscv_has_ext(env, RISCV_FEATURE_RVU) ? PRV_U : PRV_M);
     mstatus = set_field(mstatus, MSTATUS_MPP, PRV_U);
@@ -796,8 +767,7 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
 
 void helper_wfi(CPUState *env)
 {
-    if(tlib_is_in_debug_mode())
-    {
+    if (tlib_is_in_debug_mode()) {
         //According to the debug spec draft, the debug mode implies all interrupts are masked (even NMI)
         //and the WFI acts as NOP.
         return;
@@ -820,29 +790,27 @@ void helper_tlb_flush(CPUState *env)
     tlb_flush(env, 1);
 }
 
-void do_unaligned_access(target_ulong addr, int access_type, int mmu_idx,
-                                void *retaddr)
+void do_unaligned_access(target_ulong addr, int access_type, int mmu_idx, void *retaddr)
 {
     env->badaddr = addr;
-    switch(access_type) {
-        case MMU_DATA_LOAD:
-           do_raise_exception_err(env,  RISCV_EXCP_LOAD_ADDR_MIS, (uintptr_t)retaddr, 1);
-            break;
-        case MMU_DATA_STORE:
-            do_raise_exception_err(env, RISCV_EXCP_STORE_AMO_ADDR_MIS, (uintptr_t)retaddr, 1);
-            break;
-        case MMU_INST_FETCH:
-            // we don't restore intructions count / fire block_end hooks on translation
-            do_raise_exception_err(env, RISCV_EXCP_INST_ADDR_MIS, 0, 0);
-            break;
-        default:
-            tlib_abort("Illegal memory access type!");
+    switch (access_type) {
+    case MMU_DATA_LOAD:
+        do_raise_exception_err(env,  RISCV_EXCP_LOAD_ADDR_MIS, (uintptr_t)retaddr, 1);
+        break;
+    case MMU_DATA_STORE:
+        do_raise_exception_err(env, RISCV_EXCP_STORE_AMO_ADDR_MIS, (uintptr_t)retaddr, 1);
+        break;
+    case MMU_INST_FETCH:
+        // we don't restore intructions count / fire block_end hooks on translation
+        do_raise_exception_err(env, RISCV_EXCP_INST_ADDR_MIS, 0, 0);
+        break;
+    default:
+        tlib_abort("Illegal memory access type!");
     }
 }
 
 /* called to fill tlb */
-void tlb_fill(CPUState *env, target_ulong addr, int is_write, int mmu_idx,
-              void* retaddr)
+void tlb_fill(CPUState *env, target_ulong addr, int is_write, int mmu_idx, void *retaddr)
 {
     int ret;
     ret = cpu_handle_mmu_fault(env, addr, is_write, mmu_idx);

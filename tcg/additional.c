@@ -29,32 +29,38 @@ tcg_t *tcg;
 
 void *(*_TCG_malloc)(size_t);
 
-void attach_malloc(void *malloc_callback) {
-        _TCG_malloc = malloc_callback;
+void attach_malloc(void *malloc_callback)
+{
+    _TCG_malloc = malloc_callback;
 }
 
-void *TCG_malloc(size_t size) {
-	return _TCG_malloc(size);
+void *TCG_malloc(size_t size)
+{
+    return _TCG_malloc(size);
 }
 
 void *(*_TCG_realloc)(void *, size_t);
 
-void attach_realloc(void * reall) {
+void attach_realloc(void *reall)
+{
     _TCG_realloc = reall;
 }
 
-void *TCG_realloc(void *ptr, size_t size) {
+void *TCG_realloc(void *ptr, size_t size)
+{
     return _TCG_realloc(ptr, size);
 }
 
 void (*_TCG_free)(void *ptr);
 
-void attach_free(void *free_callback) {
-  _TCG_free = free_callback;
+void attach_free(void *free_callback)
+{
+    _TCG_free = free_callback;
 }
 
-void TCG_free(void *ptr) {
-  _TCG_free(ptr);
+void TCG_free(void *ptr)
+{
+    _TCG_free(ptr);
 }
 
 void TCG_pstrcpy(char *buf, int buf_size, const char *str)
@@ -62,13 +68,15 @@ void TCG_pstrcpy(char *buf, int buf_size, const char *str)
     int c;
     char *q = buf;
 
-    if (buf_size <= 0)
+    if (buf_size <= 0) {
         return;
+    }
 
-    for(;;) {
+    for (;;) {
         c = *str++;
-        if (c == 0 || q >= buf + buf_size - 1)
+        if (c == 0 || q >= buf + buf_size - 1) {
             break;
+        }
         *q++ = c;
     }
     *q = '\0';
@@ -78,8 +86,9 @@ char *TCG_pstrcat(char *buf, int buf_size, const char *s)
 {
     int len;
     len = strlen(buf);
-    if (len < buf_size)
+    if (len < buf_size) {
         TCG_pstrcpy(buf + len, buf_size - len, s);
+    }
     return buf;
 }
 
@@ -94,31 +103,36 @@ unsigned int tlb_entry_addend;
 unsigned int sizeof_CPUTLBEntry;
 int TARGET_PAGE_BITS;
 
-void set_TARGET_PAGE_BITS(int val) {
+void set_TARGET_PAGE_BITS(int val)
+{
     TARGET_PAGE_BITS = val;
 }
 
-void set_sizeof_CPUTLBEntry(unsigned int sz) {
-        sizeof_CPUTLBEntry = sz;
+void set_sizeof_CPUTLBEntry(unsigned int sz)
+{
+    sizeof_CPUTLBEntry = sz;
 }
 
-void set_temp_buf_offset(unsigned int offset) {
-        temp_buf_offset = offset;
+void set_temp_buf_offset(unsigned int offset)
+{
+    temp_buf_offset = offset;
 }
 
-void set_tlb_entry_addr_rwu(unsigned int read, unsigned int write, unsigned int addend) {
-        tlb_entry_addr_read = read;
-        tlb_entry_addr_write = write;
-        tlb_entry_addend = addend;
+void set_tlb_entry_addr_rwu(unsigned int read, unsigned int write, unsigned int addend)
+{
+    tlb_entry_addr_read = read;
+    tlb_entry_addr_write = write;
+    tlb_entry_addend = addend;
 }
 
-void set_tlb_table_n_0(int i, unsigned int offset) {
-        tlb_table_n_0[i] = offset;
+void set_tlb_table_n_0(int i, unsigned int offset)
+{
+    tlb_table_n_0[i] = offset;
 }
 
-void set_tlb_table_n_0_rwa(int i, unsigned int read, unsigned int write, unsigned int addend) {
-        tlb_table_n_0_addr_read[i] = read;
-        tlb_table_n_0_addr_write[i] = write;
-        tlb_table_n_0_addend[i] = addend;
+void set_tlb_table_n_0_rwa(int i, unsigned int read, unsigned int write, unsigned int addend)
+{
+    tlb_table_n_0_addr_read[i] = read;
+    tlb_table_n_0_addr_write[i] = write;
+    tlb_table_n_0_addend[i] = addend;
 }
-

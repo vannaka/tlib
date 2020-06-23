@@ -90,8 +90,8 @@ DEF_HELPER_1(fres, i64, i64)
 DEF_HELPER_1(frsqrte, i64, i64)
 DEF_HELPER_3(fsel, i64, i64, i64, i64)
 
-#define dh_alias_avr ptr
-#define dh_ctype_avr ppc_avr_t *
+#define dh_alias_avr     ptr
+#define dh_ctype_avr     ppc_avr_t *
 #define dh_is_signed_avr dh_is_signed_ptr
 
 DEF_HELPER_3(vaddubm, void, avr, avr, avr)

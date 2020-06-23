@@ -11,8 +11,7 @@
 #define ARM_ARCHITECTURE_MASK (0xFF00FFF0)
 
 static uint32_t cortexa15_cp15_c0_c1[8] = {
-    0x00001131, 0x00011011, 0x02010555, 0x00000000,
-    0x10201105, 0x20000000, 0x01240000, 0x02102211
+    0x00001131, 0x00011011, 0x02010555, 0x00000000, 0x10201105, 0x20000000, 0x01240000, 0x02102211
 };
 
 static uint32_t cortexa15_cp15_c0_c2[8] = {
@@ -87,7 +86,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
     case ARM_CPUID_ARM1136:
         /* This is the 1136 r1, which is a v6K core */
         set_feature(env, ARM_FEATURE_V6K);
-        /* Fall through */
+    /* Fall through */
     case ARM_CPUID_ARM1136_R2:
         /* What qemu calls "arm1136_r2" is actually the 1136 r0p2, ie an
          * older core than plain "arm1136". In particular this does not
@@ -236,7 +235,6 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         // cortex-m7?
         set_feature(env, ARM_FEATURE_VFP4);
 
-
         break;
     case ARM_CPUID_ANY: /* For userspace emulation.  */
         set_feature(env, ARM_FEATURE_V4T);
@@ -316,8 +314,9 @@ void cpu_reset(CPUState *env)
 
     id = env->cp15.c0_cpuid;
     memset(env, 0, offsetof(CPUState, breakpoints));
-    if (id)
+    if (id) {
         cpu_reset_model_id(env, id);
+    }
     /* SVC mode with interrupts disabled.  */
     env->uncached_cpsr = ARM_CPU_MODE_SVC | CPSR_A | CPSR_F | CPSR_I;
 
@@ -342,10 +341,8 @@ void cpu_reset(CPUState *env)
     set_flush_to_zero(1, &env->vfp.standard_fp_status);
     set_flush_inputs_to_zero(1, &env->vfp.standard_fp_status);
     set_default_nan_mode(1, &env->vfp.standard_fp_status);
-    set_float_detect_tininess(float_tininess_before_rounding,
-                              &env->vfp.fp_status);
-    set_float_detect_tininess(float_tininess_before_rounding,
-                              &env->vfp.standard_fp_status);
+    set_float_detect_tininess(float_tininess_before_rounding, &env->vfp.fp_status);
+    set_float_detect_tininess(float_tininess_before_rounding, &env->vfp.standard_fp_status);
     tlb_flush(env, 1);
     tb_flush(env);
 }
@@ -355,8 +352,9 @@ int cpu_init(const char *cpu_model)
     uint32_t id;
 
     id = cpu_arm_find_by_name(cpu_model);
-    if (id == 0)
+    if (id == 0) {
         return -1;
+    }
 
     cpu->cp15.c0_cpuid = id;
     cpu_reset(cpu);
@@ -369,40 +367,17 @@ struct arm_cpu_t {
 };
 
 static const struct arm_cpu_t arm_cpu_names[] = {
-    { ARM_CPUID_ARM926, "arm926"},
-    { ARM_CPUID_ARM946, "arm946"},
-    { ARM_CPUID_ARM1026, "arm1026"},
-    { ARM_CPUID_ARM1136, "arm1136"},
-    { ARM_CPUID_ARM1136_R2, "arm1136-r2"},
-    { ARM_CPUID_ARM1176, "arm1176"},
-    { ARM_CPUID_ARM11MPCORE, "arm11mpcore"},
-    { ARM_CPUID_CORTEXM3, "cortex-m0"},
-    { ARM_CPUID_CORTEXM3, "cortex-m0+"},
-    { ARM_CPUID_CORTEXM3, "cortex-m1"},
-    { ARM_CPUID_CORTEXM3, "cortex-m3"},
-    { ARM_CPUID_CORTEXM3, "cortex-m4"},
-    { ARM_CPUID_CORTEXM3, "cortex-m4f"},
-    { ARM_CPUID_CORTEXM3, "cortex-m7"},
-    { ARM_CPUID_CORTEXA8, "cortex-a8"},
-    { ARM_CPUID_CORTEXA9, "cortex-a9"},
-    { ARM_CPUID_CORTEXA15, "cortex-a15"},
-    { ARM_CPUID_TI925T, "ti925t" },
-    { ARM_CPUID_PXA250, "pxa250" },
-    { ARM_CPUID_SA1100,    "sa1100" },
-    { ARM_CPUID_SA1110,    "sa1110" },
-    { ARM_CPUID_PXA255, "pxa255" },
-    { ARM_CPUID_PXA260, "pxa260" },
-    { ARM_CPUID_PXA261, "pxa261" },
-    { ARM_CPUID_PXA262, "pxa262" },
-    { ARM_CPUID_PXA270, "pxa270" },
-    { ARM_CPUID_PXA270_A0, "pxa270-a0" },
-    { ARM_CPUID_PXA270_A1, "pxa270-a1" },
-    { ARM_CPUID_PXA270_B0, "pxa270-b0" },
-    { ARM_CPUID_PXA270_B1, "pxa270-b1" },
-    { ARM_CPUID_PXA270_C0, "pxa270-c0" },
-    { ARM_CPUID_PXA270_C5, "pxa270-c5" },
-    { ARM_CPUID_ANY, "any"},
-    { 0, NULL}
+    { ARM_CPUID_ARM926, "arm926"}, { ARM_CPUID_ARM946, "arm946"}, { ARM_CPUID_ARM1026, "arm1026"},
+    { ARM_CPUID_ARM1136, "arm1136"}, { ARM_CPUID_ARM1136_R2, "arm1136-r2"}, { ARM_CPUID_ARM1176, "arm1176"},
+    { ARM_CPUID_ARM11MPCORE, "arm11mpcore"}, { ARM_CPUID_CORTEXM3, "cortex-m0"}, { ARM_CPUID_CORTEXM3, "cortex-m0+"},
+    { ARM_CPUID_CORTEXM3, "cortex-m1"}, { ARM_CPUID_CORTEXM3, "cortex-m3"}, { ARM_CPUID_CORTEXM3, "cortex-m4"},
+    { ARM_CPUID_CORTEXM3, "cortex-m4f"}, { ARM_CPUID_CORTEXM3, "cortex-m7"}, { ARM_CPUID_CORTEXA8, "cortex-a8"},
+    { ARM_CPUID_CORTEXA9, "cortex-a9"}, { ARM_CPUID_CORTEXA15, "cortex-a15"}, { ARM_CPUID_TI925T, "ti925t" },
+    { ARM_CPUID_PXA250, "pxa250" }, { ARM_CPUID_SA1100,    "sa1100" }, { ARM_CPUID_SA1110,    "sa1110" },
+    { ARM_CPUID_PXA255, "pxa255" }, { ARM_CPUID_PXA260, "pxa260" }, { ARM_CPUID_PXA261, "pxa261" },
+    { ARM_CPUID_PXA262, "pxa262" }, { ARM_CPUID_PXA270, "pxa270" }, { ARM_CPUID_PXA270_A0, "pxa270-a0" },
+    { ARM_CPUID_PXA270_A1, "pxa270-a1" }, { ARM_CPUID_PXA270_B0, "pxa270-b0" }, { ARM_CPUID_PXA270_B1, "pxa270-b1" },
+    { ARM_CPUID_PXA270_C0, "pxa270-c0" }, { ARM_CPUID_PXA270_C5, "pxa270-c5" }, { ARM_CPUID_ANY, "any"}, { 0, NULL}
 };
 
 /* return 0 if not found */
@@ -425,11 +400,9 @@ uint32_t cpsr_read(CPUState *env)
 {
     int ZF;
     ZF = (env->ZF == 0);
-    return env->uncached_cpsr | (env->NF & 0x80000000) | (ZF << 30) |
-        (env->CF << 29) | ((env->VF & 0x80000000) >> 3) | (env->QF << 27)
-        | (env->thumb << 5) | ((env->condexec_bits & 3) << 25)
-        | ((env->condexec_bits & 0xfc) << 8)
-        | (env->GE << 16);
+    return env->uncached_cpsr | (env->NF & 0x80000000) | (ZF << 30) | (env->CF << 29) | ((env->VF & 0x80000000) >> 3) |
+           (env->QF << 27) | (env->thumb << 5) | ((env->condexec_bits & 3) << 25) | ((env->condexec_bits & 0xfc) << 8) |
+           (env->GE << 16);
 }
 
 void cpsr_write(CPUState *env, uint32_t val, uint32_t mask)
@@ -440,10 +413,12 @@ void cpsr_write(CPUState *env, uint32_t val, uint32_t mask)
         env->CF = (val >> 29) & 1;
         env->VF = (val << 3) & 0x80000000;
     }
-    if (mask & CPSR_Q)
+    if (mask & CPSR_Q) {
         env->QF = ((val & CPSR_Q) != 0);
-    if (mask & CPSR_T)
+    }
+    if (mask & CPSR_T) {
         env->thumb = ((val & CPSR_T) != 0);
+    }
     if (mask & CPSR_IT_0_1) {
         env->condexec_bits &= ~3;
         env->condexec_bits |= (val >> 25) & 3;
@@ -492,32 +467,28 @@ uint32_t HELPER(clz)(uint32_t x)
 
 int32_t HELPER(sdiv)(int32_t num, int32_t den)
 {
-    if (den == 0)
-      return 0;
-    if (num == INT_MIN && den == -1)
-      return INT_MIN;
+    if (den == 0) {
+        return 0;
+    }
+    if (num == INT_MIN && den == -1) {
+        return INT_MIN;
+    }
     return num / den;
 }
 
 uint32_t HELPER(udiv)(uint32_t num, uint32_t den)
 {
-    if (den == 0)
-      return 0;
+    if (den == 0) {
+        return 0;
+    }
     return num / den;
 }
 
 uint32_t HELPER(rbit)(uint32_t x)
 {
-    x =  ((x & 0xff000000) >> 24)
-       | ((x & 0x00ff0000) >> 8)
-       | ((x & 0x0000ff00) << 8)
-       | ((x & 0x000000ff) << 24);
-    x =  ((x & 0xf0f0f0f0) >> 4)
-       | ((x & 0x0f0f0f0f) << 4);
-    x =  ((x & 0x88888888) >> 3)
-       | ((x & 0x44444444) >> 1)
-       | ((x & 0x22222222) << 1)
-       | ((x & 0x11111111) << 3);
+    x =  ((x & 0xff000000) >> 24) | ((x & 0x00ff0000) >> 8) | ((x & 0x0000ff00) << 8) | ((x & 0x000000ff) << 24);
+    x =  ((x & 0xf0f0f0f0) >> 4) | ((x & 0x0f0f0f0f) << 4);
+    x =  ((x & 0x88888888) >> 3) | ((x & 0x44444444) >> 1) | ((x & 0x22222222) << 1) | ((x & 0x11111111) << 3);
     return x;
 }
 
@@ -554,15 +525,16 @@ void switch_mode(CPUState *env, int mode)
     int i;
 
     old_mode = env->uncached_cpsr & CPSR_M;
-    if (mode == old_mode)
+    if (mode == old_mode) {
         return;
+    }
 
     if (old_mode == ARM_CPU_MODE_FIQ) {
-        memcpy (env->fiq_regs, env->regs + 8, 5 * sizeof(uint32_t));
-        memcpy (env->regs + 8, env->usr_regs, 5 * sizeof(uint32_t));
+        memcpy(env->fiq_regs, env->regs + 8, 5 * sizeof(uint32_t));
+        memcpy(env->regs + 8, env->usr_regs, 5 * sizeof(uint32_t));
     } else if (mode == ARM_CPU_MODE_FIQ) {
-        memcpy (env->usr_regs, env->regs + 8, 5 * sizeof(uint32_t));
-        memcpy (env->regs + 8, env->fiq_regs, 5 * sizeof(uint32_t));
+        memcpy(env->usr_regs, env->regs + 8, 5 * sizeof(uint32_t));
+        memcpy(env->regs + 8, env->fiq_regs, 5 * sizeof(uint32_t));
     }
 
     i = bank_number(old_mode);
@@ -609,8 +581,9 @@ void do_v7m_exception_exit(CPUState *env)
     uint32_t xpsr;
 
     type = env->regs[15];
-    if (env->v7m.exception != 0)
+    if (env->v7m.exception != 0) {
         tlib_nvic_complete_irq(env->v7m.exception);
+    }
 
     /* Switch to the target stack.  */
     switch_v7m_sp(env, (type & 4) != 0);
@@ -625,8 +598,9 @@ void do_v7m_exception_exit(CPUState *env)
     xpsr = v7m_pop(env);
     xpsr_write(env, xpsr, 0xfffffdff);
     /* Undo stack alignment.  */
-    if (xpsr & 0x200)
+    if (xpsr & 0x200) {
         env->regs[13] |= 4;
+    }
     /* ??? The exception return type specifies Thread/Handler mode.  However
        this is also implied by the xPSR value. Not sure what to do
        if there is a mismatch.  */
@@ -642,10 +616,12 @@ static void do_interrupt_v7m(CPUState *env)
     int nr;
 
     lr = 0xfffffff1;
-    if (env->v7m.current_sp)
+    if (env->v7m.current_sp) {
         lr |= 4;
-    if (env->v7m.exception == 0)
+    }
+    if (env->v7m.exception == 0) {
         lr |= 8;
+    }
 
     /* For exceptions we just mark as pending on the NVIC, and let that
        handle it.  */
@@ -728,10 +704,11 @@ void do_interrupt(CPUState *env)
         new_mode = ARM_CPU_MODE_UND;
         addr = 0x04;
         mask = CPSR_I;
-        if (env->thumb)
+        if (env->thumb) {
             offset = 2;
-        else
+        } else {
             offset = 4;
+        }
         break;
     case EXCP_SWI:
         /* Check for semihosting interrupt.  */
@@ -742,9 +719,8 @@ void do_interrupt(CPUState *env)
         }
         /* Only intercept calls from privileged modes, to provide some
            semblance of security.  */
-        if (((mask == 0x123456 && !env->thumb)
-                || (mask == 0xab && env->thumb))
-              && (env->uncached_cpsr & CPSR_M) != ARM_CPU_MODE_USR) {
+        if (((mask == 0x123456 && !env->thumb) || (mask == 0xab && env->thumb)) &&
+            (env->uncached_cpsr & CPSR_M) != ARM_CPU_MODE_USR) {
             env->regs[0] = tlib_do_semihosting();
             return;
         }
@@ -757,8 +733,7 @@ void do_interrupt(CPUState *env)
     case EXCP_BKPT:
         /* See if this is a semihosting syscall.  */
         mask = lduw_code(env->regs[15]) & 0xff;
-        if (mask == 0xab
-              && (env->uncached_cpsr & CPSR_M) != ARM_CPU_MODE_USR) {
+        if (mask == 0xab && (env->uncached_cpsr & CPSR_M) != ARM_CPU_MODE_USR) {
             env->regs[15] += 2;
             env->regs[0] = tlib_do_semihosting();
             return;
@@ -767,7 +742,7 @@ void do_interrupt(CPUState *env)
         /* Go to prefetch abort.  */
         goto case_EXCP_PREFETCH_ABORT;
     case EXCP_PREFETCH_ABORT:
-    case_EXCP_PREFETCH_ABORT:
+case_EXCP_PREFETCH_ABORT:
         new_mode = ARM_CPU_MODE_ABT;
         addr = 0x0c;
         mask = CPSR_A | CPSR_I;
@@ -801,7 +776,7 @@ void do_interrupt(CPUState *env)
     if (env->cp15.c1_sys & (1 << 13)) {
         addr += 0xffff0000;
     }
-    switch_mode (env, new_mode);
+    switch_mode(env, new_mode);
     env->spsr = cpsr_read(env);
     /* Clear IT bits.  */
     env->condexec_bits = 0;
@@ -826,70 +801,74 @@ void do_interrupt(CPUState *env)
 /* Check section/page access permissions.
    Returns the page protection flags, or zero if the access is not
    permitted.  */
-static inline int check_ap(CPUState *env, int ap, int domain, int access_type,
-                           int is_user)
+static inline int check_ap(CPUState *env, int ap, int domain, int access_type, int is_user)
 {
-  int prot_ro;
+    int prot_ro;
 
-  if (domain == 3)
-    return PAGE_READ | PAGE_WRITE;
+    if (domain == 3) {
+        return PAGE_READ | PAGE_WRITE;
+    }
 
-  if (access_type == 1)
-      prot_ro = 0;
-  else
-      prot_ro = PAGE_READ;
+    if (access_type == 1) {
+        prot_ro = 0;
+    } else {
+        prot_ro = PAGE_READ;
+    }
 
-  switch (ap) {
-  case 0:
-      if (access_type == 1)
-          return 0;
-      switch ((env->cp15.c1_sys >> 8) & 3) {
-      case 1:
-          return is_user ? 0 : PAGE_READ;
-      case 2:
-          return PAGE_READ;
-      default:
-          return 0;
-      }
-  case 1:
-      return is_user ? 0 : PAGE_READ | PAGE_WRITE;
-  case 2:
-      if (is_user)
-          return prot_ro;
-      else
-          return PAGE_READ | PAGE_WRITE;
-  case 3:
-      return PAGE_READ | PAGE_WRITE;
-  case 4: /* Reserved.  */
-      return 0;
-  case 5:
-      return is_user ? 0 : prot_ro;
-  case 6:
-      return prot_ro;
-  case 7:
-      if (!arm_feature (env, ARM_FEATURE_V6K))
-          return 0;
-      return prot_ro;
-  default:
-      abort();
-  }
+    switch (ap) {
+    case 0:
+        if (access_type == 1) {
+            return 0;
+        }
+        switch ((env->cp15.c1_sys >> 8) & 3) {
+        case 1:
+            return is_user ? 0 : PAGE_READ;
+        case 2:
+            return PAGE_READ;
+        default:
+            return 0;
+        }
+    case 1:
+        return is_user ? 0 : PAGE_READ | PAGE_WRITE;
+    case 2:
+        if (is_user) {
+            return prot_ro;
+        } else {
+            return PAGE_READ | PAGE_WRITE;
+        }
+    case 3:
+        return PAGE_READ | PAGE_WRITE;
+    case 4: /* Reserved.  */
+        return 0;
+    case 5:
+        return is_user ? 0 : prot_ro;
+    case 6:
+        return prot_ro;
+    case 7:
+        if (!arm_feature(env, ARM_FEATURE_V6K)) {
+            return 0;
+        }
+        return prot_ro;
+    default:
+        abort();
+    }
 }
 
 static uint32_t get_level1_table_address(CPUState *env, uint32_t address)
 {
     uint32_t table;
 
-    if (address & env->cp15.c2_mask)
+    if (address & env->cp15.c2_mask) {
         table = env->cp15.c2_base1 & 0xffffc000;
-    else
+    } else {
         table = env->cp15.c2_base0 & env->cp15.c2_base_mask;
+    }
 
     table |= (address >> 18) & 0x3ffc;
     return table;
 }
 
-static int get_phys_addr_v5(CPUState *env, uint32_t address, int access_type,
-                            int is_user, uint32_t *phys_ptr, int *prot,
+static int get_phys_addr_v5(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
                             target_ulong *page_size)
 {
     int code;
@@ -912,10 +891,11 @@ static int get_phys_addr_v5(CPUState *env, uint32_t address, int access_type,
         goto do_fault;
     }
     if (domain == 0 || domain == 2) {
-        if (type == 2)
-            code = 9; /* Section domain fault.  */
-        else
+        if (type == 2) {
+            code = 9;  /* Section domain fault.  */
+        } else {
             code = 11; /* Page domain fault.  */
+        }
         goto do_fault;
     }
     if (type == 2) {
@@ -981,8 +961,7 @@ do_fault:
     return code | (domain << 4);
 }
 
-static int get_phys_addr_v6(CPUState *env, uint32_t address, int access_type,
-                            int is_user, uint32_t *phys_ptr, int *prot,
+static int get_phys_addr_v6(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
                             target_ulong *page_size)
 {
     int code;
@@ -1013,10 +992,11 @@ static int get_phys_addr_v6(CPUState *env, uint32_t address, int access_type,
     }
     domain = (env->cp15.c3 >> domain) & 3;
     if (domain == 0 || domain == 2) {
-        if (type == 2)
-            code = 9; /* Section domain fault.  */
-        else
+        if (type == 2) {
+            code = 9;  /* Section domain fault.  */
+        } else {
             code = 11; /* Page domain fault.  */
+        }
         goto do_fault;
     }
     if (type == 2) {
@@ -1060,8 +1040,9 @@ static int get_phys_addr_v6(CPUState *env, uint32_t address, int access_type,
     if (domain == 3) {
         *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
     } else {
-        if (xn && access_type == 2)
+        if (xn && access_type == 2) {
             goto do_fault;
+        }
 
         /* The simplified model uses AP[0] as an access control bit.  */
         if ((env->cp15.c1_sys & (1 << 29)) && (ap & 1) == 0) {
@@ -1084,8 +1065,7 @@ do_fault:
     return code | (domain << 4);
 }
 
-static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type,
-                 int is_user, uint32_t *phys_ptr, int *prot)
+static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot)
 {
     int n;
     uint32_t mask;
@@ -1094,17 +1074,20 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type,
     *phys_ptr = address;
     for (n = 7; n >= 0; n--) {
         base = env->cp15.c6_region[n];
-        if ((base & 1) == 0)
+        if ((base & 1) == 0) {
             continue;
+        }
         mask = 1 << ((base >> 1) & 0x1f);
         /* Keep this shift separate from the above to avoid an
            (undefined) << 32.  */
         mask = (mask << 1) - 1;
-        if (((base ^ address) & ~mask) == 0)
+        if (((base ^ address) & ~mask) == 0) {
             break;
+        }
     }
-    if (n < 0)
+    if (n < 0) {
         return 2;
+    }
 
     if (access_type == 2) {
         mask = env->cp15.c5_insn;
@@ -1116,21 +1099,24 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type,
     case 0:
         return 1;
     case 1:
-        if (is_user)
-          return 1;
+        if (is_user) {
+            return 1;
+        }
         *prot = PAGE_READ | PAGE_WRITE;
         break;
     case 2:
         *prot = PAGE_READ;
-        if (!is_user)
+        if (!is_user) {
             *prot |= PAGE_WRITE;
+        }
         break;
     case 3:
         *prot = PAGE_READ | PAGE_WRITE;
         break;
     case 5:
-        if (is_user)
+        if (is_user) {
             return 1;
+        }
         *prot = PAGE_READ;
         break;
     case 6:
@@ -1144,14 +1130,13 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type,
     return 0;
 }
 
-static inline int get_phys_addr(CPUState *env, uint32_t address,
-                                int access_type, int is_user,
-                                uint32_t *phys_ptr, int *prot,
+static inline int get_phys_addr(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
                                 target_ulong *page_size)
 {
     /* Fast Context Switch Extension.  */
-    if (address < 0x02000000)
+    if (address < 0x02000000) {
         address += env->cp15.c13_fcse;
+    }
 
     if ((env->cp15.c1_sys & 1) == 0) {
         /* MMU/MPU disabled.  */
@@ -1161,19 +1146,15 @@ static inline int get_phys_addr(CPUState *env, uint32_t address,
         return 0;
     } else if (arm_feature(env, ARM_FEATURE_MPU)) {
         *page_size = TARGET_PAGE_SIZE;
-        return get_phys_addr_mpu(env, address, access_type, is_user, phys_ptr,
-                                prot);
+        return get_phys_addr_mpu(env, address, access_type, is_user, phys_ptr, prot);
     } else if (env->cp15.c1_sys & (1 << 23)) {
-        return get_phys_addr_v6(env, address, access_type, is_user, phys_ptr,
-                                prot, page_size);
+        return get_phys_addr_v6(env, address, access_type, is_user, phys_ptr, prot, page_size);
     } else {
-        return get_phys_addr_v5(env, address, access_type, is_user, phys_ptr,
-                                prot, page_size);
+        return get_phys_addr_v5(env, address, access_type, is_user, phys_ptr, prot, page_size);
     }
 }
 
-int cpu_handle_mmu_fault (CPUState *env, target_ulong address,
-                              int access_type, int mmu_idx)
+int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, int mmu_idx)
 {
     uint32_t phys_addr = 0;
     target_ulong page_size = 0;
@@ -1181,13 +1162,12 @@ int cpu_handle_mmu_fault (CPUState *env, target_ulong address,
     int ret, is_user;
 
     is_user = mmu_idx == MMU_USER_IDX;
-    ret = get_phys_addr(env, address, access_type, is_user, &phys_addr, &prot,
-                        &page_size);
+    ret = get_phys_addr(env, address, access_type, is_user, &phys_addr, &prot, &page_size);
     if (ret == 0) {
         /* Map a single [sub]page.  */
         phys_addr &= ~(uint32_t)0x3ff;
         address &= ~(uint32_t)0x3ff;
-        tlb_set_page (env, address, phys_addr, prot, mmu_idx, page_size);
+        tlb_set_page(env, address, phys_addr, prot, mmu_idx, page_size);
         return 0;
     }
 
@@ -1197,8 +1177,9 @@ int cpu_handle_mmu_fault (CPUState *env, target_ulong address,
         env->exception_index = EXCP_PREFETCH_ABORT;
     } else {
         env->cp15.c5_data = ret;
-        if (access_type == 1 && arm_feature(env, ARM_FEATURE_V6))
+        if (access_type == 1 && arm_feature(env, ARM_FEATURE_V6)) {
             env->cp15.c5_data |= (1 << 11);
+        }
         env->cp15.c6_data = address;
         env->exception_index = EXCP_DATA_ABORT;
     }
@@ -1214,34 +1195,35 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
 
     ret = get_phys_addr(env, addr, 0, 0, &phys_addr, &prot, &page_size);
 
-    if (ret != 0)
+    if (ret != 0) {
         return -1;
+    }
 
     return phys_addr;
 }
 
-void HELPER(set_cp)(CPUState *env, uint32_t insn, uint32_t val)
+void HELPER(set_cp)(CPUState * env, uint32_t insn, uint32_t val)
 {
     int cp_num = (insn >> 8) & 0xf;
     int cp_info = (insn >> 5) & 7;
     int src = (insn >> 16) & 0xf;
     int operand = insn & 0xf;
 
-    if (env->cp[cp_num].cp_write)
-        env->cp[cp_num].cp_write(env->cp[cp_num].opaque,
-                                 cp_info, src, operand, val);
+    if (env->cp[cp_num].cp_write) {
+        env->cp[cp_num].cp_write(env->cp[cp_num].opaque, cp_info, src, operand, val);
+    }
 }
 
-uint32_t HELPER(get_cp)(CPUState *env, uint32_t insn)
+uint32_t HELPER(get_cp)(CPUState * env, uint32_t insn)
 {
     int cp_num = (insn >> 8) & 0xf;
     int cp_info = (insn >> 5) & 7;
     int dest = (insn >> 16) & 0xf;
     int operand = insn & 0xf;
 
-    if (env->cp[cp_num].cp_read)
-        return env->cp[cp_num].cp_read(env->cp[cp_num].opaque,
-                                       cp_info, dest, operand);
+    if (env->cp[cp_num].cp_read) {
+        return env->cp[cp_num].cp_read(env->cp[cp_num].opaque, cp_info, dest, operand);
+    }
     return 0;
 }
 
@@ -1275,7 +1257,7 @@ static uint32_t extended_mpu_ap_bits(uint32_t val)
     return ret;
 }
 
-void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
+void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
 {
     int op1;
     int op2;
@@ -1287,23 +1269,26 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
     switch ((insn >> 16) & 0xf) {
     case 0:
         /* ID codes.  */
-        if (arm_feature(env, ARM_FEATURE_XSCALE))
+        if (arm_feature(env, ARM_FEATURE_XSCALE)) {
             break;
-        if (arm_feature(env, ARM_FEATURE_OMAPCP))
+        }
+        if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
             break;
-        if (arm_feature(env, ARM_FEATURE_V7)
-                && op1 == 2 && crm == 0 && op2 == 0) {
+        }
+        if (arm_feature(env, ARM_FEATURE_V7) && op1 == 2 && crm == 0 && op2 == 0) {
             env->cp15.c0_cssel = val & 0xf;
             break;
         }
         goto bad_reg;
     case 1: /* System configuration.  */
-        if (arm_feature(env, ARM_FEATURE_OMAPCP))
+        if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
             op2 = 0;
+        }
         switch (op2) {
         case 0:
-            if (!arm_feature(env, ARM_FEATURE_XSCALE) || crm == 0)
+            if (!arm_feature(env, ARM_FEATURE_XSCALE) || crm == 0) {
                 env->cp15.c1_sys = val;
+            }
             /* ??? Lots of these bits are not implemented.  */
             /* This may enable/disable the MMU, so do a TLB flush.  */
             tlb_flush(env, 1);
@@ -1317,8 +1302,9 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
             tlib_write_cp15_32(insn, val);
             break;
         case 2:
-            if (arm_feature(env, ARM_FEATURE_XSCALE))
+            if (arm_feature(env, ARM_FEATURE_XSCALE)) {
                 goto bad_reg;
+            }
             if (env->cp15.c1_coproc != val) {
                 env->cp15.c1_coproc = val;
                 /* ??? Is this safe when called from within a TB?  */
@@ -1360,34 +1346,39 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
             }
         }
         break;
-    case 3: /* MMU Domain access control / MPU write buffer control.  */
+    case 3:                /* MMU Domain access control / MPU write buffer control.  */
         env->cp15.c3 = val;
         tlb_flush(env, 1); /* Flush TLB as domain not tracked in TLB */
         break;
-    case 4: /* Reserved.  */
+    case 4:                /* Reserved.  */
         goto bad_reg;
-    case 5: /* MMU Fault status / MPU access permission.  */
-        if (arm_feature(env, ARM_FEATURE_OMAPCP))
+    case 5:                /* MMU Fault status / MPU access permission.  */
+        if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
             op2 = 0;
+        }
         switch (op2) {
         case 0:
-            if (arm_feature(env, ARM_FEATURE_MPU))
+            if (arm_feature(env, ARM_FEATURE_MPU)) {
                 val = extended_mpu_ap_bits(val);
+            }
             env->cp15.c5_data = val;
             break;
         case 1:
-            if (arm_feature(env, ARM_FEATURE_MPU))
+            if (arm_feature(env, ARM_FEATURE_MPU)) {
                 val = extended_mpu_ap_bits(val);
+            }
             env->cp15.c5_insn = val;
             break;
         case 2:
-            if (!arm_feature(env, ARM_FEATURE_MPU))
+            if (!arm_feature(env, ARM_FEATURE_MPU)) {
                 goto bad_reg;
+            }
             env->cp15.c5_data = val;
             break;
         case 3:
-            if (!arm_feature(env, ARM_FEATURE_MPU))
+            if (!arm_feature(env, ARM_FEATURE_MPU)) {
                 goto bad_reg;
+            }
             env->cp15.c5_insn = val;
             break;
         default:
@@ -1396,12 +1387,14 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
         break;
     case 6: /* MMU Fault address / MPU base/size.  */
         if (arm_feature(env, ARM_FEATURE_MPU)) {
-            if (crm >= 8)
+            if (crm >= 8) {
                 goto bad_reg;
+            }
             env->cp15.c6_region[crm] = val;
         } else {
-            if (arm_feature(env, ARM_FEATURE_OMAPCP))
+            if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
                 op2 = 0;
+            }
             switch (op2) {
             case 0:
                 env->cp15.c6_data = val;
@@ -1442,27 +1435,23 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
                     /* Other states are only available with TrustZone */
                     goto bad_reg;
                 }
-                ret = get_phys_addr(env, val, access_type, is_user,
-                                    &phys_addr, &prot, &page_size);
+                ret = get_phys_addr(env, val, access_type, is_user, &phys_addr, &prot, &page_size);
                 if (ret == 0) {
                     /* We do not set any attribute bits in the PAR */
-                    if (page_size == (1 << 24)
-                        && arm_feature(env, ARM_FEATURE_V7)) {
+                    if (page_size == (1 << 24) && arm_feature(env, ARM_FEATURE_V7)) {
                         env->cp15.c7_par = (phys_addr & 0xff000000) | 1 << 1;
                     } else {
                         env->cp15.c7_par = phys_addr & 0xfffff000;
                     }
                 } else {
-                    env->cp15.c7_par = ((ret & (10 << 1)) >> 5) |
-                                       ((ret & (12 << 1)) >> 6) |
-                                       ((ret & 0xf) << 1) | 1;
+                    env->cp15.c7_par = ((ret & (10 << 1)) >> 5) | ((ret & (12 << 1)) >> 6) | ((ret & 0xf) << 1) | 1;
                 }
                 break;
             }
             }
         }
         break;
-    case 8: /* MMU TLB control.  */
+    case 8:     /* MMU TLB control.  */
         switch (op2) {
         case 0: /* Invalidate all.  */
             tlb_flush(env, 0);
@@ -1482,12 +1471,14 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
         }
         break;
     case 9:
-        if (arm_feature(env, ARM_FEATURE_OMAPCP))
+        if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
             break;
-        if (arm_feature(env, ARM_FEATURE_STRONGARM))
-            break; /* Ignore ReadBuffer access */
+        }
+        if (arm_feature(env, ARM_FEATURE_STRONGARM)) {
+            break;  /* Ignore ReadBuffer access */
+        }
         switch (crm) {
-        case 0: /* Cache lockdown.  */
+        case 0:     /* Cache lockdown.  */
             switch (op1) {
             case 0: /* L1 cache.  */
                 switch (op2) {
@@ -1507,8 +1498,8 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
             default:
                 goto bad_reg;
             }
-        break;
-        case 1: /* TCM memory region registers.  */
+            break;
+        case 1:  /* TCM memory region registers.  */
             tlib_write_cp15_32(insn, val);
             break;
         case 12: /* Performance monitor control */
@@ -1603,15 +1594,16 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
             /* Unlike real hardware the qemu TLB uses virtual addresses,
                not modified virtual addresses, so this causes a TLB flush.
              */
-            if (env->cp15.c13_fcse != val)
-              tlb_flush(env, 1);
+            if (env->cp15.c13_fcse != val) {
+                tlb_flush(env, 1);
+            }
             env->cp15.c13_fcse = val;
             break;
         case 1:
             /* This changes the ASID, so do a TLB flush.  */
-            if (env->cp15.c13_context != val
-                && !arm_feature(env, ARM_FEATURE_MPU))
-              tlb_flush(env, 0);
+            if (env->cp15.c13_context != val && !arm_feature(env, ARM_FEATURE_MPU)) {
+                tlb_flush(env, 0);
+            }
             env->cp15.c13_context = val;
             break;
         default:
@@ -1620,7 +1612,7 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
         break;
     case 14: /* Generic timer */
         if (arm_feature(env, ARM_FEATURE_GENERIC_TIMER)) {
-             /* Dummy implementation: RAZ/WI for all */
+            /* Dummy implementation: RAZ/WI for all */
             break;
         }
         goto bad_reg;
@@ -1640,21 +1632,21 @@ void HELPER(set_cp15)(CPUState *env, uint32_t insn, uint32_t val)
             switch (crm) {
             case 0:
                 break;
-            case 1: /* Set TI925T configuration.  */
+            case 1:                                     /* Set TI925T configuration.  */
                 env->cp15.c15_ticonfig = val & 0xe7;
                 env->cp15.c0_cpuid = (val & (1 << 5)) ? /* OS_TYPE bit */
-                        ARM_CPUID_TI915T : ARM_CPUID_TI925T;
+                                     ARM_CPUID_TI915T : ARM_CPUID_TI925T;
                 break;
-            case 2: /* Set I_max.  */
+            case 2:                                     /* Set I_max.  */
                 env->cp15.c15_i_max = val;
                 break;
-            case 3: /* Set I_min.  */
+            case 3:                                     /* Set I_min.  */
                 env->cp15.c15_i_min = val;
                 break;
-            case 4: /* Set thread-ID.  */
+            case 4:                                     /* Set thread-ID.  */
                 env->cp15.c15_threadid = val & 0xffff;
                 break;
-            case 8: /* Wait-for-interrupt (deprecated).  */
+            case 8:                                     /* Wait-for-interrupt (deprecated).  */
                 helper_wfi();
                 break;
             default:
@@ -1668,18 +1660,18 @@ bad_reg:
     tlib_write_cp15_32(insn, val);
 }
 
-uint64_t HELPER(get_cp15_64bit)(CPUState *env, uint32_t insn)
+uint64_t HELPER(get_cp15_64bit)(CPUState * env, uint32_t insn)
 {
     return tlib_read_cp15_64(insn);
 }
 
-void HELPER(set_cp15_64bit)(CPUState *env, uint32_t insn, uint32_t val_1, uint32_t val_2)
+void HELPER(set_cp15_64bit)(CPUState * env, uint32_t insn, uint32_t val_1, uint32_t val_2)
 {
-    uint64_t val = ((uint64_t) val_2 << 32) | val_1;
+    uint64_t val = ((uint64_t)val_2 << 32) | val_1;
     tlib_write_cp15_64(insn, val);
 }
 
-uint32_t HELPER(get_cp15)(CPUState *env, uint32_t insn)
+uint32_t HELPER(get_cp15)(CPUState * env, uint32_t insn)
 {
     int op1;
     int op2;
@@ -1695,21 +1687,20 @@ uint32_t HELPER(get_cp15)(CPUState *env, uint32_t insn)
             switch (crm) {
             case 0:
                 switch (op2) {
-                case 0: /* Device ID.  */
+                case 0:       /* Device ID.  */
                     return env->cp15.c0_cpuid;
-                case 1: /* Cache Type.  */
+                case 1:       /* Cache Type.  */
                     return env->cp15.c0_cachetype;
-                case 2: /* TCM status.  */
+                case 2:       /* TCM status.  */
                     return 0;
-                case 3: /* TLB type register.  */
+                case 3:       /* TLB type register.  */
                     return 0; /* No lockable TLB entries.  */
-                case 5: /* MPIDR */
+                case 5:       /* MPIDR */
                     /* The MPIDR was standardised in v7; prior to
                      * this it was implemented only in the 11MPCore.
                      * For all other pre-v7 cores it does not exist.
                      */
-                    if (arm_feature(env, ARM_FEATURE_V7) ||
-                        ARM_CPUID(env) == ARM_CPUID_ARM11MPCORE) {
+                    if (arm_feature(env, ARM_FEATURE_V7) || ARM_CPUID(env) == ARM_CPUID_ARM11MPCORE) {
                         int mpidr = tlib_get_cpu_index();
                         /* We don't support setting cluster ID ([8..11])
                          * so these bits always RAZ.
@@ -1727,18 +1718,20 @@ uint32_t HELPER(get_cp15)(CPUState *env, uint32_t insn)
                     /* otherwise fall through to the unimplemented-reg case */
                     goto case_6;
                 case 6:
-                case_6:
+case_6:
                     return tlib_read_cp15_32(insn);
                 default:
                     goto bad_reg;
                 }
             case 1:
-                if (!arm_feature(env, ARM_FEATURE_V6))
+                if (!arm_feature(env, ARM_FEATURE_V6)) {
                     goto bad_reg;
+                }
                 return env->cp15.c0_c1[op2];
             case 2:
-                if (!arm_feature(env, ARM_FEATURE_V6))
+                if (!arm_feature(env, ARM_FEATURE_V6)) {
                     goto bad_reg;
+                }
                 return env->cp15.c0_c2[op2];
             case 3: case 4: case 5: case 6: case 7:
                 return 0;
@@ -1748,12 +1741,15 @@ uint32_t HELPER(get_cp15)(CPUState *env, uint32_t insn)
         case 1:
             /* These registers aren't documented on arm11 cores.  However
                Linux looks at them anyway.  */
-            if (!arm_feature(env, ARM_FEATURE_V6))
+            if (!arm_feature(env, ARM_FEATURE_V6)) {
                 goto bad_reg;
-            if (crm != 0)
+            }
+            if (crm != 0) {
                 goto bad_reg;
-            if (!arm_feature(env, ARM_FEATURE_V7))
+            }
+            if (!arm_feature(env, ARM_FEATURE_V7)) {
                 return 0;
+            }
 
             switch (op2) {
             case 0:
@@ -1765,23 +1761,27 @@ uint32_t HELPER(get_cp15)(CPUState *env, uint32_t insn)
             }
             goto bad_reg;
         case 2:
-            if (op2 != 0 || crm != 0)
+            if (op2 != 0 || crm != 0) {
                 goto bad_reg;
+            }
             return env->cp15.c0_cssel;
         default:
             goto bad_reg;
         }
     case 1: /* System configuration.  */
-        if (arm_feature(env, ARM_FEATURE_OMAPCP))
+        if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
             op2 = 0;
+        }
         switch (op2) {
         case 0: /* Control register.  */
             return env->cp15.c1_sys;
         case 1: /* Auxiliary control register.  */
-            if (arm_feature(env, ARM_FEATURE_XSCALE))
+            if (arm_feature(env, ARM_FEATURE_XSCALE)) {
                 return env->cp15.c1_xscaleauxcr;
-            if (!arm_feature(env, ARM_FEATURE_AUXCR))
+            }
+            if (!arm_feature(env, ARM_FEATURE_AUXCR)) {
                 goto bad_reg;
+            }
             switch (ARM_CPUID(env) & ARM_ARCHITECTURE_MASK) {
             case ARM_CPUID_ARM1026 & ARM_ARCHITECTURE_MASK:
                 return 1;
@@ -1800,8 +1800,9 @@ uint32_t HELPER(get_cp15)(CPUState *env, uint32_t insn)
                 goto bad_reg;
             }
         case 2: /* Coprocessor access register.  */
-            if (arm_feature(env, ARM_FEATURE_XSCALE))
+            if (arm_feature(env, ARM_FEATURE_XSCALE)) {
                 goto bad_reg;
+            }
             return env->cp15.c1_coproc;
         default:
             goto bad_reg;
@@ -1835,36 +1836,43 @@ uint32_t HELPER(get_cp15)(CPUState *env, uint32_t insn)
     case 4: /* Reserved.  */
         goto bad_reg;
     case 5: /* MMU Fault status / MPU access permission.  */
-        if (arm_feature(env, ARM_FEATURE_OMAPCP))
+        if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
             op2 = 0;
+        }
         switch (op2) {
         case 0:
-            if (arm_feature(env, ARM_FEATURE_MPU))
+            if (arm_feature(env, ARM_FEATURE_MPU)) {
                 return simple_mpu_ap_bits(env->cp15.c5_data);
+            }
             return env->cp15.c5_data;
         case 1:
-            if (arm_feature(env, ARM_FEATURE_MPU))
+            if (arm_feature(env, ARM_FEATURE_MPU)) {
                 return simple_mpu_ap_bits(env->cp15.c5_data);
+            }
             return env->cp15.c5_insn;
         case 2:
-            if (!arm_feature(env, ARM_FEATURE_MPU))
+            if (!arm_feature(env, ARM_FEATURE_MPU)) {
                 goto bad_reg;
+            }
             return env->cp15.c5_data;
         case 3:
-            if (!arm_feature(env, ARM_FEATURE_MPU))
+            if (!arm_feature(env, ARM_FEATURE_MPU)) {
                 goto bad_reg;
+            }
             return env->cp15.c5_insn;
         default:
             goto bad_reg;
         }
     case 6: /* MMU Fault address.  */
         if (arm_feature(env, ARM_FEATURE_MPU)) {
-            if (crm >= 8)
+            if (crm >= 8) {
                 goto bad_reg;
+            }
             return env->cp15.c6_region[crm];
         } else {
-            if (arm_feature(env, ARM_FEATURE_OMAPCP))
+            if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
                 op2 = 0;
+            }
             switch (op2) {
             case 0:
                 return env->cp15.c6_data;
@@ -1900,7 +1908,7 @@ uint32_t HELPER(get_cp15)(CPUState *env, uint32_t insn)
         goto bad_reg;
     case 9:
         switch (crm) {
-        case 0: /* Cache lockdown */
+        case 0:     /* Cache lockdown */
             switch (op1) {
             case 0: /* L1 cache.  */
                 if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
@@ -2010,8 +2018,9 @@ uint32_t HELPER(get_cp15)(CPUState *env, uint32_t insn)
         goto bad_reg;
     case 15: /* Implementation specific.  */
         if (arm_feature(env, ARM_FEATURE_XSCALE)) {
-            if (op2 == 0 && crm == 1)
+            if (op2 == 0 && crm == 1) {
                 return env->cp15.c15_cpar;
+            }
 
             goto bad_reg;
         }
@@ -2043,7 +2052,7 @@ bad_reg:
     return tlib_read_cp15_32(insn);
 }
 
-void HELPER(set_r13_banked)(CPUState *env, uint32_t mode, uint32_t val)
+void HELPER(set_r13_banked)(CPUState * env, uint32_t mode, uint32_t val)
 {
     if ((env->uncached_cpsr & CPSR_M) == mode) {
         env->regs[13] = val;
@@ -2052,7 +2061,7 @@ void HELPER(set_r13_banked)(CPUState *env, uint32_t mode, uint32_t val)
     }
 }
 
-uint32_t HELPER(get_r13_banked)(CPUState *env, uint32_t mode)
+uint32_t HELPER(get_r13_banked)(CPUState * env, uint32_t mode)
 {
     if ((env->uncached_cpsr & CPSR_M) == mode) {
         return env->regs[13];
@@ -2062,26 +2071,26 @@ uint32_t HELPER(get_r13_banked)(CPUState *env, uint32_t mode)
 }
 
 #ifdef TARGET_PROTO_ARM_M
-uint32_t HELPER(v7m_mrs)(CPUState *env, uint32_t reg)
+uint32_t HELPER(v7m_mrs)(CPUState * env, uint32_t reg)
 {
     switch (reg) {
-    case 0: /* APSR */
+    case 0:  /* APSR */
         return xpsr_read(env) & 0xf8000000;
-    case 1: /* IAPSR */
+    case 1:  /* IAPSR */
         return xpsr_read(env) & 0xf80001ff;
-    case 2: /* EAPSR */
+    case 2:  /* EAPSR */
         return xpsr_read(env) & 0xff00fc00;
-    case 3: /* xPSR */
+    case 3:  /* xPSR */
         return xpsr_read(env) & 0xff00fdff;
-    case 5: /* IPSR */
+    case 5:  /* IPSR */
         return xpsr_read(env) & 0x000001ff;
-    case 6: /* EPSR */
+    case 6:  /* EPSR */
         return xpsr_read(env) & 0x0700fc00;
-    case 7: /* IEPSR */
+    case 7:  /* IEPSR */
         return xpsr_read(env) & 0x0700edff;
-    case 8: /* MSP */
+    case 8:  /* MSP */
         return env->v7m.current_sp ? env->v7m.other_sp : env->regs[13];
-    case 9: /* PSP */
+    case 9:  /* PSP */
         return env->v7m.current_sp ? env->regs[13] : env->v7m.other_sp;
     case 16: /* PRIMASK */
         return (env->uncached_cpsr & 1) != 0;
@@ -2099,7 +2108,7 @@ uint32_t HELPER(v7m_mrs)(CPUState *env, uint32_t reg)
     }
 }
 
-void HELPER(v7m_msr)(CPUState *env, uint32_t reg, uint32_t val)
+void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
 {
     switch (reg) {
     case 0: /* APSR */
@@ -2124,22 +2133,25 @@ void HELPER(v7m_msr)(CPUState *env, uint32_t reg, uint32_t val)
         xpsr_write(env, val, 0x0600fc00);
         break;
     case 8: /* MSP */
-        if (env->v7m.current_sp)
+        if (env->v7m.current_sp) {
             env->v7m.other_sp = val;
-        else
+        } else {
             env->regs[13] = val;
+        }
         break;
     case 9: /* PSP */
-        if (env->v7m.current_sp)
+        if (env->v7m.current_sp) {
             env->regs[13] = val;
-        else
+        } else {
             env->v7m.other_sp = val;
+        }
         break;
     case 16: /* PRIMASK */
-        if (val & 1)
+        if (val & 1) {
             env->uncached_cpsr |= CPSR_PRIMASK;
-        else
+        } else {
             env->uncached_cpsr &= ~CPSR_PRIMASK;
+        }
 
         tlib_nvic_write_primask(val & 1);
 
@@ -2156,16 +2168,16 @@ void HELPER(v7m_msr)(CPUState *env, uint32_t reg, uint32_t val)
         }
         break;
     case 19: /* FAULTMASK */
-        if (val & 1)
+        if (val & 1) {
             env->uncached_cpsr |= CPSR_F;
-        else
+        } else {
             env->uncached_cpsr &= ~CPSR_F;
+        }
         break;
     case 20: /* CONTROL */
         env->v7m.control = val & 3;
         // only switch the stack if in thread mode (handler mode always uses MSP stack)
-        if (env->v7m.exception == 0)
-        {
+        if (env->v7m.exception == 0) {
             switch_v7m_sp(env, (val & 2) != 0);
         }
         break;
@@ -2177,9 +2189,7 @@ void HELPER(v7m_msr)(CPUState *env, uint32_t reg, uint32_t val)
 }
 #endif
 
-void cpu_arm_set_cp_io(CPUState *env, int cpnum,
-                ARMReadCPFunc *cp_read, ARMWriteCPFunc *cp_write,
-                void *opaque)
+void cpu_arm_set_cp_io(CPUState *env, int cpnum, ARMReadCPFunc *cp_read, ARMWriteCPFunc *cp_write, void *opaque)
 {
     if (cpnum < 0 || cpnum > 14) {
         cpu_abort(env, "Bad coprocessor number: %i\n", cpnum);
@@ -2229,10 +2239,11 @@ void cpu_arm_set_cp_io(CPUState *env, int cpnum,
 
 static inline uint8_t do_usad(uint8_t a, uint8_t b)
 {
-    if (a > b)
+    if (a > b) {
         return a - b;
-    else
+    } else {
         return b - a;
+    }
 }
 
 /* Unsigned sum of absolute byte differences.  */
@@ -2241,7 +2252,7 @@ uint32_t HELPER(usad8)(uint32_t a, uint32_t b)
     uint32_t sum;
     sum = do_usad(a, b);
     sum += do_usad(a >> 8, b >> 8);
-    sum += do_usad(a >> 16, b >>16);
+    sum += do_usad(a >> 16, b >> 16);
     sum += do_usad(a >> 24, b >> 24);
     return sum;
 }
@@ -2252,14 +2263,18 @@ uint32_t HELPER(sel_flags)(uint32_t flags, uint32_t a, uint32_t b)
     uint32_t mask;
 
     mask = 0;
-    if (flags & 1)
+    if (flags & 1) {
         mask |= 0xff;
-    if (flags & 2)
+    }
+    if (flags & 2) {
         mask |= 0xff00;
-    if (flags & 4)
+    }
+    if (flags & 4) {
         mask |= 0xff0000;
-    if (flags & 8)
+    }
+    if (flags & 8) {
         mask |= 0xff000000;
+    }
     return (a & mask) | (b & ~mask);
 }
 
@@ -2277,29 +2292,33 @@ static inline int vfp_exceptbits_from_host(int host_bits)
 {
     int target_bits = 0;
 
-    if (host_bits & float_flag_invalid)
+    if (host_bits & float_flag_invalid) {
         target_bits |= 1;
-    if (host_bits & float_flag_divbyzero)
+    }
+    if (host_bits & float_flag_divbyzero) {
         target_bits |= 2;
-    if (host_bits & float_flag_overflow)
+    }
+    if (host_bits & float_flag_overflow) {
         target_bits |= 4;
-    if (host_bits & (float_flag_underflow | float_flag_output_denormal))
+    }
+    if (host_bits & (float_flag_underflow | float_flag_output_denormal)) {
         target_bits |= 8;
-    if (host_bits & float_flag_inexact)
+    }
+    if (host_bits & float_flag_inexact) {
         target_bits |= 0x10;
-    if (host_bits & float_flag_input_denormal)
+    }
+    if (host_bits & float_flag_input_denormal) {
         target_bits |= 0x80;
+    }
     return target_bits;
 }
 
-uint32_t HELPER(vfp_get_fpscr)(CPUState *env)
+uint32_t HELPER(vfp_get_fpscr)(CPUState * env)
 {
     int i;
     uint32_t fpscr;
 
-    fpscr = (env->vfp.xregs[ARM_VFP_FPSCR] & 0xffc8ffff)
-            | (env->vfp.vec_len << 16)
-            | (env->vfp.vec_stride << 20);
+    fpscr = (env->vfp.xregs[ARM_VFP_FPSCR] & 0xffc8ffff) | (env->vfp.vec_len << 16) | (env->vfp.vec_stride << 20);
     i = get_float_exception_flags(&env->vfp.fp_status);
     i |= get_float_exception_flags(&env->vfp.standard_fp_status);
     fpscr |= vfp_exceptbits_from_host(i);
@@ -2316,22 +2335,28 @@ static inline int vfp_exceptbits_to_host(int target_bits)
 {
     int host_bits = 0;
 
-    if (target_bits & 1)
+    if (target_bits & 1) {
         host_bits |= float_flag_invalid;
-    if (target_bits & 2)
+    }
+    if (target_bits & 2) {
         host_bits |= float_flag_divbyzero;
-    if (target_bits & 4)
+    }
+    if (target_bits & 4) {
         host_bits |= float_flag_overflow;
-    if (target_bits & 8)
+    }
+    if (target_bits & 8) {
         host_bits |= float_flag_underflow;
-    if (target_bits & 0x10)
+    }
+    if (target_bits & 0x10) {
         host_bits |= float_flag_inexact;
-    if (target_bits & 0x80)
+    }
+    if (target_bits & 0x80) {
         host_bits |= float_flag_input_denormal;
+    }
     return host_bits;
 }
 
-void HELPER(vfp_set_fpscr)(CPUState *env, uint32_t val)
+void HELPER(vfp_set_fpscr)(CPUState * env, uint32_t val)
 {
     int i;
     uint32_t changed;
@@ -2364,8 +2389,9 @@ void HELPER(vfp_set_fpscr)(CPUState *env, uint32_t val)
         set_flush_to_zero((val & (1 << 24)) != 0, &env->vfp.fp_status);
         set_flush_inputs_to_zero((val & (1 << 24)) != 0, &env->vfp.fp_status);
     }
-    if (changed & (1 << 25))
+    if (changed & (1 << 25)) {
         set_default_nan_mode((val & (1 << 25)) != 0, &env->vfp.fp_status);
+    }
 
     i = vfp_exceptbits_to_host(val);
     set_float_exception_flags(i, &env->vfp.fp_status);
@@ -2583,8 +2609,8 @@ uint32_t HELPER(vfp_fcvt_f32_to_f16)(float32 a, CPUState *env)
     return do_fcvt_f32_to_f16(a, env, &env->vfp.fp_status);
 }
 
-#define float32_two make_float32(0x40000000)
-#define float32_three make_float32(0x40400000)
+#define float32_two            make_float32(0x40000000)
+#define float32_three          make_float32(0x40400000)
 #define float32_one_point_five make_float32(0x3fc00000)
 
 float32 HELPER(recps_f32)(float32 a, float32 b, CPUState *env)
@@ -2679,16 +2705,13 @@ float32 HELPER(recpe_f32)(float32 a, CPUState *env)
         return float32_set_sign(float32_zero, float32_is_neg(a));
     }
 
-    f64 = make_float64((0x3feULL << 52)
-                       | ((int64_t)(val32 & 0x7fffff) << 29));
+    f64 = make_float64((0x3feULL << 52) | ((int64_t)(val32 & 0x7fffff) << 29));
 
     result_exp = 253 - a_exp;
 
     f64 = recip_estimate(f64, env);
 
-    val32 = sign
-        | ((result_exp & 0xff) << 23)
-        | ((float64_val(f64) >> 29) & 0x7fffff);
+    val32 = sign | ((result_exp & 0xff) << 23) | ((float64_val(f64) >> 29) & 0x7fffff);
     return make_float32(val32);
 }
 
@@ -2739,7 +2762,7 @@ static float64 recip_sqrt_estimate(float64 a, CPUState *env)
     /* r in units of 1/256 rounded to nearest */
     /* s = (int)(256.0 * r + 0.5); */
 
-    q = float64_mul(q, float64_256,s );
+    q = float64_mul(q, float64_256, s);
     q = float64_add(q, float64_half, s);
     q_int = float64_to_int64_round_to_zero(q, s);
 
@@ -2778,13 +2801,9 @@ float32 HELPER(rsqrte_f32)(float32 a, CPUState *env)
     /* Normalize to a double-precision value between 0.25 and 1.0,
      * preserving the parity of the exponent.  */
     if ((val & 0x800000) == 0) {
-        f64 = make_float64(((uint64_t)(val & 0x80000000) << 32)
-                           | (0x3feULL << 52)
-                           | ((uint64_t)(val & 0x7fffff) << 29));
+        f64 = make_float64(((uint64_t)(val & 0x80000000) << 32) | (0x3feULL << 52) | ((uint64_t)(val & 0x7fffff) << 29));
     } else {
-        f64 = make_float64(((uint64_t)(val & 0x80000000) << 32)
-                           | (0x3fdULL << 52)
-                           | ((uint64_t)(val & 0x7fffff) << 29));
+        f64 = make_float64(((uint64_t)(val & 0x80000000) << 32) | (0x3fdULL << 52) | ((uint64_t)(val & 0x7fffff) << 29));
     }
 
     result_exp = (380 - ((val & 0x7f800000) >> 23)) / 2;
@@ -2793,8 +2812,7 @@ float32 HELPER(rsqrte_f32)(float32 a, CPUState *env)
 
     val64 = float64_val(f64);
 
-    val = ((result_exp & 0xff) << 23)
-        | ((val64 >> 29)  & 0x7fffff);
+    val = ((result_exp & 0xff) << 23) | ((val64 >> 29)  & 0x7fffff);
     return make_float32(val);
 }
 
@@ -2806,10 +2824,9 @@ uint32_t HELPER(recpe_u32)(uint32_t a, CPUState *env)
         return 0xffffffff;
     }
 
-    f64 = make_float64((0x3feULL << 52)
-                       | ((int64_t)(a & 0x7fffffff) << 21));
+    f64 = make_float64((0x3feULL << 52) | ((int64_t)(a & 0x7fffffff) << 21));
 
-    f64 = recip_estimate (f64, env);
+    f64 = recip_estimate(f64, env);
 
     return 0x80000000 | ((float64_val(f64) >> 21) & 0x7fffffff);
 }
@@ -2823,11 +2840,9 @@ uint32_t HELPER(rsqrte_u32)(uint32_t a, CPUState *env)
     }
 
     if (a & 0x80000000) {
-        f64 = make_float64((0x3feULL << 52)
-                           | ((uint64_t)(a & 0x7fffffff) << 21));
+        f64 = make_float64((0x3feULL << 52) | ((uint64_t)(a & 0x7fffffff) << 21));
     } else { /* bits 31-30 == '01' */
-        f64 = make_float64((0x3fdULL << 52)
-                           | ((uint64_t)(a & 0x3fffffff) << 22));
+        f64 = make_float64((0x3fdULL << 52) | ((uint64_t)(a & 0x3fffffff) << 22));
     }
 
     f64 = recip_sqrt_estimate(f64, env);
@@ -2848,7 +2863,7 @@ float64 VFP_HELPER(muladd, d)(float64 a, float64 b, float64 c, void *fpstp)
     return float64_muladd(a, b, c, 0, fpst);
 }
 
-void HELPER(set_teecr)(CPUState *env, uint32_t val)
+void HELPER(set_teecr)(CPUState * env, uint32_t val)
 {
     val &= 1;
     if (env->teecr != val) {
@@ -2860,4 +2875,3 @@ void HELPER(set_teecr)(CPUState *env, uint32_t val)
 void tlib_arch_dispose()
 {
 }
-

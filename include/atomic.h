@@ -7,8 +7,8 @@
 
 #define MAX_NUMBER_OF_CPUS 32
 
-#define NO_CPU_ID 0xFFFFFFFF
-#define NO_RESERVATION -1
+#define NO_CPU_ID          0xFFFFFFFF
+#define NO_RESERVATION     -1
 
 struct CPUState;
 

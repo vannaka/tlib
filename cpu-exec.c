@@ -80,7 +80,7 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
         tlb_fill(env, virtual & TARGET_PAGE_MASK, access_type, mmu_idx, &physical /* not used */);
         found_idx = mmu_idx;
         target_ulong mapped_address;
-        switch(access_type){
+        switch (access_type) {
         case 0:    // DATA_LOAD
             mapped_address = env->tlb_table[mmu_idx][page_index].addr_read;
             break;
@@ -128,8 +128,7 @@ static void TLIB_NORETURN cpu_loop_exit_without_hook(CPUState *env)
 
 void TLIB_NORETURN cpu_loop_exit(CPUState *env)
 {
-    if(env->block_finished_hook_present)
-    {
+    if (env->block_finished_hook_present) {
         target_ulong pc = CPU_PC(env);
         // TODO: here we would need to have the number of executed instructions, how?!
         tlib_on_block_finished(pc, -1);
@@ -143,24 +142,19 @@ void TLIB_NORETURN cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc, uint32_t c
     uint32_t executed_instructions = 0;
     if (pc) {
         tb = tb_find_pc(pc);
-        if(!tb)
-        {
+        if (!tb) {
             tlib_abortf("tb_find_pc for pc = 0x%lx failed!", pc);
         }
         executed_instructions = cpu_restore_state_and_restore_instructions_count(cpu, tb, pc);
     }
-    if(call_hook && cpu->block_finished_hook_present)
-    {
+    if (call_hook && cpu->block_finished_hook_present) {
         tlib_on_block_finished(CPU_PC(cpu), executed_instructions);
     }
 
     cpu_loop_exit_without_hook(cpu);
 }
 
-static TranslationBlock *tb_find_slow(CPUState *env,
-                                      target_ulong pc,
-                                      target_ulong cs_base,
-                                      uint64_t flags)
+static TranslationBlock *tb_find_slow(CPUState *env, target_ulong pc, target_ulong cs_base, uint64_t flags)
 {
     tlib_on_translation_block_find_slow(pc);
     TranslationBlock *tb, **ptb1;
@@ -176,39 +170,37 @@ static TranslationBlock *tb_find_slow(CPUState *env,
     h = tb_phys_hash_func(phys_pc);
     ptb1 = &tb_phys_hash[h];
 
-    if(unlikely(env->tb_cache_disabled)) {
+    if (unlikely(env->tb_cache_disabled)) {
         goto not_found;
     }
 
-    for(;;) {
+    for (;;) {
         tb = *ptb1;
-        if (!tb)
+        if (!tb) {
             goto not_found;
-        if (tb->pc == pc &&
-            tb->page_addr[0] == phys_page1 &&
-            tb->cs_base == cs_base &&
-            tb->flags == flags) {
+        }
+        if (tb->pc == pc && tb->page_addr[0] == phys_page1 && tb->cs_base == cs_base && tb->flags == flags) {
             /* check next page if needed */
             if (tb->page_addr[1] != -1) {
                 tb_page_addr_t phys_page2;
 
-		virt_page2 = (pc & TARGET_PAGE_MASK) +
-                    TARGET_PAGE_SIZE;
-		phys_page2 = get_page_addr_code(env, virt_page2);
-                if (tb->page_addr[1] == phys_page2)
+                virt_page2 = (pc & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE;
+                phys_page2 = get_page_addr_code(env, virt_page2);
+                if (tb->page_addr[1] == phys_page2) {
                     goto found;
+                }
             } else {
                 goto found;
             }
         }
         ptb1 = &tb->phys_hash_next;
     }
- not_found:
-   /* if no translated code available, then translate it now */
+not_found:
+    /* if no translated code available, then translate it now */
     tb = tb_gen_code(env, pc, cs_base, flags, size_of_next_block_to_translate);
     size_of_next_block_to_translate = 0;
 
- found:
+found:
     /* Move the last found TB to the head of the list */
     if (likely(*ptb1)) {
         *ptb1 = tb->phys_hash_next;
@@ -217,7 +209,6 @@ static TranslationBlock *tb_find_slow(CPUState *env,
     }
     /* we add the TB in the virtual pc hash table */
     env->tb_jmp_cache[tb_jmp_cache_hash_func(pc)] = tb;
-
 
     return tb;
 }
@@ -233,8 +224,7 @@ static inline TranslationBlock *tb_find_fast(CPUState *env)
        is executed. */
     cpu_get_tb_cpu_state(env, &pc, &cs_base, &flags);
     tb = env->tb_jmp_cache[tb_jmp_cache_hash_func(pc)];
-    if (unlikely(!tb || tb->pc != pc || tb->cs_base != cs_base ||
-                 tb->flags != flags || env->tb_cache_disabled)) {
+    if (unlikely(!tb || tb->pc != pc || tb->cs_base != cs_base || tb->flags != flags || env->tb_cache_disabled)) {
         tb = tb_find_slow(env, pc, cs_base, flags);
     }
     return tb;
@@ -252,12 +242,10 @@ CPUDebugExcpHandler *cpu_set_debug_excp_handler(CPUDebugExcpHandler *handler)
 
 static void verify_state(CPUState *env)
 {
-    if(env->atomic_memory_state == NULL)
-    {
+    if (env->atomic_memory_state == NULL) {
         return;
     }
-    if(env->atomic_memory_state->locking_cpu_id == env->id)
-    {
+    if (env->atomic_memory_state->locking_cpu_id == env->id) {
         clear_global_memory_lock(env);
     }
 }
@@ -292,7 +280,7 @@ int cpu_exec(CPUState *env)
     env->exception_index = -1;
 
     /* prepare setjmp context for exception handling */
-    for(;;) {
+    for (;;) {
         verify_state(env);
         if (setjmp(env->jmp_env) == 0) {
             /* if an exception is pending, we execute it here */
@@ -306,7 +294,7 @@ int cpu_exec(CPUState *env)
                     break;
                 } else {
                     do_interrupt(env);
-                    if(env->exception_index != -1) {
+                    if (env->exception_index != -1) {
                         if (env->exception_index == EXCP_WFI) {
                             env->exception_index = -1;
                             ret = 0;
@@ -318,7 +306,7 @@ int cpu_exec(CPUState *env)
             }
 
             next_tb = 0; /* force lookup of first TB */
-            for(;;) {
+            for (;;) {
                 interrupt_request = env->interrupt_request;
                 if (unlikely(interrupt_request)) {
                     if (interrupt_request & CPU_INTERRUPT_DEBUG) {
@@ -351,13 +339,12 @@ int cpu_exec(CPUState *env)
                     env->tb_restart_request = 0;
                     cpu_loop_exit_without_hook(env);
                 }
-                if(unlikely(env->exception_index != -1)) {
+                if (unlikely(env->exception_index != -1)) {
                     cpu_loop_exit_without_hook(env);
                 }
 
 #ifdef TARGET_PROTO_ARM_M
-                if(env->regs[15] >= 0xfffffff0)
-                {
+                if (env->regs[15] >= 0xfffffff0) {
                     do_v7m_exception_exit(env);
                     next_tb = 0;
                 }
@@ -388,7 +375,7 @@ int cpu_exec(CPUState *env)
                    infinite loop and becomes env->current_tb. Avoid
                    starting execution if there is a pending interrupt. */
                 env->current_tb = tb;
-                asm volatile("" ::: "memory");
+                asm volatile ("" ::: "memory");
                 if (likely(!env->exit_request)) {
                     tc_ptr = tb->tc_ptr;
                     /* execute the generated code */

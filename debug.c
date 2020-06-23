@@ -33,7 +33,8 @@ char *msgs[MAX_MSG_COUNT];
 #define MAX_MSG_LENGTH 4096
 
 #ifdef DEBUG_ON
-static uint32_t log_set_msg(char *msg) {
+static uint32_t log_set_msg(char *msg)
+{
     int id = 0;
     while (msgs[id] != NULL) {
         if ((strcmp(msgs[id], msg)) == 0) {
@@ -50,7 +51,8 @@ static uint32_t log_set_msg(char *msg) {
 }
 #endif
 
-void generate_log(uint32_t pc, char *format, ...) {
+void generate_log(uint32_t pc, char *format, ...)
+{
 #ifdef DEBUG_ON
     char msg[MAX_MSG_LENGTH];
     va_list argList;
@@ -68,7 +70,7 @@ void generate_log(uint32_t pc, char *format, ...) {
 #endif
 }
 
-void mark_as_locked(struct TranslationBlock *tb, char* filename, int line_number)
+void mark_as_locked(struct TranslationBlock *tb, char *filename, int line_number)
 {
 #if DEBUG
     tb->lock_active = 1;
@@ -80,8 +82,7 @@ void mark_as_locked(struct TranslationBlock *tb, char* filename, int line_number
 void check_locked(struct TranslationBlock *tb)
 {
 #if DEBUG
-    if(tb->lock_active)
-    {
+    if (tb->lock_active) {
         tlib_abortf("Translation after locking the TB detected @ %s:%d", tb->lock_file, tb->lock_line);
     }
 #endif
@@ -93,4 +94,3 @@ void generate_var_log(TCGv v)
     gen_helper_var_log(v);
 #endif
 }
-

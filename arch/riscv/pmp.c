@@ -35,8 +35,7 @@ do { tlib_printf(LOG_LEVEL_DEBUG, "pmp: " fmt, ## __VA_ARGS__); } while (0)
 do {} while (0)
 #endif
 
-static void pmp_write_cfg(CPUState *env, uint32_t addr_index,
-    uint8_t val);
+static void pmp_write_cfg(CPUState *env, uint32_t addr_index, uint8_t val);
 static uint8_t pmp_read_cfg(CPUState *env, uint32_t addr_index);
 static void pmp_update_rule(CPUState *env, uint32_t pmp_index);
 
@@ -69,8 +68,7 @@ static inline int pmp_is_locked(CPUState *env, uint32_t pmp_index)
      */
     const uint8_t a_field =
         pmp_get_a_field(env->pmp_state.pmp[pmp_index + 1].cfg_reg);
-    if ((env->pmp_state.pmp[pmp_index + 1u].cfg_reg & PMP_LOCK) &&
-         (PMP_AMATCH_TOR == a_field)) {
+    if ((env->pmp_state.pmp[pmp_index + 1u].cfg_reg & PMP_LOCK) && (PMP_AMATCH_TOR == a_field)) {
         return 1;
     }
 
@@ -82,7 +80,7 @@ static inline int pmp_is_locked(CPUState *env, uint32_t pmp_index)
  */
 static inline uint32_t pmp_get_num_rules(CPUState *env)
 {
-     return env->pmp_state.num_rules;
+    return env->pmp_state.num_rules;
 }
 
 /*
@@ -126,15 +124,15 @@ static void pmp_decode_napot(target_ulong addr, int napot_grain, target_ulong *s
        a011...1111   2^(XLEN+1)-byte NAPOT range
        0111...1111   2^(XLEN+2)-byte NAPOT range
        1111...1111   Reserved
-    */
+     */
     if (addr == -1) {
         *start_addr = 0u;
         *end_addr = -1;
         return;
     } else {
         // NAPOT range equals 2^(NAPOT_GRAIN + 2)
-        target_ulong range = ((target_ulong) 2 << (napot_grain + 2)) - 1 ;
-        target_ulong base = (addr & ((target_ulong) -1 << (napot_grain + 1))) << 2;
+        target_ulong range = ((target_ulong)2 << (napot_grain + 2)) - 1;
+        target_ulong base = (addr & ((target_ulong) - 1 << (napot_grain + 1))) << 2;
         *start_addr = base;
         *end_addr = base + range;
     }
@@ -214,8 +212,7 @@ static int pmp_is_in_range(CPUState *env, int pmp_index, target_ulong addr)
 {
     int result = 0;
 
-    if ((addr >= env->pmp_state.addr[pmp_index].sa)
-        && (addr <= env->pmp_state.addr[pmp_index].ea)) {
+    if ((addr >= env->pmp_state.addr[pmp_index].sa) && (addr <= env->pmp_state.addr[pmp_index].ea)) {
         result = 1;
     } else {
         result = 0;
@@ -231,8 +228,7 @@ static int pmp_is_in_range(CPUState *env, int pmp_index, target_ulong addr)
 /*
  * Check if the address has required RWX privs to complete desired operation
  */
-bool pmp_hart_has_privs(CPUState *env, target_ulong addr,
-    target_ulong size, pmp_priv_t privs)
+bool pmp_hart_has_privs(CPUState *env, target_ulong addr, target_ulong size, pmp_priv_t privs)
 {
     int i = 0;
     int ret = -1;
@@ -299,14 +295,12 @@ bool pmp_hart_has_privs(CPUState *env, target_ulong addr,
 /*
  * Handle a write to a pmpcfg CSP
  */
-void pmpcfg_csr_write(CPUState *env, uint32_t reg_index,
-    target_ulong val)
+void pmpcfg_csr_write(CPUState *env, uint32_t reg_index, target_ulong val)
 {
     int i;
     uint8_t cfg_val;
 
-    PMP_DEBUG("hart " TARGET_FMT_ld ": reg%d, val: 0x" TARGET_FMT_lx,
-        env->mhartid, reg_index, val);
+    PMP_DEBUG("hart " TARGET_FMT_ld ": reg%d, val: 0x" TARGET_FMT_lx, env->mhartid, reg_index, val);
 
     if ((reg_index & 1) && (sizeof(target_ulong) == 8)) {
         PMP_DEBUG("ignoring write - incorrect address");
@@ -315,8 +309,7 @@ void pmpcfg_csr_write(CPUState *env, uint32_t reg_index,
 
     for (i = 0; i < sizeof(target_ulong); i++) {
         cfg_val = (val >> 8 * i)  & 0xff;
-        pmp_write_cfg(env, (reg_index * sizeof(target_ulong)) + i,
-            cfg_val);
+        pmp_write_cfg(env, (reg_index * sizeof(target_ulong)) + i, cfg_val);
     }
 }
 
@@ -334,8 +327,7 @@ target_ulong pmpcfg_csr_read(CPUState *env, uint32_t reg_index)
         cfg_val |= (val << (i * 8));
     }
 
-    PMP_DEBUG("hart " TARGET_FMT_ld ": reg%d, val: 0x" TARGET_FMT_lx,
-        env->mhartid, reg_index, cfg_val);
+    PMP_DEBUG("hart " TARGET_FMT_ld ": reg%d, val: 0x" TARGET_FMT_lx, env->mhartid, reg_index, cfg_val);
 
     return cfg_val;
 }
@@ -343,11 +335,9 @@ target_ulong pmpcfg_csr_read(CPUState *env, uint32_t reg_index)
 /*
  * Handle a write to a pmpaddr CSP
  */
-void pmpaddr_csr_write(CPUState *env, uint32_t addr_index,
-    target_ulong val)
+void pmpaddr_csr_write(CPUState *env, uint32_t addr_index, target_ulong val)
 {
-    PMP_DEBUG("hart " TARGET_FMT_ld ": addr%d, val: 0x" TARGET_FMT_lx,
-        env->mhartid, addr_index, val);
+    PMP_DEBUG("hart " TARGET_FMT_ld ": addr%d, val: 0x" TARGET_FMT_lx, env->mhartid, addr_index, val);
 
     if (addr_index < MAX_RISCV_PMPS) {
         if (!pmp_is_locked(env, addr_index)) {
@@ -366,9 +356,8 @@ void pmpaddr_csr_write(CPUState *env, uint32_t addr_index,
  */
 target_ulong pmpaddr_csr_read(CPUState *env, uint32_t addr_index)
 {
-    PMP_DEBUG("hart " TARGET_FMT_ld ": addr%d, val: 0x" TARGET_FMT_lx,
-        env->mhartid, addr_index,
-        env->pmp_state.pmp[addr_index].addr_reg);
+    PMP_DEBUG("hart " TARGET_FMT_ld ": addr%d, val: 0x" TARGET_FMT_lx, env->mhartid, addr_index,
+              env->pmp_state.pmp[addr_index].addr_reg);
     if (addr_index < MAX_RISCV_PMPS) {
         return env->pmp_state.pmp[addr_index].addr_reg;
     } else {

@@ -6,11 +6,11 @@
 #include "host-utils.h"
 
 // This could possibly be generalized. 0 and 1 values are used as "is_write". This conflicts in a way with READ_ACCESS_TYPE et al.
-#define MMU_DATA_LOAD 0
-#define MMU_DATA_STORE 1
-#define MMU_INST_FETCH 2
+#define MMU_DATA_LOAD               0
+#define MMU_DATA_STORE              1
+#define MMU_INST_FETCH              2
 
-#define TARGET_PAGE_BITS 12 /* 4 KiB Pages */
+#define TARGET_PAGE_BITS            12/* 4 KiB Pages */
 #if TARGET_LONG_BITS == 64
 #define TARGET_RISCV64
 #define TARGET_PHYS_ADDR_SPACE_BITS 50
@@ -27,16 +27,17 @@
 
 #define RV(x) ((target_ulong)1 << (x - 'A'))
 
-#define TRANSLATE_FAIL 1
+#define TRANSLATE_FAIL    1
 #define TRANSLATE_SUCCESS 0
-#define NB_MMU_MODES 4
+#define NB_MMU_MODES      4
 
-#define MAX_RISCV_PMPS (16)
+#define MAX_RISCV_PMPS    (16)
 
 #define get_field(reg, mask) (((reg) & (target_ulong)(mask)) / ((mask) & ~((mask) << 1)))
-#define set_field(reg, mask, val) (((reg) & ~(target_ulong)(mask)) | (((target_ulong)(val) * ((mask) & ~((mask) << 1))) & (target_ulong)(mask)))
+#define set_field(reg, mask, val) \
+                             (((reg) & ~(target_ulong)(mask)) | (((target_ulong)(val) * ((mask) & ~((mask) << 1))) & (target_ulong)(mask)))
 
-#define assert(x) {if (!(x)) tlib_abortf("Assert not met in %s:%d: %s", __FILE__, __LINE__, #x);}while(0)
+#define assert(x)            {if (!(x)) tlib_abortf("Assert not met in %s:%d: %s", __FILE__, __LINE__, #x);}while(0)
 
 typedef struct custom_instruction_descriptor_t {
     uint64_t id;
@@ -71,7 +72,6 @@ struct CPUState {
 
     target_ulong badaddr;
 
-
     target_ulong priv;
 
     target_ulong misa;
@@ -99,13 +99,13 @@ struct CPUState {
     target_ulong mtvec;
     target_ulong mepc;
     target_ulong mcause;
-    target_ulong mtval;  /*  renamed from mbadaddr since: priv-1.10.0 */
+    target_ulong mtval;      /*  renamed from mbadaddr since: priv-1.10.0 */
 
-    uint32_t mucounteren; /* until 1.10.0 */
-    uint32_t mscounteren; /* until 1.10.0 */
+    uint32_t mucounteren;    /* until 1.10.0 */
+    uint32_t mscounteren;    /* until 1.10.0 */
     target_ulong scounteren; /* since: priv-1.10.0 */
     target_ulong mcounteren; /* since: priv-1.10.0 */
-    uint32_t mcountinhibit; /* since: priv-1.11 */
+    uint32_t mcountinhibit;  /* since: priv-1.11 */
 
     target_ulong sscratch;
     target_ulong mscratch;
@@ -125,7 +125,7 @@ struct CPUState {
 
     uint64_t minstret_snapshot_offset;
     uint64_t minstret_snapshot;
-    
+
     /* non maskable interrupts */
     uint32_t nmi_pending;
     target_ulong nmi_address;
@@ -138,24 +138,24 @@ struct CPUState {
 
     /*
        Supported CSR validation levels:
-       * 0 - (CSR_VALIDATION_NONE): no validation
-       * 1 - (CSR_VALIDATION_PRIV): privilege level validation only
-       * 2 - (CSR_VALIDATION_FULL): full validation - privilege level and read/write bit validation
+     * 0 - (CSR_VALIDATION_NONE): no validation
+     * 1 - (CSR_VALIDATION_PRIV): privilege level validation only
+     * 2 - (CSR_VALIDATION_FULL): full validation - privilege level and read/write bit validation
 
-       *Illegal Instruction Exception* is generated when validation fails
+     * Illegal Instruction Exception* is generated when validation fails
 
        Levels are defined in `cpu_bits.h`
-    */
+     */
     int32_t csr_validation_level;
 
     /* flags indicating extensions from which instructions
        that are *not* enabled for this CPU should *not* be logged as errors;
 
-       this is useful when some instructions are `software-emulated`, 
+       this is useful when some instructions are `software-emulated`,
        i.e., the ILLEGAL INSTRUCTION exception is generated and handled by the software */
     target_ulong silenced_extensions;
 
-    /* since priv-1.11.0 pmp grain size must be the same across all pmp regions */ 
+    /* since priv-1.11.0 pmp grain size must be the same across all pmp regions */
     int32_t pmp_napot_grain;
 
     CPU_COMMON
@@ -165,8 +165,7 @@ void riscv_set_mode(CPUState *env, target_ulong newpriv);
 
 void helper_raise_exception(CPUState *env, uint32_t exception);
 
-int cpu_handle_mmu_fault(CPUState *cpu, target_ulong address, int rw,
-                              int mmu_idx);
+int cpu_handle_mmu_fault(CPUState *cpu, target_ulong address, int rw, int mmu_idx);
 
 static inline int cpu_mmu_index(CPUState *env)
 {
@@ -178,8 +177,7 @@ int riscv_cpu_hw_interrupts_pending(CPUState *env);
 #include "cpu-all.h"
 #include "exec-all.h"
 
-static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc,
-                                        target_ulong *cs_base, int *flags)
+static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc, target_ulong *cs_base, int *flags)
 {
     *pc = env->pc;
     *cs_base = 0;
@@ -200,8 +198,7 @@ void cpu_set_nmi(CPUState *env, int number);
 
 void cpu_reset_nmi(CPUState *env, int number);
 
-void csr_write_helper(CPUState *env, target_ulong val_to_write,
-        target_ulong csrno);
+void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ulong csrno);
 
 void do_nmi(CPUState *env);
 
@@ -237,15 +234,13 @@ static inline int riscv_silent_ext(CPUState *env, target_ulong ext)
     return (env->silenced_extensions & ext) != 0;
 }
 
-static inline int riscv_features_to_string(uint32_t features, char* buffer, int size)
+static inline int riscv_features_to_string(uint32_t features, char *buffer, int size)
 {
     // features are encoded on the first 26 bits
     // bit #0: 'A', bit #1: 'B', ..., bit #25: 'Z'
     int i, pos = 0;
-    for(i = 0; i < 26 && pos < size; i++)
-    {
-        if(features & (1 << i))
-        {
+    for (i = 0; i < 26 && pos < size; i++) {
+        if (features & (1 << i)) {
             buffer[pos++] = 'A' + i;
         }
     }
@@ -259,7 +254,7 @@ static inline void mark_fs_dirty()
 
 static inline void set_default_mstatus()
 {
-    if(riscv_has_ext(env, RISCV_FEATURE_RVD) || riscv_has_ext(env, RISCV_FEATURE_RVF)) {
+    if (riscv_has_ext(env, RISCV_FEATURE_RVD) || riscv_has_ext(env, RISCV_FEATURE_RVF)) {
         env->mstatus = (MSTATUS_FS_INITIAL | MSTATUS_XS_INITIAL);
     } else {
         env->mstatus = 0;

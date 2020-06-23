@@ -20,25 +20,25 @@
 #if SHIFT == 0
 #define Reg MMXReg
 #define XMM_ONLY(...)
-#define B(n) MMX_B(n)
-#define W(n) MMX_W(n)
-#define L(n) MMX_L(n)
-#define Q(n) q
+#define B(n)          MMX_B(n)
+#define W(n)          MMX_W(n)
+#define L(n)          MMX_L(n)
+#define Q(n)          q
 #define SUFFIX _mmx
 #else
-#define Reg XMMReg
+#define Reg    XMMReg
 #define XMM_ONLY(...) __VA_ARGS__
-#define B(n) XMM_B(n)
-#define W(n) XMM_W(n)
-#define L(n) XMM_L(n)
-#define Q(n) XMM_Q(n)
+#define B(n)          XMM_B(n)
+#define W(n)          XMM_W(n)
+#define L(n)          XMM_L(n)
+#define Q(n)          XMM_Q(n)
 #define SUFFIX _xmm
 #endif
 
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN(a, b)     (((a) < (b)) ? (a) : (b))
+#define MAX(a, b)     (((a) > (b)) ? (a) : (b))
 
-void glue(helper_psrlw, SUFFIX)(Reg *d, Reg *s)
+void glue(helper_psrlw, SUFFIX)(Reg * d, Reg *s)
 {
     int shift;
 
@@ -62,7 +62,7 @@ void glue(helper_psrlw, SUFFIX)(Reg *d, Reg *s)
     }
 }
 
-void glue(helper_psraw, SUFFIX)(Reg *d, Reg *s)
+void glue(helper_psraw, SUFFIX)(Reg * d, Reg *s)
 {
     int shift;
 
@@ -83,7 +83,7 @@ void glue(helper_psraw, SUFFIX)(Reg *d, Reg *s)
 #endif
 }
 
-void glue(helper_psllw, SUFFIX)(Reg *d, Reg *s)
+void glue(helper_psllw, SUFFIX)(Reg * d, Reg *s)
 {
     int shift;
 
@@ -107,7 +107,7 @@ void glue(helper_psllw, SUFFIX)(Reg *d, Reg *s)
     }
 }
 
-void glue(helper_psrld, SUFFIX)(Reg *d, Reg *s)
+void glue(helper_psrld, SUFFIX)(Reg * d, Reg *s)
 {
     int shift;
 
@@ -127,7 +127,7 @@ void glue(helper_psrld, SUFFIX)(Reg *d, Reg *s)
     }
 }
 
-void glue(helper_psrad, SUFFIX)(Reg *d, Reg *s)
+void glue(helper_psrad, SUFFIX)(Reg * d, Reg *s)
 {
     int shift;
 
@@ -144,7 +144,7 @@ void glue(helper_psrad, SUFFIX)(Reg *d, Reg *s)
 #endif
 }
 
-void glue(helper_pslld, SUFFIX)(Reg *d, Reg *s)
+void glue(helper_pslld, SUFFIX)(Reg * d, Reg *s)
 {
     int shift;
 
@@ -164,7 +164,7 @@ void glue(helper_pslld, SUFFIX)(Reg *d, Reg *s)
     }
 }
 
-void glue(helper_psrlq, SUFFIX)(Reg *d, Reg *s)
+void glue(helper_psrlq, SUFFIX)(Reg * d, Reg *s)
 {
     int shift;
 
@@ -182,7 +182,7 @@ void glue(helper_psrlq, SUFFIX)(Reg *d, Reg *s)
     }
 }
 
-void glue(helper_psllq, SUFFIX)(Reg *d, Reg *s)
+void glue(helper_psllq, SUFFIX)(Reg * d, Reg *s)
 {
     int shift;
 
@@ -201,34 +201,40 @@ void glue(helper_psllq, SUFFIX)(Reg *d, Reg *s)
 }
 
 #if SHIFT == 1
-void glue(helper_psrldq, SUFFIX)(Reg *d, Reg *s)
+void glue(helper_psrldq, SUFFIX)(Reg * d, Reg *s)
 {
     int shift, i;
 
     shift = s->L(0);
-    if (shift > 16)
+    if (shift > 16) {
         shift = 16;
-    for(i = 0; i < 16 - shift; i++)
+    }
+    for (i = 0; i < 16 - shift; i++) {
         d->B(i) = d->B(i + shift);
-    for(i = 16 - shift; i < 16; i++)
+    }
+    for (i = 16 - shift; i < 16; i++) {
         d->B(i) = 0;
+    }
 }
 
-void glue(helper_pslldq, SUFFIX)(Reg *d, Reg *s)
+void glue(helper_pslldq, SUFFIX)(Reg * d, Reg *s)
 {
     int shift, i;
 
     shift = s->L(0);
-    if (shift > 16)
+    if (shift > 16) {
         shift = 16;
-    for(i = 15; i >= shift; i--)
+    }
+    for (i = 15; i >= shift; i--) {
         d->B(i) = d->B(i - shift);
-    for(i = 0; i < shift; i++)
+    }
+    for (i = 0; i < shift; i++) {
         d->B(i) = 0;
+    }
 }
 #endif
 
-#define SSE_HELPER_B(name, F)\
+#define SSE_HELPER_B(name, F) \
 void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
     d->B(0) = F(d->B(0), s->B(0));\
@@ -251,7 +257,7 @@ void glue(name, SUFFIX) (Reg *d, Reg *s)\
     )\
 }
 
-#define SSE_HELPER_W(name, F)\
+#define SSE_HELPER_W(name, F) \
 void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
     d->W(0) = F(d->W(0), s->W(0));\
@@ -266,7 +272,7 @@ void glue(name, SUFFIX) (Reg *d, Reg *s)\
     )\
 }
 
-#define SSE_HELPER_L(name, F)\
+#define SSE_HELPER_L(name, F) \
 void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
     d->L(0) = F(d->L(0), s->L(0));\
@@ -277,7 +283,7 @@ void glue(name, SUFFIX) (Reg *d, Reg *s)\
     )\
 }
 
-#define SSE_HELPER_Q(name, F)\
+#define SSE_HELPER_Q(name, F) \
 void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
     d->Q(0) = F(d->Q(0), s->Q(0));\
@@ -289,76 +295,80 @@ void glue(name, SUFFIX) (Reg *d, Reg *s)\
 #if SHIFT == 0
 static inline int satub(int x)
 {
-    if (x < 0)
+    if (x < 0) {
         return 0;
-    else if (x > 255)
+    } else if (x > 255) {
         return 255;
-    else
+    } else {
         return x;
+    }
 }
 
 static inline int satuw(int x)
 {
-    if (x < 0)
+    if (x < 0) {
         return 0;
-    else if (x > 65535)
+    } else if (x > 65535) {
         return 65535;
-    else
+    } else {
         return x;
+    }
 }
 
 static inline int satsb(int x)
 {
-    if (x < -128)
+    if (x < -128) {
         return -128;
-    else if (x > 127)
+    } else if (x > 127) {
         return 127;
-    else
+    } else {
         return x;
+    }
 }
 
 static inline int satsw(int x)
 {
-    if (x < -32768)
+    if (x < -32768) {
         return -32768;
-    else if (x > 32767)
+    } else if (x > 32767) {
         return 32767;
-    else
+    } else {
         return x;
+    }
 }
 
-#define FADD(a, b) ((a) + (b))
-#define FADDUB(a, b) satub((a) + (b))
-#define FADDUW(a, b) satuw((a) + (b))
-#define FADDSB(a, b) satsb((int8_t)(a) + (int8_t)(b))
-#define FADDSW(a, b) satsw((int16_t)(a) + (int16_t)(b))
+#define FADD(a, b)    ((a) + (b))
+#define FADDUB(a, b)  satub((a) + (b))
+#define FADDUW(a, b)  satuw((a) + (b))
+#define FADDSB(a, b)  satsb((int8_t)(a) + (int8_t)(b))
+#define FADDSW(a, b)  satsw((int16_t)(a) + (int16_t)(b))
 
-#define FSUB(a, b) ((a) - (b))
-#define FSUBUB(a, b) satub((a) - (b))
-#define FSUBUW(a, b) satuw((a) - (b))
-#define FSUBSB(a, b) satsb((int8_t)(a) - (int8_t)(b))
-#define FSUBSW(a, b) satsw((int16_t)(a) - (int16_t)(b))
-#define FMINUB(a, b) ((a) < (b)) ? (a) : (b)
-#define FMINSW(a, b) ((int16_t)(a) < (int16_t)(b)) ? (a) : (b)
-#define FMAXUB(a, b) ((a) > (b)) ? (a) : (b)
-#define FMAXSW(a, b) ((int16_t)(a) > (int16_t)(b)) ? (a) : (b)
+#define FSUB(a, b)    ((a) - (b))
+#define FSUBUB(a, b)  satub((a) - (b))
+#define FSUBUW(a, b)  satuw((a) - (b))
+#define FSUBSB(a, b)  satsb((int8_t)(a) - (int8_t)(b))
+#define FSUBSW(a, b)  satsw((int16_t)(a) - (int16_t)(b))
+#define FMINUB(a, b)  ((a) < (b)) ? (a) : (b)
+#define FMINSW(a, b)  ((int16_t)(a) < (int16_t)(b)) ? (a) : (b)
+#define FMAXUB(a, b)  ((a) > (b)) ? (a) : (b)
+#define FMAXSW(a, b)  ((int16_t)(a) > (int16_t)(b)) ? (a) : (b)
 
-#define FAND(a, b) (a) & (b)
-#define FANDN(a, b) ((~(a)) & (b))
-#define FOR(a, b) (a) | (b)
-#define FXOR(a, b) (a) ^ (b)
+#define FAND(a, b)    (a) & (b)
+#define FANDN(a, b)   ((~(a)) & (b))
+#define FOR(a, b)     (a) | (b)
+#define FXOR(a, b)    (a) ^ (b)
 
 #define FCMPGTB(a, b) (int8_t)(a) > (int8_t)(b) ? -1 : 0
 #define FCMPGTW(a, b) (int16_t)(a) > (int16_t)(b) ? -1 : 0
 #define FCMPGTL(a, b) (int32_t)(a) > (int32_t)(b) ? -1 : 0
-#define FCMPEQ(a, b) (a) == (b) ? -1 : 0
+#define FCMPEQ(a, b)  (a) == (b) ? -1 : 0
 
-#define FMULLW(a, b) (a) * (b)
+#define FMULLW(a, b)  (a) * (b)
 #define FMULHRW(a, b) ((int16_t)(a) * (int16_t)(b) + 0x8000) >> 16
 #define FMULHUW(a, b) (a) * (b) >> 16
-#define FMULHW(a, b) (int16_t)(a) * (int16_t)(b) >> 16
+#define FMULHW(a, b)  (int16_t)(a) * (int16_t)(b) >> 16
 
-#define FAVG(a, b) ((a) + (b) + 1) >> 1
+#define FAVG(a, b)    ((a) + (b) + 1) >> 1
 #endif
 
 SSE_HELPER_B(helper_paddb, FADD)
@@ -410,7 +420,7 @@ SSE_HELPER_W(helper_pmulhw, FMULHW)
 SSE_HELPER_B(helper_pavgb, FAVG)
 SSE_HELPER_W(helper_pavgw, FAVG)
 
-void glue(helper_pmuludq, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_pmuludq, SUFFIX) (Reg * d, Reg *s)
 {
     d->Q(0) = (uint64_t)s->L(0) * (uint64_t)d->L(0);
 #if SHIFT == 1
@@ -418,26 +428,26 @@ void glue(helper_pmuludq, SUFFIX) (Reg *d, Reg *s)
 #endif
 }
 
-void glue(helper_pmaddwd, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_pmaddwd, SUFFIX) (Reg * d, Reg *s)
 {
     int i;
 
-    for(i = 0; i < (2 << SHIFT); i++) {
-        d->L(i) = (int16_t)s->W(2*i) * (int16_t)d->W(2*i) +
-            (int16_t)s->W(2*i+1) * (int16_t)d->W(2*i+1);
+    for (i = 0; i < (2 << SHIFT); i++) {
+        d->L(i) = (int16_t)s->W(2 * i) * (int16_t)d->W(2 * i) + (int16_t)s->W(2 * i + 1) * (int16_t)d->W(2 * i + 1);
     }
 }
 
 #if SHIFT == 0
 static inline int abs1(int a)
 {
-    if (a < 0)
+    if (a < 0) {
         return -a;
-    else
+    } else {
         return a;
+    }
 }
 #endif
-void glue(helper_psadbw, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_psadbw, SUFFIX) (Reg * d, Reg *s)
 {
     unsigned int val;
 
@@ -465,16 +475,17 @@ void glue(helper_psadbw, SUFFIX) (Reg *d, Reg *s)
 #endif
 }
 
-void glue(helper_maskmov, SUFFIX) (Reg *d, Reg *s, target_ulong a0)
+void glue(helper_maskmov, SUFFIX) (Reg * d, Reg *s, target_ulong a0)
 {
     int i;
-    for(i = 0; i < (8 << SHIFT); i++) {
-        if (s->B(i) & 0x80)
+    for (i = 0; i < (8 << SHIFT); i++) {
+        if (s->B(i) & 0x80) {
             stb(a0 + i, d->B(i));
+        }
     }
 }
 
-void glue(helper_movl_mm_T0, SUFFIX) (Reg *d, uint32_t val)
+void glue(helper_movl_mm_T0, SUFFIX) (Reg * d, uint32_t val)
 {
     d->L(0) = val;
     d->L(1) = 0;
@@ -484,7 +495,7 @@ void glue(helper_movl_mm_T0, SUFFIX) (Reg *d, uint32_t val)
 }
 
 #ifdef TARGET_X86_64
-void glue(helper_movq_mm_T0, SUFFIX) (Reg *d, uint64_t val)
+void glue(helper_movq_mm_T0, SUFFIX) (Reg * d, uint64_t val)
 {
     d->Q(0) = val;
 #if SHIFT == 1
@@ -494,7 +505,7 @@ void glue(helper_movq_mm_T0, SUFFIX) (Reg *d, uint64_t val)
 #endif
 
 #if SHIFT == 0
-void glue(helper_pshufw, SUFFIX) (Reg *d, Reg *s, int order)
+void glue(helper_pshufw, SUFFIX) (Reg * d, Reg *s, int order)
 {
     Reg r;
     r.W(0) = s->W(order & 3);
@@ -522,7 +533,7 @@ void helper_shufpd(Reg *d, Reg *s, int order)
     *d = r;
 }
 
-void glue(helper_pshufd, SUFFIX) (Reg *d, Reg *s, int order)
+void glue(helper_pshufd, SUFFIX) (Reg * d, Reg *s, int order)
 {
     Reg r;
     r.L(0) = s->L(order & 3);
@@ -532,7 +543,7 @@ void glue(helper_pshufd, SUFFIX) (Reg *d, Reg *s, int order)
     *d = r;
 }
 
-void glue(helper_pshuflw, SUFFIX) (Reg *d, Reg *s, int order)
+void glue(helper_pshuflw, SUFFIX) (Reg * d, Reg *s, int order)
 {
     Reg r;
     r.W(0) = s->W(order & 3);
@@ -543,7 +554,7 @@ void glue(helper_pshuflw, SUFFIX) (Reg *d, Reg *s, int order)
     *d = r;
 }
 
-void glue(helper_pshufhw, SUFFIX) (Reg *d, Reg *s, int order)
+void glue(helper_pshufhw, SUFFIX) (Reg * d, Reg *s, int order)
 {
     Reg r;
     r.Q(0) = s->Q(0);
@@ -559,7 +570,7 @@ void glue(helper_pshufhw, SUFFIX) (Reg *d, Reg *s, int order)
 /* FPU ops */
 /* XXX: not accurate */
 
-#define SSE_HELPER_S(name, F)\
+#define SSE_HELPER_S(name, F) \
 void helper_ ## name ## ps (Reg *d, Reg *s)\
 {\
     d->XMM_S(0) = F(32, d->XMM_S(0), s->XMM_S(0));\
@@ -583,12 +594,12 @@ void helper_ ## name ## sd (Reg *d, Reg *s)\
     d->XMM_D(0) = F(64, d->XMM_D(0), s->XMM_D(0));\
 }
 
-#define FPU_ADD(size, a, b) float ## size ## _add(a, b, &env->sse_status)
-#define FPU_SUB(size, a, b) float ## size ## _sub(a, b, &env->sse_status)
-#define FPU_MUL(size, a, b) float ## size ## _mul(a, b, &env->sse_status)
-#define FPU_DIV(size, a, b) float ## size ## _div(a, b, &env->sse_status)
-#define FPU_MIN(size, a, b) (a) < (b) ? (a) : (b)
-#define FPU_MAX(size, a, b) (a) > (b) ? (a) : (b)
+#define FPU_ADD(size, a, b)  float ## size ## _add(a, b, &env->sse_status)
+#define FPU_SUB(size, a, b)  float ## size ## _sub(a, b, &env->sse_status)
+#define FPU_MUL(size, a, b)  float ## size ## _mul(a, b, &env->sse_status)
+#define FPU_DIV(size, a, b)  float ## size ## _div(a, b, &env->sse_status)
+#define FPU_MIN(size, a, b)  (a) < (b) ? (a) : (b)
+#define FPU_MAX(size, a, b)  (a) > (b) ? (a) : (b)
 #define FPU_SQRT(size, a, b) float ## size ## _sqrt(b, &env->sse_status)
 
 SSE_HELPER_S(add, FPU_ADD)
@@ -598,7 +609,6 @@ SSE_HELPER_S(div, FPU_DIV)
 SSE_HELPER_S(min, FPU_MIN)
 SSE_HELPER_S(max, FPU_MAX)
 SSE_HELPER_S(sqrt, FPU_SQRT)
-
 
 /* float to float conversions */
 void helper_cvtps2pd(Reg *d, Reg *s)
@@ -781,25 +791,15 @@ int64_t helper_cvttsd2sq(XMMReg *s)
 
 void helper_rsqrtps(XMMReg *d, XMMReg *s)
 {
-    d->XMM_S(0) = float32_div(float32_one,
-                              float32_sqrt(s->XMM_S(0), &env->sse_status),
-                              &env->sse_status);
-    d->XMM_S(1) = float32_div(float32_one,
-                              float32_sqrt(s->XMM_S(1), &env->sse_status),
-                              &env->sse_status);
-    d->XMM_S(2) = float32_div(float32_one,
-                              float32_sqrt(s->XMM_S(2), &env->sse_status),
-                              &env->sse_status);
-    d->XMM_S(3) = float32_div(float32_one,
-                              float32_sqrt(s->XMM_S(3), &env->sse_status),
-                              &env->sse_status);
+    d->XMM_S(0) = float32_div(float32_one, float32_sqrt(s->XMM_S(0), &env->sse_status), &env->sse_status);
+    d->XMM_S(1) = float32_div(float32_one, float32_sqrt(s->XMM_S(1), &env->sse_status), &env->sse_status);
+    d->XMM_S(2) = float32_div(float32_one, float32_sqrt(s->XMM_S(2), &env->sse_status), &env->sse_status);
+    d->XMM_S(3) = float32_div(float32_one, float32_sqrt(s->XMM_S(3), &env->sse_status), &env->sse_status);
 }
 
 void helper_rsqrtss(XMMReg *d, XMMReg *s)
 {
-    d->XMM_S(0) = float32_div(float32_one,
-                              float32_sqrt(s->XMM_S(0), &env->sse_status),
-                              &env->sse_status);
+    d->XMM_S(0) = float32_div(float32_one, float32_sqrt(s->XMM_S(0), &env->sse_status), &env->sse_status);
 }
 
 void helper_rcpps(XMMReg *d, XMMReg *s)
@@ -910,7 +910,7 @@ void helper_addsubpd(XMMReg *d, XMMReg *s)
 }
 
 /* XXX: unordered */
-#define SSE_HELPER_CMP(name, F)\
+#define SSE_HELPER_CMP(name, F) \
 void helper_ ## name ## ps (Reg *d, Reg *s)\
 {\
     d->XMM_L(0) = F(32, d->XMM_S(0), s->XMM_S(0));\
@@ -934,14 +934,14 @@ void helper_ ## name ## sd (Reg *d, Reg *s)\
     d->XMM_Q(0) = F(64, d->XMM_D(0), s->XMM_D(0));\
 }
 
-#define FPU_CMPEQ(size, a, b) float ## size ## _eq_quiet(a, b, &env->sse_status) ? -1 : 0
-#define FPU_CMPLT(size, a, b) float ## size ## _lt(a, b, &env->sse_status) ? -1 : 0
-#define FPU_CMPLE(size, a, b) float ## size ## _le(a, b, &env->sse_status) ? -1 : 0
+#define FPU_CMPEQ(size, a, b)    float ## size ## _eq_quiet(a, b, &env->sse_status) ? -1 : 0
+#define FPU_CMPLT(size, a, b)    float ## size ## _lt(a, b, &env->sse_status) ? -1 : 0
+#define FPU_CMPLE(size, a, b)    float ## size ## _le(a, b, &env->sse_status) ? -1 : 0
 #define FPU_CMPUNORD(size, a, b) float ## size ## _unordered_quiet(a, b, &env->sse_status) ? - 1 : 0
-#define FPU_CMPNEQ(size, a, b) float ## size ## _eq_quiet(a, b, &env->sse_status) ? 0 : -1
-#define FPU_CMPNLT(size, a, b) float ## size ## _lt(a, b, &env->sse_status) ? 0 : -1
-#define FPU_CMPNLE(size, a, b) float ## size ## _le(a, b, &env->sse_status) ? 0 : -1
-#define FPU_CMPORD(size, a, b) float ## size ## _unordered_quiet(a, b, &env->sse_status) ? 0 : -1
+#define FPU_CMPNEQ(size, a, b)   float ## size ## _eq_quiet(a, b, &env->sse_status) ? 0 : -1
+#define FPU_CMPNLT(size, a, b)   float ## size ## _lt(a, b, &env->sse_status) ? 0 : -1
+#define FPU_CMPNLE(size, a, b)   float ## size ## _le(a, b, &env->sse_status) ? 0 : -1
+#define FPU_CMPORD(size, a, b)   float ## size ## _unordered_quiet(a, b, &env->sse_status) ? 0 : -1
 
 SSE_HELPER_CMP(cmpeq, FPU_CMPEQ)
 SSE_HELPER_CMP(cmplt, FPU_CMPLT)
@@ -1018,7 +1018,7 @@ uint32_t helper_movmskpd(Reg *s)
 
 #endif
 
-uint32_t glue(helper_pmovmskb, SUFFIX)(Reg *s)
+uint32_t glue(helper_pmovmskb, SUFFIX)(Reg * s)
 {
     uint32_t val;
     val = 0;
@@ -1043,7 +1043,7 @@ uint32_t glue(helper_pmovmskb, SUFFIX)(Reg *s)
     return val;
 }
 
-void glue(helper_packsswb, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_packsswb, SUFFIX) (Reg * d, Reg *s)
 {
     Reg r;
 
@@ -1070,7 +1070,7 @@ void glue(helper_packsswb, SUFFIX) (Reg *d, Reg *s)
     *d = r;
 }
 
-void glue(helper_packuswb, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_packuswb, SUFFIX) (Reg * d, Reg *s)
 {
     Reg r;
 
@@ -1097,7 +1097,7 @@ void glue(helper_packuswb, SUFFIX) (Reg *d, Reg *s)
     *d = r;
 }
 
-void glue(helper_packssdw, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_packssdw, SUFFIX) (Reg * d, Reg *s)
 {
     Reg r;
 
@@ -1247,18 +1247,22 @@ void helper_pfcmpgt(MMXReg *d, MMXReg *s)
 
 void helper_pfmax(MMXReg *d, MMXReg *s)
 {
-    if (float32_lt(d->MMX_S(0), s->MMX_S(0), &env->mmx_status))
+    if (float32_lt(d->MMX_S(0), s->MMX_S(0), &env->mmx_status)) {
         d->MMX_S(0) = s->MMX_S(0);
-    if (float32_lt(d->MMX_S(1), s->MMX_S(1), &env->mmx_status))
+    }
+    if (float32_lt(d->MMX_S(1), s->MMX_S(1), &env->mmx_status)) {
         d->MMX_S(1) = s->MMX_S(1);
+    }
 }
 
 void helper_pfmin(MMXReg *d, MMXReg *s)
 {
-    if (float32_lt(s->MMX_S(0), d->MMX_S(0), &env->mmx_status))
+    if (float32_lt(s->MMX_S(0), d->MMX_S(0), &env->mmx_status)) {
         d->MMX_S(0) = s->MMX_S(0);
-    if (float32_lt(s->MMX_S(1), d->MMX_S(1), &env->mmx_status))
+    }
+    if (float32_lt(s->MMX_S(1), d->MMX_S(1), &env->mmx_status)) {
         d->MMX_S(1) = s->MMX_S(1);
+    }
 }
 
 void helper_pfmul(MMXReg *d, MMXReg *s)
@@ -1292,9 +1296,7 @@ void helper_pfrcp(MMXReg *d, MMXReg *s)
 void helper_pfrsqrt(MMXReg *d, MMXReg *s)
 {
     d->MMX_L(1) = s->MMX_L(0) & 0x7fffffff;
-    d->MMX_S(1) = float32_div(float32_one,
-                              float32_sqrt(d->MMX_S(1), &env->mmx_status),
-                              &env->mmx_status);
+    d->MMX_S(1) = float32_div(float32_one, float32_sqrt(d->MMX_S(1), &env->mmx_status), &env->mmx_status);
     d->MMX_L(1) |= s->MMX_L(0) & 0x80000000;
     d->MMX_L(0) = d->MMX_L(1);
 }
@@ -1321,18 +1323,19 @@ void helper_pswapd(MMXReg *d, MMXReg *s)
 #endif
 
 /* SSSE3 op helpers */
-void glue(helper_pshufb, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_pshufb, SUFFIX) (Reg * d, Reg *s)
 {
     int i;
     Reg r;
 
-    for (i = 0; i < (8 << SHIFT); i++)
+    for (i = 0; i < (8 << SHIFT); i++) {
         r.B(i) = (s->B(i) & 0x80) ? 0 : (d->B(s->B(i) & ((8 << SHIFT) - 1)));
+    }
 
     *d = r;
 }
 
-void glue(helper_phaddw, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_phaddw, SUFFIX) (Reg * d, Reg *s)
 {
     d->W(0) = (int16_t)d->W(0) + (int16_t)d->W(1);
     d->W(1) = (int16_t)d->W(2) + (int16_t)d->W(3);
@@ -1344,7 +1347,7 @@ void glue(helper_phaddw, SUFFIX) (Reg *d, Reg *s)
     XMM_ONLY(d->W(7) = (int16_t)s->W(6) + (int16_t)s->W(7));
 }
 
-void glue(helper_phaddd, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_phaddd, SUFFIX) (Reg * d, Reg *s)
 {
     d->L(0) = (int32_t)d->L(0) + (int32_t)d->L(1);
     XMM_ONLY(d->L(1) = (int32_t)d->L(2) + (int32_t)d->L(3));
@@ -1352,7 +1355,7 @@ void glue(helper_phaddd, SUFFIX) (Reg *d, Reg *s)
     XMM_ONLY(d->L(3) = (int32_t)s->L(2) + (int32_t)s->L(3));
 }
 
-void glue(helper_phaddsw, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_phaddsw, SUFFIX) (Reg * d, Reg *s)
 {
     d->W(0) = satsw((int16_t)d->W(0) + (int16_t)d->W(1));
     d->W(1) = satsw((int16_t)d->W(2) + (int16_t)d->W(3));
@@ -1364,29 +1367,21 @@ void glue(helper_phaddsw, SUFFIX) (Reg *d, Reg *s)
     XMM_ONLY(d->W(7) = satsw((int16_t)s->W(6) + (int16_t)s->W(7)));
 }
 
-void glue(helper_pmaddubsw, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_pmaddubsw, SUFFIX) (Reg * d, Reg *s)
 {
-    d->W(0) = satsw((int8_t)s->B( 0) * (uint8_t)d->B( 0) +
-                    (int8_t)s->B( 1) * (uint8_t)d->B( 1));
-    d->W(1) = satsw((int8_t)s->B( 2) * (uint8_t)d->B( 2) +
-                    (int8_t)s->B( 3) * (uint8_t)d->B( 3));
-    d->W(2) = satsw((int8_t)s->B( 4) * (uint8_t)d->B( 4) +
-                    (int8_t)s->B( 5) * (uint8_t)d->B( 5));
-    d->W(3) = satsw((int8_t)s->B( 6) * (uint8_t)d->B( 6) +
-                    (int8_t)s->B( 7) * (uint8_t)d->B( 7));
+    d->W(0) = satsw((int8_t)s->B(0) * (uint8_t)d->B(0) + (int8_t)s->B(1) * (uint8_t)d->B(1));
+    d->W(1) = satsw((int8_t)s->B(2) * (uint8_t)d->B(2) + (int8_t)s->B(3) * (uint8_t)d->B(3));
+    d->W(2) = satsw((int8_t)s->B(4) * (uint8_t)d->B(4) + (int8_t)s->B(5) * (uint8_t)d->B(5));
+    d->W(3) = satsw((int8_t)s->B(6) * (uint8_t)d->B(6) + (int8_t)s->B(7) * (uint8_t)d->B(7));
 #if SHIFT == 1
-    d->W(4) = satsw((int8_t)s->B( 8) * (uint8_t)d->B( 8) +
-                    (int8_t)s->B( 9) * (uint8_t)d->B( 9));
-    d->W(5) = satsw((int8_t)s->B(10) * (uint8_t)d->B(10) +
-                    (int8_t)s->B(11) * (uint8_t)d->B(11));
-    d->W(6) = satsw((int8_t)s->B(12) * (uint8_t)d->B(12) +
-                    (int8_t)s->B(13) * (uint8_t)d->B(13));
-    d->W(7) = satsw((int8_t)s->B(14) * (uint8_t)d->B(14) +
-                    (int8_t)s->B(15) * (uint8_t)d->B(15));
+    d->W(4) = satsw((int8_t)s->B(8) * (uint8_t)d->B(8) + (int8_t)s->B(9) * (uint8_t)d->B(9));
+    d->W(5) = satsw((int8_t)s->B(10) * (uint8_t)d->B(10) + (int8_t)s->B(11) * (uint8_t)d->B(11));
+    d->W(6) = satsw((int8_t)s->B(12) * (uint8_t)d->B(12) + (int8_t)s->B(13) * (uint8_t)d->B(13));
+    d->W(7) = satsw((int8_t)s->B(14) * (uint8_t)d->B(14) + (int8_t)s->B(15) * (uint8_t)d->B(15));
 #endif
 }
 
-void glue(helper_phsubw, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_phsubw, SUFFIX) (Reg * d, Reg *s)
 {
     d->W(0) = (int16_t)d->W(0) - (int16_t)d->W(1);
     d->W(1) = (int16_t)d->W(2) - (int16_t)d->W(3);
@@ -1398,7 +1393,7 @@ void glue(helper_phsubw, SUFFIX) (Reg *d, Reg *s)
     XMM_ONLY(d->W(7) = (int16_t)s->W(6) - (int16_t)s->W(7));
 }
 
-void glue(helper_phsubd, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_phsubd, SUFFIX) (Reg * d, Reg *s)
 {
     d->L(0) = (int32_t)d->L(0) - (int32_t)d->L(1);
     XMM_ONLY(d->L(1) = (int32_t)d->L(2) - (int32_t)d->L(3));
@@ -1406,7 +1401,7 @@ void glue(helper_phsubd, SUFFIX) (Reg *d, Reg *s)
     XMM_ONLY(d->L(3) = (int32_t)s->L(2) - (int32_t)s->L(3));
 }
 
-void glue(helper_phsubsw, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_phsubsw, SUFFIX) (Reg * d, Reg *s)
 {
     d->W(0) = satsw((int16_t)d->W(0) - (int16_t)d->W(1));
     d->W(1) = satsw((int16_t)d->W(2) - (int16_t)d->W(3));
@@ -1428,14 +1423,14 @@ SSE_HELPER_L(helper_pabsd, FABSL)
 #define FMULHRSW(d, s) ((int16_t) d * (int16_t) s + 0x4000) >> 15
 SSE_HELPER_W(helper_pmulhrsw, FMULHRSW)
 
-#define FSIGNB(d, s) s <= INT8_MAX  ? s ? d : 0 : -(int8_t ) d
-#define FSIGNW(d, s) s <= INT16_MAX ? s ? d : 0 : -(int16_t) d
-#define FSIGNL(d, s) s <= INT32_MAX ? s ? d : 0 : -(int32_t) d
+#define FSIGNB(d, s)   s <= INT8_MAX  ? s ? d : 0 : -(int8_t ) d
+#define FSIGNW(d, s)   s <= INT16_MAX ? s ? d : 0 : -(int16_t) d
+#define FSIGNL(d, s)   s <= INT32_MAX ? s ? d : 0 : -(int32_t) d
 SSE_HELPER_B(helper_psignb, FSIGNB)
 SSE_HELPER_W(helper_psignw, FSIGNW)
 SSE_HELPER_L(helper_psignd, FSIGNL)
 
-void glue(helper_palignr, SUFFIX) (Reg *d, Reg *s, int32_t shift)
+void glue(helper_palignr, SUFFIX) (Reg * d, Reg *s, int32_t shift)
 {
     Reg r;
 
@@ -1447,17 +1442,10 @@ void glue(helper_palignr, SUFFIX) (Reg *d, Reg *s, int32_t shift)
         shift <<= 3;
 #define SHR(v, i) (i < 64 && i > -64 ? i > 0 ? v >> (i) : (v << -(i)) : 0)
 #if SHIFT == 0
-        r.Q(0) = SHR(s->Q(0), shift -   0) |
-                 SHR(d->Q(0), shift -  64);
+        r.Q(0) = SHR(s->Q(0), shift -   0) | SHR(d->Q(0), shift -  64);
 #else
-        r.Q(0) = SHR(s->Q(0), shift -   0) |
-                 SHR(s->Q(1), shift -  64) |
-                 SHR(d->Q(0), shift - 128) |
-                 SHR(d->Q(1), shift - 192);
-        r.Q(1) = SHR(s->Q(0), shift +  64) |
-                 SHR(s->Q(1), shift -   0) |
-                 SHR(d->Q(0), shift -  64) |
-                 SHR(d->Q(1), shift - 128);
+        r.Q(0) = SHR(s->Q(0), shift -   0) | SHR(s->Q(1), shift -  64) | SHR(d->Q(0), shift - 128) | SHR(d->Q(1), shift - 192);
+        r.Q(1) = SHR(s->Q(0), shift +  64) | SHR(s->Q(1), shift -   0) | SHR(d->Q(0), shift -  64) | SHR(d->Q(1), shift - 128);
 #endif
 #undef SHR
     }
@@ -1468,7 +1456,7 @@ void glue(helper_palignr, SUFFIX) (Reg *d, Reg *s, int32_t shift)
 #define XMM0 env->xmm_regs[0]
 
 #if SHIFT == 1
-#define SSE_HELPER_V(name, elem, num, F)\
+#define SSE_HELPER_V(name, elem, num, F) \
 void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
     d->elem(0) = F(d->elem(0), s->elem(0), XMM0.elem(0));\
@@ -1495,7 +1483,7 @@ void glue(name, SUFFIX) (Reg *d, Reg *s)\
     }\
 }
 
-#define SSE_HELPER_I(name, elem, num, F)\
+#define SSE_HELPER_I(name, elem, num, F) \
 void glue(name, SUFFIX) (Reg *d, Reg *s, uint32_t imm)\
 {\
     d->elem(0) = F(d->elem(0), s->elem(0), ((imm >> 0) & 1));\
@@ -1523,14 +1511,14 @@ void glue(name, SUFFIX) (Reg *d, Reg *s, uint32_t imm)\
 }
 
 /* SSE4.1 op helpers */
-#define FBLENDVB(d, s, m) (m & 0x80) ? s : d
+#define FBLENDVB(d, s, m)  (m & 0x80) ? s : d
 #define FBLENDVPS(d, s, m) (m & 0x80000000) ? s : d
 #define FBLENDVPD(d, s, m) (m & 0x8000000000000000LL) ? s : d
 SSE_HELPER_V(helper_pblendvb, B, 16, FBLENDVB)
 SSE_HELPER_V(helper_blendvps, L, 4, FBLENDVPS)
 SSE_HELPER_V(helper_blendvpd, Q, 2, FBLENDVPD)
 
-void glue(helper_ptest, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_ptest, SUFFIX) (Reg * d, Reg *s)
 {
     uint64_t zf = (s->Q(0) &  d->Q(0)) | (s->Q(1) &  d->Q(1));
     uint64_t cf = (s->Q(0) & ~d->Q(0)) | (s->Q(1) & ~d->Q(1));
@@ -1538,7 +1526,7 @@ void glue(helper_ptest, SUFFIX) (Reg *d, Reg *s)
     CC_SRC = (zf ? 0 : CC_Z) | (cf ? 0 : CC_C);
 }
 
-#define SSE_HELPER_F(name, elem, num, F)\
+#define SSE_HELPER_F(name, elem, num, F) \
 void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
     d->elem(0) = F(0);\
@@ -1555,12 +1543,12 @@ void glue(name, SUFFIX) (Reg *d, Reg *s)\
     }\
 }
 
-SSE_HELPER_F(helper_pmovsxbw, W, 8, (int8_t) s->B)
-SSE_HELPER_F(helper_pmovsxbd, L, 4, (int8_t) s->B)
-SSE_HELPER_F(helper_pmovsxbq, Q, 2, (int8_t) s->B)
-SSE_HELPER_F(helper_pmovsxwd, L, 4, (int16_t) s->W)
-SSE_HELPER_F(helper_pmovsxwq, Q, 2, (int16_t) s->W)
-SSE_HELPER_F(helper_pmovsxdq, Q, 2, (int32_t) s->L)
+SSE_HELPER_F(helper_pmovsxbw, W, 8, (int8_t)s->B)
+SSE_HELPER_F(helper_pmovsxbd, L, 4, (int8_t)s->B)
+SSE_HELPER_F(helper_pmovsxbq, Q, 2, (int8_t)s->B)
+SSE_HELPER_F(helper_pmovsxwd, L, 4, (int16_t)s->W)
+SSE_HELPER_F(helper_pmovsxwq, Q, 2, (int16_t)s->W)
+SSE_HELPER_F(helper_pmovsxdq, Q, 2, (int32_t)s->L)
 SSE_HELPER_F(helper_pmovzxbw, W, 8, s->B)
 SSE_HELPER_F(helper_pmovzxbd, L, 4, s->B)
 SSE_HELPER_F(helper_pmovzxbq, Q, 2, s->B)
@@ -1568,25 +1556,25 @@ SSE_HELPER_F(helper_pmovzxwd, L, 4, s->W)
 SSE_HELPER_F(helper_pmovzxwq, Q, 2, s->W)
 SSE_HELPER_F(helper_pmovzxdq, Q, 2, s->L)
 
-void glue(helper_pmuldq, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_pmuldq, SUFFIX) (Reg * d, Reg *s)
 {
-    d->Q(0) = (int64_t) (int32_t) d->L(0) * (int32_t) s->L(0);
-    d->Q(1) = (int64_t) (int32_t) d->L(2) * (int32_t) s->L(2);
+    d->Q(0) = (int64_t)(int32_t)d->L(0) * (int32_t)s->L(0);
+    d->Q(1) = (int64_t)(int32_t)d->L(2) * (int32_t)s->L(2);
 }
 
 #define FCMPEQQ(d, s) d == s ? -1 : 0
 SSE_HELPER_Q(helper_pcmpeqq, FCMPEQQ)
 
-void glue(helper_packusdw, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_packusdw, SUFFIX) (Reg * d, Reg *s)
 {
-    d->W(0) = satuw((int32_t) d->L(0));
-    d->W(1) = satuw((int32_t) d->L(1));
-    d->W(2) = satuw((int32_t) d->L(2));
-    d->W(3) = satuw((int32_t) d->L(3));
-    d->W(4) = satuw((int32_t) s->L(0));
-    d->W(5) = satuw((int32_t) s->L(1));
-    d->W(6) = satuw((int32_t) s->L(2));
-    d->W(7) = satuw((int32_t) s->L(3));
+    d->W(0) = satuw((int32_t)d->L(0));
+    d->W(1) = satuw((int32_t)d->L(1));
+    d->W(2) = satuw((int32_t)d->L(2));
+    d->W(3) = satuw((int32_t)d->L(3));
+    d->W(4) = satuw((int32_t)s->L(0));
+    d->W(5) = satuw((int32_t)s->L(1));
+    d->W(6) = satuw((int32_t)s->L(2));
+    d->W(7) = satuw((int32_t)s->L(3));
 }
 
 #define FMINSB(d, s) MIN((int8_t) d, (int8_t) s)
@@ -1605,24 +1593,31 @@ SSE_HELPER_L(helper_pmaxud, MAX)
 #define FMULLD(d, s) (int32_t) d * (int32_t) s
 SSE_HELPER_L(helper_pmulld, FMULLD)
 
-void glue(helper_phminposuw, SUFFIX) (Reg *d, Reg *s)
+void glue(helper_phminposuw, SUFFIX) (Reg * d, Reg *s)
 {
     int idx = 0;
 
-    if (s->W(1) < s->W(idx))
+    if (s->W(1) < s->W(idx)) {
         idx = 1;
-    if (s->W(2) < s->W(idx))
+    }
+    if (s->W(2) < s->W(idx)) {
         idx = 2;
-    if (s->W(3) < s->W(idx))
+    }
+    if (s->W(3) < s->W(idx)) {
         idx = 3;
-    if (s->W(4) < s->W(idx))
+    }
+    if (s->W(4) < s->W(idx)) {
         idx = 4;
-    if (s->W(5) < s->W(idx))
+    }
+    if (s->W(5) < s->W(idx)) {
         idx = 5;
-    if (s->W(6) < s->W(idx))
+    }
+    if (s->W(6) < s->W(idx)) {
         idx = 6;
-    if (s->W(7) < s->W(idx))
+    }
+    if (s->W(7) < s->W(idx)) {
         idx = 7;
+    }
 
     d->Q(1) = 0;
     d->L(1) = 0;
@@ -1630,12 +1625,12 @@ void glue(helper_phminposuw, SUFFIX) (Reg *d, Reg *s)
     d->W(0) = s->W(idx);
 }
 
-void glue(helper_roundps, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
+void glue(helper_roundps, SUFFIX) (Reg * d, Reg *s, uint32_t mode)
 {
     signed char prev_rounding_mode;
 
     prev_rounding_mode = env->sse_status.float_rounding_mode;
-    if (!(mode & (1 << 2)))
+    if (!(mode & (1 << 2))) {
         switch (mode & 3) {
         case 0:
             set_float_rounding_mode(float_round_nearest_even, &env->sse_status);
@@ -1650,6 +1645,7 @@ void glue(helper_roundps, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
             set_float_rounding_mode(float_round_to_zero, &env->sse_status);
             break;
         }
+    }
 
     d->L(0) = float64_round_to_int(s->L(0), &env->sse_status);
     d->L(1) = float64_round_to_int(s->L(1), &env->sse_status);
@@ -1659,12 +1655,12 @@ void glue(helper_roundps, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
     env->sse_status.float_rounding_mode = prev_rounding_mode;
 }
 
-void glue(helper_roundpd, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
+void glue(helper_roundpd, SUFFIX) (Reg * d, Reg *s, uint32_t mode)
 {
     signed char prev_rounding_mode;
 
     prev_rounding_mode = env->sse_status.float_rounding_mode;
-    if (!(mode & (1 << 2)))
+    if (!(mode & (1 << 2))) {
         switch (mode & 3) {
         case 0:
             set_float_rounding_mode(float_round_nearest_even, &env->sse_status);
@@ -1679,6 +1675,7 @@ void glue(helper_roundpd, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
             set_float_rounding_mode(float_round_to_zero, &env->sse_status);
             break;
         }
+    }
 
     d->Q(0) = float64_round_to_int(s->Q(0), &env->sse_status);
     d->Q(1) = float64_round_to_int(s->Q(1), &env->sse_status);
@@ -1686,12 +1683,12 @@ void glue(helper_roundpd, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
     env->sse_status.float_rounding_mode = prev_rounding_mode;
 }
 
-void glue(helper_roundss, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
+void glue(helper_roundss, SUFFIX) (Reg * d, Reg *s, uint32_t mode)
 {
     signed char prev_rounding_mode;
 
     prev_rounding_mode = env->sse_status.float_rounding_mode;
-    if (!(mode & (1 << 2)))
+    if (!(mode & (1 << 2))) {
         switch (mode & 3) {
         case 0:
             set_float_rounding_mode(float_round_nearest_even, &env->sse_status);
@@ -1706,18 +1703,19 @@ void glue(helper_roundss, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
             set_float_rounding_mode(float_round_to_zero, &env->sse_status);
             break;
         }
+    }
 
     d->L(0) = float64_round_to_int(s->L(0), &env->sse_status);
 
     env->sse_status.float_rounding_mode = prev_rounding_mode;
 }
 
-void glue(helper_roundsd, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
+void glue(helper_roundsd, SUFFIX) (Reg * d, Reg *s, uint32_t mode)
 {
     signed char prev_rounding_mode;
 
     prev_rounding_mode = env->sse_status.float_rounding_mode;
-    if (!(mode & (1 << 2)))
+    if (!(mode & (1 << 2))) {
         switch (mode & 3) {
         case 0:
             set_float_rounding_mode(float_round_nearest_even, &env->sse_status);
@@ -1732,6 +1730,7 @@ void glue(helper_roundsd, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
             set_float_rounding_mode(float_round_to_zero, &env->sse_status);
             break;
         }
+    }
 
     d->Q(0) = float64_round_to_int(s->Q(0), &env->sse_status);
 
@@ -1743,49 +1742,43 @@ SSE_HELPER_I(helper_blendps, L, 4, FBLENDP)
 SSE_HELPER_I(helper_blendpd, Q, 2, FBLENDP)
 SSE_HELPER_I(helper_pblendw, W, 8, FBLENDP)
 
-void glue(helper_dpps, SUFFIX) (Reg *d, Reg *s, uint32_t mask)
+void glue(helper_dpps, SUFFIX) (Reg * d, Reg *s, uint32_t mask)
 {
     float32 iresult = 0 /*float32_zero*/;
 
-    if (mask & (1 << 4))
-        iresult = float32_add(iresult,
-                        float32_mul(d->L(0), s->L(0), &env->sse_status),
-                        &env->sse_status);
-    if (mask & (1 << 5))
-        iresult = float32_add(iresult,
-                        float32_mul(d->L(1), s->L(1), &env->sse_status),
-                        &env->sse_status);
-    if (mask & (1 << 6))
-        iresult = float32_add(iresult,
-                        float32_mul(d->L(2), s->L(2), &env->sse_status),
-                        &env->sse_status);
-    if (mask & (1 << 7))
-        iresult = float32_add(iresult,
-                        float32_mul(d->L(3), s->L(3), &env->sse_status),
-                        &env->sse_status);
+    if (mask & (1 << 4)) {
+        iresult = float32_add(iresult, float32_mul(d->L(0), s->L(0), &env->sse_status), &env->sse_status);
+    }
+    if (mask & (1 << 5)) {
+        iresult = float32_add(iresult, float32_mul(d->L(1), s->L(1), &env->sse_status), &env->sse_status);
+    }
+    if (mask & (1 << 6)) {
+        iresult = float32_add(iresult, float32_mul(d->L(2), s->L(2), &env->sse_status), &env->sse_status);
+    }
+    if (mask & (1 << 7)) {
+        iresult = float32_add(iresult, float32_mul(d->L(3), s->L(3), &env->sse_status), &env->sse_status);
+    }
     d->L(0) = (mask & (1 << 0)) ? iresult : 0 /*float32_zero*/;
     d->L(1) = (mask & (1 << 1)) ? iresult : 0 /*float32_zero*/;
     d->L(2) = (mask & (1 << 2)) ? iresult : 0 /*float32_zero*/;
     d->L(3) = (mask & (1 << 3)) ? iresult : 0 /*float32_zero*/;
 }
 
-void glue(helper_dppd, SUFFIX) (Reg *d, Reg *s, uint32_t mask)
+void glue(helper_dppd, SUFFIX) (Reg * d, Reg *s, uint32_t mask)
 {
     float64 iresult = 0 /*float64_zero*/;
 
-    if (mask & (1 << 4))
-        iresult = float64_add(iresult,
-                        float64_mul(d->Q(0), s->Q(0), &env->sse_status),
-                        &env->sse_status);
-    if (mask & (1 << 5))
-        iresult = float64_add(iresult,
-                        float64_mul(d->Q(1), s->Q(1), &env->sse_status),
-                        &env->sse_status);
+    if (mask & (1 << 4)) {
+        iresult = float64_add(iresult, float64_mul(d->Q(0), s->Q(0), &env->sse_status), &env->sse_status);
+    }
+    if (mask & (1 << 5)) {
+        iresult = float64_add(iresult, float64_mul(d->Q(1), s->Q(1), &env->sse_status), &env->sse_status);
+    }
     d->Q(0) = (mask & (1 << 0)) ? iresult : 0 /*float64_zero*/;
     d->Q(1) = (mask & (1 << 1)) ? iresult : 0 /*float64_zero*/;
 }
 
-void glue(helper_mpsadbw, SUFFIX) (Reg *d, Reg *s, uint32_t offset)
+void glue(helper_mpsadbw, SUFFIX) (Reg * d, Reg *s, uint32_t offset)
 {
     int s0 = (offset & 3) << 2;
     int d0 = (offset & 4) << 0;
@@ -1813,17 +1806,19 @@ static inline int pcmp_elen(int reg, uint32_t ctrl)
     int val;
 
     /* Presence of REX.W is indicated by a bit higher than 7 set */
-    if (ctrl >> 8)
-        val = abs1((int64_t) env->regs[reg]);
-    else
-        val = abs1((int32_t) env->regs[reg]);
+    if (ctrl >> 8) {
+        val = abs1((int64_t)env->regs[reg]);
+    } else {
+        val = abs1((int32_t)env->regs[reg]);
+    }
 
     if (ctrl & 1) {
-        if (val > 8)
+        if (val > 8) {
             return 8;
-    } else
-        if (val > 16)
-            return 16;
+        }
+    } else if (val > 16) {
+        return 16;
+    }
 
     return val;
 }
@@ -1833,11 +1828,14 @@ static inline int pcmp_ilen(Reg *r, uint8_t ctrl)
     int val = 0;
 
     if (ctrl & 1) {
-        while (val < 8 && r->W(val))
+        while (val < 8 && r->W(val)) {
             val++;
-    } else
-        while (val < 16 && r->B(val))
+        }
+    } else {
+        while (val < 16 && r->B(val)) {
             val++;
+        }
+    }
 
     return val;
 }
@@ -1850,15 +1848,14 @@ static inline int pcmp_val(Reg *r, uint8_t ctrl, int i)
     case 1:
         return r->W(i);
     case 2:
-        return (int8_t) r->B(i);
+        return (int8_t)r->B(i);
     case 3:
     default:
-        return (int16_t) r->W(i);
+        return (int16_t)r->W(i);
     }
 }
 
-static inline unsigned pcmpxstrx(Reg *d, Reg *s,
-                int8_t ctrl, int valids, int validd)
+static inline unsigned pcmpxstrx(Reg *d, Reg *s, int8_t ctrl, int valids, int validd)
 {
     unsigned int res = 0;
     int v;
@@ -1875,17 +1872,18 @@ static inline unsigned pcmpxstrx(Reg *d, Reg *s,
         for (j = valids; j >= 0; j--) {
             res <<= 1;
             v = pcmp_val(s, ctrl, j);
-            for (i = validd; i >= 0; i--)
+            for (i = validd; i >= 0; i--) {
                 res |= (v == pcmp_val(d, ctrl, i));
+            }
         }
         break;
     case 1:
         for (j = valids; j >= 0; j--) {
             res <<= 1;
             v = pcmp_val(s, ctrl, j);
-            for (i = ((validd - 1) | 1); i >= 0; i -= 2)
-                res |= (pcmp_val(d, ctrl, i - 0) <= v &&
-                        pcmp_val(d, ctrl, i - 1) >= v);
+            for (i = ((validd - 1) | 1); i >= 0; i -= 2) {
+                res |= (pcmp_val(d, ctrl, i - 0) <= v && pcmp_val(d, ctrl, i - 1) >= v);
+            }
         }
         break;
     case 2:
@@ -1901,8 +1899,9 @@ static inline unsigned pcmpxstrx(Reg *d, Reg *s,
         for (j = valids - validd; j >= 0; j--) {
             res <<= 1;
             res |= 1;
-            for (i = MIN(upper - j, validd); i >= 0; i--)
+            for (i = MIN(upper - j, validd); i >= 0; i--) {
                 res &= (pcmp_val(s, ctrl, i + j) == pcmp_val(d, ctrl, i));
+            }
         }
         break;
     }
@@ -1916,10 +1915,12 @@ static inline unsigned pcmpxstrx(Reg *d, Reg *s,
         break;
     }
 
-    if (res)
-       CC_SRC |= CC_C;
-    if (res & 1)
-       CC_SRC |= CC_O;
+    if (res) {
+        CC_SRC |= CC_C;
+    }
+    if (res & 1) {
+        CC_SRC |= CC_O;
+    }
 
     return res;
 }
@@ -1928,11 +1929,12 @@ static inline int rffs1(unsigned int val)
 {
     int ret = 1, hi;
 
-    for (hi = sizeof(val) * 4; hi; hi /= 2)
+    for (hi = sizeof(val) * 4; hi; hi /= 2) {
         if (val >> hi) {
             val >>= hi;
             ret += hi;
         }
+    }
 
     return ret;
 }
@@ -1941,77 +1943,74 @@ static inline int ffs1(unsigned int val)
 {
     int ret = 1, hi;
 
-    for (hi = sizeof(val) * 4; hi; hi /= 2)
+    for (hi = sizeof(val) * 4; hi; hi /= 2) {
         if (val << hi) {
             val <<= hi;
             ret += hi;
         }
+    }
 
     return ret;
 }
 
-void glue(helper_pcmpestri, SUFFIX) (Reg *d, Reg *s, uint32_t ctrl)
+void glue(helper_pcmpestri, SUFFIX) (Reg * d, Reg *s, uint32_t ctrl)
 {
-    unsigned int res = pcmpxstrx(d, s, ctrl,
-                    pcmp_elen(R_EDX, ctrl),
-                    pcmp_elen(R_EAX, ctrl));
+    unsigned int res = pcmpxstrx(d, s, ctrl, pcmp_elen(R_EDX, ctrl), pcmp_elen(R_EAX, ctrl));
 
-    if (res)
+    if (res) {
         env->regs[R_ECX] = ((ctrl & (1 << 6)) ? rffs1 : ffs1)(res) - 1;
-    else
+    } else {
         env->regs[R_ECX] = 16 >> (ctrl & (1 << 0));
+    }
 }
 
-void glue(helper_pcmpestrm, SUFFIX) (Reg *d, Reg *s, uint32_t ctrl)
+void glue(helper_pcmpestrm, SUFFIX) (Reg * d, Reg *s, uint32_t ctrl)
 {
     int i;
-    unsigned int res = pcmpxstrx(d, s, ctrl,
-                    pcmp_elen(R_EDX, ctrl),
-                    pcmp_elen(R_EAX, ctrl));
+    unsigned int res = pcmpxstrx(d, s, ctrl, pcmp_elen(R_EDX, ctrl), pcmp_elen(R_EAX, ctrl));
 
     if ((ctrl >> 6) & 1) {
-        if (ctrl & 1)
+        if (ctrl & 1) {
             for (i = 0; i < 8; i++, res >>= 1) {
                 d->W(i) = (res & 1) ? ~0 : 0;
             }
-        else
+        } else {
             for (i = 0; i < 16; i++, res >>= 1) {
                 d->B(i) = (res & 1) ? ~0 : 0;
             }
+        }
     } else {
         d->Q(1) = 0;
         d->Q(0) = res;
     }
 }
 
-void glue(helper_pcmpistri, SUFFIX) (Reg *d, Reg *s, uint32_t ctrl)
+void glue(helper_pcmpistri, SUFFIX) (Reg * d, Reg *s, uint32_t ctrl)
 {
-    unsigned int res = pcmpxstrx(d, s, ctrl,
-                    pcmp_ilen(s, ctrl),
-                    pcmp_ilen(d, ctrl));
+    unsigned int res = pcmpxstrx(d, s, ctrl, pcmp_ilen(s, ctrl), pcmp_ilen(d, ctrl));
 
-    if (res)
+    if (res) {
         env->regs[R_ECX] = ((ctrl & (1 << 6)) ? rffs1 : ffs1)(res) - 1;
-    else
+    } else {
         env->regs[R_ECX] = 16 >> (ctrl & (1 << 0));
+    }
 }
 
-void glue(helper_pcmpistrm, SUFFIX) (Reg *d, Reg *s, uint32_t ctrl)
+void glue(helper_pcmpistrm, SUFFIX) (Reg * d, Reg *s, uint32_t ctrl)
 {
     int i;
-    unsigned int res = pcmpxstrx(d, s, ctrl,
-                    pcmp_ilen(s, ctrl),
-                    pcmp_ilen(d, ctrl));
+    unsigned int res = pcmpxstrx(d, s, ctrl, pcmp_ilen(s, ctrl), pcmp_ilen(d, ctrl));
 
     if ((ctrl >> 6) & 1) {
-        if (ctrl & 1)
+        if (ctrl & 1) {
             for (i = 0; i < 8; i++, res >>= 1) {
                 d->W(i) = (res & 1) ? ~0 : 0;
             }
-        else
+        } else {
             for (i = 0; i < 16; i++, res >>= 1) {
                 d->B(i) = (res & 1) ? ~0 : 0;
             }
+        }
     } else {
         d->Q(1) = 0;
         d->Q(0) = res;
@@ -2022,11 +2021,11 @@ void glue(helper_pcmpistrm, SUFFIX) (Reg *d, Reg *s, uint32_t ctrl)
 #define CRCPOLY_BITREV 0x82f63b78
 target_ulong helper_crc32(uint32_t crc1, target_ulong msg, uint32_t len)
 {
-    target_ulong crc = (msg & ((target_ulong) -1 >>
-                            (TARGET_LONG_BITS - len))) ^ crc1;
+    target_ulong crc = (msg & ((target_ulong) - 1 >> (TARGET_LONG_BITS - len))) ^ crc1;
 
-    while (len--)
+    while (len--) {
         crc = (crc >> 1) ^ ((crc & 1) ? CRCPOLY_BITREV : 0);
+    }
 
     return crc;
 }
@@ -2041,15 +2040,17 @@ target_ulong helper_popcnt(target_ulong n, uint32_t type)
     n = POPCOUNT(n, 1);
     n = POPCOUNT(n, 2);
     n = POPCOUNT(n, 3);
-    if (type == 1)
+    if (type == 1) {
         return n & 0xff;
+    }
 
     n = POPCOUNT(n, 4);
 #ifndef TARGET_X86_64
     return n;
 #else
-    if (type == 2)
+    if (type == 2) {
         return n & 0xff;
+    }
 
     return POPCOUNT(n, 5);
 #endif

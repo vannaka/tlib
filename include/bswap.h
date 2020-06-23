@@ -15,34 +15,34 @@
 
 #define bswap_16(x) \
 ({ \
-	uint16_t __x = (x); \
-	((uint16_t)( \
-		(((uint16_t)(__x) & (uint16_t)0x00ffU) << 8) | \
-		(((uint16_t)(__x) & (uint16_t)0xff00U) >> 8) )); \
+        uint16_t __x = (x); \
+        ((uint16_t)( \
+                (((uint16_t)(__x) & (uint16_t)0x00ffU) << 8) | \
+                (((uint16_t)(__x) & (uint16_t)0xff00U) >> 8) )); \
 })
 
 #define bswap_32(x) \
 ({ \
-	uint32_t __x = (x); \
-	((uint32_t)( \
-		(((uint32_t)(__x) & (uint32_t)0x000000ffUL) << 24) | \
-		(((uint32_t)(__x) & (uint32_t)0x0000ff00UL) <<  8) | \
-		(((uint32_t)(__x) & (uint32_t)0x00ff0000UL) >>  8) | \
-		(((uint32_t)(__x) & (uint32_t)0xff000000UL) >> 24) )); \
+        uint32_t __x = (x); \
+        ((uint32_t)( \
+                (((uint32_t)(__x) & (uint32_t)0x000000ffUL) << 24) | \
+                (((uint32_t)(__x) & (uint32_t)0x0000ff00UL) <<  8) | \
+                (((uint32_t)(__x) & (uint32_t)0x00ff0000UL) >>  8) | \
+                (((uint32_t)(__x) & (uint32_t)0xff000000UL) >> 24) )); \
 })
 
 #define bswap_64(x) \
 ({ \
-	uint64_t __x = (x); \
-	((uint64_t)( \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x00000000000000ffULL) << 56) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x000000000000ff00ULL) << 40) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x0000000000ff0000ULL) << 24) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x00000000ff000000ULL) <<  8) | \
-	        (uint64_t)(((uint64_t)(__x) & (uint64_t)0x000000ff00000000ULL) >>  8) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x0000ff0000000000ULL) >> 24) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x00ff000000000000ULL) >> 40) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0xff00000000000000ULL) >> 56) )); \
+        uint64_t __x = (x); \
+        ((uint64_t)( \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x00000000000000ffULL) << 56) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x000000000000ff00ULL) << 40) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x0000000000ff0000ULL) << 24) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x00000000ff000000ULL) <<  8) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x000000ff00000000ULL) >>  8) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x0000ff0000000000ULL) >> 24) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x00ff000000000000ULL) >> 40) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0xff00000000000000ULL) >> 56) )); \
 })
 
 #endif /* !CONFIG_BYTESWAP_H */
@@ -75,18 +75,18 @@ static inline void bswap64s(uint64_t *s)
 }
 
 #if defined(HOST_WORDS_BIGENDIAN)
-#define be_bswap(v, size) (v)
-#define le_bswap(v, size) bswap ## size(v)
+#define be_bswap(v, size)  (v)
+#define le_bswap(v, size)  bswap ## size(v)
 #define be_bswaps(v, size)
 #define le_bswaps(p, size) *p = bswap ## size(*p);
 #else
-#define le_bswap(v, size) (v)
-#define be_bswap(v, size) bswap ## size(v)
+#define le_bswap(v, size)  (v)
+#define be_bswap(v, size)  bswap ## size(v)
 #define le_bswaps(v, size)
 #define be_bswaps(p, size) *p = bswap ## size(*p);
 #endif
 
-#define CPU_CONVERT(endian, size, type)\
+#define CPU_CONVERT(endian, size, type) \
 static inline type endian ## size ## _to_cpu(type v)\
 {\
     return endian ## _bswap(v, size);\
@@ -131,9 +131,9 @@ CPU_CONVERT(le, 64, uint64_t)
 
 #define cpu_to_le16wu(p, v) cpu_to_le16w(p, v)
 #define cpu_to_le32wu(p, v) cpu_to_le32w(p, v)
-#define le16_to_cpupu(p) le16_to_cpup(p)
-#define le32_to_cpupu(p) le32_to_cpup(p)
-#define be32_to_cpupu(p) be32_to_cpup(p)
+#define le16_to_cpupu(p)    le16_to_cpup(p)
+#define le32_to_cpupu(p)    le32_to_cpup(p)
+#define be32_to_cpupu(p)    be32_to_cpup(p)
 
 #define cpu_to_be16wu(p, v) cpu_to_be16w(p, v)
 #define cpu_to_be32wu(p, v) cpu_to_be32w(p, v)

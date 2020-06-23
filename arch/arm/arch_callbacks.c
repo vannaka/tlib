@@ -25,7 +25,7 @@ int32_t tlib_nvic_acknowledge_irq(void) __attribute__((weak));
 
 int32_t tlib_nvic_acknowledge_irq(void)
 {
-  return -1;
+    return -1;
 }
 
 DEFAULT_VOID_HANDLER1(void tlib_nvic_complete_irq, int32_t number)

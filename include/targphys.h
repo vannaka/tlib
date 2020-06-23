@@ -12,18 +12,17 @@
 
    SPARC architecture has 36-bits wide physical address, that's why
    we use `<=` operators below instead of simple `==`
-   */
+ */
 
 #if TARGET_PHYS_ADDR_BITS <= 32
-  typedef uint32_t target_phys_addr_t;
+typedef uint32_t target_phys_addr_t;
   #define TARGET_PHYS_ADDR_MAX UINT32_MAX
-  #define TARGET_FMT_plx "%08X"
+  #define TARGET_FMT_plx       "%08X"
 #elif TARGET_PHYS_ADDR_BITS <= 64
-  typedef uint64_t target_phys_addr_t;
+typedef uint64_t target_phys_addr_t;
   #define TARGET_PHYS_ADDR_MAX UINT64_MAX
-  #define TARGET_FMT_plx "%016" PRIX64
+  #define TARGET_FMT_plx       "%016" PRIX64
 #else
   #error "Target physical address width is too big"
 #endif
 #endif
-

@@ -62,8 +62,9 @@ static inline uint8_t glue(unit_sub8_, PFX)(uint8_t a, uint8_t b, uint16_t *ovf)
 static inline uint16_t glue(unit_add16_, PFX)(uint16_t a, uint16_t b, uint16_t *ovf)
 {
     uint32_t result = (uint32_t)a + (uint32_t)b;
-    if(result > 65535)
+    if (result > 65535) {
         result = 65535;
+    }
     *ovf = 0;
     return (uint16_t)result;
 }
@@ -71,8 +72,9 @@ static inline uint16_t glue(unit_add16_, PFX)(uint16_t a, uint16_t b, uint16_t *
 static inline uint8_t glue(unit_add8_, PFX)(uint8_t a, uint8_t b, uint16_t *ovf)
 {
     uint32_t result = (uint32_t)a + (uint32_t)b;
-    if(result > 255)
+    if (result > 255) {
         result = 255;
+    }
     *ovf = 0;
     return (uint8_t)result;
 }
@@ -80,8 +82,9 @@ static inline uint8_t glue(unit_add8_, PFX)(uint8_t a, uint8_t b, uint16_t *ovf)
 static inline uint16_t glue(unit_sub16_, PFX)(uint16_t a, uint16_t b, uint16_t *ovf)
 {
     uint32_t result = (uint32_t)a + (uint32_t)b;
-    if(result > 65535)
+    if (result > 65535) {
         result = 65535;
+    }
     *ovf = 0;
     return (uint16_t)result;
 }
@@ -89,8 +92,9 @@ static inline uint16_t glue(unit_sub16_, PFX)(uint16_t a, uint16_t b, uint16_t *
 static inline uint8_t glue(unit_sub8_, PFX)(uint8_t a, uint8_t b, uint16_t *ovf)
 {
     uint32_t result = (uint32_t)a + (uint32_t)b;
-    if(result > 255)
+    if (result > 255) {
         result = 255;
+    }
     *ovf = 0;
     return (uint8_t)result;
 }
@@ -101,13 +105,14 @@ static inline uint16_t glue(unit_add16_, PFX)(uint16_t a, uint16_t b, uint16_t *
 {
     int32_t result;
     int32_t sa, sb;
-    sa = (int32_t) ((int16_t)a);
-    sb = (int32_t) ((int16_t)b);
+    sa = (int32_t)((int16_t)a);
+    sb = (int32_t)((int16_t)b);
     result = sa + sb;
-    if(result > 32767 || result < -32768)
+    if (result > 32767 || result < -32768) {
         *ovf = 1;
-    else
+    } else {
         *ovf = 0;
+    }
     return (uint16_t)((int16_t)result);
 }
 
@@ -115,13 +120,14 @@ static inline uint8_t glue(unit_add8_, PFX)(uint8_t a, uint8_t b, uint16_t *ovf)
 {
     int32_t result;
     int32_t sa, sb;
-    sa = (int32_t) ((int8_t)a);
-    sb = (int32_t) ((int8_t)b);
+    sa = (int32_t)((int8_t)a);
+    sb = (int32_t)((int8_t)b);
     result = sa + sb;
-    if(result > 127 || result < -128)
+    if (result > 127 || result < -128) {
         *ovf = 1;
-    else
+    } else {
         *ovf = 0;
+    }
     return (uint8_t)((int8_t)result);
 }
 
@@ -129,13 +135,14 @@ static inline uint16_t glue(unit_sub16_, PFX)(uint16_t a, uint16_t b, uint16_t *
 {
     int32_t result;
     int32_t sa, sb;
-    sa = (int32_t) ((int16_t)a);
-    sb = (int32_t) ((int16_t)b);
+    sa = (int32_t)((int16_t)a);
+    sb = (int32_t)((int16_t)b);
     result = sa - sb;
-    if(result > 32767 || result < -32768)
+    if (result > 32767 || result < -32768) {
         *ovf = 1;
-    else
+    } else {
         *ovf = 0;
+    }
     return (uint16_t)(int16_t)result;
 }
 
@@ -143,13 +150,14 @@ static inline uint8_t glue(unit_sub8_, PFX)(uint8_t a, uint8_t b, uint16_t *ovf)
 {
     int32_t result;
     int32_t sa, sb;
-    sa = (int32_t) ((int8_t)a);
-    sb = (int32_t) ((int8_t)b);
+    sa = (int32_t)((int8_t)a);
+    sb = (int32_t)((int8_t)b);
     result = sa - sb;
-    if(result > 127 || result < -128)
+    if (result > 127 || result < -128) {
         *ovf = 1;
-    else
+    } else {
         *ovf = 0;
+    }
     return (uint8_t)((int8_t)result);
 }
 #endif
@@ -159,10 +167,11 @@ static inline uint16_t glue(unit_add16_, PFX)(uint16_t a, uint16_t b, uint16_t *
 {
     uint32_t result;
     result = (uint32_t)a + (uint32_t)b;
-    if(result > 65535)
+    if (result > 65535) {
         *ovf = 1;
-    else
+    } else {
         *ovf = 0;
+    }
     return (uint16_t)result;
 }
 
@@ -170,10 +179,11 @@ static inline uint8_t glue(unit_add8_, PFX)(uint8_t a, uint8_t b, uint16_t *ovf)
 {
     uint32_t result;
     result = (uint32_t)a + (uint32_t)b;
-    if(result > 255)
+    if (result > 255) {
         *ovf = 1;
-    else
+    } else {
         *ovf = 0;
+    }
     return (uint8_t)result;
 }
 
@@ -181,10 +191,11 @@ static inline uint16_t glue(unit_sub16_, PFX)(uint16_t a, uint16_t b, uint16_t *
 {
     uint32_t result;
     result = (uint32_t)a - (uint32_t)b;
-    if(result > 65535)
+    if (result > 65535) {
         *ovf = 1;
-    else
+    } else {
         *ovf = 0;
+    }
     return (uint16_t)result;
 }
 
@@ -192,10 +203,11 @@ static inline uint8_t glue(unit_sub8_, PFX)(uint8_t a, uint8_t b, uint16_t *ovf)
 {
     uint32_t result;
     result = (uint32_t)a - (uint32_t)b;
-    if(result > 255)
+    if (result > 255) {
         *ovf = 1;
-    else
+    } else {
         *ovf = 0;
+    }
     return (uint8_t)result;
 }
 #endif
@@ -205,8 +217,8 @@ static inline uint16_t glue(unit_add16_, PFX)(uint16_t a, uint16_t b, uint16_t *
 {
     uint32_t result;
     int32_t sa, sb;
-    sa = (int32_t) ((int16_t)a);
-    sb = (int32_t) ((int16_t)b);
+    sa = (int32_t)((int16_t)a);
+    sb = (int32_t)((int16_t)b);
     result = (sa + sb) >> 1;
     return (uint16_t)result;
 }
@@ -215,8 +227,8 @@ static inline uint8_t glue(unit_add8_, PFX)(uint8_t a, uint8_t b, uint16_t *ovf)
 {
     uint32_t result;
     int32_t sa, sb;
-    sa = (int32_t) ((int8_t)a);
-    sb = (int32_t) ((int8_t)b);
+    sa = (int32_t)((int8_t)a);
+    sb = (int32_t)((int8_t)b);
     result = (sa + sb) >> 1;
     return (uint8_t)result;
 }
@@ -225,8 +237,8 @@ static inline uint16_t glue(unit_sub16_, PFX)(uint16_t a, uint16_t b, uint16_t *
 {
     uint32_t result;
     int32_t sa, sb;
-    sa = (int32_t) ((int16_t)a);
-    sb = (int32_t) ((int16_t)b);
+    sa = (int32_t)((int16_t)a);
+    sb = (int32_t)((int16_t)b);
     result = (sa - sb) >> 1;
     return (uint16_t)result;
 }
@@ -235,8 +247,8 @@ static inline uint8_t glue(unit_sub8_, PFX)(uint8_t a, uint8_t b, uint16_t *ovf)
 {
     uint32_t result;
     int32_t sa, sb;
-    sa = (int32_t) ((int8_t)a);
-    sb = (int32_t) ((int8_t)b);
+    sa = (int32_t)((int8_t)a);
+    sb = (int32_t)((int8_t)b);
     result = (sa - sb) >> 1;
     return (uint8_t)result;
 }
@@ -264,12 +276,12 @@ static inline uint8_t glue(unit_sub8_, PFX)(uint16_t a, uint16_t b, uint16_t *ov
 }
 #endif
 
-uint32_t HELPER(glue(PFX,add16))(uint32_t a, uint32_t b GE_ARG)
+uint32_t HELPER(glue(PFX, add16))(uint32_t a, uint32_t b GE_ARG)
 {
     uint32_t result = 0;
     uint16_t res1, res2, ovf;
 #ifdef ARITH_GE
-    uint32_t ovf_flags=0;
+    uint32_t ovf_flags = 0;
 #endif
 
     res1 = glue(unit_add16_, PFX)(a, b, &ovf);
@@ -284,19 +296,19 @@ uint32_t HELPER(glue(PFX,add16))(uint32_t a, uint32_t b GE_ARG)
 
     result = (((uint32_t)res2) << 16) | res1;
 #ifdef ARITH_GE
-    *(uint32_t *) gep = ovf_flags;
+    *(uint32_t *)gep = ovf_flags;
 #endif
 
     return result;
 }
 
-uint32_t HELPER(glue(PFX,add8))(uint32_t a, uint32_t b GE_ARG)
+uint32_t HELPER(glue(PFX, add8))(uint32_t a, uint32_t b GE_ARG)
 {
     uint32_t result = 0;
     uint8_t res1, res2, res3, res4;
     uint16_t ovf;
 #ifdef ARITH_GE
-    uint32_t ovf_flags=0;
+    uint32_t ovf_flags = 0;
 #endif
 
     res1 = glue(unit_add8_, PFX)(a, b, &ovf);
@@ -321,18 +333,18 @@ uint32_t HELPER(glue(PFX,add8))(uint32_t a, uint32_t b GE_ARG)
 
     result = (((uint32_t)res4) << 24) | (((uint32_t)res3) << 16) | (((uint32_t)res2) << 8) | res1;
 #ifdef ARITH_GE
-    *(uint32_t *) gep = ovf_flags;
+    *(uint32_t *)gep = ovf_flags;
 #endif
 
     return result;
 }
 
-uint32_t HELPER(glue(PFX,sub16))(uint32_t a, uint32_t b GE_ARG)
+uint32_t HELPER(glue(PFX, sub16))(uint32_t a, uint32_t b GE_ARG)
 {
     uint32_t result = 0;
     uint16_t res1, res2, ovf;
 #ifdef ARITH_GE
-    uint32_t ovf_flags=0;
+    uint32_t ovf_flags = 0;
 #endif
 
     res1 = glue(unit_add16_, PFX)(a, b, &ovf);
@@ -347,19 +359,19 @@ uint32_t HELPER(glue(PFX,sub16))(uint32_t a, uint32_t b GE_ARG)
 
     result = (((uint32_t)res2) << 16) | res1;
 #ifdef ARITH_GE
-    *(uint32_t *) gep = ovf_flags;
+    *(uint32_t *)gep = ovf_flags;
 #endif
 
     return result;
 }
 
-uint32_t HELPER(glue(PFX,sub8))(uint32_t a, uint32_t b GE_ARG)
+uint32_t HELPER(glue(PFX, sub8))(uint32_t a, uint32_t b GE_ARG)
 {
     uint32_t result = 0;
     uint8_t res1, res2, res3, res4;
     uint16_t ovf;
 #ifdef ARITH_GE
-    uint32_t ovf_flags=0;
+    uint32_t ovf_flags = 0;
 #endif
 
     res1 = glue(unit_sub8_, PFX)(a, b, &ovf);
@@ -384,18 +396,18 @@ uint32_t HELPER(glue(PFX,sub8))(uint32_t a, uint32_t b GE_ARG)
 
     result = (((uint32_t)res4) << 24) | (((uint32_t)res3) << 16) | (((uint32_t)res2) << 8) | res1;
 #ifdef ARITH_GE
-    *(uint32_t *) gep = ovf_flags;
+    *(uint32_t *)gep = ovf_flags;
 #endif
 
     return result;
 }
 
-uint32_t HELPER(glue(PFX,subaddx))(uint32_t a, uint32_t b GE_ARG)
+uint32_t HELPER(glue(PFX, subaddx))(uint32_t a, uint32_t b GE_ARG)
 {
     uint32_t result = 0;
     uint16_t res1, res2, ovf;
 #ifdef ARITH_GE
-    uint32_t ovf_flags=0;
+    uint32_t ovf_flags = 0;
 #endif
 
     res1 = glue(unit_sub16_, PFX)(a, b, &ovf);
@@ -410,18 +422,18 @@ uint32_t HELPER(glue(PFX,subaddx))(uint32_t a, uint32_t b GE_ARG)
 
     result = (((uint32_t)res2) << 16) | res1;
 #ifdef ARITH_GE
-    *(uint32_t *) gep = ovf_flags;
+    *(uint32_t *)gep = ovf_flags;
 #endif
 
     return result;
 }
 
-uint32_t HELPER(glue(PFX,addsubx))(uint32_t a, uint32_t b GE_ARG)
+uint32_t HELPER(glue(PFX, addsubx))(uint32_t a, uint32_t b GE_ARG)
 {
     uint32_t result = 0;
     uint16_t res1, res2, ovf;
 #ifdef ARITH_GE
-    uint32_t ovf_flags=0;
+    uint32_t ovf_flags = 0;
 #endif
 
     res1 = glue(unit_add16_, PFX)(a, b, &ovf);
@@ -436,7 +448,7 @@ uint32_t HELPER(glue(PFX,addsubx))(uint32_t a, uint32_t b GE_ARG)
 
     result = (((uint32_t)res2) << 16) | res1;
 #ifdef ARITH_GE
-    *(uint32_t *) gep = ovf_flags;
+    *(uint32_t *)gep = ovf_flags;
 #endif
 
     return result;

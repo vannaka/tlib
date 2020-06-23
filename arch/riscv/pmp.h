@@ -44,7 +44,7 @@ typedef enum {
 
 typedef struct {
     target_ulong addr_reg;
-    uint8_t  cfg_reg;
+    uint8_t cfg_reg;
 } pmp_entry_t;
 
 typedef struct {
@@ -54,17 +54,14 @@ typedef struct {
 
 typedef struct {
     pmp_entry_t pmp[MAX_RISCV_PMPS];
-    pmp_addr_t  addr[MAX_RISCV_PMPS];
+    pmp_addr_t addr[MAX_RISCV_PMPS];
     uint32_t num_rules;
 } pmp_table_t;
 
-void pmpcfg_csr_write(CPUState *env, uint32_t reg_index,
-    target_ulong val);
+void pmpcfg_csr_write(CPUState *env, uint32_t reg_index, target_ulong val);
 target_ulong pmpcfg_csr_read(CPUState *env, uint32_t reg_index);
-void pmpaddr_csr_write(CPUState *env, uint32_t addr_index,
-    target_ulong val);
+void pmpaddr_csr_write(CPUState *env, uint32_t addr_index, target_ulong val);
 target_ulong pmpaddr_csr_read(CPUState *env, uint32_t addr_index);
-bool pmp_hart_has_privs(CPUState *env, target_ulong addr,
-    target_ulong size, pmp_priv_t priv);
+bool pmp_hart_has_privs(CPUState *env, target_ulong addr, target_ulong size, pmp_priv_t priv);
 
 #endif

@@ -40,7 +40,8 @@ static TCGArg *event_size2_arg;
 static int exit_no_hook_label;
 static int block_header_interrupted_label;
 
-CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc) {
+CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc)
+{
     CPUBreakpoint *bp;
     QTAILQ_FOREACH(bp, &env->breakpoints, entry) {
         if (bp->pc == pc) {
@@ -70,25 +71,24 @@ static inline void gen_block_header(TranslationBlock *tb)
     tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, exit_no_hook_label);
     tcg_temp_free_i32(flag);
 
-    if(cpu->block_begin_hook_present)
-    {
-      TCGv event_address = tcg_const_tl(tb->pc);
-      event_size_arg = gen_opparam_ptr + 1;
-      TCGv_i32 event_size = tcg_const_i32(0xFFFF); // bogus value that is to be fixed at later point
+    if (cpu->block_begin_hook_present) {
+        TCGv event_address = tcg_const_tl(tb->pc);
+        event_size_arg = gen_opparam_ptr + 1;
+        TCGv_i32 event_size = tcg_const_i32(0xFFFF); // bogus value that is to be fixed at later point
 
-      TCGv_i32 result = tcg_temp_new_i32();
-      gen_helper_block_begin_event(result, event_address, event_size);
-      tcg_temp_free(event_address);
-      tcg_temp_free_i32(event_size);
+        TCGv_i32 result = tcg_temp_new_i32();
+        gen_helper_block_begin_event(result, event_address, event_size);
+        tcg_temp_free(event_address);
+        tcg_temp_free_i32(event_size);
 
-      tcg_gen_brcondi_i64(TCG_COND_NE, result, 0, execute_block_label);
-      tcg_temp_free_i32(result);
+        tcg_gen_brcondi_i64(TCG_COND_NE, result, 0, execute_block_label);
+        tcg_temp_free_i32(result);
 
-      TCGv_i32 const_one = tcg_const_i32(1);
-      tcg_gen_st_i32(const_one, cpu_env, offsetof(CPUState, exit_request));
-      tcg_temp_free_i32(const_one);
+        TCGv_i32 const_one = tcg_const_i32(1);
+        tcg_gen_st_i32(const_one, cpu_env, offsetof(CPUState, exit_request));
+        tcg_temp_free_i32(const_one);
 
-      tcg_gen_br(block_header_interrupted_label);
+        tcg_gen_br(block_header_interrupted_label);
     }
 
     gen_set_label(execute_block_label);
@@ -102,8 +102,7 @@ static inline void gen_block_header(TranslationBlock *tb)
 
 static void gen_exit_tb_inner(uintptr_t val, TranslationBlock *tb, uint32_t instructions_count)
 {
-    if(cpu->block_finished_hook_present)
-    {
+    if (cpu->block_finished_hook_present) {
         // This line may be missleading - we do not raport exact pc + size,
         // as the size of the current instruction is not yet taken into account.
         // Effectively it gives us the PC of the current instruction.
@@ -137,9 +136,8 @@ static inline void gen_block_footer(TranslationBlock *tb)
     if (tlib_is_on_block_translation_enabled) {
         tlib_on_block_translation(tb->pc, tb->size, tb->disas_flags);
     }
-    if(cpu->block_begin_hook_present)
-    {
-      *event_size_arg = tb->icount;
+    if (cpu->block_begin_hook_present) {
+        *event_size_arg = tb->icount;
     }
     *event_size2_arg = tb->icount;
 
@@ -160,20 +158,17 @@ static inline void gen_block_footer(TranslationBlock *tb)
 
 static uint64_t get_max_instruction_count(CPUState *env, TranslationBlock *tb)
 {
-    int instructions_count = size_of_next_block_to_translate > 0
-        ? size_of_next_block_to_translate
-        : maximum_block_size;
+    int instructions_count = size_of_next_block_to_translate > 0 ? size_of_next_block_to_translate : maximum_block_size;
 
-    return instructions_count > env->instructions_count_threshold
-        ? env->instructions_count_threshold
-        : instructions_count;
+    return instructions_count > env->instructions_count_threshold ? env->instructions_count_threshold : instructions_count;
 }
 
-static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_pc) {
+static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_pc)
+{
     CPUBreakpoint *bp;
-    DisasContextBase *dc = (DisasContextBase *) tlib_malloc(sizeof(DisasContext));
+    DisasContextBase *dc = (DisasContextBase *)tlib_malloc(sizeof(DisasContext));
 
-    memset((void*)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);
+    memset((void *)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);
 
     tb->icount = 0;
     tb->size = 0;
@@ -208,8 +203,7 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
         if (tcg_check_temp_count()) {
             tlib_abortf("TCG temps leak detected at PC %08X", dc->pc);
         }
-        if (!tb->search_pc)
-        {
+        if (!tb->search_pc) {
             // it looks like `search_pc` is set to 1 only when restoring the state;
             // the intention here is to set `original_size` value only during the first block generation
             // so it can be used later when restoring the block
@@ -227,8 +221,7 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
         if (dc->is_jmp) {
             break;
         }
-        if (tb->search_pc && tb->size == tb->original_size)
-        {
+        if (tb->search_pc && tb->size == tb->original_size) {
             // `search_pc` is set to 1 only when restoring the block;
             // this is to ensure that the size of restored block is not bigger than the size of the original one
             break;
@@ -241,7 +234,7 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
 
 /* '*gen_code_size_ptr' contains the size of the generated code (host
    code).
-*/
+ */
 void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
 {
     TCGContext *s = tcg->ctx;
@@ -266,8 +259,7 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
 
 /* The cpu state corresponding to 'searched_pc' is restored.
  */
-int cpu_restore_state(CPUState *env,
-                TranslationBlock *tb, uintptr_t searched_pc)
+int cpu_restore_state(CPUState *env, TranslationBlock *tb, uintptr_t searched_pc)
 {
     TCGContext *s = tcg->ctx;
     int j, k;
@@ -279,24 +271,26 @@ int cpu_restore_state(CPUState *env,
 
     /* find opc index corresponding to search_pc */
     tc_ptr = (uintptr_t)tb->tc_ptr;
-    if (searched_pc < tc_ptr)
+    if (searched_pc < tc_ptr) {
         return -1;
+    }
 
     s->tb_next_offset = tb->tb_next_offset;
     s->tb_jmp_offset = tb->tb_jmp_offset;
     s->tb_next = NULL;
     j = tcg_gen_code_search_pc(s, (uint8_t *)tc_ptr, searched_pc - tc_ptr);
-    if (j < 0)
+    if (j < 0) {
         return -1;
+    }
     /* now find start of instruction before */
-    while (tcg->gen_opc_instr_start[j] == 0)
+    while (tcg->gen_opc_instr_start[j] == 0) {
         j--;
+    }
 
     k = j;
-    while (k >= 0)
-    {
-      instructions_executed_so_far += tcg->gen_opc_instr_start[k];
-      k--;
+    while (k >= 0) {
+        instructions_executed_so_far += tcg->gen_opc_instr_start[k];
+        k--;
     }
 
     restore_state_to_opc(env, tb, j);
@@ -304,12 +298,10 @@ int cpu_restore_state(CPUState *env,
     return instructions_executed_so_far;
 }
 
-int cpu_restore_state_and_restore_instructions_count(CPUState *env,
-                TranslationBlock *tb, uintptr_t searched_pc)
+int cpu_restore_state_and_restore_instructions_count(CPUState *env, TranslationBlock *tb, uintptr_t searched_pc)
 {
     int executed_instructions = cpu_restore_state(env, tb, searched_pc);
-    if(executed_instructions != -1 && tb->instructions_count_dirty)
-    {
+    if (executed_instructions != -1 && tb->instructions_count_dirty) {
         cpu->instructions_count_value -= (tb->icount - executed_instructions);
         cpu->instructions_count_total_value -= (tb->icount - executed_instructions);
         tb->instructions_count_dirty = 0;

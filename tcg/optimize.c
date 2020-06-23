@@ -60,7 +60,7 @@ static struct tcg_temp_info temps[TCG_MAX_TEMPS];
 static void reset_temp(TCGArg temp, int nb_temps, int nb_globals)
 {
     int i;
-    TCGArg new_base = (TCGArg)-1;
+    TCGArg new_base = (TCGArg) - 1;
     if (temps[temp].state == TCG_TEMP_HAS_COPY) {
         for (i = temps[temp].next_copy; i != temp; i = temps[i].next_copy) {
             if (i >= nb_globals) {
@@ -70,7 +70,7 @@ static void reset_temp(TCGArg temp, int nb_temps, int nb_globals)
             }
         }
         for (i = temps[temp].next_copy; i != temp; i = temps[i].next_copy) {
-            if (new_base == (TCGArg)-1) {
+            if (new_base == (TCGArg) - 1) {
                 temps[i].state = TCG_TEMP_ANY;
             } else {
                 temps[i].val = new_base;
@@ -84,7 +84,7 @@ static void reset_temp(TCGArg temp, int nb_temps, int nb_globals)
         new_base = temps[temp].val;
     }
     temps[temp].state = TCG_TEMP_ANY;
-    if (new_base != (TCGArg)-1 && temps[new_base].next_copy == new_base) {
+    if (new_base != (TCGArg) - 1 && temps[new_base].next_copy == new_base) {
         temps[new_base].state = TCG_TEMP_ANY;
     }
 }
@@ -111,40 +111,37 @@ static TCGOpcode op_to_movi(TCGOpcode op)
     }
 }
 
-static void tcg_opt_gen_mov(TCGContext *s, TCGArg *gen_args, TCGArg dst,
-                            TCGArg src, int nb_temps, int nb_globals)
+static void tcg_opt_gen_mov(TCGContext *s, TCGArg *gen_args, TCGArg dst, TCGArg src, int nb_temps, int nb_globals)
 {
-        reset_temp(dst, nb_temps, nb_globals);
-        assert(temps[src].state != TCG_TEMP_COPY);
-        /* Don't try to copy if one of temps is a global or either one
-           is local and another is register */
-        if (src >= nb_globals && dst >= nb_globals &&
-            tcg_arg_is_local(s, src) == tcg_arg_is_local(s, dst)) {
-            assert(temps[src].state != TCG_TEMP_CONST);
-            if (temps[src].state != TCG_TEMP_HAS_COPY) {
-                temps[src].state = TCG_TEMP_HAS_COPY;
-                temps[src].next_copy = src;
-                temps[src].prev_copy = src;
-            }
-            temps[dst].state = TCG_TEMP_COPY;
-            temps[dst].val = src;
-            temps[dst].next_copy = temps[src].next_copy;
-            temps[dst].prev_copy = src;
-            temps[temps[dst].next_copy].prev_copy = dst;
-            temps[src].next_copy = dst;
+    reset_temp(dst, nb_temps, nb_globals);
+    assert(temps[src].state != TCG_TEMP_COPY);
+    /* Don't try to copy if one of temps is a global or either one
+       is local and another is register */
+    if (src >= nb_globals && dst >= nb_globals && tcg_arg_is_local(s, src) == tcg_arg_is_local(s, dst)) {
+        assert(temps[src].state != TCG_TEMP_CONST);
+        if (temps[src].state != TCG_TEMP_HAS_COPY) {
+            temps[src].state = TCG_TEMP_HAS_COPY;
+            temps[src].next_copy = src;
+            temps[src].prev_copy = src;
         }
-        gen_args[0] = dst;
-        gen_args[1] = src;
+        temps[dst].state = TCG_TEMP_COPY;
+        temps[dst].val = src;
+        temps[dst].next_copy = temps[src].next_copy;
+        temps[dst].prev_copy = src;
+        temps[temps[dst].next_copy].prev_copy = dst;
+        temps[src].next_copy = dst;
+    }
+    gen_args[0] = dst;
+    gen_args[1] = src;
 }
 
-static void tcg_opt_gen_movi(TCGArg *gen_args, TCGArg dst, TCGArg val,
-                             int nb_temps, int nb_globals)
+static void tcg_opt_gen_movi(TCGArg *gen_args, TCGArg dst, TCGArg val, int nb_temps, int nb_globals)
 {
-        reset_temp(dst, nb_temps, nb_globals);
-        temps[dst].state = TCG_TEMP_CONST;
-        temps[dst].val = val;
-        gen_args[0] = dst;
-        gen_args[1] = val;
+    reset_temp(dst, nb_temps, nb_globals);
+    temps[dst].state = TCG_TEMP_CONST;
+    temps[dst].val = val;
+    gen_args[0] = dst;
+    gen_args[1] = val;
 }
 
 static TCGOpcode op_to_mov(TCGOpcode op)
@@ -166,23 +163,23 @@ static TCGOpcode op_to_mov(TCGOpcode op)
 static TCGArg do_constant_folding_2(TCGOpcode op, TCGArg x, TCGArg y)
 {
     switch (op) {
-    CASE_OP_32_64(add):
-        return x + y;
+        CASE_OP_32_64(add) :
+            return x + y;
 
-    CASE_OP_32_64(sub):
-        return x - y;
+        CASE_OP_32_64(sub) :
+            return x - y;
 
-    CASE_OP_32_64(mul):
-        return x * y;
+        CASE_OP_32_64(mul) :
+            return x * y;
 
-    CASE_OP_32_64(and):
-        return x & y;
+        CASE_OP_32_64(and) :
+            return x & y;
 
-    CASE_OP_32_64(or):
-        return x | y;
+        CASE_OP_32_64(or) :
+            return x | y;
 
-    CASE_OP_32_64(xor):
-        return x ^ y;
+        CASE_OP_32_64(xor) :
+            return x ^ y;
 
     case INDEX_op_shl_i32:
         return (uint32_t)x << (uint32_t)y;
@@ -218,38 +215,38 @@ static TCGArg do_constant_folding_2(TCGOpcode op, TCGArg x, TCGArg y)
         x = ((uint64_t)x << y) | ((uint64_t)x >> (64 - y));
         return x;
 
-    CASE_OP_32_64(not):
-        return ~x;
+        CASE_OP_32_64(not) :
+            return ~x;
 
-    CASE_OP_32_64(neg):
-        return -x;
+        CASE_OP_32_64(neg) :
+            return -x;
 
-    CASE_OP_32_64(andc):
-        return x & ~y;
+        CASE_OP_32_64(andc) :
+            return x & ~y;
 
-    CASE_OP_32_64(orc):
-        return x | ~y;
+        CASE_OP_32_64(orc) :
+            return x | ~y;
 
-    CASE_OP_32_64(eqv):
-        return ~(x ^ y);
+        CASE_OP_32_64(eqv) :
+            return ~(x ^ y);
 
-    CASE_OP_32_64(nand):
-        return ~(x & y);
+        CASE_OP_32_64(nand) :
+            return ~(x & y);
 
-    CASE_OP_32_64(nor):
-        return ~(x | y);
+        CASE_OP_32_64(nor) :
+            return ~(x | y);
 
-    CASE_OP_32_64(ext8s):
-        return (int8_t)x;
+        CASE_OP_32_64(ext8s) :
+            return (int8_t)x;
 
-    CASE_OP_32_64(ext16s):
-        return (int16_t)x;
+        CASE_OP_32_64(ext16s) :
+            return (int16_t)x;
 
-    CASE_OP_32_64(ext8u):
-        return (uint8_t)x;
+        CASE_OP_32_64(ext8u) :
+            return (uint8_t)x;
 
-    CASE_OP_32_64(ext16u):
-        return (uint16_t)x;
+        CASE_OP_32_64(ext16u) :
+            return (uint16_t)x;
 
     case INDEX_op_ext32s_i64:
         return (int32_t)x;
@@ -258,8 +255,7 @@ static TCGArg do_constant_folding_2(TCGOpcode op, TCGArg x, TCGArg y)
         return (uint32_t)x;
 
     default:
-        fprintf(stderr,
-                "Unrecognized operation %d in do_constant_folding.\n", op);
+        fprintf(stderr, "Unrecognized operation %d in do_constant_folding.\n", op);
         tcg_abort();
         /* Never reached */
         return 0;
@@ -528,8 +524,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
 
 /* *INDENT-ON* */
 
-TCGArg *tcg_optimize(TCGContext *s, uint16_t *tcg_opc_ptr,
-        TCGArg *args, TCGOpDef *tcg_op_defs)
+TCGArg *tcg_optimize(TCGContext *s, uint16_t *tcg_opc_ptr, TCGArg *args, TCGOpDef *tcg_op_defs)
 {
     TCGArg *res;
     res = tcg_constant_folding(s, tcg_opc_ptr, args, tcg_op_defs);

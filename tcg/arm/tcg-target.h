@@ -49,34 +49,34 @@ typedef enum {
     TCG_REG_PC,
 } TCGReg;
 
-#define TCG_TARGET_NB_REGS 16
+#define TCG_TARGET_NB_REGS           16
 
-#define TCG_CT_CONST_ARM 0x100
+#define TCG_CT_CONST_ARM             0x100
 
 /* used for function call generation */
-#define TCG_REG_CALL_STACK		TCG_REG_R13
-#define TCG_TARGET_STACK_ALIGN		8
-#define TCG_TARGET_CALL_ALIGN_ARGS	1
-#define TCG_TARGET_CALL_STACK_OFFSET	0
+#define TCG_REG_CALL_STACK           TCG_REG_R13
+#define TCG_TARGET_STACK_ALIGN       8
+#define TCG_TARGET_CALL_ALIGN_ARGS   1
+#define TCG_TARGET_CALL_STACK_OFFSET 0
 
 /* optional instructions */
-#define TCG_TARGET_HAS_div_i32          0
-#define TCG_TARGET_HAS_ext8s_i32        1
-#define TCG_TARGET_HAS_ext16s_i32       1
-#define TCG_TARGET_HAS_ext8u_i32        0 /* and r0, r1, #0xff */
-#define TCG_TARGET_HAS_ext16u_i32       1
-#define TCG_TARGET_HAS_bswap16_i32      1
-#define TCG_TARGET_HAS_bswap32_i32      1
-#define TCG_TARGET_HAS_not_i32          1
-#define TCG_TARGET_HAS_neg_i32          1
-#define TCG_TARGET_HAS_rot_i32          1
-#define TCG_TARGET_HAS_andc_i32         1
-#define TCG_TARGET_HAS_orc_i32          0
-#define TCG_TARGET_HAS_eqv_i32          0
-#define TCG_TARGET_HAS_nand_i32         0
-#define TCG_TARGET_HAS_nor_i32          0
-#define TCG_TARGET_HAS_deposit_i32      0
-#define TCG_TARGET_HAS_muls2_i32        1
+#define TCG_TARGET_HAS_div_i32       0
+#define TCG_TARGET_HAS_ext8s_i32     1
+#define TCG_TARGET_HAS_ext16s_i32    1
+#define TCG_TARGET_HAS_ext8u_i32     0    /* and r0, r1, #0xff */
+#define TCG_TARGET_HAS_ext16u_i32    1
+#define TCG_TARGET_HAS_bswap16_i32   1
+#define TCG_TARGET_HAS_bswap32_i32   1
+#define TCG_TARGET_HAS_not_i32       1
+#define TCG_TARGET_HAS_neg_i32       1
+#define TCG_TARGET_HAS_rot_i32       1
+#define TCG_TARGET_HAS_andc_i32      1
+#define TCG_TARGET_HAS_orc_i32       0
+#define TCG_TARGET_HAS_eqv_i32       0
+#define TCG_TARGET_HAS_nand_i32      0
+#define TCG_TARGET_HAS_nor_i32       0
+#define TCG_TARGET_HAS_deposit_i32   0
+#define TCG_TARGET_HAS_muls2_i32     1
 
 #define TCG_TARGET_HAS_GUEST_BASE
 
@@ -88,7 +88,7 @@ enum {
 static inline void flush_icache_range(unsigned long start, unsigned long stop)
 {
 #if defined(__GNUC__)
-    __builtin___clear_cache((char *) start, (char *) stop);
+    __builtin___clear_cache((char *)start, (char *)stop);
 #else
     register unsigned long _beg __asm ("a1") = start;
     register unsigned long _end __asm ("a2") = stop;

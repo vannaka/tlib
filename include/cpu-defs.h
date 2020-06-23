@@ -38,9 +38,8 @@
 # define GETPC() ((void *)((uintptr_t)__builtin_return_address(0) - 1))
 #endif
 
-
 #if defined(_WIN64)
-/* This is to avoid longjmp crashing because of stack unwinding. 
+/* This is to avoid longjmp crashing because of stack unwinding.
  * It is incompatible with the execution of generated code. */
 # undef setjmp
 # define setjmp(env) _setjmp(env, NULL)
@@ -63,16 +62,16 @@ typedef uint64_t target_ullong __attribute__((aligned(TARGET_LLONG_ALIGNMENT)));
 typedef int32_t target_long __attribute__((aligned(TARGET_LONG_ALIGNMENT)));
 typedef uint32_t target_ulong __attribute__((aligned(TARGET_LONG_ALIGNMENT)));
 #define TARGET_ULONG_MAX UINT32_MAX
-#define TARGET_FMT_lx "%08X"
-#define TARGET_FMT_ld "%d"
-#define TARGET_FMT_lu "%u"
+#define TARGET_FMT_lx    "%08X"
+#define TARGET_FMT_ld    "%d"
+#define TARGET_FMT_lu    "%u"
 #elif TARGET_LONG_SIZE == 8
 typedef int64_t target_long __attribute__((aligned(TARGET_LONG_ALIGNMENT)));
 typedef uint64_t target_ulong __attribute__((aligned(TARGET_LONG_ALIGNMENT)));
 #define TARGET_ULONG_MAX UINT64_MAX
-#define TARGET_FMT_lx "%016" PRIX64
-#define TARGET_FMT_ld "%" PRId64
-#define TARGET_FMT_lu "%" PRIu64
+#define TARGET_FMT_lx    "%016" PRIX64
+#define TARGET_FMT_ld    "%" PRId64
+#define TARGET_FMT_lu    "%" PRIu64
 #else
 #error TARGET_LONG_SIZE undefined
 #endif
@@ -85,27 +84,27 @@ typedef struct DisasContextBase {
     int is_jmp;
 } DisasContextBase;
 
-#define HOST_LONG_SIZE (HOST_LONG_BITS / 8)
+#define HOST_LONG_SIZE     (HOST_LONG_BITS / 8)
 
-#define EXCP_INTERRUPT 	0x10000 /* async interruption */
-#define EXCP_WFI        0x10001 /* hlt instruction reached */
-#define EXCP_DEBUG      0x10002 /* cpu stopped after a breakpoint or singlestep */
-#define EXCP_HALTED     0x10003 /* cpu is halted (waiting for external event) */
-#define EXCP_WATCHPOINT 0x10004
+#define EXCP_INTERRUPT     0x10000 /* async interruption */
+#define EXCP_WFI           0x10001 /* hlt instruction reached */
+#define EXCP_DEBUG         0x10002 /* cpu stopped after a breakpoint or singlestep */
+#define EXCP_HALTED        0x10003 /* cpu is halted (waiting for external event) */
+#define EXCP_WATCHPOINT    0x10004
 
-#define TB_JMP_CACHE_BITS 12
-#define TB_JMP_CACHE_SIZE (1 << TB_JMP_CACHE_BITS)
+#define TB_JMP_CACHE_BITS  12
+#define TB_JMP_CACHE_SIZE  (1 << TB_JMP_CACHE_BITS)
 
 /* Only the bottom TB_JMP_PAGE_BITS of the jump cache hash bits vary for
    addresses on the same page.  The top bits are the same.  This allows
    TLB invalidation to quickly clear a subset of the hash table.  */
-#define TB_JMP_PAGE_BITS (TB_JMP_CACHE_BITS / 2)
-#define TB_JMP_PAGE_SIZE (1 << TB_JMP_PAGE_BITS)
-#define TB_JMP_ADDR_MASK (TB_JMP_PAGE_SIZE - 1)
-#define TB_JMP_PAGE_MASK (TB_JMP_CACHE_SIZE - TB_JMP_PAGE_SIZE)
+#define TB_JMP_PAGE_BITS   (TB_JMP_CACHE_BITS / 2)
+#define TB_JMP_PAGE_SIZE   (1 << TB_JMP_PAGE_BITS)
+#define TB_JMP_ADDR_MASK   (TB_JMP_PAGE_SIZE - 1)
+#define TB_JMP_PAGE_MASK   (TB_JMP_CACHE_SIZE - TB_JMP_PAGE_SIZE)
 
-#define CPU_TLB_BITS 8
-#define CPU_TLB_SIZE (1 << CPU_TLB_BITS)
+#define CPU_TLB_BITS       8
+#define CPU_TLB_SIZE       (1 << CPU_TLB_BITS)
 
 #if HOST_LONG_BITS == 32 && TARGET_LONG_BITS == 32
 #define CPU_TLB_ENTRY_BITS 4
@@ -119,7 +118,7 @@ typedef struct CPUTLBEntry {
                                     go directly to ram.
        bit 3                      : indicates that the entry is invalid
        bit 2..0                   : zero
-    */
+     */
     target_ulong addr_read;
     target_ulong addr_write;
     target_ulong addr_code;
@@ -128,9 +127,7 @@ typedef struct CPUTLBEntry {
     uintptr_t addend;
     /* padding to get a power of two size */
     uint8_t dummy[(1 << CPU_TLB_ENTRY_BITS) -
-                  (sizeof(target_ulong) * 3 +
-                   ((-sizeof(target_ulong) * 3) & (sizeof(uintptr_t) - 1)) +
-                   sizeof(uintptr_t))];
+                  (sizeof(target_ulong) * 3 + ((-sizeof(target_ulong) * 3) & (sizeof(uintptr_t) - 1)) + sizeof(uintptr_t))];
 } CPUTLBEntry;
 
 extern int CPUTLBEntry_wrong_size[sizeof(CPUTLBEntry) == (1 << CPU_TLB_ENTRY_BITS) ? 1 : -1];
@@ -153,20 +150,20 @@ typedef struct CPUBreakpoint {
     /* --------------------------------------- */                            \
     /* warning: cleared by CPU reset           */                            \
     /* --------------------------------------- */                            \
-    /* instruction counting is used to execute callback after given          \
+    /* instruction counting is used to execute callback after given \
        number of instructions */                                             \
     uint64_t instructions_count_threshold;                                   \
     uint64_t instructions_count_value;                                       \
     uint64_t instructions_count_total_value;                                 \
     /* soft mmu support */                                                   \
-    /* in order to avoid passing too many arguments to the MMIO              \
-       helpers, we store some rarely used information in the CPU             \
+    /* in order to avoid passing too many arguments to the MMIO \
+       helpers, we store some rarely used information in the CPU \
        context) */                                                           \
-    uintptr_t mem_io_pc; /* host pc at which the memory was                  \
-                                accessed */                                  \
-    target_ulong mem_io_vaddr; /* target virtual addr at which the           \
+    uintptr_t mem_io_pc;       /* host pc at which the memory was \
+                                      accessed */                                  \
+    target_ulong mem_io_vaddr; /* target virtual addr at which the \
                                      memory was accessed */                  \
-    uint32_t wfi; /* Nonzero if the CPU is in suspend state */               \
+    uint32_t wfi;              /* Nonzero if the CPU is in suspend state */               \
     uint32_t interrupt_request;                                              \
     volatile sig_atomic_t exit_request;                                      \
     int tb_restart_request;                                                  \
@@ -179,14 +176,14 @@ typedef struct CPUBreakpoint {
     /* Core interrupt code */                                                \
     jmp_buf jmp_env;                                                         \
     int exception_index;                                                     \
-    int nr_cores;  /* number of cores within this CPU package */             \
-    int nr_threads;/* number of threads within this CPU */                   \
+    int nr_cores;   /* number of cores within this CPU package */             \
+    int nr_threads; /* number of threads within this CPU */                   \
     /* user data */                                                          \
     /* chaining is enabled by default */                                     \
     int chaining_disabled;                                                   \
     /* tb cache is enabled by default */                                     \
     int tb_cache_disabled;                                                   \
-    /* indicates if the block_finished hook is registered, implicitly        \
+    /* indicates if the block_finished hook is registered, implicitly \
                           disabling block chaining */                        \
     int block_finished_hook_present;                                         \
     /* indicates if the block_begin hook is registered */                    \

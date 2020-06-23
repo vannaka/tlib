@@ -54,9 +54,8 @@ static inline void hreg_compute_hflags(CPUState *env)
     target_ulong hflags_mask;
 
     /* We 'forget' FE0 & FE1: we'll never generate imprecise exceptions */
-    hflags_mask = (1 << MSR_VR) | (1 << MSR_AP) | (1 << MSR_SA) |
-        (1 << MSR_PR) | (1 << MSR_FP) | (1 << MSR_SE) | (1 << MSR_BE) |
-        (1 << MSR_LE);
+    hflags_mask = (1 << MSR_VR) | (1 << MSR_AP) | (1 << MSR_SA) | (1 << MSR_PR) | (1 << MSR_FP) | (1 << MSR_SE) | (1 << MSR_BE) |
+                  (1 << MSR_LE);
     hflags_mask |= (1ULL << MSR_CM) | (1ULL << MSR_SF) | MSR_HVB;
     hreg_compute_mem_idx(env);
     env->hflags = env->msr & hflags_mask;
@@ -64,8 +63,7 @@ static inline void hreg_compute_hflags(CPUState *env)
     env->hflags |= env->hflags_nmsr;
 }
 
-static inline int hreg_store_msr(CPUState *env, target_ulong value,
-                                 int alter_hv)
+static inline int hreg_store_msr(CPUState *env, target_ulong value, int alter_hv)
 {
     int excp;
 
@@ -76,15 +74,13 @@ static inline int hreg_store_msr(CPUState *env, target_ulong value,
         value &= ~MSR_HVB;
         value |= env->msr & MSR_HVB;
     }
-    if (((value >> MSR_IR) & 1) != msr_ir ||
-        ((value >> MSR_DR) & 1) != msr_dr) {
+    if (((value >> MSR_IR) & 1) != msr_ir || ((value >> MSR_DR) & 1) != msr_dr) {
         /* Flush all tlb when changing translation mode */
         tlb_flush(env, 1);
         excp = POWERPC_EXCP_NONE;
         env->interrupt_request |= CPU_INTERRUPT_EXITTB;
     }
-    if (unlikely((env->flags & POWERPC_FLAG_TGPR) &&
-                 ((value ^ env->msr) & (1 << MSR_TGPR)))) {
+    if (unlikely((env->flags & POWERPC_FLAG_TGPR) && ((value ^ env->msr) & (1 << MSR_TGPR)))) {
         /* Swap temporary saved registers with GPRs */
         hreg_swap_gpr_tgpr(env);
     }

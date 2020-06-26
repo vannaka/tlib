@@ -29,6 +29,23 @@
 void cpu_reset(CPUState *env)
 {
     int i;
+    /* Preserve cpuid info */
+
+    uint32_t cpuid_level = env->cpuid_level;
+    uint32_t cpuid_vendor1 = env->cpuid_vendor1;
+    uint32_t cpuid_vendor2 = env->cpuid_vendor2;
+    uint32_t cpuid_vendor3 = env->cpuid_vendor3;
+    uint32_t cpuid_version = env->cpuid_version;
+    uint32_t cpuid_features = env->cpuid_features;
+    uint32_t cpuid_ext_features = env->cpuid_ext_features;
+    uint32_t cpuid_xlevel = env->cpuid_xlevel;
+    uint32_t cpuid_ext2_features = env->cpuid_ext2_features;
+    uint32_t cpuid_ext3_features = env->cpuid_ext3_features;
+    uint32_t cpuid_xlevel2 = env->cpuid_xlevel2;
+    uint32_t cpuid_ext4_features = env->cpuid_ext4_features;
+    uint32_t cpuid_model[CPUID_MODEL_LENGTH];
+    int cpuid_vendor_override = env->cpuid_vendor_override;
+    memcpy(cpuid_model, env->cpuid_model, CPUID_MODEL_LENGTH * sizeof(uint32_t));
 
     memset(env, 0, offsetof(CPUState, breakpoints));
 
@@ -37,6 +54,20 @@ void cpu_reset(CPUState *env)
     env->old_exception = -1;
 
     /* init to reset state */
+    env->cpuid_level = cpuid_level;
+    env->cpuid_vendor1 = cpuid_vendor1;
+    env->cpuid_vendor2 = cpuid_vendor2;
+    env->cpuid_vendor3 = cpuid_vendor3;
+    env->cpuid_version = cpuid_version;
+    env->cpuid_features = cpuid_features;
+    env->cpuid_ext_features = cpuid_ext_features;
+    env->cpuid_xlevel = cpuid_xlevel;
+    env->cpuid_ext2_features = cpuid_ext2_features;
+    env->cpuid_ext3_features = cpuid_ext3_features;
+    env->cpuid_xlevel2 = cpuid_xlevel2;
+    env->cpuid_ext4_features = cpuid_ext4_features;
+    env->cpuid_vendor_override = cpuid_vendor_override;
+    memcpy(env->cpuid_model, cpuid_model, CPUID_MODEL_LENGTH * sizeof(uint32_t));
 
     env->hflags |= HF_SOFTMMU_MASK;
     env->hflags2 |= HF2_GIF_MASK;

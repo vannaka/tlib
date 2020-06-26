@@ -339,6 +339,7 @@
 
 #define MSR_VM_HSAVE_PA          0xc0010117
 
+#define CPUID_MODEL_LENGTH       12
 /* cpuid_features bits */
 #define CPUID_FP87               (1 << 0)
 #define CPUID_VME                (1 << 1)
@@ -746,7 +747,7 @@ typedef struct CPUState {
     uint32_t cpuid_features;
     uint32_t cpuid_ext_features;
     uint32_t cpuid_xlevel;
-    uint32_t cpuid_model[12];
+    uint32_t cpuid_model[CPUID_MODEL_LENGTH];
     uint32_t cpuid_ext2_features;
     uint32_t cpuid_ext3_features;
     int cpuid_vendor_override;

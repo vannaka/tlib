@@ -189,6 +189,9 @@ typedef struct CPUBreakpoint {
     /* indicates if the block_begin hook is registered */                    \
     int block_begin_hook_present;                                            \
     uint32_t cycles_per_instruction;                                         \
+    int interrupt_begin_callback_enabled;                                    \
+    int interrupt_end_callback_enabled;                                      \
+    int32_t tlib_is_on_memory_access_enabled;                                \
                                                                              \
     int id;                                                                  \
     /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                       \
@@ -200,8 +203,6 @@ typedef struct CPUBreakpoint {
     long temp_buf[CPU_TEMP_BUF_NLONGS];                                      \
     /* when set any exception will force `cpu_exec` to finish immediately */ \
     int32_t return_on_exception;                                             \
-    int interrupt_begin_callback_enabled;                                    \
-    int interrupt_end_callback_enabled;                                      \
                                                                              \
 
 #endif

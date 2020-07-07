@@ -446,3 +446,8 @@ void tlib_set_interrupt_end_hook_present(uint32_t val)
     // Supported in RISC-V architecture only
     cpu->interrupt_end_callback_enabled = !!val;
 }
+
+void tlib_on_memory_access_event_enabled(int32_t value)
+{
+    cpu->tlib_is_on_memory_access_enabled = !!value;
+}

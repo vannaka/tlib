@@ -57,6 +57,11 @@ extern void *global_retaddr;
 #define ADDR_READ        addr_read
 #endif
 
+#define MEMORY_IO_READ 0
+#define MEMORY_IO_WRITE 1
+#define MEMORY_READ 2
+#define MEMORY_WRITE 3
+
 #ifdef ALIGNED_ONLY
 void do_unaligned_access(target_ulong addr, int is_write, int is_user, void *retaddr);
 #endif
@@ -122,6 +127,10 @@ redo:
             global_retaddr = retaddr;
             ioaddr = cpu->iotlb[mmu_idx][index];
             res = glue(io_read, SUFFIX)(ioaddr, addr, retaddr);
+            if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
+            {
+                tlib_on_memory_access(MEMORY_IO_READ, addr);
+            }
         } else if (((addr & ~TARGET_PAGE_MASK) + DATA_SIZE - 1) >= TARGET_PAGE_SIZE) {
             /* slow unaligned access (it spans two pages or IO) */
 do_unaligned_access:
@@ -130,6 +139,10 @@ do_unaligned_access:
             do_unaligned_access(addr, READ_ACCESS_TYPE, mmu_idx, retaddr);
 #endif
             res = glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(addr, mmu_idx, retaddr);
+            if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
+            {
+                tlib_on_memory_access(MEMORY_READ, addr);
+            }
         } else {
             /* unaligned/aligned access in the same page */
 #ifdef ALIGNED_ONLY
@@ -140,6 +153,10 @@ do_unaligned_access:
 #endif
             addend = cpu->tlb_table[mmu_idx][index].addend;
             res = glue(glue(ld, USUFFIX), _raw)((uint8_t *)(uintptr_t)(addr + addend));
+            if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
+            {
+                tlib_on_memory_access(MEMORY_READ, addr);
+            }
         }
     } else {
         /* the page is not in the TLB : fill it */
@@ -269,6 +286,10 @@ redo:
             global_retaddr = retaddr;
             ioaddr = cpu->iotlb[mmu_idx][index];
             glue(io_write, SUFFIX)(ioaddr, val, addr, retaddr);
+            if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
+            {
+                tlib_on_memory_access(MEMORY_IO_WRITE, addr);
+            }
         } else if (((addr & ~TARGET_PAGE_MASK) + DATA_SIZE - 1) >= TARGET_PAGE_SIZE) {
 do_unaligned_access:
             retaddr = GETPC();
@@ -276,6 +297,10 @@ do_unaligned_access:
             do_unaligned_access(addr, 1, mmu_idx, retaddr);
 #endif
             glue(glue(slow_st, SUFFIX), MMUSUFFIX)(addr, val, mmu_idx, retaddr);
+            if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
+            {
+                tlib_on_memory_access(MEMORY_WRITE, addr);
+            }
         } else {
             /* aligned/unaligned access in the same page */
 #ifdef ALIGNED_ONLY
@@ -286,6 +311,10 @@ do_unaligned_access:
 #endif
             addend = cpu->tlb_table[mmu_idx][index].addend;
             glue(glue(st, SUFFIX), _raw)((uint8_t *)(uintptr_t)(addr + addend), val);
+            if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
+            {
+                tlib_on_memory_access(MEMORY_WRITE, addr);
+            }
         }
     } else {
         /* the page is not in the TLB : fill it */

@@ -200,6 +200,8 @@ typedef struct CPUBreakpoint {
     long temp_buf[CPU_TEMP_BUF_NLONGS];                                      \
     /* when set any exception will force `cpu_exec` to finish immediately */ \
     int32_t return_on_exception;                                             \
+    int interrupt_begin_callback_enabled;                                    \
+    int interrupt_end_callback_enabled;                                      \
                                                                              \
 
 #endif

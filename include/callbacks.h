@@ -65,5 +65,7 @@ void tlib_on_block_translation(uint64_t start, uint32_t size, uint32_t flags);
 extern int32_t tlib_is_on_block_translation_enabled;
 void tlib_set_on_block_translation_enabled(int32_t value);
 void tlib_on_block_finished(uint64_t pc, uint32_t executed_instructions);
+void tlib_on_interrupt_begin(uint64_t exception_index);
+void tlib_on_interrupt_end(uint64_t exception_index);
 
 #endif

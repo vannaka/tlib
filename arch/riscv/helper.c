@@ -353,6 +353,10 @@ void do_interrupt(CPUState *env)
         return;
     }
 
+    if(env->interrupt_begin_callback_enabled) {
+        tlib_on_interrupt_begin(env->exception_index);
+    }
+
     target_ulong fixed_cause = 0;
     target_ulong bit = 0;
     uint8_t is_interrupt = 0;

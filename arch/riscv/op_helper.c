@@ -731,6 +731,10 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
     acquire_global_memory_lock(env);
     cancel_reservation(env);
     release_global_memory_lock(env);
+    if(env->interrupt_end_callback_enabled)
+    {
+        tlib_on_interrupt_end(env->exception_index);
+    }
 
     return retpc;
 }
@@ -761,6 +765,10 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
     acquire_global_memory_lock(env);
     cancel_reservation(env);
     release_global_memory_lock(env);
+    if(env->interrupt_end_callback_enabled)
+    {
+        tlib_on_interrupt_end(env->exception_index);
+    }
 
     return retpc;
 }

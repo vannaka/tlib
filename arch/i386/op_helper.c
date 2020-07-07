@@ -1209,6 +1209,9 @@ static void handle_even_inj(int intno, int is_int, int error_code, int is_hw, in
  */
 static void do_interrupt_all(int intno, int is_int, int error_code, target_ulong next_eip, int is_hw)
 {
+    if(env->interrupt_begin_callback_enabled) {
+        tlib_on_interrupt_begin(env->exception_index);
+    }
     if (env->cr[0] & CR0_PE_MASK) {
         if (env->hflags & HF_SVMI_MASK) {
             handle_even_inj(intno, is_int, error_code, is_hw, 0);

@@ -694,6 +694,10 @@ void do_interrupt(CPUState *env)
     int new_mode;
     uint32_t offset;
 
+    if(env->interrupt_begin_callback_enabled) {
+        tlib_on_interrupt_begin(env->exception_index);
+    }
+
 #ifdef TARGET_PROTO_ARM_M
     do_interrupt_v7m(env);
     return;

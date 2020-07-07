@@ -435,3 +435,14 @@ void tlib_set_register_value(int reg_number, uint64_t val)
 #error "Unknown number of bits"
 #endif
 }
+
+void tlib_set_interrupt_begin_hook_present(uint32_t val)
+{
+    cpu->interrupt_begin_callback_enabled = !!val;
+}
+
+void tlib_set_interrupt_end_hook_present(uint32_t val)
+{
+    // Supported in RISC-V architecture only
+    cpu->interrupt_end_callback_enabled = !!val;
+}

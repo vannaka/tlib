@@ -299,6 +299,11 @@ void do_interrupt(CPUState *env)
 {
     int cwp, intno = env->exception_index;
 
+    if(env->interrupt_begin_callback_enabled)
+    {
+        tlib_on_interrupt_begin(env->exception_index);
+    }
+
     /* Compute PSR before exposing state.  */
     if (env->cc_op != CC_OP_FLAGS) {
         cpu_get_psr(env);

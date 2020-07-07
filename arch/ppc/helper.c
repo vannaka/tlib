@@ -1963,6 +1963,10 @@ static inline void powerpc_excp(CPUState *env, int excp_model, int excp)
     int srr0, srr1, asrr0, asrr1;
     int lpes0, lpes1, lev;
 
+    if(env->interrupt_begin_callback_enabled) {
+        tlib_on_interrupt_begin(excp);
+    }
+
     if (0) {
         /* XXX: find a suitable condition to enable the hypervisor mode */
         lpes0 = (env->spr[SPR_LPCR] >> 1) & 1;

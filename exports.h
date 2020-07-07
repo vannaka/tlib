@@ -40,7 +40,7 @@ void tlib_add_breakpoint(uint64_t address);
 void tlib_remove_breakpoint(uint64_t address);
 void tlib_set_block_begin_hook_present(uint32_t val);
 
-int32_t tlib_get_total_executed_instructions(void);
+uint64_t tlib_get_total_executed_instructions(void);
 
 void tlib_set_translation_cache_size(uintptr_t size);
 void tlib_invalidate_translation_cache(void);

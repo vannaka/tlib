@@ -27,7 +27,7 @@
 #include "compiler.h"
 #include "cpu.h"
 
-CPUState *env;
+extern CPUState *env;
 
 /* Page tracking code uses ram addresses in system mode, and virtual
    addresses in userspace mode.  Define tb_page_addr_t to be an appropriate
@@ -79,7 +79,7 @@ void tlb_set_page(CPUState *env, target_ulong vaddr, target_phys_addr_t paddr, i
 #define CODE_GEN_AVG_BLOCK_SIZE  128
 
 extern uint32_t size_of_next_block_to_translate;
-uint32_t maximum_block_size;
+extern uint32_t maximum_block_size;
 
 struct TranslationBlock {
     target_ulong pc;      /* simulated PC corresponding to this block (EIP + CS base) */

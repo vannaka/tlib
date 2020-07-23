@@ -32,7 +32,7 @@
 
 int gen_new_label(void);
 
-TCGv_ptr cpu_env;
+extern TCGv_ptr cpu_env;
 extern CPUState *cpu;
 static TCGArg *event_size_arg;
 static TCGArg *event_size2_arg;

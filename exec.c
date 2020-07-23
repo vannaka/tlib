@@ -31,6 +31,8 @@
 
 #define SMC_BITMAP_USE_THRESHOLD 10
 
+CPUState* env;
+
 static TranslationBlock *tbs;
 static int code_gen_max_blocks;
 TranslationBlock *tb_phys_hash[CODE_GEN_PHYS_HASH_SIZE];

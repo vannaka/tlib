@@ -39,7 +39,7 @@ extern int TARGET_PAGE_BITS;
 #   error "Only 32 or 64 values are supported for HOST_LONG_BITS"
 #endif
 
-#define TARGET_PAGE_SIZE      (1 << TARGET_PAGE_BITS)
+#define TARGET_PAGE_SIZE      (1ull << TARGET_PAGE_BITS)
 #define TARGET_PAGE_MASK      ~(TARGET_PAGE_SIZE - 1)
 
 #define TARGET_LONG_ALIGNMENT 4

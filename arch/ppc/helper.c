@@ -60,7 +60,7 @@ static inline void pte64_invalidate(target_ulong *pte0)
 #endif
 
 #define PTE_PTEM_MASK    0x7FFFFFBF
-#define PTE_CHECK_MASK   (TARGET_PAGE_MASK | 0x7B)
+#define PTE_CHECK_MASK   (target_ulong)(TARGET_PAGE_MASK | 0x7B)
 #if defined(TARGET_PPC64)
 #define PTE64_PTEM_MASK  0xFFFFFFFFFFFFFF80ULL
 #define PTE64_CHECK_MASK (TARGET_PAGE_MASK | 0x7F)

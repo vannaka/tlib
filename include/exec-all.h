@@ -244,7 +244,8 @@ void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx, void
    is the offset relative to phys_ram_base */
 static inline tb_page_addr_t get_page_addr_code(CPUState *env1, target_ulong addr)
 {
-    int mmu_idx, page_index, pd;
+    int mmu_idx, page_index;
+    ram_addr_t pd;
     void *p;
 
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);

@@ -1252,7 +1252,7 @@ static void tlb_add_large_page(CPUState *env, target_ulong vaddr, target_ulong s
 void tlb_set_page(CPUState *env, target_ulong vaddr, target_phys_addr_t paddr, int prot, int mmu_idx, target_ulong size)
 {
     PhysPageDesc *p;
-    unsigned long pd;
+    ram_addr_t pd;
     unsigned int index;
     target_ulong address;
     target_ulong code_address;
@@ -1471,7 +1471,7 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf, int len, int 
     uint8_t *ptr;
     uint32_t val;
     target_phys_addr_t page;
-    unsigned long pd;
+    ram_addr_t pd;
     PhysPageDesc *p;
 
     while (len > 0) {
@@ -1564,7 +1564,7 @@ void cpu_physical_memory_write_rom(target_phys_addr_t addr, const uint8_t *buf, 
     int l;
     uint8_t *ptr;
     target_phys_addr_t page;
-    unsigned long pd;
+    ram_addr_t pd;
     PhysPageDesc *p;
 
     while (len > 0) {
@@ -1600,7 +1600,7 @@ uint32_t ldl_phys(target_phys_addr_t addr)
 {
     uint8_t *ptr;
     uint32_t val;
-    unsigned long pd;
+    ram_addr_t pd;
     PhysPageDesc *p;
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
@@ -1630,7 +1630,7 @@ uint64_t ldq_phys(target_phys_addr_t addr)
     int io_index;
     uint8_t *ptr;
     uint64_t val;
-    unsigned long pd;
+    ram_addr_t pd;
     PhysPageDesc *p;
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
@@ -1675,7 +1675,7 @@ uint32_t lduw_phys(target_phys_addr_t addr)
 {
     uint8_t *ptr;
     uint64_t val;
-    unsigned long pd;
+    ram_addr_t pd;
     PhysPageDesc *p;
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
@@ -1705,7 +1705,7 @@ uint32_t lduw_phys(target_phys_addr_t addr)
 void stl_phys_notdirty(target_phys_addr_t addr, uint32_t val)
 {
     uint8_t *ptr;
-    unsigned long pd;
+    ram_addr_t pd;
     PhysPageDesc *p;
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
@@ -1731,7 +1731,7 @@ void stq_phys_notdirty(target_phys_addr_t addr, uint64_t val)
 {
     int io_index;
     uint8_t *ptr;
-    unsigned long pd;
+    ram_addr_t pd;
     PhysPageDesc *p;
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
@@ -1763,7 +1763,7 @@ void stq_phys_notdirty(target_phys_addr_t addr, uint64_t val)
 void stl_phys(target_phys_addr_t addr, uint32_t val)
 {
     uint8_t *ptr;
-    unsigned long pd;
+    ram_addr_t pd;
     PhysPageDesc *p;
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
@@ -1804,7 +1804,7 @@ void stb_phys(target_phys_addr_t addr, uint32_t val)
 void stw_phys(target_phys_addr_t addr, uint32_t val)
 {
     uint8_t *ptr;
-    unsigned long pd;
+    ram_addr_t pd;
     PhysPageDesc *p;
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);

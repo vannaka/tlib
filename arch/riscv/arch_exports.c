@@ -103,22 +103,23 @@ void tlib_enter_wfi()
     helper_wfi(cpu);
 }
 
-uint32_t tlib_set_csr_validation_level(uint32_t value)
+void tlib_set_csr_validation_level(uint32_t value)
 {
     switch (value) {
-    case CSR_VALIDATION_FULL:
-    case CSR_VALIDATION_PRIV:
-    case CSR_VALIDATION_NONE:
-    {
-        uint32_t result = cpu->csr_validation_level;
-        cpu->csr_validation_level = value;
-        return result;
-    }
+        case CSR_VALIDATION_FULL:
+        case CSR_VALIDATION_PRIV:
+        case CSR_VALIDATION_NONE:
+            cpu->csr_validation_level = value;
+            break;
 
-    default:
-        tlib_abortf("Unexpected CSR validation level: %d", value);
-        return cpu->csr_validation_level;
+        default:
+            tlib_abortf("Unexpected CSR validation level: %d", value);
     }
+}
+
+uint32_t tlib_get_csr_validation_level()
+{
+    return cpu->csr_validation_level;
 }
 
 void tlib_set_nmi_vector(uint64_t nmi_adress, uint32_t nmi_length)

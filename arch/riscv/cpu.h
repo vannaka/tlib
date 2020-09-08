@@ -49,7 +49,7 @@ typedef struct custom_instruction_descriptor_t {
 
 typedef struct DisasContext {
     struct DisasContextBase base;
-    uint32_t opcode;
+    uint64_t opcode;
 } DisasContext;
 
 typedef struct CPUState CPUState;

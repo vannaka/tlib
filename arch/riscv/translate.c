@@ -1839,7 +1839,7 @@ static void decode_RV32_64G(CPUState *env, DisasContext *dc)
 
 static int disas_insn(CPUState *env, DisasContext *dc)
 {
-    dc->opcode = ldl_code(dc->base.pc);
+    dc->opcode = ldq_code(dc->base.pc);
     /* handle custom instructions */
     int i;
     for (i = 0; i < env->custom_instructions_count; i++) {

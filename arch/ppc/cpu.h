@@ -512,6 +512,12 @@ struct ppc_slb_t {
 #endif
 #endif
 
+/* Local Partitioning Control Register (LPCR) Definitions */
+/* TODO: LPCR register is 84bit wide, current implementation uses 32bit */
+#define LPCR_HR   (1 << (63-43))   /* Host Radix Translation Enable        */
+#define LPCR_UPRT (1 << (63-41))   /* Use Process Table                    */
+#define LPCR_LD   (1 << (63-46))   /* Large Decrementer (32 or 64 bit)     */
+
 /* Exception state register bits definition                                  */
 #define ESR_PIL   (1 << (63 - 36)) /* Illegal Instruction                    */
 #define ESR_PPR   (1 << (63 - 37)) /* Privileged Instruction                 */
@@ -1273,7 +1279,7 @@ static inline int cpu_mmu_index (CPUState *env)
 #define SPR_BOOKE_IAC3    (0x13A)
 #define SPR_HSRR1         (0x13B)
 #define SPR_BOOKE_IAC4    (0x13B)
-#define SPR_LPCR          (0x13C)
+#define SPR_LPCR          (0x13E)
 #define SPR_BOOKE_DAC1    (0x13C)
 #define SPR_LPIDR         (0x13D)
 #define SPR_DABR2         (0x13D)

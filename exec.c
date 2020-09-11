@@ -31,7 +31,7 @@
 
 #define SMC_BITMAP_USE_THRESHOLD 10
 
-CPUState* env;
+CPUState *env;
 
 static TranslationBlock *tbs;
 static int code_gen_max_blocks;

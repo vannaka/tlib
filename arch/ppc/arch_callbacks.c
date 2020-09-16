@@ -24,8 +24,8 @@ DEFAULT_INT_HANDLER1(uint32_t tlib_read_tbl, void)
 
 DEFAULT_INT_HANDLER1(uint32_t tlib_read_tbu, void)
 
-DEFAULT_INT_HANDLER1(uint32_t tlib_read_decrementer, void)
+DEFAULT_INT_HANDLER1(uint64_t tlib_read_decrementer, void)
 
-DEFAULT_VOID_HANDLER1(void tlib_write_decrementer, uint32_t value)
+DEFAULT_VOID_HANDLER1(void tlib_write_decrementer, uint64_t value)
 
 DEFAULT_INT_HANDLER1(uint32_t tlib_is_vle_enabled, void)

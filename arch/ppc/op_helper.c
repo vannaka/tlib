@@ -122,17 +122,19 @@ void helper_store_601_rtcu (target_ulong val)
 
 target_ulong helper_load_decr (void)
 {
-    return tlib_read_decrementer();
+    return (target_ulong)tlib_read_decrementer();
 }
 
 void helper_store_decr (target_ulong val)
 {
-    // since we convert 64 bit value to 32 bit one, we guard whether it fits in
-    // the more narrow type
-    if (val > UINT32_MAX) {
-        tlib_abort("Trying to write decrementer value that does not fit in 32 bits.");
+    // since we convert 64 bit value to 32 bit one, when not using LargeDecrementer,
+    // we guard whether it fits in the more narrow type
+    if (val > UINT32_MAX && !(env->spr[SPR_LPCR] & LPCR_LD)) {
+        //Power ISA specifies that the upper bits are ignored in 32-bit decrementer mode
+        tlib_printf(LOG_LEVEL_WARNING, "Trying to write decrementer value that does not fit in 32 bits. Ignoring higher bits.");
+        val = (uint32_t)val;
     }
-    tlib_write_decrementer((uint32_t)val);
+    tlib_write_decrementer((uint64_t)val);
 }
 
 void helper_store_hid0_601 (target_ulong val)

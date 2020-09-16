@@ -8008,6 +8008,11 @@ static void init_ppc_proc (CPUState *env, const ppc_def_t *def)
     env->wfi = 0;
     env->gpr[1] = (16<<20) - 8;
     env->gpr[3] = 0;
+#if defined TARGET_PPC64
+    //This bit must be set in order to configure large decrementer mode on 64bit cpus. As linux sets 'max_decrementer` value
+    //basing on `ibm,dec-bits` from `.dts` and won't configure the mode by itself when not in hypervisor mode, we do it manually.
+    env->spr[SPR_LPCR] = LPCR_LD;
+#endif
 ppcmas_tlb_t *tlb = booke206_get_tlbm(env, 1, 0, 0);
     target_phys_addr_t size;
 

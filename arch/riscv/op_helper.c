@@ -299,8 +299,8 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
         env->sepc = val_to_write;
         break;
     case CSR_STVEC:
-        if (((env->privilege_architecture >= RISCV_PRIV1_10) && (val_to_write & 0x2)) || (val_to_write & 0x3)) {
-            tlib_printf(LOG_LEVEL_WARNING, "Trying to set unaligned stvec: 0x{0:X}, aligning to 4-byte boundary.", val_to_write);
+        if (((env->privilege_architecture >= RISCV_PRIV1_10) && (val_to_write & 0x2)) || (env->privilege_architecture < RISCV_PRIV1_10 && (val_to_write & 0x3))) {
+            tlib_printf(LOG_LEVEL_WARNING, "Trying to set unaligned stvec: 0x%X, aligning to 4-byte boundary.", val_to_write);
         }
         if (env->privilege_architecture >= RISCV_PRIV1_10) {
             env->stvec = val_to_write & ~0x2;
@@ -324,8 +324,8 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
         env->mepc = val_to_write;
         break;
     case CSR_MTVEC:
-        if (((env->privilege_architecture >= RISCV_PRIV1_10) && (val_to_write & 0x2)) || (val_to_write & 0x3)) {
-            tlib_printf(LOG_LEVEL_WARNING, "Trying to set unaligned mtvec: 0x{0:X}, aligning to 4-byte boundary.", val_to_write);
+        if (((env->privilege_architecture >= RISCV_PRIV1_10) && (val_to_write & 0x2)) || (env->privilege_architecture < RISCV_PRIV1_10 && (val_to_write & 0x3))) {
+            tlib_printf(LOG_LEVEL_WARNING, "Trying to set unaligned mtvec: 0x%X, aligning to 4-byte boundary.", val_to_write);
         }
         if (env->privilege_architecture >= RISCV_PRIV1_10) {
             env->mtvec = val_to_write & ~0x2;

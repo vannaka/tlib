@@ -45,7 +45,7 @@ typedef struct custom_instruction_descriptor_t {
     uint64_t mask;
     uint64_t pattern;
 } custom_instruction_descriptor_t;
-#define CPU_CUSTOM_INSTRUCTIONS_LIMIT 64
+#define CPU_CUSTOM_INSTRUCTIONS_LIMIT 256
 
 typedef struct DisasContext {
     struct DisasContextBase base;

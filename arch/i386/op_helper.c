@@ -4740,7 +4740,7 @@ void helper_boundl(target_ulong a0, int v)
    NULL, it means that the function was called in C code (i.e. not
    from generated code or from helper.c) */
 /* XXX: fix it to restore all registers */
-void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx, void *retaddr)
+void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx, void *retaddr, int no_page_fault)
 {
     TranslationBlock *tb;
     int ret;
@@ -4751,7 +4751,7 @@ void tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx, void
     env = env1;
 
     ret = cpu_handle_mmu_fault(env, addr, is_write, mmu_idx);
-    if (ret) {
+    if (ret && !no_page_fault) {
         if (retaddr) {
             /* now we have a real cpu fault */
             pc = (uintptr_t)retaddr;

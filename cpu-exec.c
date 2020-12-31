@@ -77,7 +77,7 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
             return -1;
         }
         // Not mapped in any mode - referesh page table from h/w tables
-        tlb_fill(env, virtual & TARGET_PAGE_MASK, access_type, mmu_idx, &physical /* not used */);
+        tlb_fill(env, virtual & TARGET_PAGE_MASK, access_type, mmu_idx, &physical /* not used */, 0);
         found_idx = mmu_idx;
         target_ulong mapped_address;
         switch (access_type) {

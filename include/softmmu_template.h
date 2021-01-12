@@ -136,7 +136,9 @@ redo:
 do_unaligned_access:
             retaddr = GETPC();
 #ifdef ALIGNED_ONLY
-            do_unaligned_access(addr, READ_ACCESS_TYPE, mmu_idx, retaddr);
+            if (!cpu->allow_unaligned_accesses) {
+                do_unaligned_access(addr, READ_ACCESS_TYPE, mmu_idx, retaddr);
+            }
 #endif
             res = glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(addr, mmu_idx, retaddr);
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
@@ -146,7 +148,7 @@ do_unaligned_access:
         } else {
             /* unaligned/aligned access in the same page */
 #ifdef ALIGNED_ONLY
-            if ((addr & (DATA_SIZE - 1)) != 0) {
+            if (((addr & (DATA_SIZE - 1)) != 0) && !cpu->allow_unaligned_accesses) {
                 retaddr = GETPC();
                 do_unaligned_access(addr, READ_ACCESS_TYPE, mmu_idx, retaddr);
             }
@@ -162,7 +164,7 @@ do_unaligned_access:
         /* the page is not in the TLB : fill it */
         retaddr = GETPC();
 #ifdef ALIGNED_ONLY
-        if ((addr & (DATA_SIZE - 1)) != 0) {
+        if (((addr & (DATA_SIZE - 1)) != 0) && !cpu->allow_unaligned_accesses) {
             do_unaligned_access(addr, READ_ACCESS_TYPE, mmu_idx, retaddr);
         }
 #endif
@@ -294,7 +296,9 @@ redo:
 do_unaligned_access:
             retaddr = GETPC();
 #ifdef ALIGNED_ONLY
-            do_unaligned_access(addr, 1, mmu_idx, retaddr);
+            if (!cpu->allow_unaligned_accesses) {
+                do_unaligned_access(addr, 1, mmu_idx, retaddr);
+            }
 #endif
             glue(glue(slow_st, SUFFIX), MMUSUFFIX)(addr, val, mmu_idx, retaddr);
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
@@ -304,7 +308,7 @@ do_unaligned_access:
         } else {
             /* aligned/unaligned access in the same page */
 #ifdef ALIGNED_ONLY
-            if ((addr & (DATA_SIZE - 1)) != 0) {
+            if (((addr & (DATA_SIZE - 1)) != 0) && !cpu->allow_unaligned_accesses) {
                 retaddr = GETPC();
                 do_unaligned_access(addr, 1, mmu_idx, retaddr);
             }
@@ -320,7 +324,7 @@ do_unaligned_access:
         /* the page is not in the TLB : fill it */
         retaddr = GETPC();
 #ifdef ALIGNED_ONLY
-        if ((addr & (DATA_SIZE - 1)) != 0) {
+        if (((addr & (DATA_SIZE - 1)) != 0) && !cpu->allow_unaligned_accesses) {
             do_unaligned_access(addr, 1, mmu_idx, retaddr);
         }
 #endif

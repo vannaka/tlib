@@ -192,6 +192,7 @@ typedef struct CPUBreakpoint {
     int interrupt_begin_callback_enabled;                                    \
     int interrupt_end_callback_enabled;                                      \
     int32_t tlib_is_on_memory_access_enabled;                                \
+    int allow_unaligned_accesses;                                            \
                                                                              \
     int id;                                                                  \
     /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                       \

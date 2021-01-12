@@ -145,3 +145,8 @@ void tlib_set_nmi(int32_t nmi, int32_t state)
         cpu_reset_nmi(cpu, nmi);
     }
 }
+
+void tlib_allow_unaligned_accesses(int32_t allowed)
+{
+    cpu->allow_unaligned_accesses = allowed;
+}

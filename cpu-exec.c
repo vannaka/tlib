@@ -193,7 +193,7 @@ static TranslationBlock *tb_find_slow(CPUState *env, target_ulong pc, target_ulo
     }
 not_found:
     /* if no translated code available, then translate it now */
-    tb = tb_gen_code(env, pc, cs_base, flags, size_of_next_block_to_translate);
+    tb = tb_gen_code(env, pc, cs_base, flags, 0);
     size_of_next_block_to_translate = 0;
 
 found:

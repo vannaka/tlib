@@ -196,10 +196,10 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
             tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
         }
         int do_break = 0;
+        tb->icount++;
         if (!gen_intermediate_code(env, dc)) {
             do_break = 1;
         }
-        tb->icount++;
         if (tcg_check_temp_count()) {
             tlib_abortf("TCG temps leak detected at PC %08X", dc->pc);
         }

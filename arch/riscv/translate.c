@@ -1929,15 +1929,14 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext *)base;
     switch (dc->base.is_jmp) {
-    case BS_STOP:
-        gen_goto_tb(dc, 0, dc->base.pc);
-        break;
     case BS_NONE:     /* handle end of page - DO NOT CHAIN. See gen_goto_tb. */
         gen_sync_pc(dc);
         gen_exit_tb_no_chaining(dc->base.tb);
         break;
+    case BS_STOP:
+        gen_goto_tb(dc, 0, dc->base.pc);
+        break;
     case BS_BRANCH:     /* ops using BS_BRANCH generate own exit seq */
-    default:
         break;
     }
     return 0;

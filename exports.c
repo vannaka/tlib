@@ -58,11 +58,8 @@ uint32_t size_of_next_block_to_translate;
 
 uint32_t tlib_set_maximum_block_size(uint32_t size)
 {
-    uint32_t effective_value;
-
-    effective_value = size & CF_COUNT_MASK;
-    maximum_block_size = effective_value;
-    return effective_value;
+    maximum_block_size = size;
+    return maximum_block_size;
 }
 
 uint32_t tlib_get_maximum_block_size()
@@ -94,7 +91,7 @@ int32_t tlib_init(char *cpu_name)
         tlib_free(env);
         return -1;
     }
-    tlib_set_maximum_block_size(0x7FF);
+    tlib_set_maximum_block_size(10000);
     env->atomic_memory_state = NULL;
     return 0;
 }

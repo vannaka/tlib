@@ -78,7 +78,6 @@ void tlb_set_page(CPUState *env, target_ulong vaddr, target_phys_addr_t paddr, i
    according to the host CPU */
 #define CODE_GEN_AVG_BLOCK_SIZE  128
 
-extern uint32_t size_of_next_block_to_translate;
 extern uint32_t maximum_block_size;
 
 struct TranslationBlock {

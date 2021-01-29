@@ -17,8 +17,6 @@ void HELPER(prepare_block_for_execution)(void *tb)
         // setting `tb_restart_request` to 1 will stop executing this block at the end of the header
         cpu->tb_restart_request = 1;
     } else if (current_block_size > instructions_left) {
-        size_of_next_block_to_translate = instructions_left;
-
         // invalidate this block and jump back to the main loop
         tb_phys_invalidate(cpu->current_tb, -1);
         cpu->tb_restart_request = 1;

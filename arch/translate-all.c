@@ -156,7 +156,7 @@ static inline void gen_block_footer(TranslationBlock *tb)
     *gen_opc_ptr = INDEX_op_end;
 }
 
-static uint64_t get_max_instruction_count(CPUState *env, TranslationBlock *tb)
+static inline uint64_t get_max_instruction_count(CPUState *env, TranslationBlock *tb)
 {
     int instructions_count = size_of_next_block_to_translate > 0 ? size_of_next_block_to_translate : maximum_block_size;
 

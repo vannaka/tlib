@@ -80,12 +80,12 @@ void tlib_set_cpu_id(uint32_t value)
     cpu->cp15.c0_cpuid = value;
 }
 
-#ifdef TARGET_PROTO_ARM_M
-
 void tlib_toggle_fpu(int32_t enabled)
 {
     cpu->vfp.xregs[ARM_VFP_FPEXC] = enabled ? (1 << 30) : 0;
 }
+
+#ifdef TARGET_PROTO_ARM_M
 
 void tlib_set_interrupt_vector_base(uint32_t address)
 {

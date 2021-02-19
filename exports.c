@@ -178,7 +178,29 @@ int32_t tlib_execute(int32_t max_insns)
         tlib_abortf("Tried to execute cpu without reading executed instructions count first.");
     }
     cpu->instructions_count_threshold = max_insns;
-    return cpu_exec(cpu);
+
+    int32_t local_counter = 0;
+    int32_t result = EXCP_INTERRUPT;
+    while ((result == EXCP_INTERRUPT) && (cpu->instructions_count_threshold > 0)) {
+        result = cpu_exec(cpu);
+
+        local_counter += cpu->instructions_count_value;
+        cpu->instructions_count_threshold -= cpu->instructions_count_value;
+        cpu->instructions_count_value = 0;
+
+        if(cpu->exit_request)
+        {
+            cpu->exit_request = 0;
+            break;
+        }
+    }
+
+    // we need to reset the instructions count value
+    // as this is might be accessed after calling `tlib_execute`
+    // to read the progress
+    cpu->instructions_count_value = local_counter;
+    
+    return result;
 }
 
 int tlib_restore_context(void);

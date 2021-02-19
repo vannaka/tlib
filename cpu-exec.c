@@ -379,8 +379,8 @@ int cpu_exec(CPUState *env)
                         tb = (TranslationBlock *)(uintptr_t)(next_tb & ~3);
                         /* Restore PC.  */
                         cpu_pc_from_tb(env, tb);
-                        env->exception_index = EXCP_INTERRUPT;
                         next_tb = 0;
+                        env->exception_index = EXCP_INTERRUPT;
                         cpu_loop_exit_without_hook(env);
                     }
                 }

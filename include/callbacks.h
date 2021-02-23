@@ -77,4 +77,8 @@ void tlib_on_interrupt_end(uint64_t exception_index);
 void tlib_on_memory_access(uint32_t operation, uint64_t addr);
 void tlib_on_memory_access_event_enabled(int32_t value);
 
+uint32_t tlib_is_in_debug_mode(void);
+
+void tlib_clean_wfi_proc_state(void);
+
 #endif

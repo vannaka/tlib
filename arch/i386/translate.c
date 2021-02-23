@@ -24,6 +24,7 @@
 #include <signal.h>
 
 #include "cpu.h"
+#include "arch_callbacks.h"
 
 #include "tb-helper.h"
 
@@ -7834,6 +7835,10 @@ void cpu_exec_epilogue(CPUState *env)
 
 int process_interrupt(int interrupt_request, CPUState *env)
 {
+    if (tlib_is_in_debug_mode()) {
+        return 0;
+    }
+
     if (interrupt_request & CPU_INTERRUPT_INIT) {
         svm_check_intercept(env, SVM_EXIT_INIT);
         do_cpu_init(env);

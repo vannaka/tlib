@@ -9802,6 +9802,10 @@ void cpu_exec_prologue(CPUState *env)
 
 int process_interrupt(int interrupt_request, CPUState *env)
 {
+    if (tlib_is_in_debug_mode()) {
+        return 0;
+    }
+
     if (interrupt_request & CPU_INTERRUPT_HARD) {
         ppc_hw_interrupt(env);
         if (env->pending_interrupts == 0) {

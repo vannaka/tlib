@@ -10169,6 +10169,10 @@ void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
 
 int process_interrupt(int interrupt_request, CPUState *env)
 {
+    if (tlib_is_in_debug_mode()) {
+        return 0;
+    }
+
     if (interrupt_request & CPU_INTERRUPT_FIQ && !(env->uncached_cpsr & CPSR_F)) {
         env->exception_index = EXCP_FIQ;
         do_interrupt(env);

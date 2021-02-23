@@ -492,3 +492,10 @@ void tlib_on_memory_access_event_enabled(int32_t value)
 {
     cpu->tlib_is_on_memory_access_enabled = !!value;
 }
+
+void tlib_clean_wfi_proc_state(void)
+{
+    // Invalidates "Wait for interrupt" state, and makes the core ready to resume execution
+    cpu->exception_index &= ~EXCP_WFI;
+    cpu->wfi = 0;
+}

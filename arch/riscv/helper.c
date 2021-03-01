@@ -408,9 +408,9 @@ void do_interrupt(CPUState *env)
 
         /* Lowest bit of MTVEC changes mode to vectored interrupt */
         if ((env->mtvec & 1) && is_interrupt && env->privilege_architecture >= RISCV_PRIV1_10) {
-            env->pc = (env->mtvec & ~0x1) + (fixed_cause * 4);
+            env->pc = (env->mtvec & ~0x3) + (fixed_cause * 4);
         } else {
-            env->pc = env->mtvec;
+            env->pc = env->mtvec & ~0x3;
         }
 
         target_ulong ms = env->mstatus;
@@ -432,9 +432,9 @@ void do_interrupt(CPUState *env)
 
         /* Lowest bit of STVEC changes mode to vectored interrupt */
         if ((env->stvec & 1) && is_interrupt && (env->privilege_architecture >= RISCV_PRIV1_10)) {
-            env->pc = (env->stvec & ~0x1) + (fixed_cause * 4);
+            env->pc = (env->stvec & ~0x3) + (fixed_cause * 4);
         } else {
-            env->pc = env->stvec;
+            env->pc = env->stvec & ~0x3;
         }
 
         target_ulong s = env->mstatus;

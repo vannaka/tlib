@@ -434,3 +434,7 @@
 #define CSR_VALIDATION_FULL               2 /* privilege level + r/w bit */
 #define CSR_VALIDATION_PRIV               1 /* privilege level only */
 #define CSR_VALIDATION_NONE               0 /* non validation */
+
+#define INTERRUPT_MODE_AUTO               0 /* check mtvec's LSB to detect mode */
+#define INTERRUPT_MODE_DIRECT             1 /* force the direct interrupt mode and mask mtvec's LSB to 0 */
+#define INTERRUPT_MODE_VECTORED           2 /* force the vectored interrupt mode and set mtvec's LSB to 1 */

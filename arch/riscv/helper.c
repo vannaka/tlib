@@ -33,6 +33,7 @@ void cpu_reset(CPUState *env)
 {
     tlb_flush(env, 1);
 
+    int32_t interrupt_mode = env->interrupt_mode;
     int32_t csr_validation_level = env->csr_validation_level;
     int privilege = env->privilege_architecture;
     target_ulong mhartid = env->mhartid;
@@ -45,6 +46,7 @@ void cpu_reset(CPUState *env)
 
     memset(env, 0, offsetof(CPUState, breakpoints));
 
+    env->interrupt_mode = interrupt_mode;
     env->csr_validation_level = csr_validation_level;
     env->mhartid = mhartid;
     env->privilege_architecture = privilege;

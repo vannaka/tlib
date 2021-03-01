@@ -150,3 +150,58 @@ void tlib_allow_unaligned_accesses(int32_t allowed)
 {
     cpu->allow_unaligned_accesses = allowed;
 }
+
+void tlib_set_interrupt_mode(int32_t mode)
+{
+    target_ulong new_value;
+
+    switch(mode)
+    {
+        case INTERRUPT_MODE_AUTO:
+            break;
+
+        case INTERRUPT_MODE_DIRECT:
+            new_value = (cpu->mtvec & ~0x3);
+            if(cpu->mtvec != new_value)
+            {
+                tlib_printf(LOG_LEVEL_WARNING, "Direct interrupt mode set - updating MTVEC from 0x%x to 0x%x", cpu->mtvec, new_value);
+                cpu->mtvec = new_value;
+            }
+
+            new_value = (cpu->stvec & ~0x3);
+            if(cpu->stvec != new_value)
+            {
+                tlib_printf(LOG_LEVEL_WARNING, "Direct interrupt mode set - updating STVEC from 0x%x to 0x%x", cpu->stvec, new_value);
+                cpu->stvec = new_value;
+            }
+            break;
+
+        case INTERRUPT_MODE_VECTORED:
+            if(cpu->privilege_architecture < RISCV_PRIV1_10)
+            {
+                tlib_abortf("Vectored interrupt mode not supported in the selected privilege architecture");
+            }
+
+            new_value = (cpu->mtvec & ~0x3) | 0x1;
+            if(cpu->mtvec != new_value)
+            {
+                tlib_printf(LOG_LEVEL_WARNING, "Vectored interrupt mode set - updating MTVEC from 0x%x to 0x%x", cpu->mtvec, new_value);
+                cpu->mtvec = new_value;
+            }
+
+            new_value = (cpu->stvec & ~0x3) | 0x1;
+            if(cpu->stvec != new_value)
+            {
+                tlib_printf(LOG_LEVEL_WARNING, "Vectored interrupt mode set - updating STVEC from 0x%x to 0x%x", cpu->stvec, new_value);
+                cpu->stvec = new_value;
+            }
+
+            break;
+
+        default:
+            tlib_abortf("Unexpected interrupt mode: %d", mode);
+            return;
+    }
+
+    cpu->interrupt_mode = mode;
+}

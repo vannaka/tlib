@@ -128,6 +128,44 @@ target_ulong priv_version_csr_filter(CPUState *env, target_ulong csrno)
     return csrno;
 }
 
+static target_ulong mtvec_stvec_write_handler(target_ulong val_to_write, char* register_name)
+{
+    target_ulong new_value = 0;
+
+    if (((env->privilege_architecture >= RISCV_PRIV1_10) && (val_to_write & 0x2)) || (env->privilege_architecture < RISCV_PRIV1_10 && (val_to_write & 0x3))) {
+        tlib_printf(LOG_LEVEL_WARNING, "Trying to set unaligned %s: 0x%X, aligning to 4-byte boundary.", register_name, val_to_write);
+    }
+
+    switch (cpu->interrupt_mode)
+    {
+        case INTERRUPT_MODE_AUTO:
+            if (env->privilege_architecture >= RISCV_PRIV1_10) {
+                new_value = val_to_write & ~0x2;
+            } else {
+                new_value = val_to_write & ~0x3;
+            }
+        break;
+
+        case INTERRUPT_MODE_DIRECT:
+            new_value = val_to_write & ~0x3;
+            break;
+
+        case INTERRUPT_MODE_VECTORED:
+            new_value = (val_to_write & ~0x3) | 0x1;
+            break;
+
+        default:
+            tlib_abortf("Unexpected interrupt mode: %d", cpu->interrupt_mode);
+    }
+
+    if (new_value != val_to_write)
+    {
+        tlib_printf(LOG_LEVEL_WARNING, "%s value written to CSR corrected from 0x%x to 0x%x because of the selected interrupt mode and privilege architecture", register_name, val_to_write, new_value);
+    }
+
+    return new_value;
+}
+
 /*
  * Handle writes to CSRs and any resulting special behavior
  *
@@ -299,14 +337,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
         env->sepc = val_to_write;
         break;
     case CSR_STVEC:
-        if (((env->privilege_architecture >= RISCV_PRIV1_10) && (val_to_write & 0x2)) || (env->privilege_architecture < RISCV_PRIV1_10 && (val_to_write & 0x3))) {
-            tlib_printf(LOG_LEVEL_WARNING, "Trying to set unaligned stvec: 0x%X, aligning to 4-byte boundary.", val_to_write);
-        }
-        if (env->privilege_architecture >= RISCV_PRIV1_10) {
-            env->stvec = val_to_write & ~0x2;
-        } else {
-            env->stvec = val_to_write & ~0x3;
-        }
+        env->stvec = mtvec_stvec_write_handler(val_to_write, "STVEC");
         break;
     case CSR_SCOUNTEREN:
         env->scounteren = val_to_write;
@@ -324,14 +355,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
         env->mepc = val_to_write;
         break;
     case CSR_MTVEC:
-        if (((env->privilege_architecture >= RISCV_PRIV1_10) && (val_to_write & 0x2)) || (env->privilege_architecture < RISCV_PRIV1_10 && (val_to_write & 0x3))) {
-            tlib_printf(LOG_LEVEL_WARNING, "Trying to set unaligned mtvec: 0x%X, aligning to 4-byte boundary.", val_to_write);
-        }
-        if (env->privilege_architecture >= RISCV_PRIV1_10) {
-            env->mtvec = val_to_write & ~0x2;
-        } else {
-            env->mtvec = val_to_write & ~0x3;
-        }
+        env->mtvec = mtvec_stvec_write_handler(val_to_write, "MTVEC");
         break;
     case CSR_MCOUNTEREN:
         env->mcounteren = val_to_write;

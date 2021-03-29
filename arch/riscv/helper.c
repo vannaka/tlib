@@ -315,18 +315,28 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
 /*
  * Assuming system mode, only called in tlb_fill
  */
-int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, int mmu_idx)
+int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, int mmu_idx, int access_width)
 {
     target_phys_addr_t pa = 0;
     int prot;
+    int overlapping_region_id;
     int ret = TRANSLATE_FAIL;
+    target_ulong page_size = TARGET_PAGE_SIZE;
 
     ret = get_physical_address(env, &pa, &prot, address, access_type, mmu_idx);
-    if (!pmp_hart_has_privs(env, pa, TARGET_PAGE_SIZE, 1 << access_type)) {
+    if (!pmp_hart_has_privs(env, pa, access_width, 1 << access_type)) {
         ret = TRANSLATE_FAIL;
     }
     if (ret == TRANSLATE_SUCCESS) {
-        tlb_set_page(env, address & TARGET_PAGE_MASK, pa & TARGET_PAGE_MASK, prot, mmu_idx, TARGET_PAGE_SIZE);
+        overlapping_region_id = pmp_find_overlapping(env, pa & TARGET_PAGE_MASK, TARGET_PAGE_SIZE, 0);
+        // are there any PMP regions defined for this page?
+        if (overlapping_region_id != -1) {
+            // this effectively makes the tlb page entry one-shot:
+            // thanks to this every access to this page will be verified against PMP
+            page_size = access_width;
+        }
+
+        tlb_set_page(env, address & TARGET_PAGE_MASK, pa & TARGET_PAGE_MASK, prot, mmu_idx, page_size);
     } else if (ret == TRANSLATE_FAIL) {
         raise_mmu_exception(env, address, access_type);
     }

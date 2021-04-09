@@ -115,8 +115,22 @@ DATA_TYPE REGPARM glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr, int mmu
     /* test if there is match for unaligned or IO access */
     /* XXX: could done more in memory macro in a non portable way */
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-redo:
+
     tlb_addr = cpu->tlb_table[mmu_idx][index].ADDR_READ;
+    if(tlb_addr != -1 && (tlb_addr & TLB_ONE_SHOT) != 0) {
+        // TLB_ONE_SHOT pages should not be reused
+        // as there might be protected memory regions in them.
+        // A protected memory region does not have to fill the whole page;
+        // there might also be many memory regions defined for a single page.
+        // That's why we flush the page and force
+        // calling tlb_fill to check memory region
+        // restrictions on each access.
+        tlb_flush_page(cpu, addr);
+    }
+
+redo:
+    tlb_addr = cpu->tlb_table[mmu_idx][index].ADDR_READ & ~TLB_ONE_SHOT;
+
     if ((addr & TARGET_PAGE_MASK) == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
         if (tlb_addr & ~TARGET_PAGE_MASK) {
             /* IO access */
@@ -186,8 +200,22 @@ static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr, int m
     uintptr_t addend;
 
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-redo:
+
     tlb_addr = cpu->tlb_table[mmu_idx][index].ADDR_READ;
+    if(tlb_addr != -1 && (tlb_addr & TLB_ONE_SHOT) != 0) {
+        // TLB_ONE_SHOT pages should not be reused
+        // as there might be protected memory regions in them.
+        // A protected memory region does not have to fill the whole page;
+        // there might also be many memory regions defined for a single page.
+        // That's why we flush the page and force
+        // calling tlb_fill to check memory region
+        // restrictions on each access.
+        tlb_flush_page(cpu, addr);
+    }
+
+redo:
+    tlb_addr = cpu->tlb_table[mmu_idx][index].ADDR_READ & ~TLB_ONE_SHOT;
+
     if ((addr & TARGET_PAGE_MASK) == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
         if (tlb_addr & ~TARGET_PAGE_MASK) {
             /* IO access */
@@ -276,8 +304,22 @@ void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr, DATA_TYPE va
     register_address_access(cpu, addr);
 
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-redo:
+
     tlb_addr = cpu->tlb_table[mmu_idx][index].addr_write;
+    if(tlb_addr != -1 && (tlb_addr & TLB_ONE_SHOT) != 0) {
+        // TLB_ONE_SHOT pages should not be reused
+        // as there might be protected memory regions in them.
+        // A protected memory region does not have to fill the whole page;
+        // there might also be many memory regions defined for a single page.
+        // That's why we flush the page and force
+        // calling tlb_fill to check memory region
+        // restrictions on each access.
+        tlb_flush_page(cpu, addr);
+    }
+
+redo:
+    tlb_addr = cpu->tlb_table[mmu_idx][index].addr_write & ~TLB_ONE_SHOT;
+
     if ((addr & TARGET_PAGE_MASK) == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
         if (tlb_addr & ~TARGET_PAGE_MASK) {
             /* IO access */
@@ -344,8 +386,22 @@ static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr, DATA_TYPE 
     uintptr_t addend;
 
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-redo:
+
     tlb_addr = cpu->tlb_table[mmu_idx][index].addr_write;
+    if(tlb_addr != -1 && (tlb_addr & TLB_ONE_SHOT) != 0) {
+        // TLB_ONE_SHOT pages should not be reused
+        // as there might be protected memory regions in them.
+        // A protected memory region does not have to fill the whole page;
+        // there might also be many memory regions defined for a single page.
+        // That's why we flush the page and force
+        // calling tlb_fill to check memory region
+        // restrictions on each access.
+        tlb_flush_page(cpu, addr);
+    }
+
+redo:
+    tlb_addr = cpu->tlb_table[mmu_idx][index].addr_write & ~TLB_ONE_SHOT;
+
     if ((addr & TARGET_PAGE_MASK) == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
         if (tlb_addr & ~TARGET_PAGE_MASK) {
             /* IO access */

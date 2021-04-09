@@ -606,6 +606,8 @@ extern dirty_ram_t dirty_ram;
 
 /* Flags stored in the low bits of the TLB virtual address.  These are
    defined so that fast path ram access is all zeros.  */
+/* TLB entry should be recalculated before each use - e.g., it contains protected regions that needs to be checked */
+#define TLB_ONE_SHOT      (1 << 2)
 /* Zero if TLB entry is valid.  */
 #define TLB_INVALID_MASK  (1 << 3)
 /* Set if TLB entry references a clean RAM page.  The iotlb entry will

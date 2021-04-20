@@ -6989,7 +6989,7 @@ INLINE float ## s float ## s ## _minmax(float ## s a, float ## s b,     \
     uint ## s ## _t av, bv;                                             \
     a = float ## s ## _squash_input_denormal(a STATUS_VAR);             \
     b = float ## s ## _squash_input_denormal(b STATUS_VAR);             \
-    if (float ## s ## _is_any_nan(a) ||                                 \
+    if (float ## s ## _is_any_nan(a) &&                                 \
         float ## s ## _is_any_nan(b)) {                                 \
         return propagateFloat ## s ## NaN(a, b STATUS_VAR);             \
     }                                                                   \
@@ -6997,17 +6997,15 @@ INLINE float ## s float ## s ## _minmax(float ## s a, float ## s b,     \
     bSign = extractFloat ## s ## Sign(b);                               \
     av = float ## s ## _val(a);                                         \
     bv = float ## s ## _val(b);                                         \
-    if (aSign != bSign) {                                               \
-        if (ismin) {                                                    \
-            return aSign ? a : b;                                       \
-        } else {                                                        \
-            return aSign ? b : a;                                       \
-        }                                                               \
+    if(float ## s ## _is_any_nan(a)) {                                  \
+        return b;                                                       \
+    } else if(float ## s ## _is_any_nan(b)) {                           \
+        return a;                                                       \
     } else {                                                            \
-        if (ismin) {                                                    \
-            return (aSign ^ (av < bv)) ? a : b;                         \
+        if (aSign != bSign) {                                           \
+            return ismin ^ aSign ? b : a;                               \
         } else {                                                        \
-            return (aSign ^ (av < bv)) ? b : a;                         \
+            return ismin ^ aSign ^ (av < bv) ? b : a;                   \
         }                                                               \
     }                                                                   \
 }                                                                       \

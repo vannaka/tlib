@@ -884,22 +884,22 @@ static void gen_atomic(CPUState *env, DisasContext *dc, uint32_t opc, int rd, in
         break;
     case OPC_RISC_AMOMIN_W:
         tcg_gen_qemu_ld32s(dat, source1, dc->base.mem_idx);
-        tcg_gen_brcond_tl(TCG_COND_LT, dat, source2, done);
+        tcg_gen_brcond_i32(TCG_COND_LT, dat, source2, done);
         tcg_gen_qemu_st32(source2, source1, dc->base.mem_idx);
         break;
     case OPC_RISC_AMOMAX_W:
         tcg_gen_qemu_ld32s(dat, source1, dc->base.mem_idx);
-        tcg_gen_brcond_tl(TCG_COND_GT, dat, source2, done);
+        tcg_gen_brcond_i32(TCG_COND_GT, dat, source2, done);
         tcg_gen_qemu_st32(source2, source1, dc->base.mem_idx);
         break;
     case OPC_RISC_AMOMINU_W:
         tcg_gen_qemu_ld32s(dat, source1, dc->base.mem_idx);
-        tcg_gen_brcond_tl(TCG_COND_LTU, dat, source2, done);
+        tcg_gen_brcond_i32(TCG_COND_LTU, dat, source2, done);
         tcg_gen_qemu_st32(source2, source1, dc->base.mem_idx);
         break;
     case OPC_RISC_AMOMAXU_W:
         tcg_gen_qemu_ld32s(dat, source1, dc->base.mem_idx);
-        tcg_gen_brcond_tl(TCG_COND_GTU, dat, source2, done);
+        tcg_gen_brcond_i32(TCG_COND_GTU, dat, source2, done);
         tcg_gen_qemu_st32(source2, source1, dc->base.mem_idx);
         break;
 #if defined(TARGET_RISCV64)

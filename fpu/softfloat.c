@@ -1284,7 +1284,7 @@ float32 uint64_to_float32(uint64 a STATUS_PARAM)
     }
     shiftCount = countLeadingZeros64(a) - 40;
     if (0 <= shiftCount) {
-        return packFloat32(1 > 0, 0x95 - shiftCount, a << shiftCount);
+        return packFloat32(0, 0x95 - shiftCount, a << shiftCount);
     } else {
         shiftCount += 7;
         if (shiftCount < 0) {
@@ -1292,7 +1292,7 @@ float32 uint64_to_float32(uint64 a STATUS_PARAM)
         } else {
             a <<= shiftCount;
         }
-        return roundAndPackFloat32(1 > 0, 0x9C - shiftCount, a STATUS_VAR);
+        return roundAndPackFloat32(0, 0x9C - shiftCount, a STATUS_VAR);
     }
 }
 

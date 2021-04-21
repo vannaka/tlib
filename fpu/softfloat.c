@@ -3006,6 +3006,7 @@ int64 float64_to_int64(float64 a STATUS_PARAM)
     }
     shiftCount = 0x433 - aExp;
     if (shiftCount <= 0) {
+        if (shiftCount < -11) goto invalid;
         if (0x43E < aExp) {
             float_raise(float_flag_invalid STATUS_VAR);
             if (!aSign || ((aExp == 0x7FF) && (aSig != LIT64(0x0010000000000000)))) {
@@ -3019,6 +3020,9 @@ int64 float64_to_int64(float64 a STATUS_PARAM)
         shift64ExtraRightJamming(aSig, 0, shiftCount, &aSig, &aSigExtra);
     }
     return roundAndPackInt64(aSign, aSig, aSigExtra STATUS_VAR);
+invalid:
+    return (aExp == 0x7FF) && aSig ? 0x7FFFFFFFFFFFFFFF
+                : aSign ? (-0x7FFFFFFFFFFFFFFF - 1) : 0x7FFFFFFFFFFFFFFF;
 
 }
 

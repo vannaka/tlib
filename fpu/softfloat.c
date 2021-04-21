@@ -6725,16 +6725,39 @@ uint16 float64_to_uint16_round_to_zero(float64 a STATUS_PARAM)
     return res;
 }
 
-/* FIXME: This looks broken.  */
 uint64_t float64_to_uint64 (float64 a STATUS_PARAM)
 {
-    int64_t v;
+    flag aSign;
+    int16 aExp, shiftCount;
+    uint64_t aSig, aSigExtra;
+    a = float64_squash_input_denormal(a STATUS_VAR);
 
-    v = float64_val(int64_to_float64(INT64_MIN STATUS_VAR));
-    v += float64_val(a);
-    v = float64_to_int64(make_float64(v) STATUS_VAR);
+    aSig = extractFloat64Frac(a);
+    aExp = extractFloat64Exp(a);
+    aSign = extractFloat64Sign(a);
+    if (aExp) {
+        aSig |= LIT64(0x0010000000000000);
+    }
+    shiftCount = 0x433 - aExp;
+    if (shiftCount <= 0) {
+        if (shiftCount < -11) goto invalid;
+        if (0x43E < aExp) {
+            float_raise(float_flag_invalid STATUS_VAR);
+            if (!aSign || ((aExp == 0x7FF) && (aSig != LIT64(0x0010000000000000)))) {
+                return LIT64(0x7FFFFFFFFFFFFFFF);
+            }
+            return (int64_t)LIT64(0x8000000000000000);
+        }
+        aSigExtra = 0;
+        aSig <<= -shiftCount;
+    } else {
+        shift64ExtraRightJamming(aSig, 0, shiftCount, &aSig, &aSigExtra);
+    }
+    return roundAndPackInt64(aSign, aSig, aSigExtra STATUS_VAR);
+invalid:
+    return (aExp == 0x7FF) && aSig ? 0xFFFFFFFFFFFFFFFF
+                : aSign ? 0 : 0xFFFFFFFFFFFFFFFF;
 
-    return v - INT64_MIN;
 }
 
 uint64_t float64_to_uint64_round_to_zero (float64 a STATUS_PARAM)

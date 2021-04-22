@@ -1322,7 +1322,7 @@ float64 uint64_to_float64(uint64 a STATUS_PARAM)
     if (a == 0) {
         return float64_zero;
     }
-    if (a == (uint64_t)LIT64(0x8000000000000000)) {
+    if (a & (uint64_t)LIT64(0x8000000000000000)) {
         shift64RightJamming(a, 1, &a);
         return roundAndPackFloat64(0, 0x43D, a STATUS_VAR);
     }

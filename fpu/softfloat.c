@@ -6755,8 +6755,8 @@ uint64_t float64_to_uint64 (float64 a STATUS_PARAM)
     }
     return roundAndPackInt64(aSign, aSig, aSigExtra STATUS_VAR);
 invalid:
-    return (aExp == 0x7FF) && aSig ? 0xFFFFFFFFFFFFFFFF
-                : aSign ? 0 : 0xFFFFFFFFFFFFFFFF;
+    return (aExp == 0x7FF) && extractFloat64Frac(a) ? LIT64(0xFFFFFFFFFFFFFFFF)
+                : aSign ? 0 : LIT64(0xFFFFFFFFFFFFFFFF);
 
 }
 

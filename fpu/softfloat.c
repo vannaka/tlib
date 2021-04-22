@@ -1309,7 +1309,7 @@ float64 int64_to_float64(int64 a STATUS_PARAM)
     if (a == 0) {
         return float64_zero;
     }
-    if (a == (int64_t)LIT64(0x8000000000000000)) {
+    if (!(a & (int64_t)LIT64(0x7FFFFFFFFFFFFFFF))) {
         return packFloat64(1, 0x43E, 0);
     }
     zSign = (a < 0);

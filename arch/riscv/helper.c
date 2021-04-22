@@ -329,11 +329,17 @@ int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, i
     }
     if (ret == TRANSLATE_SUCCESS) {
         overlapping_region_id = pmp_find_overlapping(env, pa & TARGET_PAGE_MASK, TARGET_PAGE_SIZE, 0);
+
         // are there any PMP regions defined for this page?
         if (overlapping_region_id != -1) {
-            // this effectively makes the tlb page entry one-shot:
-            // thanks to this every access to this page will be verified against PMP
-            page_size = access_width;
+            // does the PMP region cover the whole page?
+            if (env->pmp_state.addr[overlapping_region_id].sa > (pa & TARGET_PAGE_MASK)
+                || env->pmp_state.addr[overlapping_region_id].ea < (pa & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE - 1)
+            {
+                // this effectively makes the tlb page entry one-shot:
+                // thanks to this every access to this page will be verified against PMP
+                page_size = access_width;
+            }
         }
 
         tlb_set_page(env, address & TARGET_PAGE_MASK, pa & TARGET_PAGE_MASK, prot, mmu_idx, page_size);

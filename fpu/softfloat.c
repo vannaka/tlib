@@ -3021,8 +3021,8 @@ int64 float64_to_int64(float64 a STATUS_PARAM)
     }
     return roundAndPackInt64(aSign, aSig, aSigExtra STATUS_VAR);
 invalid:
-    return (aExp == 0x7FF) && aSig ? 0x7FFFFFFFFFFFFFFF
-                : aSign ? (-0x7FFFFFFFFFFFFFFF - 1) : 0x7FFFFFFFFFFFFFFF;
+    return (aExp == 0x7FF) && extractFloat64Frac(a) ? LIT64(0x7FFFFFFFFFFFFFFF)
+                : aSign ? (-LIT64(0x7FFFFFFFFFFFFFFF) - 1) : LIT64(0x7FFFFFFFFFFFFFFF);
 
 }
 

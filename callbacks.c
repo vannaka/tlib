@@ -93,3 +93,11 @@ void tlib_on_block_translation(uint64_t start, uint32_t size, uint32_t flags)
 DEFAULT_VOID_HANDLER2(void tlib_on_memory_access, uint32_t operation, uint64_t address)
 
 DEFAULT_INT_HANDLER1(uint32_t tlib_is_in_debug_mode, void)
+
+DEFAULT_VOID_HANDLER1(void tlib_on_interrupt_begin, uint64_t exception_index)
+
+DEFAULT_VOID_HANDLER1(void tlib_on_interrupt_end, uint64_t exception_index)
+
+DEFAULT_PTR_HANDLER1(void *tlib_guest_offset_to_host_ptr, uint64_t offset)
+
+DEFAULT_INT_HANDLER1(uint64_t tlib_host_ptr_to_guest_offset, void *ptr)

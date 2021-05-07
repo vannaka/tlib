@@ -45,6 +45,14 @@
   return 0;\
 }
 
+#define DEFAULT_PTR_HANDLER1(NAME, PARAM1) \
+  NAME(PARAM1) __attribute__((weak));\
+\
+  NAME(PARAM1)\
+{\
+  return NULL;\
+}
+
 uint32_t tlib_read_byte(uint64_t address);
 uint32_t tlib_read_word(uint64_t address);
 uint32_t tlib_read_double_word(uint64_t address);

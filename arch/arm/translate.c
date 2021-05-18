@@ -10210,7 +10210,7 @@ int process_interrupt(int interrupt_request, CPUState *env)
     // fix from https://bugs.launchpad.net/qemu/+bug/942659
     if ((interrupt_request & CPU_INTERRUPT_HARD) &&
 #ifdef TARGET_PROTO_ARM_M
-        (env->regs[15] < 0xfffffff0) && !(env->uncached_cpsr & CPSR_PRIMASK))
+        (env->regs[15] < 0xffffffe0) && !(env->uncached_cpsr & CPSR_PRIMASK))
 #else
         !(env->uncached_cpsr & CPSR_I))
 #endif

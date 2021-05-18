@@ -82,7 +82,11 @@ void tlib_set_cpu_id(uint32_t value)
 
 void tlib_toggle_fpu(int32_t enabled)
 {
-    cpu->vfp.xregs[ARM_VFP_FPEXC] = enabled ? (1 << 30) : 0;
+    if (enabled) {
+        cpu->vfp.xregs[ARM_VFP_FPEXC] |= ARM_VFP_FPEXC_FPUEN_MASK;
+    } else {
+        cpu->vfp.xregs[ARM_VFP_FPEXC] &= ~ARM_VFP_FPEXC_FPUEN_MASK;
+    }
 }
 
 #ifdef TARGET_PROTO_ARM_M

@@ -27,12 +27,7 @@ add_definitions (
     -fomit-frame-pointer
     -fPIC
 
-    -DTCG_STANDALONE
-    -DCONFIG_NEED_MMU
-    -DCONFIG_SOFTMMU
-    -DNEED_CPU_H
     -DTARGET_LONG_BITS=${TARGET_LONG_BITS}
-    -DTCG_TARGET_${HOST_UPPER}
     -DHOST_LONG_BITS=${HOST_LONG_BITS}
 
     ${BIG_ENDIAN_DEF}

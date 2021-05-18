@@ -60,6 +60,7 @@ add_definitions (
     -Wextra
     -Wno-unused-parameter
     -Wno-sign-compare
+    -Werror
 
     -DCONFIG_NEED_MMU
     -DCONFIG_${HOST_ARCH_U}_DIS=1
@@ -108,9 +109,8 @@ add_dependencies (tlib tcglib)
 target_link_libraries (tlib
     $<$<PLATFORM_ID:Linux>:-Wl,--wrap=memcpy>  # Decreases required glibc version
     -fPIC
+    $<$<C_COMPILER_ID:GNU>:-zdefs>  # Error for undefined symbols is a default for Clang
 
-    m
-    rt
     pthread
     ${CMAKE_CURRENT_BINARY_DIR}/tcg/src/tcglib-build/libtcg.a
     )

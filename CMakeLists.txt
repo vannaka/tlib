@@ -43,33 +43,24 @@ string (TOUPPER "${HOST_ARCH}" HOST_ARCH_U)
 string (TOUPPER "${TARGET_ARCH}" TARGET_ARCH_U)
 
 if(TARGET_BIG_ENDIAN)
-    add_definitions (
-        -DTARGET_WORDS_BIGENDIAN=1)
+    set (BIG_ENDIAN_DEF -DTARGET_WORDS_BIGENDIAN=1)
 endif()
-
-if(HOST_WORD_SIZE EQUAL 64)
-    add_definitions (-fPIC)
-endif()
-
-if(DEBUG)
-    add_definitions (-g3)
-else()
-    add_definitions (-O2)
-endif()
-
-add_definitions (-Wall)
-add_definitions (-Wextra)
-add_definitions (-Wno-unused-parameter)
-add_definitions (-Wno-sign-compare)
 
 set (TARGET_ACTUAL_ARCH ${TARGET_ARCH})
 if("${TARGET_ARCH}" STREQUAL "arm-m")
     set (TARGET_ACTUAL_ARCH "arm")
+    set (ARM_M_DEF -DTARGET_PROTO_ARM_M=1)
 endif()
 string (TOUPPER "${TARGET_ACTUAL_ARCH}" TARGET_ACTUAL_ARCH_U)
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fomit-frame-pointer")
 add_definitions (
+    -fomit-frame-pointer
+    -fPIC
+    -Wall
+    -Wextra
+    -Wno-unused-parameter
+    -Wno-sign-compare
+
     -DCONFIG_NEED_MMU
     -DCONFIG_${HOST_ARCH_U}_DIS=1
     -DCONFIG_${TARGET_ACTUAL_ARCH_U}_DIS=1
@@ -84,18 +75,14 @@ add_definitions (
     -DTARGET_INT_ALIGNMENT=4
     -DTARGET_LONG_ALIGNMENT=4
     -DTARGET_LLONG_ALIGNMENT=4
+
     -DTARGET_ARCH=${TARGET_ACTUAL_ARCH}
     -DTARGET_${TARGET_ACTUAL_ARCH_U}=1
-    -DTARGET_LONG_BITS=${TARGET_WORD_SIZE})
+    -DTARGET_LONG_BITS=${TARGET_WORD_SIZE}
 
-if("${TARGET_ARCH}" STREQUAL "arm-m")
-    add_definitions (-DTARGET_PROTO_ARM_M=1)
-endif()
-
-set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fomit-frame-pointer")
-if(${HOST_WORD_SIZE} EQUAL 64)
-    set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--wrap=memcpy")
-endif()
+    ${ARM_M_DEF}
+    ${BIG_ENDIAN_DEF}
+    )
 
 include_directories (
     tcg
@@ -103,7 +90,8 @@ include_directories (
     include
     include_empty
     tcg/${HOST_ARCH}
-    arch/${TARGET_ACTUAL_ARCH})
+    arch/${TARGET_ACTUAL_ARCH}
+    )
 
 file (GLOB SOURCES
     "*.c"
@@ -118,9 +106,13 @@ add_library (tlib SHARED ${SOURCES})
 add_dependencies (tlib tcglib)
 
 target_link_libraries (tlib
+    $<$<PLATFORM_ID:Linux>:-Wl,--wrap=memcpy>  # Decreases required glibc version
+    -fPIC
+
     m
     rt
     pthread
-    ${CMAKE_CURRENT_BINARY_DIR}/tcg/src/tcglib-build/libtcg.a)
+    ${CMAKE_CURRENT_BINARY_DIR}/tcg/src/tcglib-build/libtcg.a
+    )
 
 

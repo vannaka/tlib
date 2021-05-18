@@ -321,6 +321,7 @@ void cpu_reset(CPUState *env)
     env->uncached_cpsr = ARM_CPU_MODE_SVC | CPSR_A | CPSR_F | CPSR_I;
 
 #ifdef TARGET_PROTO_ARM_M
+    env->v7m.fpccr = (env->v7m.fpccr & ~ARM_FPCCR_LSPACT_MASK) | ARM_FPCCR_ASPEN_MASK | ARM_FPCCR_LSPEN_MASK;
     tlib_nvic_write_primask((ARM_CPU_MODE_SVC | CPSR_A | CPSR_F | CPSR_I) & CPSR_PRIMASK);
 #endif
 
@@ -597,6 +598,31 @@ void do_v7m_exception_exit(CPUState *env)
     env->regs[15] = v7m_pop(env) & ~1;
     xpsr = v7m_pop(env);
     xpsr_write(env, xpsr, 0xfffffdff);
+    /* Pop extended frame  */
+    if (~type & ARM_EXC_RETURN_NFPCA_MASK) {
+        if(env->v7m.fpccr & ARM_FPCCR_LSPACT_MASK) {
+            /* FP state is still valid, pop space from stack  */
+            env->v7m.fpccr ^= ARM_FPCCR_LSPACT_MASK;
+            env->regs[13] += 0x48;
+        } else {
+            if (~env->vfp.xregs[ARM_VFP_FPEXC] & ARM_VFP_FPEXC_FPUEN_MASK) {
+                /* FPU is disabled, revert SP and rise Usage Fault  */
+                env->regs[13] -= 0x20;
+                env->v7m.control &= ~ARM_CONTROL_FPCA_MASK;
+                env->exception_index = EXCP_UDEF;
+                cpu_loop_exit(env);
+            }
+            for (int i = 0; i < 8; ++i) {
+                env->vfp.regs[i] = v7m_pop(env);
+                env->vfp.regs[i] |= ((uint64_t)v7m_pop(env)) << 32;
+            }
+            vfp_set_fpscr(env, v7m_pop(env));
+            /* Pop Reserved field  */
+            env->regs[13] += 0x4;
+        }
+    }
+    /* Set CONTROL.FPCA to NOT(type[ARM_EXC_RETURN_NFPCA])  */
+    env->v7m.control ^= (env->v7m.control ^ ~type >> (ARM_EXC_RETURN_NFPCA - ARM_CONTROL_FPCA)) & ARM_CONTROL_FPCA_MASK;
     /* Undo stack alignment.  */
     if (xpsr & 0x200) {
         env->regs[13] |= 4;
@@ -606,6 +632,23 @@ void do_v7m_exception_exit(CPUState *env)
        if there is a mismatch.  */
     /* ??? Likewise for mismatches between the CONTROL register and the stack
        pointer.  */
+}
+
+void HELPER(fp_lsp)(CPUState * env)
+{
+    /* Save FP state if FPCCR.LSPACT is set  */
+    if (unlikely(env->v7m.fpccr & ARM_FPCCR_LSPACT_MASK)) {
+        env->v7m.fpccr ^= ARM_FPCCR_LSPACT_MASK;
+        uint32_t fpcar = env->v7m.fpcar & ~0x3;
+        for (int i = 0; i < 8; ++i) {
+            stl_phys(fpcar + i * 8, env->vfp.regs[i]);
+            stl_phys(fpcar + i * 8 + 4, env->vfp.regs[i] >> 32);
+        }
+        uint32_t fpscr = vfp_get_fpscr(env);
+        stl_phys(fpcar + 0x40, fpscr);
+        /* Set default values from FPDSCR to FPSCR in new context */
+        vfp_set_fpscr(env, (fpscr & ~ARM_FPDSCR_VALUES_MASK) | (env->v7m.fpdscr & ARM_FPDSCR_VALUES_MASK));
+    }
 }
 
 static void do_interrupt_v7m(CPUState *env)
@@ -621,6 +664,9 @@ static void do_interrupt_v7m(CPUState *env)
     }
     if (env->v7m.exception == 0) {
         lr |= 8;
+    }
+    if (env->v7m.control & ARM_CONTROL_FPCA_MASK) {
+        lr ^= ARM_EXC_RETURN_NFPCA_MASK;
     }
 
     /* For exceptions we just mark as pending on the NVIC, and let that
@@ -659,11 +705,40 @@ static void do_interrupt_v7m(CPUState *env)
     env->condexec_bits = 0;
 
     /* Align stack pointer.  */
-    /* ??? Should only do this if Configuration Control Register
-       STACKALIGN bit is set.  */
+    /* ??? Should do this if Configuration Control Register
+       STACKALIGN bit is set or extended frame is being pushed.  */
     if (env->regs[13] & 4) {
         env->regs[13] -= 4;
         xpsr |= 0x200;
+    }
+    /* Push extended frame  */
+    if (env->v7m.control & ARM_CONTROL_FPCA_MASK) {
+        env->v7m.control &= ~ARM_CONTROL_FPCA_MASK;
+        if (env->v7m.fpccr & ARM_FPCCR_LSPEN_MASK) {
+            /* Set lazy FP state preservation  */
+            env->v7m.fpccr |= ARM_FPCCR_LSPACT_MASK;
+            env->regs[13] -= 0x48;
+            env->v7m.fpcar = env->regs[13];
+        } else {
+            if (~env->vfp.xregs[ARM_VFP_FPEXC] & ARM_VFP_FPEXC_FPUEN_MASK) {
+                /* FPU is disabled, revert SP and rise Usage Fault  */
+                if (xpsr & 0x200) {
+                    env->regs[13] |= 4;
+                }
+                env->exception_index = EXCP_UDEF;
+                cpu_loop_exit(env);
+            }
+            /* Push Reserved field  */
+            env->regs[13] -= 0x4;
+            uint32_t fpscr = vfp_get_fpscr(env);
+            v7m_push(env, fpscr);
+            /* Set default values from FPDSCR to FPSCR in new context */
+            vfp_set_fpscr(env, (fpscr & ~ARM_FPDSCR_VALUES_MASK) | (env->v7m.fpdscr & ARM_FPDSCR_VALUES_MASK));
+            for (int i = 0; i < 8; ++i) {
+                v7m_push(env, env->vfp.regs[8 - i]);
+                v7m_push(env, env->vfp.regs[8 - i] >> 32);
+            }
+        }
     }
     /* Switch to the handler mode.  */
     v7m_push(env, xpsr);

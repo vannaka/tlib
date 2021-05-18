@@ -61,6 +61,8 @@ DEF_HELPER_0(cpsr_read, i32)
 #ifdef TARGET_PROTO_ARM_M
 DEF_HELPER_3(v7m_msr, void, env, i32, i32)
 DEF_HELPER_2(v7m_mrs, i32, env, i32)
+
+DEF_HELPER_1(fp_lsp, void, env)
 #endif
 
 DEF_HELPER_3(set_cp15, void, env, i32, i32)

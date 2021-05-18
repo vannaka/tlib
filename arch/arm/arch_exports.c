@@ -97,4 +97,9 @@ uint32_t tlib_get_interrupt_vector_base()
     return cpu->v7m.vecbase;
 }
 
+uint32_t tlib_get_xpsr()
+{
+    return xpsr_read(cpu);
+}
+
 #endif

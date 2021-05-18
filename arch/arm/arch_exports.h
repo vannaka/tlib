@@ -13,6 +13,8 @@ void tlib_toggle_fpu(int32_t enabled);
 #ifdef TARGET_PROTO_ARM_M
 void tlib_set_interrupt_vector_base(uint32_t address);
 uint32_t tlib_get_interrupt_vector_base(void);
+
+uint32_t tlib_get_xpsr(void);
 #endif
 
 #endif

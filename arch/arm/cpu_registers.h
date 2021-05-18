@@ -26,6 +26,9 @@ typedef enum {
     BasePri_32   = 19,
     VecBase_32   = 20,
     CurrentSP_32 = 21,
-    OtherSP_32   = 22
+    OtherSP_32   = 22,
+    FPCCR_32     = 23,
+    FPCAR_32     = 24,
+    FPDSCR_32    = 26
 #endif
 } Registers;

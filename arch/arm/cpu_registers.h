@@ -29,6 +29,7 @@ typedef enum {
     OtherSP_32   = 22,
     FPCCR_32     = 23,
     FPCAR_32     = 24,
-    FPDSCR_32    = 26
+    FPDSCR_32    = 26,
+    CPACR_32     = 27
 #endif
 } Registers;

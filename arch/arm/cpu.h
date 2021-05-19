@@ -174,6 +174,7 @@ typedef struct CPUState {
         uint32_t current_sp;
         uint32_t exception;
         uint32_t pending_exception;
+        uint32_t cpacr;
         uint32_t fpccr;
         uint32_t fpcar;
         uint32_t fpdscr;
@@ -351,6 +352,13 @@ enum arm_cpu_mode {
 #define ARM_VFP_FPEXC_FPUEN_MASK   (1 << ARM_VFP_FPEXC_FPUEN)
 #define ARM_FPDSCR_VALUES_MASK     0x07c00000
 
+#define ARM_CPACR_CP10          20
+#define ARM_CPACR_CP10_MASK     (3 << ARM_CPACR_CP10)
+
+#define ARM_CPN_ACCESS_NONE     0
+#define ARM_CPN_ACCESS_PRIV     1
+#define ARM_CPN_ACCESS_FULL     3
+
 /* iwMMXt coprocessor control registers.  */
 #define ARM_IWMMXT_wCID  0
 #define ARM_IWMMXT_wCon  1
@@ -494,7 +502,11 @@ static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc, target_
     if (privmode) {
         *flags |= ARM_TBFLAG_PRIV_MASK;
     }
-    if (env->vfp.xregs[ARM_VFP_FPEXC] & ARM_VFP_FPEXC_FPUEN_MASK) {
+    if ((env->vfp.xregs[ARM_VFP_FPEXC] & ARM_VFP_FPEXC_FPUEN_MASK)
+#ifdef TARGET_PROTO_ARM_M
+        && (privmode || ((env->v7m.cpacr & ARM_CPACR_CP10_MASK) >> ARM_CPACR_CP10) == ARM_CPN_ACCESS_FULL)
+#endif
+    ) {
         *flags |= ARM_TBFLAG_VFPEN_MASK;
     }
 }

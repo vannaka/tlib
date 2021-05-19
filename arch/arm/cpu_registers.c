@@ -46,6 +46,8 @@ uint32_t *get_reg_pointer_32(int reg)
         return &(cpu->v7m.fpcar);
     case FPDSCR_32:
         return &(cpu->v7m.fpdscr);
+    case CPACR_32:
+        return &(cpu->v7m.cpacr);
 #endif
     default:
         return NULL;

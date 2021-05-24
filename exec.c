@@ -943,20 +943,26 @@ TranslationBlock *tb_find_pc(uintptr_t tc_ptr)
 
 static void breakpoint_invalidate(CPUState *env, target_ulong pc)
 {
-    target_phys_addr_t addr;
+    TranslationBlock *tb;
     target_ulong pd;
     ram_addr_t ram_addr;
     PhysPageDesc *p;
 
-    addr = cpu_get_phys_page_debug(env, pc);
-    p = phys_page_find(addr >> TARGET_PAGE_BITS);
-    if (!p) {
-        pd = IO_MEM_UNASSIGNED;
-    } else {
-        pd = p->phys_offset;
+    for (int i = 0; i < nb_tbs; ++i) {
+        tb = &tbs[i];
+        if (pc < tb->pc || tb->pc + tb->size < pc) {
+            continue;
+        }
+
+        p = phys_page_find(tb->page_addr[0] >> TARGET_PAGE_BITS);
+        if (!p) {
+            pd = IO_MEM_UNASSIGNED;
+        } else {
+            pd = p->phys_offset;
+        }
+        ram_addr = (pd & TARGET_PAGE_MASK) | (pc & ~TARGET_PAGE_MASK);
+        tb_invalidate_phys_page_range_inner(ram_addr, ram_addr + 1, 0, 0);
     }
-    ram_addr = (pd & TARGET_PAGE_MASK) | (pc & ~TARGET_PAGE_MASK);
-    tb_invalidate_phys_page_range_inner(ram_addr, ram_addr + 1, 0, 0);
 }
 
 /* Add a breakpoint.  */

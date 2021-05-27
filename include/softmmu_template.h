@@ -89,8 +89,11 @@ static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr, targe
     res = tlib_read_double_word(physaddr);
 #else
 #ifdef TARGET_WORDS_BIGENDIAN
-    res = (uint64_t)SWAP_BYTES(tlib_read_double_word(physaddr)) << 32;
-    res |= SWAP_BYTES(tlib_read_double_word(physaddr + 4));
+    uint32_t tmp;
+    tmp = tlib_read_double_word(physaddr);
+    res = (uint64_t)SWAP_BYTES(tmp) << 32;
+    tmp = tlib_read_double_word(physaddr + 4);
+    res |= SWAP_BYTES(tmp);
 #else
     res = tlib_read_double_word(physaddr);
     res |= (uint64_t)tlib_read_double_word(physaddr + 4) << 32;

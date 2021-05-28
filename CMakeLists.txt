@@ -7,7 +7,10 @@ option (DEBUG "Debug mode" OFF)
 
 option (HOST_BIG_ENDIAN "Host big endian" OFF)
 set (HOST_ARCH "i386" CACHE STRING "Host architecture")
-set (HOST_WORD_SIZE "64" CACHE STRING "Host word size")
+
+# Detect whether the host is 32- or 64-bit
+math (EXPR WORD_SIZE_FOUND "${CMAKE_SIZEOF_VOID_P} * 8")
+set (HOST_WORD_SIZE "${WORD_SIZE_FOUND}" CACHE STRING "Host word size")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 	set(CMAKE_BUILD_TYPE "Release" CACHE

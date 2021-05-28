@@ -124,8 +124,14 @@ if("${TARGET_ACTUAL_ARCH}" STREQUAL "i386")
       "Argument pointing linker to a math functions library. It's required to translate i386 code.")
 endif()
 
+# On x86_64 Linux, the memcpy function was modified in GNU libc v2.14.
+# It'd be impossible to run tlib without this wrapping with older libc.
+if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux AND ${HOST_ARCH} STREQUAL i386 AND ${HOST_WORD_SIZE} EQUAL 64)
+    set(WRAP_MEMCPY_OPT -Wl,--wrap=memcpy)
+endif()
+
 target_link_libraries (tlib
-    $<$<PLATFORM_ID:Linux>:-Wl,--wrap=memcpy>  # Decreases required glibc version
+    ${WRAP_MEMCPY_OPT}
     -fPIC
     $<$<C_COMPILER_ID:GNU>:-zdefs>  # Error for undefined symbols is a default for Clang
 

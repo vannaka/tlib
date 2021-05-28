@@ -3,9 +3,11 @@
 
 /* CPU interfaces that are target indpendent.  */
 
-#if defined(__arm__)
-#define WORDS_ALIGNED
-#endif
+// TODO: Fix or remove. Using 'WORDS_ALIGNED' is currently broken
+//       but it turns out it isn't really required on ARMv7.
+// #if defined(__arm__)
+// #define WORDS_ALIGNED
+// #endif
 
 #include "targphys.h"
 #include "bswap.h"

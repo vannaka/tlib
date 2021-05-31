@@ -24,6 +24,8 @@
 
 #include <elf.h>
 
+#include "additional.h"
+
 #if defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7EM__) || defined(__ARM_ARCH_7M__) || \
     defined(__ARM_ARCH_7R__)
 #define USE_ARMV7_INSTRUCTIONS
@@ -843,7 +845,7 @@ static inline void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, int opc)
         tcg_out_dat_imm(s, COND_AL, ARITH_ADD, TCG_REG_R0, TCG_REG_R0,
                         (mem_index << (TLB_SHIFT & 1)) | ((16 - (TLB_SHIFT >> 1)) << 8));
     }
-    tcg_out_ld32_12(s, COND_AL, TCG_REG_R1, TCG_REG_R0, offsetof(CPUState, tlb_table[0][0].addr_read));
+    tcg_out_ld32_12(s, COND_AL, TCG_REG_R1, TCG_REG_R0, tlb_table_n_0_addr_read[0]);
     tcg_out_dat_reg(s, COND_AL, ARITH_CMP, 0, TCG_REG_R1, TCG_REG_R8, SHIFT_IMM_LSL(TARGET_PAGE_BITS));
     /* Check alignment.  */
     if (s_bits) {
@@ -852,10 +854,10 @@ static inline void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, int opc)
 #  if TARGET_LONG_BITS == 64
     /* XXX: possibly we could use a block data load or writeback in
      * the first access.  */
-    tcg_out_ld32_12(s, COND_EQ, TCG_REG_R1, TCG_REG_R0, offsetof(CPUState, tlb_table[0][0].addr_read) + 4);
+    tcg_out_ld32_12(s, COND_EQ, TCG_REG_R1, TCG_REG_R0, tlb_table_n_0_addr_read[0] + 4);
     tcg_out_dat_reg(s, COND_EQ, ARITH_CMP, 0, TCG_REG_R1, addr_reg2, SHIFT_IMM_LSL(0));
 #  endif
-    tcg_out_ld32_12(s, COND_EQ, TCG_REG_R1, TCG_REG_R0, offsetof(CPUState, tlb_table[0][0].addend));
+    tcg_out_ld32_12(s, COND_EQ, TCG_REG_R1, TCG_REG_R0, tlb_table_n_0_addend[0]); 
 
     switch (opc) {
     case 0:
@@ -1002,7 +1004,7 @@ static inline void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, int opc)
         tcg_out_dat_imm(s, COND_AL, ARITH_ADD, TCG_REG_R0, TCG_REG_R0,
                         (mem_index << (TLB_SHIFT & 1)) | ((16 - (TLB_SHIFT >> 1)) << 8));
     }
-    tcg_out_ld32_12(s, COND_AL, TCG_REG_R1, TCG_REG_R0, offsetof(CPUState, tlb_table[0][0].addr_write));
+    tcg_out_ld32_12(s, COND_AL, TCG_REG_R1, TCG_REG_R0, tlb_table_n_0_addr_write[0]);
     tcg_out_dat_reg(s, COND_AL, ARITH_CMP, 0, TCG_REG_R1, TCG_REG_R8, SHIFT_IMM_LSL(TARGET_PAGE_BITS));
     /* Check alignment.  */
     if (s_bits) {
@@ -1011,10 +1013,10 @@ static inline void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, int opc)
 #  if TARGET_LONG_BITS == 64
     /* XXX: possibly we could use a block data load or writeback in
      * the first access.  */
-    tcg_out_ld32_12(s, COND_EQ, TCG_REG_R1, TCG_REG_R0, offsetof(CPUState, tlb_table[0][0].addr_write) + 4);
+    tcg_out_ld32_12(s, COND_EQ, TCG_REG_R1, TCG_REG_R0, tlb_table_n_0_addr_write[0] + 4);
     tcg_out_dat_reg(s, COND_EQ, ARITH_CMP, 0, TCG_REG_R1, addr_reg2, SHIFT_IMM_LSL(0));
 #  endif
-    tcg_out_ld32_12(s, COND_EQ, TCG_REG_R1, TCG_REG_R0, offsetof(CPUState, tlb_table[0][0].addend));
+    tcg_out_ld32_12(s, COND_EQ, TCG_REG_R1, TCG_REG_R0, tlb_table_n_0_addend[0]);
 
     switch (opc) {
     case 0:
@@ -1491,7 +1493,7 @@ static const TCGTargetOpDef arm_op_defs[] = {
 static void tcg_target_init(TCGContext *s)
 {
     /* fail safe */
-    if ((1 << CPU_TLB_ENTRY_BITS) != sizeof(CPUTLBEntry)) {
+    if ((1 << CPU_TLB_ENTRY_BITS) != sizeof_CPUTLBEntry) {
         tcg_abort();
     }
 

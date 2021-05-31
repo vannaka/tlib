@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <elf.h>
+
 #if defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7EM__) || defined(__ARM_ARCH_7M__) || \
     defined(__ARM_ARCH_7R__)
 #define USE_ARMV7_INSTRUCTIONS
@@ -1106,6 +1108,7 @@ static inline void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, int opc)
         }
         break;
     }
+# endif
 
     switch (s_bits) {
     case 0:

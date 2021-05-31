@@ -40,7 +40,10 @@ add_definitions (
     ${BIG_ENDIAN_DEF}
     )
 
-include_directories (${HOST_LOWER})
+include_directories (
+    ${HOST_LOWER}
+    ${CMAKE_SOURCE_DIR}
+    )
 
 add_library (tcg STATIC
     additional.c

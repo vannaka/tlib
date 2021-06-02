@@ -4,9 +4,18 @@ include (ExternalProject)
 project (tlib)
 
 option (DEBUG "Debug mode" OFF)
-
 option (HOST_BIG_ENDIAN "Host big endian" OFF)
-set (HOST_ARCH "i386" CACHE STRING "Host architecture")
+
+if(NOT DEFINED HOST_ARCH)
+    message(STATUS "'HOST_ARCH' isn't set; analyzing the CPU (${CMAKE_SYSTEM_PROCESSOR})...")
+    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(aarch64|arm)")
+        set (HOST_ARCH "arm" CACHE STRING "Host architecture")
+    elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(amd64|86)")
+        set (HOST_ARCH "i386" CACHE STRING "Host architecture")
+    else()
+        message(FATAL_ERROR "CMAKE_SYSTEM_PROCESSOR '${CMAKE_SYSTEM_PROCESSOR}' doesn't seem to be supported. Supported host architectures are: 'arm', 'i386'. Please set 'HOST_ARCH' manually.")
+    endif()
+endif()
 
 # Detect whether the host is 32- or 64-bit
 math (EXPR WORD_SIZE_FOUND "${CMAKE_SIZEOF_VOID_P} * 8")

@@ -28,6 +28,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifndef glue
 #define xglue(x, y)   x ## y
@@ -62,8 +63,8 @@ static inline void muls64(uint64_t *plow, uint64_t *phigh, int64_t a, int64_t b)
              : "a" (a), "0" (b));
 }
 #else
-void muls64(uint64_t *phigh, uint64_t *plow, int64_t a, int64_t b);
-void mulu64(uint64_t *phigh, uint64_t *plow, uint64_t a, uint64_t b);
+void muls64(uint64_t *plow, uint64_t *phigh, int64_t a, int64_t b);
+void mulu64(uint64_t *plow, uint64_t *phigh, uint64_t a, uint64_t b);
 #endif
 
 /**

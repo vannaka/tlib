@@ -44,6 +44,7 @@ include_directories (${HOST_LOWER})
 
 add_library (tcg STATIC
     additional.c
+    host-utils.c
     optimize.c
     tcg.c
     tcg-runtime.c

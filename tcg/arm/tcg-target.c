@@ -721,9 +721,6 @@ static inline void tcg_out_goto(TCGContext *s, int cond, uint32_t addr)
     if (val - 8 < 0x01fffffd && val - 8 > -0x01fffffd) {
         tcg_out_b(s, cond, val);
     } else {
-#if 1
-        tcg_abort();
-#else
         if (cond == COND_AL) {
             tcg_out_ld32_12(s, COND_AL, TCG_REG_PC, TCG_REG_PC, -4);
             tcg_out32(s, addr); /* XXX: This is l->u.value, can we use it? */
@@ -731,7 +728,6 @@ static inline void tcg_out_goto(TCGContext *s, int cond, uint32_t addr)
             tcg_out_movi32(s, cond, TCG_REG_R8, val - 8);
             tcg_out_dat_reg(s, cond, ARITH_ADD, TCG_REG_PC, TCG_REG_PC, TCG_REG_R8, SHIFT_IMM_LSL(0));
         }
-#endif
     }
 }
 
@@ -751,19 +747,18 @@ static inline void tcg_out_call(TCGContext *s, uint32_t addr)
             tcg_out_bl(s, COND_AL, val);
         }
     } else {
-#if 1
-        tcg_abort();
-#else
-        if (cond == COND_AL) {
-            tcg_out_dat_imm(s, cond, ARITH_ADD, TCG_REG_R14, TCG_REG_PC, 4);
+        // With the commented-out code this function was uncompilable because there's no 'cond' at all.
+        // Let's fix the problem by using the 'COND_AL' branch although it's just a guess on what's correct.
+        //
+        // if (cond == COND_AL) {
+            tcg_out_dat_imm(s, COND_AL, ARITH_ADD, TCG_REG_R14, TCG_REG_PC, 4);
             tcg_out_ld32_12(s, COND_AL, TCG_REG_PC, TCG_REG_PC, -4);
             tcg_out32(s, addr); /* XXX: This is l->u.value, can we use it? */
-        } else {
-            tcg_out_movi32(s, cond, TCG_REG_R9, addr);
-            tcg_out_dat_reg(s, cond, ARITH_MOV, TCG_REG_R14, 0, TCG_REG_PC, SHIFT_IMM_LSL(0));
-            tcg_out_bx(s, cond, TCG_REG_R9);
-        }
-#endif
+        // } else {
+        //     tcg_out_movi32(s, cond, TCG_REG_R9, addr);
+        //     tcg_out_dat_reg(s, cond, ARITH_MOV, TCG_REG_R14, 0, TCG_REG_PC, SHIFT_IMM_LSL(0));
+        //     tcg_out_bx(s, cond, TCG_REG_R9);
+        // }
     }
 }
 

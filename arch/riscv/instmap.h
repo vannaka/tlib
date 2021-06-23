@@ -50,6 +50,8 @@ enum {
     OPC_RISC_FNMADD      = (0x4F),
 
     OPC_RISC_FP_ARITH    = (0x53),
+
+    OPC_RISC_V           = (0x57),
 };
 
 #define MASK_OP_ARITH(op) (MASK_OP_MAJOR(op) | (op & ((0x7 << 12) |   \
@@ -310,6 +312,13 @@ enum {
     OPC_RISC_FCLASS_D  = OPC_RISC_FP_ARITH | (0x71 << 25),
 
     OPC_RISC_FMV_D_X   = OPC_RISC_FP_ARITH | (0x79 << 25),
+};
+
+#define MASK_OP_V(op) (MASK_OP_MAJOR(op) | (op & (0x7 << 12)))
+#define MASK_OP_V_CFG(op) (MASK_OP_MAJOR(op) | (op & (0x7 << 12)) | (op & (0x1 << 31)))
+enum {
+    OPC_RISC_VSETVLI   = OPC_RISC_V | (0x7 << 12) | (0x0 << 31),
+    OPC_RISC_VSETVL    = OPC_RISC_V | (0x7 << 12) | (0x1 << 31),
 };
 
 #define GET_B_IMM(inst)          ((extract32(inst, 8, 4) << 1)\

@@ -90,8 +90,9 @@ uint64_t *get_reg_pointer_64(int reg)
     case VLENB_64:
         return &(cpu->vlenb);
     default:
-        return NULL;
+        break;
     }
+    return NULL;
 }
 
 CPU_REGISTER_ACCESSOR(64)
@@ -163,8 +164,9 @@ uint32_t *get_reg_pointer_32(int reg)
     case VLENB_32:
         return &(cpu->vlenb);
     default:
-        return NULL;
+        break;
     }
+    return NULL;
 }
 
 CPU_REGISTER_ACCESSOR(32)

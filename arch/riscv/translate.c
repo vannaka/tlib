@@ -104,11 +104,6 @@ static inline void gen_sync_pc(DisasContext *dc)
     tcg_gen_movi_tl(cpu_pc, dc->base.pc);
 }
 
-static inline uint32_t extract32(uint32_t value, uint8_t start, uint8_t length)
-{
-    return (value >> start) & ((((uint32_t)1) << length) - 1);
-}
-
 static inline uint64_t sextract64(uint64_t value, uint8_t start, uint8_t length)
 {
     uint64_t result = (value >> start) & ((1 << length) - 1);
@@ -1479,6 +1474,64 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int csr)
     tcg_temp_free(imm_rs1);
 }
 
+static void gen_v_cfg(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, int imm)
+{
+    TCGv source1, source2, csr_store, dest, rd_pass, rs1_pass, rs2_pass, imm_rs1, vec_imm;
+    source1 = tcg_temp_new();
+    source2 = tcg_temp_new();
+    csr_store = tcg_temp_new();
+    dest = tcg_temp_new();
+    rs1_pass = tcg_temp_new();
+    rs2_pass = tcg_temp_new();
+    rd_pass = tcg_temp_new();
+    imm_rs1 = tcg_temp_new();
+    vec_imm = tcg_temp_new();
+    gen_get_gpr(source1, rs1);
+    gen_get_gpr(source2, rs2);
+    gen_sync_pc(dc);
+    tcg_gen_movi_tl(rs1_pass, rs1);
+    tcg_gen_movi_tl(rs2_pass, rs2);
+    tcg_gen_movi_tl(rd_pass, rd);
+    tcg_gen_movi_tl(imm_rs1, rs1);
+    tcg_gen_movi_tl(csr_store, CSR_VL);
+
+    switch (opc) {
+        case OPC_RISC_VSETVL:
+            // set VL csr
+            gen_helper_vsetvl(dest, cpu_env, rd_pass, imm_rs1, source1, source2);
+            break;
+        case OPC_RISC_VSETVLI:
+            // set VL
+            gen_helper_vsetvl(dest, cpu_env, rd_pass, imm_rs1, source1, rs2_pass);
+            break;
+        default:
+            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+            break;
+    }
+    gen_set_gpr(rd, dest);
+    tcg_temp_free(source1);
+    tcg_temp_free(source2);
+    tcg_temp_free(csr_store);
+    tcg_temp_free(dest);
+    tcg_temp_free(rs1_pass);
+    tcg_temp_free(rs2_pass);
+    tcg_temp_free(imm_rs1);
+    tcg_temp_free(vec_imm);
+}
+
+static void gen_v(CPUState *env, DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, int imm)
+{
+    switch (opc) {
+        case OPC_RISC_VSETVL:
+        case OPC_RISC_VSETVLI:
+            gen_v_cfg(dc, MASK_OP_V_CFG(dc->opcode), rd, rs1, rs2, imm);
+            break;
+        default:
+            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+            break;
+    }
+}
+
 static void decode_RV32_64C0(DisasContext *dc)
 {
     uint8_t funct3 = extract32(dc->opcode, 13, 3);
@@ -1830,6 +1883,9 @@ static void decode_RV32_64G(CPUState *env, DisasContext *dc)
         break;
     case OPC_RISC_SYSTEM:
         gen_system(dc, MASK_OP_SYSTEM(dc->opcode), rd, rs1, (dc->opcode & 0xFFF00000) >> 20);
+        break;
+    case OPC_RISC_V:
+        gen_v(env, dc, MASK_OP_V(dc->opcode), rd, rs1, rs2, imm);
         break;
     default:
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);

@@ -82,6 +82,9 @@ DEF_HELPER_1(release_global_memory_lock, void, env)
 DEF_HELPER_2(reserve_address, void, env, tl)
 DEF_HELPER_2(check_address_reservation, tl, env, tl)
 
+/* Vector Extension */
+DEF_HELPER_5(vsetvl, tl, env, tl, tl, tl, tl)
+
 DEF_HELPER_2(handle_custom_instruction, i32, i64, i64)
 
 void do_nmi(CPUState *env);

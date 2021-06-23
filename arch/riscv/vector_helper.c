@@ -1,0 +1,46 @@
+#include "cpu.h"
+
+
+#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
+
+/*
+ * Handle configuration to vector registers
+ *
+ * Adapted from Spike's processor_t::vectorUnit_t::set_vl
+ */
+target_ulong helper_vsetvl(CPUState *env, target_ulong rd, target_ulong rs1, target_ulong rs1_pass, target_ulong rs2_pass)
+{
+    target_ulong prev_csr_vl = env->vl;
+
+    env->vtype = rs2_pass;
+    env->vsew = 1 << (GET_VTYPE_VSEW(rs2_pass) + 3);
+    env->vlmul = GET_VTYPE_VLMUL(rs2_pass);
+    int8_t vlmul = (int8_t)(env->vlmul << 5) >> 5;
+    env->vflmul = vlmul >= 0 ? 1 << vlmul : 1.0 / (1 << -vlmul);
+    env->vlmax = (target_ulong)(env->vlen / env->vsew * env->vflmul);
+    env->vta = GET_VTYPE_VTA(rs2_pass);
+    env->vma = GET_VTYPE_VMA(rs2_pass);
+
+    float ceil_vfmul = MIN(env->vflmul, 1.0f);
+    env->vill = !(env->vflmul >= 0.125 && env->vflmul <= 8)
+           || env->vsew > (ceil_vfmul * env->elen)
+           || (rs2_pass >> 8) != 0;
+
+    if (env->vill) {
+        env->vtype |= ((target_ulong)1) << (TARGET_LONG_BITS - 1);
+        env->vlmax = 0;
+    }
+
+    if (env->vlmax == 0) {
+        env->vl = 0;
+    } else if (rd == 0 && rs1 == 0) {
+        // Keep existing VL value
+        env->vl = MIN(prev_csr_vl, env->vlmax);
+    } else if (rs1 == 0 && rd != 0) {
+        env->vl = env->vlmax;
+    } else {  // Normal stripmining (rs1 != 0)
+        env->vl = MIN(rs1_pass, env->vlmax);
+    }
+    env->vstart = 0;
+    return env->vl;
+}

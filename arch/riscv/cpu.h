@@ -123,6 +123,13 @@ struct CPUState {
     target_ulong elen;
     target_ulong vlmax;
 
+    target_ulong vsew;
+    target_ulong vlmul;
+    float vflmul;
+    target_ulong vill;
+    target_ulong vta;
+    target_ulong vma;
+
     /* temporary htif regs */
     uint64_t mfromhost;
     uint64_t mtohost;
@@ -281,5 +288,15 @@ static inline void set_default_mstatus()
         env->mstatus = 0;
     }
 }
+
+static inline uint32_t extract32(uint32_t value, uint8_t start, uint8_t length)
+{
+    return (value >> start) & ((((uint32_t)1) << length) - 1);
+}
+
+#define GET_VTYPE_VLMUL(inst)    extract32(inst, 0, 3)
+#define GET_VTYPE_VSEW(inst)     extract32(inst, 3, 3)
+#define GET_VTYPE_VTA(inst)      extract32(inst, 6, 1)
+#define GET_VTYPE_VMA(inst)      extract32(inst, 7, 1)
 
 #endif /* !defined (__RISCV_CPU_H__) */

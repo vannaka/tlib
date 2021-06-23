@@ -245,6 +245,13 @@
 #define CSR_MARCHID                       0xf12
 #define CSR_MIMPID                        0xf13
 #define CSR_MHARTID                       0xf14
+#define CSR_VSTART                        0x008
+#define CSR_VXSAT                         0x009
+#define CSR_VXRM                          0x00a
+#define CSR_VCSR                          0x00f
+#define CSR_VL                            0xc20
+#define CSR_VTYPE                         0xc21
+#define CSR_VLENB                         0xc22
 #define CSR_UNHANDLED                     0xffff
 
 /* mstatus bits */

@@ -63,6 +63,19 @@ void cpu_reset(CPUState *env)
     memcpy(env->custom_instructions, custom_instructions,
            sizeof(custom_instruction_descriptor_t) * CPU_CUSTOM_INSTRUCTIONS_LIMIT);
     env->pmp_napot_grain = -1;
+
+    // TODO: vlen and elen should be alterable to match machine architectures
+    env->vlen = 512;
+    env->elen = 64;
+
+    env->vlmax = 0;
+    env->vstart = 0;
+    env->vxsat = 0;
+    env->vxrm = 0;
+    env->vcsr = 0;
+    env->vl = 0;
+    env->vtype = 0;
+    env->vlenb = env->vlen / 8;
 }
 
 int get_interrupts_in_order(target_ulong pending_interrupts, target_ulong priv)

@@ -110,6 +110,19 @@ struct CPUState {
     target_ulong sscratch;
     target_ulong mscratch;
 
+    target_ulong vstart;
+    target_ulong vxsat;
+    target_ulong vxrm;
+    target_ulong vcsr;
+    target_ulong vl;
+    target_ulong vtype;
+    target_ulong vlenb;
+
+    /* Vector shadow state */
+    target_ulong vlen;
+    target_ulong elen;
+    target_ulong vlmax;
+
     /* temporary htif regs */
     uint64_t mfromhost;
     uint64_t mtohost;
@@ -161,8 +174,8 @@ struct CPUState {
     /* Supported modes:
          * 0 (INTERRUPT_MODE_AUTO) - chceck mtvec's LSB to detect mode: 0->direct, 1->vectored
          * 1 (INTERRUPT_MODE_DIRECT) - all exceptions set pc to mtvec's BASE
-         * 2 (INTERRUPT_MODE_VECTORED) - asynchronous interrupts set pc to mtvec's BASE + 4 * cause 
-     */ 
+         * 2 (INTERRUPT_MODE_VECTORED) - asynchronous interrupts set pc to mtvec's BASE + 4 * cause
+     */
     int32_t interrupt_mode;
 
     CPU_COMMON

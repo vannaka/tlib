@@ -452,6 +452,18 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
     case CSR_PMPADDR15:
         pmpaddr_csr_write(env, csrno - CSR_PMPADDR0, val_to_write);
         break;
+    case CSR_VSTART:
+        env->vstart = val_to_write;
+        break;
+    case CSR_VXSAT:
+        env->vxsat = val_to_write;
+        break;
+    case CSR_VXRM:
+        env->vxrm = val_to_write;
+        break;
+    case CSR_VCSR:
+        env->vcsr = val_to_write;
+        break;
     default:
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
@@ -651,6 +663,20 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     case CSR_PMPADDR14:
     case CSR_PMPADDR15:
         return pmpaddr_csr_read(env, csrno - CSR_PMPADDR0);
+    case CSR_VSTART:
+        return env->vstart;
+    case CSR_VXSAT:
+        return env->vxsat;
+    case CSR_VXRM:
+        return env->vxrm;
+    case CSR_VCSR:
+        return env->vcsr;
+    case CSR_VL:
+        return env->vl;
+    case CSR_VTYPE:
+        return env->vtype;
+    case CSR_VLENB:
+        return env->vlenb;
     default:
         /* used by e.g. MTIME read */
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);

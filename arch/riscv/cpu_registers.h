@@ -123,6 +123,13 @@ typedef enum {
     F_29_64     = 62,
     F_30_64     = 63,
     F_31_64     = 64,
+    VSTART_64   = 101,
+    VXSAT_64    = 102,
+    VXRM_64     = 103,
+    VCSR_64     = 104,
+    VL_64       = 0xc20,
+    VTYPE_64    = 0xc21,
+    VLENB_64    = 0xc22,
 #endif
 #ifdef TARGET_RISCV32
     ZERO_32     = 0,
@@ -245,5 +252,12 @@ typedef enum {
     F_29_32     = 62,
     F_30_32     = 63,
     F_31_32     = 64,
+    VSTART_32   = 101,
+    VXSAT_32    = 102,
+    VXRM_32     = 103,
+    VCSR_32     = 104,
+    VL_32       = 0xc20,
+    VTYPE_32    = 0xc21,
+    VLENB_32    = 0xc22,
 #endif
 } Registers;

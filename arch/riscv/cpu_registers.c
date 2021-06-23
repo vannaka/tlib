@@ -75,6 +75,20 @@ uint64_t *get_reg_pointer_64(int reg)
         return &(cpu->mtval);
     case MIP_64:
         return &(cpu->mip);
+    case VSTART_64:
+        return &(cpu->vstart);
+    case VXSAT_64:
+        return &(cpu->vxsat);
+    case VXRM_64:
+        return &(cpu->vxrm);
+    case VCSR_64:
+        return &(cpu->vcsr);
+    case VL_64:
+        return &(cpu->vl);
+    case VTYPE_64:
+        return &(cpu->vtype);
+    case VLENB_64:
+        return &(cpu->vlenb);
     default:
         return NULL;
     }
@@ -134,6 +148,20 @@ uint32_t *get_reg_pointer_32(int reg)
         return &(cpu->mtval);
     case MIP_32:
         return &(cpu->mip);
+    case VSTART_32:
+        return &(cpu->vstart);
+    case VXSAT_32:
+        return &(cpu->vxsat);
+    case VXRM_32:
+        return &(cpu->vxrm);
+    case VCSR_32:
+        return &(cpu->vcsr);
+    case VL_32:
+        return &(cpu->vl);
+    case VTYPE_32:
+        return &(cpu->vtype);
+    case VLENB_32:
+        return &(cpu->vlenb);
     default:
         return NULL;
     }

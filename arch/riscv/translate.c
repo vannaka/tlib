@@ -1519,8 +1519,12 @@ static void gen_v_cfg(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, 
     tcg_temp_free(vec_imm);
 }
 
-static void gen_v(CPUState *env, DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, int imm)
+static void gen_v(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, int imm)
 {
+    if (!ensure_extension(dc, RISCV_FEATURE_RVV))
+    {
+        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+    }
     switch (opc) {
         case OPC_RISC_VSETVL:
         case OPC_RISC_VSETVLI:
@@ -1885,7 +1889,7 @@ static void decode_RV32_64G(CPUState *env, DisasContext *dc)
         gen_system(dc, MASK_OP_SYSTEM(dc->opcode), rd, rs1, (dc->opcode & 0xFFF00000) >> 20);
         break;
     case OPC_RISC_V:
-        gen_v(env, dc, MASK_OP_V(dc->opcode), rd, rs1, rs2, imm);
+        gen_v(dc, MASK_OP_V(dc->opcode), rd, rs1, rs2, imm);
         break;
     default:
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);

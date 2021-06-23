@@ -1,5 +1,8 @@
 #include "cpu.h"
 
+#define require_vec if (!(env->mstatus & MSTATUS_VS)) { \
+    helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST); \
+}
 
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 
@@ -10,6 +13,7 @@
  */
 target_ulong helper_vsetvl(CPUState *env, target_ulong rd, target_ulong rs1, target_ulong rs1_pass, target_ulong rs2_pass)
 {
+    require_vec;
     target_ulong prev_csr_vl = env->vl;
 
     env->vtype = rs2_pass;

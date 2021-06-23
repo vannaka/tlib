@@ -220,7 +220,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
                 helper_tlb_flush(env);
             }
             mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV |
-                   MSTATUS_SUM | MSTATUS_MPP | MSTATUS_MXR |
+                   MSTATUS_SUM | MSTATUS_MPP | MSTATUS_MXR | MSTATUS_VS |
                    (validate_vm(env, get_field(val_to_write, MSTATUS_VM)) ? MSTATUS_VM : 0);
         }
         if (env->privilege_architecture >= RISCV_PRIV1_10) {
@@ -228,7 +228,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
                 helper_tlb_flush(env);
             }
             mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV |
-                   MSTATUS_SUM | MSTATUS_MPP | MSTATUS_MXR;
+                   MSTATUS_SUM | MSTATUS_MPP | MSTATUS_MXR | MSTATUS_VS;
         }
 #ifdef TARGET_RISCV64
         mask |= MSTATUS_UXL | MSTATUS_SXL;
@@ -374,7 +374,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
             val_to_write &= ~RISCV_FEATURE_RVD;
         }
 
-        // allow MAFDCSU bits in MISA to be modified
+        // allow MAFDCSUV bits in MISA to be modified
         target_ulong mask = 0;
         mask |= RISCV_FEATURE_RVM;
         mask |= RISCV_FEATURE_RVA;
@@ -383,6 +383,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
         mask |= RISCV_FEATURE_RVC;
         mask |= RISCV_FEATURE_RVS;
         mask |= RISCV_FEATURE_RVU;
+        mask |= RISCV_FEATURE_RVV;
         mask &= env->misa_mask;
 
         env->misa = (val_to_write & mask) | (env->misa & ~mask);

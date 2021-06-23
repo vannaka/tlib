@@ -264,6 +264,7 @@
 #define MSTATUS_HPIE                      0x00000040
 #define MSTATUS_MPIE                      0x00000080
 #define MSTATUS_SPP                       0x00000100
+#define MSTATUS_VS                        0x00000600 /* vec-1.0-rc1 */
 #define MSTATUS_HPP                       0x00000600
 #define MSTATUS_MPP                       0x00001800
 #define MSTATUS_FS                        0x00006000
@@ -277,6 +278,7 @@
 #define MSTATUS_TW                        0x20000000 /* since: priv-1.10 */
 #define MSTATUS_TSR                       0x40000000 /* since: priv-1.10 */
 
+#define MSTATUS_VS_INITIAL                0x00000600
 #define MSTATUS_FS_INITIAL                0x00002000
 #define MSTATUS_XS_INITIAL                0x00008000
 

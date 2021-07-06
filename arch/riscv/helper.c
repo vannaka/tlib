@@ -68,13 +68,6 @@ void cpu_reset(CPUState *env)
     env->vlen = 512;
     env->elen = 64;
 
-    env->vlmax = 0;
-    env->vstart = 0;
-    env->vxsat = 0;
-    env->vxrm = 0;
-    env->vcsr = 0;
-    env->vl = 0;
-    env->vtype = 0;
     env->vlenb = env->vlen / 8;
 }
 

@@ -240,3 +240,69 @@ uint32_t tlib_set_elen(uint32_t elen)
     cpu->elen = elen;
     return 0;
 }
+
+static bool check_vector_access(uint32_t regn, uint32_t idx)
+{
+    if (regn >= 32) {
+        tlib_printf(LOG_LEVEL_ERROR, "Vector register number out of bounds");
+        return 1;
+    }
+    if (V_IDX_INVALID(regn)) {
+        tlib_printf(LOG_LEVEL_ERROR, "Invalid vector register number (not divisible by LMUL=%d)", cpu->vlmul);
+        return 1;
+    }
+    if (idx >= cpu->vlmax) {
+        tlib_printf(LOG_LEVEL_ERROR, "Vector element index out of bounds (VLMAX=%d)", cpu->vlmax);
+        return 1;
+    }
+    return 0;
+} 
+
+uint64_t tlib_get_vector(uint32_t regn, uint32_t idx)
+{
+    if (check_vector_access(regn, idx)) {
+        return 0;
+    }
+
+    switch (cpu->vsew) {
+    case 8:
+        return ((uint8_t *)V(regn))[idx];
+    case 16:
+        return ((uint16_t *)V(regn))[idx];
+    case 32:
+        return ((uint32_t *)V(regn))[idx];
+    case 64: 
+        return ((uint64_t *)V(regn))[idx];
+    default:
+        tlib_printf(LOG_LEVEL_ERROR, "Unsupported SEW (%d)", cpu->vsew);
+        return 0;
+    }
+}
+
+void tlib_set_vector(uint32_t regn, uint32_t idx, uint64_t value)
+{
+    if (check_vector_access(regn, idx)) {
+        return;
+    }
+    if (value >> cpu->vsew) {
+        tlib_printf(LOG_LEVEL_ERROR, "`value` (0x%llx) won't fit in vector element with SEW=%d", value, cpu->vsew);
+        return;
+    }
+
+    switch (cpu->vsew) {
+    case 8:
+        ((uint8_t *)V(regn))[idx] = value;
+        break;
+    case 16:
+        ((uint16_t *)V(regn))[idx] = value;
+        break;
+    case 32:
+        ((uint32_t *)V(regn))[idx] = value;
+        break;
+    case 64: 
+        ((uint64_t *)V(regn))[idx] = value;
+        break;
+    default:
+        tlib_printf(LOG_LEVEL_ERROR, "Unsupported SEW (%d)", cpu->vsew);
+    }
+}

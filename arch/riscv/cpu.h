@@ -71,6 +71,7 @@ typedef struct CPUState CPUState;
 struct CPUState {
     target_ulong gpr[32];
     uint64_t fpr[32]; /* assume both F and D extensions */
+    uint8_t vr[32 * (VLEN_MAX / 8)];
     target_ulong pc;
 
     target_ulong frm;
@@ -308,5 +309,16 @@ static inline uint32_t extract32(uint32_t value, uint8_t start, uint8_t length)
 #define GET_VTYPE_VSEW(inst)     extract32(inst, 3, 3)
 #define GET_VTYPE_VTA(inst)      extract32(inst, 6, 1)
 #define GET_VTYPE_VMA(inst)      extract32(inst, 7, 1)
+
+// Vector registers are defined as contiguous segments of vlenb bytes.
+#define V(x) (env->vr + (x) * env->vlenb)
+#define SEW() GET_VTYPE_VSEW(env->vtype)
+#define EMUL(eew) (((int8_t)(env->vlmul & 0x4 ? env->vlmul | 0xf8 : env->vlmul) + (eew) - SEW()) & 0x7)
+
+// if LMUL >= 1 then n has to be divisible by LMUL
+#define V_IDX_INVALID_EMUL(n, emul) ((emul) < 0x4 && ((n) & ((1 << (emul)) - 1)) != 0)
+#define V_IDX_INVALID_EEW(n, eew) V_IDX_INVALID_EMUL(n, EMUL(eew))
+#define V_IDX_INVALID(n) V_IDX_INVALID_EMUL(n, env->vlmul)
+#define V_INVALID_NF(vd, nf, emul) (((emul) & 0x4) != 0 && (((nf) << (emul)) >= 8 || ((vd) + ((nf) << (emul))) >= 32))
 
 #endif /* !defined (__RISCV_CPU_H__) */

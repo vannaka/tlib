@@ -1793,7 +1793,19 @@ static void gen_v_opivv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
     case RISC_V_FUNCT_MADC:
     case RISC_V_FUNCT_SBC:
     case RISC_V_FUNCT_MSBC:
+        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        break;
     case RISC_V_FUNCT_MERGE_MV:
+        if (vm) {
+            if (vs2) {
+                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+                break;
+            }
+            gen_helper_vmv_ivv(cpu_env, t_vd, t_vs1);
+        } else {
+            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        }
+        break;
     case RISC_V_FUNCT_MSEQ:
     case RISC_V_FUNCT_MSNE:
     case RISC_V_FUNCT_MSLTU:
@@ -1846,7 +1858,19 @@ static void gen_v_opivt(DisasContext *dc, uint8_t funct6, int vd, int vs2, TCGv 
     case RISC_V_FUNCT_SLIDEDOWN:
     case RISC_V_FUNCT_ADC:
     case RISC_V_FUNCT_MADC:
+        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        break;
     case RISC_V_FUNCT_MERGE_MV:
+        if (vm) {
+            if (vs2) {
+                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+            } else {
+                gen_helper_vmv_ivi(cpu_env, t_vd, t);
+            }
+        } else {
+            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        }
+        break;
     case RISC_V_FUNCT_MSEQ:
     case RISC_V_FUNCT_MSNE:
     case RISC_V_FUNCT_MSLEU:

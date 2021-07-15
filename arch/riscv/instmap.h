@@ -315,7 +315,6 @@ enum {
 };
 
 #define MASK_OP_V(op) (MASK_OP_MAJOR(op) | (op & (0x7 << 12)))
-#define MASK_OP_V_CFG(op) (MASK_OP_MAJOR(op) | (op & (0x7 << 12)) | (op & (0x1 << 31)))
 enum {
     OPC_RISC_V_IVV = OPC_RISC_V | (0x0 << 12),
     OPC_RISC_V_FVV = OPC_RISC_V | (0x1 << 12),

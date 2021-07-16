@@ -84,13 +84,14 @@ typedef struct DisasContextBase {
     int is_jmp;
 } DisasContextBase;
 
-#define HOST_LONG_SIZE     (HOST_LONG_BITS / 8)
+#define HOST_LONG_SIZE      (HOST_LONG_BITS / 8)
 
-#define EXCP_INTERRUPT     0x10000 /* async interruption */
-#define EXCP_WFI           0x10001 /* hlt instruction reached */
-#define EXCP_DEBUG         0x10002 /* cpu stopped after a breakpoint or singlestep */
-#define EXCP_HALTED        0x10003 /* cpu is halted (waiting for external event) */
-#define EXCP_WATCHPOINT    0x10004
+#define EXCP_INTERRUPT      0x10000 /* async interruption */
+#define EXCP_WFI            0x10001 /* hlt instruction reached */
+#define EXCP_DEBUG          0x10002 /* cpu stopped after a breakpoint or singlestep */
+#define EXCP_HALTED         0x10003 /* cpu is halted (waiting for external event) */
+#define EXCP_WATCHPOINT     0x10004
+#define EXCP_RETURN_REQUEST 0x10005
 
 #define TB_JMP_CACHE_BITS  12
 #define TB_JMP_CACHE_SIZE  (1 << TB_JMP_CACHE_BITS)
@@ -164,7 +165,6 @@ typedef struct CPUBreakpoint {
     target_ulong mem_io_vaddr; /* target virtual addr at which the \
                                      memory was accessed */                   \
     uint32_t wfi;              /* Nonzero if the CPU is in suspend state */   \
-    uint32_t wfe;                                                             \
     uint32_t interrupt_request;                                               \
     volatile sig_atomic_t exit_request;                                       \
     int tb_restart_request;                                                   \

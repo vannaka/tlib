@@ -263,12 +263,9 @@ int cpu_exec(CPUState *env)
     uint8_t *tc_ptr;
     uintptr_t next_tb;
 
-    if (env->wfi) {
-        if (!cpu_has_work(env)) {
-            return EXCP_WFI;
-        }
 
-        env->wfi = 0;
+    if (!cpu_has_work(env)) {
+        return EXCP_WFI;
     }
 
     cpu_exec_prologue(env);

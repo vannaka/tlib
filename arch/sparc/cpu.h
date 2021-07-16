@@ -387,7 +387,9 @@ static inline bool tb_am_enabled(int tb_flags)
 
 static inline bool cpu_has_work(CPUState *env)
 {
-    return (env->interrupt_request & CPU_INTERRUPT_HARD) && cpu_interrupts_enabled(env);
+    // clear WFI if waking up condition is met
+    env->wfi &= !((env->interrupt_request & CPU_INTERRUPT_HARD) && cpu_interrupts_enabled(env));
+    return !env->wfi;
 }
 
 #include "exec-all.h"

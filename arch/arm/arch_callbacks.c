@@ -52,4 +52,8 @@ DEFAULT_VOID_HANDLER2(void tlib_write_cp15_64, uint32_t instruction, uint64_t va
 
 DEFAULT_INT_HANDLER1(uint32_t tlib_is_wfi_as_nop, void)
 
+DEFAULT_INT_HANDLER1(uint32_t tlib_is_wfe_and_sev_as_nop, void)
+
 DEFAULT_INT_HANDLER1(uint32_t tlib_do_semihosting, void)
+
+DEFAULT_VOID_HANDLER1(void tlib_set_system_event, int32_t value)

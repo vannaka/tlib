@@ -214,8 +214,9 @@ static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc, target_
 
 static inline bool cpu_has_work(CPUState *env)
 {
-    return (cpu->mip & cpu->mie);
-
+    // clear WFI if waking up condition is met
+    env->wfi &= !(cpu->mip & cpu->mie);
+    return !env->wfi;
 }
 
 static inline int riscv_mstatus_fs(CPUState *env)

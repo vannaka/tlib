@@ -54,6 +54,7 @@ DEF_HELPER_1(logicq_cc, i32, i64)
 DEF_HELPER_3(sel_flags, i32, i32, i32, i32)
 DEF_HELPER_1(exception, void, i32)
 DEF_HELPER_0(wfi, void)
+DEF_HELPER_0(wfe, void)
 
 DEF_HELPER_2(cpsr_write, void, i32, i32)
 DEF_HELPER_0(cpsr_read, i32)

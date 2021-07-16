@@ -84,6 +84,7 @@ void translate_init(void)
    conditional executions state has been updated.  */
 #define DISAS_WFI 4
 #define DISAS_SWI 5
+#define DISAS_WFE 6
 
 static inline TCGv load_cpu_offset(int offset)
 {
@@ -3830,8 +3831,19 @@ static void gen_nop_hint(DisasContext *s, int val)
         s->base.is_jmp = DISAS_WFI;
         break;
     case 2:  /* wfe */
+        if (tlib_is_wfe_and_sev_as_nop()){
+            break;
+        }
+        gen_set_pc_im(s->base.pc);
+        s->base.is_jmp = DISAS_WFE;
+        break;
+
     case 4:  /* sev */
-    /* TODO: Implement SEV and WFE.  May help SMP performance.  */
+        if (tlib_is_wfe_and_sev_as_nop()){
+            break;
+        }
+        tlib_set_system_event(1);
+        break;
     default: /* nop */
         break;
     }
@@ -10175,7 +10187,11 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)
         break;
     case DISAS_WFI:
         gen_helper_wfi();
-        gen_exit_tb_no_chaining(dc->base.tb);;
+        gen_exit_tb_no_chaining(dc->base.tb);
+        break;
+    case DISAS_WFE:
+        gen_helper_wfe();
+        gen_exit_tb_no_chaining(dc->base.tb);
         break;
     case DISAS_SWI:
         gen_exception(EXCP_SWI);

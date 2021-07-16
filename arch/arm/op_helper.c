@@ -201,6 +201,12 @@ void HELPER(wfi)(void)
     env->wfi = 1;
 }
 
+void HELPER(wfe)(void)
+{
+    env->exception_index = EXCP_WFI;
+    env->wfe = 1;
+}
+
 void HELPER(exception)(uint32_t excp)
 {
     env->exception_index = excp;

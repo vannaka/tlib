@@ -89,6 +89,16 @@ void tlib_toggle_fpu(int32_t enabled)
     }
 }
 
+void tlib_set_sev_on_pending(int32_t value)
+{
+    cpu->sev_on_pending = !!value;
+}
+
+void tlib_set_event_flag(int value)
+{
+    cpu->sev_pending = !!value;
+}
+
 #ifdef TARGET_PROTO_ARM_M
 
 void tlib_set_interrupt_vector_base(uint32_t address)

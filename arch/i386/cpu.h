@@ -979,8 +979,10 @@ static inline int cpu_mmu_index (CPUState *env)
 
 static inline bool cpu_has_work(CPUState *env)
 {
-    return ((env->interrupt_request & CPU_INTERRUPT_HARD) && (env->eflags & IF_MASK)) ||
-           (env->interrupt_request & (CPU_INTERRUPT_NMI | CPU_INTERRUPT_INIT | CPU_INTERRUPT_SIPI | CPU_INTERRUPT_MCE));
+    // clear WFI if waking up condition is met
+    env->wfi &= !(((env->interrupt_request & CPU_INTERRUPT_HARD) && (env->eflags & IF_MASK)) ||
+        (env->interrupt_request & (CPU_INTERRUPT_NMI | CPU_INTERRUPT_INIT | CPU_INTERRUPT_SIPI | CPU_INTERRUPT_MCE)));
+    return !env->wfi;
 }
 
 #include "exec-all.h"

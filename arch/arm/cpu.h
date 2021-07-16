@@ -118,6 +118,9 @@ typedef struct CPUState {
     uint32_t thumb;         /* cpsr[5]. 0 = arm mode, 1 = thumb mode. */
     uint32_t condexec_bits; /* IT bits.  cpsr[15:10,26:25].  */
 
+    bool wfe;
+    bool sev_pending;
+
     /* System control coprocessor (cp15) */
     struct {
         uint32_t c0_cpuid;
@@ -218,6 +221,8 @@ typedef struct CPUState {
     uint32_t exclusive_addr;
     uint32_t exclusive_val;
     uint32_t exclusive_high;
+
+    int32_t sev_on_pending;
 
     /* iwMMXt coprocessor state.  */
     struct {
@@ -513,13 +518,52 @@ static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc, target_
     }
 }
 
+static inline bool is_cpu_event_pending(CPUState *env)
+{
+    // The execution of an SEV instruction on any processor in the multiprocessor system.
+    bool event_pending = env->sev_pending;
+#ifdef TARGET_PROTO_ARM_M
+    // Any exception entering the Pending state if SEVONPEND in the System Control Register is set.
+    event_pending |= env->sev_on_pending && tlib_nvic_get_pending_masked_irq();
+    // An asynchronous exception at a priority that preempts any currently active exceptions.
+    event_pending |= env->interrupt_request & CPU_INTERRUPT_HARD;
+#else
+    uint32_t cpsr = cpsr_read(env);
+    // An IRQ interrupt (even when CPSR I-bit is set, some implementations check this mask)
+    event_pending |= !!(env->interrupt_request & CPU_INTERRUPT_HARD);
+    // An FIQ interrupt (even when CPSR F-bit is set, some implementations check this mask)
+    event_pending |= !!(env->interrupt_request & CPU_INTERRUPT_FIQ);
+    // An asynchronous abort (not when masked by the CPSR A-bit)
+    event_pending |= (env->interrupt_request & CPU_INTERRUPT_EXITTB) && (cpsr & CPSR_A);
+    // Events could be sent by implementation defined mechanisms, e.g.:
+    // A CP15 maintenance request broadcast by other processors.
+    // Virtual Interrupts (HCR), Hypervisor mode isn't implemented
+    // TODO
+#endif
+
+    return event_pending;
+}
+
 static inline bool cpu_has_work(CPUState *env)
 {
+    if (env->wfe && is_cpu_event_pending(env)) {
+        env->sev_pending = 0;
+        env->wfe = 0;
+    }
+
+    if (env->wfi) {
+        bool has_work = false;
 #ifndef TARGET_PROTO_ARM_M
-    return env->interrupt_request & (CPU_INTERRUPT_FIQ | CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB);
+        has_work = !!(env->interrupt_request & (CPU_INTERRUPT_FIQ | CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB));
 #else
-    return (tlib_nvic_get_pending_masked_irq() != 0);
+        has_work = tlib_nvic_get_pending_masked_irq() != 0;
 #endif
+        if(has_work) {
+            env->wfi = 0;
+        }
+    }
+
+    return !(env->wfe || env->wfi);
 }
 
 #include "exec-all.h"

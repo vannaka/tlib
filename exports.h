@@ -65,4 +65,6 @@ void tlib_flush_page(uint64_t address);
 uint64_t tlib_get_register_value(int reg_number);
 void tlib_set_register_value(int reg_number, uint64_t val);
 
+void tlib_set_event_flag(int value);
+
 #endif

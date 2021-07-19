@@ -2180,7 +2180,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                                                    SPARCv8 manual, nop
                                                    on the microSPARC
                                                    II */
-
+                        break;
                     case 0x10 ... 0x1f:
                         /* implementation-dependent
                            in the SPARCv8

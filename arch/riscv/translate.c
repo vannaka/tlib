@@ -188,6 +188,14 @@ static inline void gen_set_gpr(int reg_num_dst, TCGv t)
     }
 }
 
+/* Some instructions don't allow NFIELDS value to be different from 1, 2, 4 or 8.
+ * As NFIELDS can be expressed as `nf + 1` this function checks if the above condition is true, while saving a few clock cycles
+ * */
+static inline bool is_nfields_power_of_two(uint32_t nf)
+{
+    return (nf & (nf + 1)) == 0;
+}
+
 static void gen_mulhsu(TCGv ret, TCGv arg1, TCGv arg2)
 {
     TCGv rl = tcg_temp_new();
@@ -773,10 +781,9 @@ static void gen_fp_load(DisasContext *dc, uint32_t opc, int rd, int rs1, target_
     tcg_temp_free(t0);
 }
 
-static void gen_v_load(DisasContext *dc, uint32_t rest, uint32_t vd, uint32_t rs1, uint32_t rs2, uint32_t width)
+static void gen_v_load(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t vd, uint32_t rs1, uint32_t rs2, uint32_t width)
 {
     uint32_t vm = extract32(rest, 0, 1);
-    uint32_t mop = extract32(rest, 1, 2);
     uint32_t mew = extract32(rest, 3, 1);
     uint32_t nf = extract32(rest, 4, 3);
     if (!ensure_extension(dc, RISCV_FEATURE_RVV) || mew) {
@@ -793,40 +800,59 @@ static void gen_v_load(DisasContext *dc, uint32_t rest, uint32_t vd, uint32_t rs
     tcg_gen_movi_i32(t_rs2, rs2);
     tcg_gen_movi_i32(t_nf, nf);
 
-    switch (mop) {
-    case 0: // unit-stride
-        switch (width & 0x3) {
-        case 0:
-            if (vm) {
-                gen_helper_vle8(cpu_env, t_vd, t_rs1, t_nf);
-            } else {
-                gen_helper_vle8_m(cpu_env, t_vd, t_rs1, t_nf);
+    switch (opc) {
+    case OPC_RISC_VL_US: // unit-stride
+        switch (MASK_OP_V_LOAD_US(dc->opcode)) {
+        case OPC_RISC_VL_US:
+        case OPC_RISC_VL_US_FOF:
+            switch (width & 0x3) {
+            case 0:
+                if (vm) {
+                    gen_helper_vle8(cpu_env, t_vd, t_rs1, t_nf);
+                } else {
+                    gen_helper_vle8_m(cpu_env, t_vd, t_rs1, t_nf);
+                }
+                break;
+            case 1:
+                if (vm) {
+                    gen_helper_vle16(cpu_env, t_vd, t_rs1, t_nf);
+                } else {
+                    gen_helper_vle16_m(cpu_env, t_vd, t_rs1, t_nf);
+                }
+                break;
+            case 2:
+                if (vm) {
+                    gen_helper_vle32(cpu_env, t_vd, t_rs1, t_nf);
+                } else {
+                    gen_helper_vle32_m(cpu_env, t_vd, t_rs1, t_nf);
+                }
+                break;
+            case 3:
+                if (vm) {
+                    gen_helper_vle64(cpu_env, t_vd, t_rs1, t_nf);
+                } else {
+                    gen_helper_vle64_m(cpu_env, t_vd, t_rs1, t_nf);
+                }
+                break;
             }
             break;
-        case 1:
-            if (vm) {
-                gen_helper_vle16(cpu_env, t_vd, t_rs1, t_nf);
-            } else {
-                gen_helper_vle16_m(cpu_env, t_vd, t_rs1, t_nf);
+        case OPC_RISC_VL_US_WR:
+            if (!vm || !is_nfields_power_of_two(nf)) {
+                generate_exception(dc, RISCV_EXCP_ILLEGAL_INST);
+                break;
             }
+            gen_helper_vl_wr(cpu_env, t_vd, t_rs1, t_nf);
             break;
-        case 2:
-            if (vm) {
-                gen_helper_vle32(cpu_env, t_vd, t_rs1, t_nf);
-            } else {
-                gen_helper_vle32_m(cpu_env, t_vd, t_rs1, t_nf);
+        case OPC_RISC_VL_US_MASK:
+            if (!vm || width || nf) {
+                generate_exception(dc, RISCV_EXCP_ILLEGAL_INST);
+                break;
             }
-            break;
-        case 3:
-            if (vm) {
-                gen_helper_vle64(cpu_env, t_vd, t_rs1, t_nf);
-            } else {
-                gen_helper_vle64_m(cpu_env, t_vd, t_rs1, t_nf);
-            }
+            gen_helper_vlm(cpu_env, t_vd, t_rs1);
             break;
         }
         break;
-    case 2: // strided
+    case OPC_RISC_VL_VS: // vector-strided
         switch (width & 0x3) {
         case 0:
             if (vm) {
@@ -858,7 +884,8 @@ static void gen_v_load(DisasContext *dc, uint32_t rest, uint32_t vd, uint32_t rs
             break;
         }
         break;
-    default: // indexed
+    case OPC_RISC_VL_UVI: // unordered vector-indexed
+    case OPC_RISC_VL_OVI: // ordered vector-indexed
         switch (width & 0x3) {
         case 0:
             if (vm) {
@@ -889,6 +916,9 @@ static void gen_v_load(DisasContext *dc, uint32_t rest, uint32_t vd, uint32_t rs
             }
             break;
         }
+        break;
+    default:
+        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
     tcg_temp_free(t_vd);
@@ -938,10 +968,9 @@ static void gen_fp_store(DisasContext *dc, uint32_t opc, int rs1, int rs2, targe
     tcg_temp_free(t1);
 }
 
-static void gen_v_store(DisasContext *dc, uint32_t rest, uint32_t vd, uint32_t rs1, uint32_t rs2, uint32_t width)
+static void gen_v_store(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t vd, uint32_t rs1, uint32_t rs2, uint32_t width)
 {
     uint32_t vm = extract32(rest, 0, 1);
-    uint32_t mop = extract32(rest, 1, 2);
     uint32_t mew = extract32(rest, 3, 1);
     uint32_t nf = extract32(rest, 4, 3);
     if (!ensure_extension(dc, RISCV_FEATURE_RVV) || mew) {
@@ -958,40 +987,62 @@ static void gen_v_store(DisasContext *dc, uint32_t rest, uint32_t vd, uint32_t r
     tcg_gen_movi_i32(t_rs2, rs2);
     tcg_gen_movi_i32(t_nf, nf);
 
-    switch (mop) {
-    case 0: // unit-stride
-        switch (width & 0x3) {
-        case 0:
-            if (vm) {
-                gen_helper_vse8(cpu_env, t_vd, t_rs1, t_nf);
-            } else {
-                gen_helper_vse8_m(cpu_env, t_vd, t_rs1, t_nf);
+
+    switch (opc) {
+    case OPC_RISC_VS_US: // unit-stride
+        switch (MASK_OP_V_STORE_US(dc->opcode)) {
+        case OPC_RISC_VS_US:
+            switch (width & 0x3) {
+            case 0:
+                if (vm) {
+                    gen_helper_vse8(cpu_env, t_vd, t_rs1, t_nf);
+                } else {
+                    gen_helper_vse8_m(cpu_env, t_vd, t_rs1, t_nf);
+                }
+                break;
+            case 1:
+                if (vm) {
+                    gen_helper_vse16(cpu_env, t_vd, t_rs1, t_nf);
+                } else {
+                    gen_helper_vse16_m(cpu_env, t_vd, t_rs1, t_nf);
+                }
+                break;
+            case 2:
+                if (vm) {
+                    gen_helper_vse32(cpu_env, t_vd, t_rs1, t_nf);
+                } else {
+                    gen_helper_vse32_m(cpu_env, t_vd, t_rs1, t_nf);
+                }
+                break;
+            case 3:
+                if (vm) {
+                    gen_helper_vse64(cpu_env, t_vd, t_rs1, t_nf);
+                } else {
+                    gen_helper_vse64_m(cpu_env, t_vd, t_rs1, t_nf);
+                }
+                break;
             }
             break;
-        case 1:
-            if (vm) {
-                gen_helper_vse16(cpu_env, t_vd, t_rs1, t_nf);
-            } else {
-                gen_helper_vse16_m(cpu_env, t_vd, t_rs1, t_nf);
+        case OPC_RISC_VS_US_WR:
+            if (!vm || width || !is_nfields_power_of_two(nf)) {
+                generate_exception(dc, RISCV_EXCP_ILLEGAL_INST);
+                break;
             }
+            gen_helper_vs_wr(cpu_env, t_vd, t_rs1, t_nf);
             break;
-        case 2:
-            if (vm) {
-                gen_helper_vse32(cpu_env, t_vd, t_rs1, t_nf);
-            } else {
-                gen_helper_vse32_m(cpu_env, t_vd, t_rs1, t_nf);
+        case OPC_RISC_VS_US_MASK:
+            if (!vm || width || nf) {
+                generate_exception(dc, RISCV_EXCP_ILLEGAL_INST);
+                break;
             }
+            gen_helper_vsm(cpu_env, t_vd, t_rs1);
             break;
-        case 3:
-            if (vm) {
-                gen_helper_vse64(cpu_env, t_vd, t_rs1, t_nf);
-            } else {
-                gen_helper_vse64_m(cpu_env, t_vd, t_rs1, t_nf);
-            }
+        default:
+            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
         break;
-    case 2: // strided
+    case OPC_RISC_VS_VS: // vector-strided
         switch (width & 0x3) {
         case 0:
             if (vm) {
@@ -1023,7 +1074,8 @@ static void gen_v_store(DisasContext *dc, uint32_t rest, uint32_t vd, uint32_t r
             break;
         }
         break;
-    default: // indexed
+    case OPC_RISC_VS_UVI: // unordered vector-indexed
+    case OPC_RISC_VS_OVI: // ordered vector-indexed
         switch (width & 0x3) {
         case 0:
             if (vm) {
@@ -1054,6 +1106,9 @@ static void gen_v_store(DisasContext *dc, uint32_t rest, uint32_t vd, uint32_t r
             }
             break;
         }
+        break;
+    default:
+        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
     tcg_temp_free(t_vd);
@@ -2394,14 +2449,14 @@ static void decode_RV32_64G(CPUState *env, DisasContext *dc)
         if (rm - 1 < 4) {
             gen_fp_load(dc, MASK_OP_FP_LOAD(dc->opcode), rd, rs1, imm);
         } else {
-            gen_v_load(dc, imm >> 5, rd, rs1, rs2, rm);
+            gen_v_load(dc, MASK_OP_V_LOAD(dc->opcode), imm >> 5, rd, rs1, rs2, rm);
         }
         break;
     case OPC_RISC_FP_STORE:
         if (rm - 1 < 4) {
             gen_fp_store(dc, MASK_OP_FP_STORE(dc->opcode), rs1, rs2, GET_STORE_IMM(dc->opcode));
         } else {
-            gen_v_store(dc, imm >> 5, rd, rs1, rs2, rm);
+            gen_v_store(dc, MASK_OP_V_STORE(dc->opcode), imm >> 5, rd, rs1, rs2, rm);
         }
         break;
     case OPC_RISC_ATOMIC:

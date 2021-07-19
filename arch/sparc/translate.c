@@ -2194,8 +2194,9 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                         /* The version number for LEON3 is 3, which */
                         /* is hardcoded in to bits 27:24 of the %psr. */
                         if (dc->def->iu_version == 0xf3000000 && dc->def->features & CPU_FEATURE_ASR) {
-                            rs1 = GET_FIELD(insn, 13, 17);
-                            gen_movl_reg_TN(rs1, cpu_asr[rd - 16]);
+                            tcg_gen_xor_tl(cpu_tmp0, cpu_src1, cpu_src2);
+                            tcg_gen_andi_tl(cpu_asr[rd - 16], cpu_tmp0, 0xffffffff);
+
                             /* WRASR to ASR19 */
                             /* Power-down instruction for Leon3 */
                             if (rd == 0x13) {

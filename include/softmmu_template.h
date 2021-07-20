@@ -73,6 +73,7 @@ void notdirty_mem_writew(void *opaque, target_phys_addr_t ram_addr, uint32_t val
 void notdirty_mem_writel(void *opaque, target_phys_addr_t ram_addr, uint32_t val);
 
 static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr, int mmu_idx, void *retaddr);
+static inline DATA_TYPE glue(glue(glue(slow_ld, SUFFIX), _err), MMUSUFFIX)(target_ulong addr, int mmu_idx, void *retaddr, int *err);
 static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr, target_ulong addr, void *retaddr)
 {
     DATA_TYPE res;
@@ -94,7 +95,7 @@ static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr, targe
 }
 
 /* handle all cases except unaligned access which span two pages */
-DATA_TYPE REGPARM glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr, int mmu_idx)
+DATA_TYPE REGPARM glue(glue(glue(__ld, SUFFIX), _err), MMUSUFFIX)(target_ulong addr, int mmu_idx, int *err)
 {
     DATA_TYPE res;
     int index;
@@ -148,7 +149,7 @@ do_unaligned_access:
                 do_unaligned_access(addr, READ_ACCESS_TYPE, mmu_idx, retaddr);
             }
 #endif
-            res = glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(addr, mmu_idx, retaddr);
+            res = glue(glue(glue(slow_ld, SUFFIX), _err), MMUSUFFIX)(addr, mmu_idx, retaddr, err);
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
             {
                 tlib_on_memory_access(MEMORY_READ, addr);
@@ -176,16 +177,27 @@ do_unaligned_access:
             do_unaligned_access(addr, READ_ACCESS_TYPE, mmu_idx, retaddr);
         }
 #endif
-        tlb_fill(cpu, addr, READ_ACCESS_TYPE, mmu_idx, retaddr, 0, DATA_SIZE);
-        goto redo;
+        if (!tlb_fill(cpu, addr, READ_ACCESS_TYPE, mmu_idx, retaddr, !!err, DATA_SIZE)) {
+            goto redo;
+        } else {
+            if (err) {
+                *err = 1;
+            }
+            res = -1;
+        }
     }
 
     release_global_memory_lock(cpu);
     return res;
 }
 
+DATA_TYPE REGPARM glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr, int mmu_idx)
+{
+    return glue(glue(glue(__ld, SUFFIX), _err), MMUSUFFIX)(addr, mmu_idx, NULL);
+}
+
 /* handle all unaligned cases */
-static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr, int mmu_idx, void *retaddr)
+static DATA_TYPE glue(glue(glue(slow_ld, SUFFIX), _err), MMUSUFFIX)(target_ulong addr, int mmu_idx, void *retaddr, int *err)
 {
     DATA_TYPE res, res1, res2;
     int index, shift;
@@ -223,8 +235,8 @@ do_unaligned_access:
             /* slow unaligned access (it spans two pages) */
             addr1 = addr & ~(DATA_SIZE - 1);
             addr2 = addr1 + DATA_SIZE;
-            res1 = glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(addr1, mmu_idx, retaddr);
-            res2 = glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(addr2, mmu_idx, retaddr);
+            res1 = glue(glue(glue(slow_ld, SUFFIX), _err), MMUSUFFIX)(addr1, mmu_idx, retaddr, err);
+            res2 = glue(glue(glue(slow_ld, SUFFIX), _err), MMUSUFFIX)(addr2, mmu_idx, retaddr, err);
             shift = (addr & (DATA_SIZE - 1)) * 8;
 #ifdef TARGET_WORDS_BIGENDIAN
             res = (res1 << shift) | (res2 >> ((DATA_SIZE * 8) - shift));
@@ -239,10 +251,21 @@ do_unaligned_access:
         }
     } else {
         /* the page is not in the TLB : fill it */
-        tlb_fill(cpu, addr, READ_ACCESS_TYPE, mmu_idx, retaddr, 0, DATA_SIZE);
-        goto redo;
+        if (!tlb_fill(cpu, addr, READ_ACCESS_TYPE, mmu_idx, retaddr, !!err, DATA_SIZE)) {
+            goto redo;
+        } else {
+            if (err) {
+                *err = 1;
+            }
+            res = -1;
+        }
     }
     return res;
+}
+
+static inline DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr, int mmu_idx, void *retaddr)
+{
+    return glue(glue(glue(slow_ld, SUFFIX), _err), MMUSUFFIX)(addr, mmu_idx, retaddr, NULL);
 }
 
 #ifndef SOFTMMU_CODE_ACCESS

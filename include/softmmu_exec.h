@@ -147,6 +147,13 @@
 #define ldl(p)    ldl_data(p)
 #define ldq(p)    ldq_data(p)
 
+#define ldub_graceful(p, err)   ldub_err_data(p, err)
+#define ldsb_graceful(p, err)   ldsb_err_data(p, err)
+#define lduw_graceful(p, err)   lduw_err_data(p, err)
+#define ldsw_graceful(p, err)   ldsw_err_data(p, err)
+#define ldl_graceful(p, err)    ldl_err_data(p, err)
+#define ldq_graceful(p, err)    ldq_err_data(p, err)
+
 #define stb(p, v) stb_data(p, v)
 #define stw(p, v) stw_data(p, v)
 #define stl(p, v) stl_data(p, v)

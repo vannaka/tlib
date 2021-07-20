@@ -252,7 +252,6 @@ void helper_vsm(CPUState *env, uint32_t vd, uint32_t rs1)
 
 #endif
 
-
 #undef SHIFT
 #undef DATA_TYPE
 #undef BITS

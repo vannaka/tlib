@@ -71,7 +71,7 @@
 
 /* generic load/store macros */
 
-static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
+static inline RES_TYPE glue(glue(glue(ld, USUFFIX), _err), MEMSUFFIX)(target_ulong ptr, int *err)
 {
     int page_index;
     RES_TYPE res;
@@ -83,7 +83,7 @@ static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = CPU_MMU_INDEX;
     if (unlikely(env->tlb_table[mmu_idx][page_index].ADDR_READ != (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
-        res = glue(glue(__ld, SUFFIX), MMUSUFFIX)(addr, mmu_idx);
+        res = glue(glue(glue(__ld, SUFFIX), _err), MMUSUFFIX)(addr, mmu_idx, err);
     } else {
         physaddr = addr + env->tlb_table[mmu_idx][page_index].addend;
         res = glue(glue(ld, USUFFIX), _raw)(physaddr);
@@ -91,8 +91,13 @@ static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
     return res;
 }
 
+static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
+{
+    return glue(glue(glue(ld, USUFFIX), _err), MEMSUFFIX)(ptr, NULL);
+}
+
 #if DATA_SIZE <= 2
-static inline int glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
+static inline int glue(glue(glue(lds, SUFFIX), _err), MEMSUFFIX)(target_ulong ptr, int *err)
 {
     int res, page_index;
     target_ulong addr;
@@ -103,12 +108,17 @@ static inline int glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = CPU_MMU_INDEX;
     if (unlikely(env->tlb_table[mmu_idx][page_index].ADDR_READ != (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
-        res = (DATA_STYPE)glue(glue(__ld, SUFFIX), MMUSUFFIX)(addr, mmu_idx);
+        res = (DATA_STYPE)glue(glue(glue(__ld, SUFFIX), _err), MMUSUFFIX)(addr, mmu_idx, err);
     } else {
         physaddr = addr + env->tlb_table[mmu_idx][page_index].addend;
         res = glue(glue(lds, SUFFIX), _raw)(physaddr);
     }
     return res;
+}
+
+static inline int glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
+{
+    return glue(glue(glue(lds, SUFFIX), _err), MEMSUFFIX)(ptr, NULL);
 }
 #endif
 

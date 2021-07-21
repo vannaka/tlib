@@ -54,5 +54,6 @@ typedef enum {
     WIM_32    = 66,
     TBR_32    = 67,
     PC_32     = 68,
-    NPC_32    = 69
+    NPC_32    = 69,
+    FSR_32    = 70
 } Registers;

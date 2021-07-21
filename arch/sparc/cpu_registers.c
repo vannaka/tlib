@@ -47,6 +47,8 @@ uint32_t *get_reg_pointer_32(int reg)
         return &(cpu->asr[reg - ASR_16_32]);
     case WIM_32:
         return &(cpu->wim);
+    case FSR_32:
+        return &(cpu->fsr);
     default:
         return NULL;
     }

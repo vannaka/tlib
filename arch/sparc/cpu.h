@@ -280,6 +280,7 @@ typedef struct CPUState {
 
     uint32_t psr;               /* processor state register */
     target_ulong fsr;           /* FPU state register */
+    target_ulong csr;           /* coprocessor state register */
     float32 fpr[TARGET_FPREGS]; /* floating point registers */
     uint32_t cwp;               /* index of current register window (extracted
                                    from PSR) */

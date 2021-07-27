@@ -1948,8 +1948,22 @@ static void gen_v_opivv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
     case RISC_V_FUNCT_SRA:
     case RISC_V_FUNCT_SSRL:
     case RISC_V_FUNCT_SSRA:
+        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        break;
     case RISC_V_FUNCT_NSRL:
+        if (vm) {
+            gen_helper_vnsrl_ivv(cpu_env, t_vd, t_vs2, t_vs1);
+        } else {
+            gen_helper_vnsrl_ivv_m(cpu_env, t_vd, t_vs2, t_vs1);
+        }
+        break;
     case RISC_V_FUNCT_NSRA:
+        if (vm) {
+            gen_helper_vnsra_ivv(cpu_env, t_vd, t_vs2, t_vs1);
+        } else {
+            gen_helper_vnsra_ivv_m(cpu_env, t_vd, t_vs2, t_vs1);
+        }
+        break;
     case RISC_V_FUNCT_NCLIPU:
     case RISC_V_FUNCT_NCLIP:
     case RISC_V_FUNCT_WREDSUMU:
@@ -2022,8 +2036,22 @@ static void gen_v_opivt(DisasContext *dc, uint8_t funct6, int vd, int vs2, TCGv 
     case RISC_V_FUNCT_SRA:
     case RISC_V_FUNCT_SSRL:
     case RISC_V_FUNCT_SSRA:
+        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        break;
     case RISC_V_FUNCT_NSRL:
+        if (vm) {
+            gen_helper_vnsrl_ivi(cpu_env, t_vd, t_vs2, t);
+        } else {
+            gen_helper_vnsrl_ivi_m(cpu_env, t_vd, t_vs2, t);
+        }
+        break;
     case RISC_V_FUNCT_NSRA:
+        if (vm) {
+            gen_helper_vnsra_ivi(cpu_env, t_vd, t_vs2, t);
+        } else {
+            gen_helper_vnsra_ivi_m(cpu_env, t_vd, t_vs2, t);
+        }
+        break;
     case RISC_V_FUNCT_NCLIPU:
     case RISC_V_FUNCT_NCLIP:
     // defined for vi and reserved for vx

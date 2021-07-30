@@ -166,6 +166,14 @@ static target_ulong mtvec_stvec_write_handler(target_ulong val_to_write, char* r
     return new_value;
 }
 
+static inline void warn_nonexistent_csr_read(const int no)
+{
+    tlib_printf(LOG_LEVEL_WARNING, "Reading from CSR #%d that is not implemented.", no);
+}
+static inline void warn_nonexistent_csr_write(const int no, const target_ulong val)
+{
+    tlib_printf(LOG_LEVEL_WARNING, "Writing value 0x%X to CSR #%d that is not implemented.", val, no);
+}
 /*
  * Handle writes to CSRs and any resulting special behavior
  *
@@ -466,6 +474,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
         env->vcsr = val_to_write;
         break;
     default:
+        warn_nonexistent_csr_write(csrno, val_to_write);
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
 }
@@ -680,6 +689,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         return env->vlenb;
     default:
         /* used by e.g. MTIME read */
+        warn_nonexistent_csr_read(csrno);
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
     return 0;

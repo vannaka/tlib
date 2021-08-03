@@ -72,8 +72,6 @@ void notdirty_mem_writeb(void *opaque, target_phys_addr_t ram_addr, uint32_t val
 void notdirty_mem_writew(void *opaque, target_phys_addr_t ram_addr, uint32_t val);
 void notdirty_mem_writel(void *opaque, target_phys_addr_t ram_addr, uint32_t val);
 
-#define SWAP_BYTES(n) (((n & 0xFF) << 24) | ((n & 0xFF00) << 8) | ((n & 0xFF0000) >> 8) | ((n & 0xFF000000) >> 24))
-
 static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr, int mmu_idx, void *retaddr);
 static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr, target_ulong addr, void *retaddr)
 {
@@ -84,20 +82,13 @@ static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr, targe
 #if SHIFT == 0
     res = tlib_read_byte(physaddr);
 #elif SHIFT == 1
-    res = tlib_read_word(physaddr);
+    res = tswap16(tlib_read_word(physaddr));
 #elif SHIFT == 2
-    res = tlib_read_double_word(physaddr);
-#else
-#ifdef TARGET_WORDS_BIGENDIAN
-    uint32_t tmp;
-    tmp = tlib_read_double_word(physaddr);
-    res = (uint64_t)SWAP_BYTES(tmp) << 32;
-    tmp = tlib_read_double_word(physaddr + 4);
-    res |= SWAP_BYTES(tmp);
+    res = tswap32(tlib_read_double_word(physaddr));
 #else
     res = tlib_read_double_word(physaddr);
     res |= (uint64_t)tlib_read_double_word(physaddr + 4) << 32;
-#endif
+    res = tswap64(res);
 #endif /* SHIFT > 2 */
     return res;
 }
@@ -279,19 +270,13 @@ static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr, DATA_TYPE
 #if SHIFT == 0
     tlib_write_byte(physaddr, val);
 #elif SHIFT == 1
-    tlib_write_word(physaddr, val);
+    tlib_write_word(physaddr, tswap16(val));
 #elif SHIFT == 2
-    tlib_write_double_word(physaddr, val);
+    tlib_write_double_word(physaddr, tswap32(val));
 #else
-#ifdef TARGET_WORDS_BIGENDIAN
-    uint32_t temp_val = (uint32_t)(val >> 32);
-    tlib_write_double_word(physaddr, SWAP_BYTES(temp_val));
-    temp_val = (uint32_t)val;
-    tlib_write_double_word(physaddr + 4, SWAP_BYTES(temp_val));
-#else
+    val = tswap64(val);
     tlib_write_double_word(physaddr, (uint32_t)val);
     tlib_write_double_word(physaddr + 4, (uint32_t)(val >> 32));
-#endif
 #endif /* SHIFT > 2 */
 }
 

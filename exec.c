@@ -1629,7 +1629,7 @@ uint32_t ldl_phys(target_phys_addr_t addr)
         if (p) {
             addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
         }
-        val = tlib_read_double_word(addr);
+        val = tswap32(tlib_read_double_word(addr));
     } else {
         /* RAM case */
         ptr = get_ram_ptr(pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
@@ -1704,7 +1704,7 @@ uint32_t lduw_phys(target_phys_addr_t addr)
         if (p) {
             addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
         }
-        val = tlib_read_word(addr);
+        val = tswap16(tlib_read_word(addr));
     } else {
         /* RAM case */
         ptr = get_ram_ptr(pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
@@ -1733,7 +1733,7 @@ void stl_phys_notdirty(target_phys_addr_t addr, uint32_t val)
         if (p) {
             addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
         }
-        tlib_write_double_word(addr, val);
+        tlib_write_double_word(addr, tswap32(val));
     } else {
         uintptr_t addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
         ptr = get_ram_ptr(addr1);
@@ -1791,7 +1791,7 @@ void stl_phys(target_phys_addr_t addr, uint32_t val)
         if (p) {
             addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
         }
-        tlib_write_double_word(addr, val);
+        tlib_write_double_word(addr, tswap32(val));
     } else {
         uintptr_t addr1;
         addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
@@ -1832,7 +1832,7 @@ void stw_phys(target_phys_addr_t addr, uint32_t val)
         if (p) {
             addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
         }
-        tlib_write_word(addr, val);
+        tlib_write_word(addr, tswap16(val));
     } else {
         uintptr_t addr1;
         addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);

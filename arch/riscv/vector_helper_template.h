@@ -100,6 +100,46 @@ static inline DATA_STYPE glue(roundoff_i, BITS)(DATA_STYPE v, uint16_t d, uint8_
     return (v >> d) + r;
 }
 
+static inline DATA_TYPE glue(divu_, BITS)(DATA_TYPE dividend, DATA_TYPE divisor)
+{
+    if (divisor == 0) {
+        return glue(glue(UINT, BITS), _MAX);
+    } else {
+        return dividend / divisor;
+    }
+}
+
+static inline DATA_STYPE glue(div_, BITS)(DATA_STYPE dividend, DATA_STYPE divisor)
+{
+    if (divisor == 0) {
+        return -1;
+    } else if (divisor == -1 && dividend == glue(glue(INT, BITS), _MIN)) {
+        return glue(glue(INT, BITS), _MIN);
+    } else {
+        return dividend / divisor;
+    }
+}
+
+static inline DATA_TYPE glue(remu_, BITS)(DATA_TYPE dividend, DATA_TYPE divisor)
+{
+    if (divisor == 0) {
+        return dividend;
+    } else {
+        return dividend % divisor;
+    }
+}
+
+static inline DATA_STYPE glue(rem_, BITS)(DATA_STYPE dividend, DATA_STYPE divisor)
+{
+    if (divisor == 0) {
+        return dividend;
+    } else if (divisor == -1 && dividend == glue(glue(INT, BITS), _MIN)) {
+        return 0;
+    } else {
+        return dividend % divisor;
+    }
+}
+
 #endif
 
 void glue(glue(helper_vle, BITS), POSTFIX)(CPUState *env, uint32_t vd, uint32_t rs1, uint32_t nf)
@@ -3500,6 +3540,262 @@ void glue(helper_vmsgt_ivi, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, ta
             break;
         case 64:
             V(vd)[i >> 3] |= (((int64_t *)V(vs2))[i] > (int64_t)rs1) << (i & 0x7);
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+}
+
+void glue(helper_vdivu_mvv, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    for (int ei = env->vstart; ei < env->vl; ++ei) {
+#ifdef MASKED
+        if (!(V(0)[ei >> 3] & (1 << (ei & 0x7)))) {
+            continue;
+        }
+#endif
+        switch (eew) {
+        case 8:
+            ((uint8_t *)V(vd))[ei] = divu_8(((uint8_t *)V(vs2))[ei], ((uint8_t *)V(vs1))[ei]);
+            break;
+        case 16:
+            ((uint16_t *)V(vd))[ei] = divu_16(((uint16_t *)V(vs2))[ei], ((uint16_t *)V(vs1))[ei]);
+            break;
+        case 32:
+            ((uint32_t *)V(vd))[ei] = divu_32(((uint32_t *)V(vs2))[ei], ((uint32_t *)V(vs1))[ei]);
+            break;
+        case 64:
+            ((uint64_t *)V(vd))[ei] = divu_64(((uint64_t *)V(vs2))[ei], ((uint64_t *)V(vs1))[ei]);
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+}
+
+void glue(helper_vdiv_mvv, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    for (int ei = env->vstart; ei < env->vl; ++ei) {
+#ifdef MASKED
+        if (!(V(0)[ei >> 3] & (1 << (ei & 0x7)))) {
+            continue;
+        }
+#endif
+        switch (eew) {
+        case 8:
+            ((int8_t *)V(vd))[ei] = div_8(((int8_t *)V(vs2))[ei], ((int8_t *)V(vs1))[ei]);
+            break;
+        case 16:
+            ((int16_t *)V(vd))[ei] = div_16(((int16_t *)V(vs2))[ei], ((int16_t *)V(vs1))[ei]);
+            break;
+        case 32:
+            ((int32_t *)V(vd))[ei] = div_32(((int32_t *)V(vs2))[ei], ((int32_t *)V(vs1))[ei]);
+            break;
+        case 64:
+            ((int64_t *)V(vd))[ei] = div_64(((int64_t *)V(vs2))[ei], ((int64_t *)V(vs1))[ei]);
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+}
+
+void glue(helper_vremu_mvv, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    for (int ei = env->vstart; ei < env->vl; ++ei) {
+#ifdef MASKED
+        if (!(V(0)[ei >> 3] & (1 << (ei & 0x7)))) {
+            continue;
+        }
+#endif
+        switch (eew) {
+        case 8:
+            ((uint8_t *)V(vd))[ei] = remu_8(((uint8_t *)V(vs2))[ei], ((uint8_t *)V(vs1))[ei]);
+            break;
+        case 16:
+            ((uint16_t *)V(vd))[ei] = remu_16(((uint16_t *)V(vs2))[ei], ((uint16_t *)V(vs1))[ei]);
+            break;
+        case 32:
+            ((uint32_t *)V(vd))[ei] = remu_32(((uint32_t *)V(vs2))[ei], ((uint32_t *)V(vs1))[ei]);
+            break;
+        case 64:
+            ((uint64_t *)V(vd))[ei] = remu_64(((uint64_t *)V(vs2))[ei], ((uint64_t *)V(vs1))[ei]);
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+}
+
+void glue(helper_vrem_mvv, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    for (int ei = env->vstart; ei < env->vl; ++ei) {
+#ifdef MASKED
+        if (!(V(0)[ei >> 3] & (1 << (ei & 0x7)))) {
+            continue;
+        }
+#endif
+        switch (eew) {
+        case 8:
+            ((int8_t *)V(vd))[ei] = rem_8(((int8_t *)V(vs2))[ei], ((int8_t *)V(vs1))[ei]);
+            break;
+        case 16:
+            ((int16_t *)V(vd))[ei] = rem_16(((int16_t *)V(vs2))[ei], ((int16_t *)V(vs1))[ei]);
+            break;
+        case 32:
+            ((int32_t *)V(vd))[ei] = rem_32(((int32_t *)V(vs2))[ei], ((int32_t *)V(vs1))[ei]);
+            break;
+        case 64:
+            ((int64_t *)V(vd))[ei] = rem_64(((int64_t *)V(vs2))[ei], ((int64_t *)V(vs1))[ei]);
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+}
+
+void glue(helper_vdivu_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    for (int ei = env->vstart; ei < env->vl; ++ei) {
+#ifdef MASKED
+        if (!(V(0)[ei >> 3] & (1 << (ei & 0x7)))) {
+            continue;
+        }
+#endif
+        switch (eew) {
+        case 8:
+            ((uint8_t *)V(vd))[ei] = divu_8(((uint8_t *)V(vs2))[ei], rs1);
+            break;
+        case 16:
+            ((uint16_t *)V(vd))[ei] = divu_16(((uint16_t *)V(vs2))[ei], rs1);
+            break;
+        case 32:
+            ((uint32_t *)V(vd))[ei] = divu_32(((uint32_t *)V(vs2))[ei], rs1);
+            break;
+        case 64:
+            ((uint64_t *)V(vd))[ei] = divu_64(((uint64_t *)V(vs2))[ei], rs1);
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+}
+
+void glue(helper_vdiv_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    for (int ei = env->vstart; ei < env->vl; ++ei) {
+#ifdef MASKED
+        if (!(V(0)[ei >> 3] & (1 << (ei & 0x7)))) {
+            continue;
+        }
+#endif
+        switch (eew) {
+        case 8:
+            ((int8_t *)V(vd))[ei] = div_8(((int8_t *)V(vs2))[ei], rs1);
+            break;
+        case 16:
+            ((int16_t *)V(vd))[ei] = div_16(((int16_t *)V(vs2))[ei], rs1);
+            break;
+        case 32:
+            ((int32_t *)V(vd))[ei] = div_32(((int32_t *)V(vs2))[ei], rs1);
+            break;
+        case 64:
+            ((int64_t *)V(vd))[ei] = div_64(((int64_t *)V(vs2))[ei], rs1);
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+}
+
+void glue(helper_vremu_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    for (int ei = env->vstart; ei < env->vl; ++ei) {
+#ifdef MASKED
+        if (!(V(0)[ei >> 3] & (1 << (ei & 0x7)))) {
+            continue;
+        }
+#endif
+        switch (eew) {
+        case 8:
+            ((uint8_t *)V(vd))[ei] = remu_8(((uint8_t *)V(vs2))[ei], rs1);
+            break;
+        case 16:
+            ((uint16_t *)V(vd))[ei] = remu_16(((uint16_t *)V(vs2))[ei], rs1);
+            break;
+        case 32:
+            ((uint32_t *)V(vd))[ei] = remu_32(((uint32_t *)V(vs2))[ei], rs1);
+            break;
+        case 64:
+            ((uint64_t *)V(vd))[ei] = remu_64(((uint64_t *)V(vs2))[ei], rs1);
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+}
+
+void glue(helper_vrem_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    for (int ei = env->vstart; ei < env->vl; ++ei) {
+#ifdef MASKED
+        if (!(V(0)[ei >> 3] & (1 << (ei & 0x7)))) {
+            continue;
+        }
+#endif
+        switch (eew) {
+        case 8:
+            ((int8_t *)V(vd))[ei] = rem_8(((int8_t *)V(vs2))[ei], rs1);
+            break;
+        case 16:
+            ((int16_t *)V(vd))[ei] = rem_16(((int16_t *)V(vs2))[ei], rs1);
+            break;
+        case 32:
+            ((int32_t *)V(vd))[ei] = rem_32(((int32_t *)V(vs2))[ei], rs1);
+            break;
+        case 64:
+            ((int64_t *)V(vd))[ei] = rem_64(((int64_t *)V(vs2))[ei], rs1);
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);

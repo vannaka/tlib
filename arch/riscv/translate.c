@@ -2701,6 +2701,20 @@ static void gen_v_opmvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         }
         break;
     case RISC_V_FUNCT_WXUNARY0:
+        switch (vs1) {
+        case 0x0:
+            if (vm) {
+                gen_helper_vmv_xs(t_vd, cpu_env, t_vs2);
+                gen_set_gpr(vd, t_vd);
+            } else {
+                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+            }
+            break;
+        default:
+            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+        break;
     case RISC_V_FUNCT_XUNARY0:
         switch (vs1) {
         case 2:
@@ -3017,7 +3031,11 @@ static void gen_v_opmvx(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
         }
         break;
     case RISC_V_FUNCT_RXUNARY0:
-        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        if (vs2 == 0x0 && vm) {
+            gen_helper_vmv_sx(cpu_env, t_vd, t_rs1);
+        } else {
+            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        }
         break;
     case RISC_V_FUNCT_DIVU:
         if (vm) {

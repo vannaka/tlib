@@ -614,3 +614,8 @@ target_ulong helper_fclass_d(CPUState *env, uint64_t frs1)
     mark_fs_dirty();
     return frs1;
 }
+
+// Note that MASKED is not defined for the 2nd include
+#define MASKED
+#include "fpu_vector_helper_template.h"
+#include "fpu_vector_helper_template.h"

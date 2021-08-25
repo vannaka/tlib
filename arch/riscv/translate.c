@@ -178,6 +178,12 @@ static inline void gen_get_gpr(TCGv t, int reg_num)
     }
 }
 
+
+static inline void gen_get_fpr(TCGv_i64 t, int reg_num)
+{
+    tcg_gen_mov_tl(t, cpu_fpr[reg_num]);
+}
+
 /* Wrapper for setting reg values - need to check of reg is zero since
  * cpu_gpr[0] is not actually allocated. this is more for safety purposes,
  * since we usually avoid calling the OP_TYPE_gen function if we see a write to
@@ -3367,10 +3373,10 @@ static void gen_v_opmvx(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
 
 static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int vs2, uint8_t vm)
 {
-    TCGv t_vd, t_vs2, t_vs1;
-    t_vd = tcg_temp_new();
-    t_vs2 = tcg_temp_new();
-    t_vs1 = tcg_temp_new();
+    TCGv_i32 t_vd, t_vs2, t_vs1;
+    t_vd = tcg_temp_new_i32();
+    t_vs2 = tcg_temp_new_i32();
+    t_vs1 = tcg_temp_new_i32();
     tcg_gen_movi_i32(t_vd, vd);
     tcg_gen_movi_i32(t_vs2, vs2);
     tcg_gen_movi_i32(t_vs1, vs1);
@@ -3438,6 +3444,12 @@ static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         }
         break;
     case RISC_V_FUNCT_WFUNARY0:
+        if (vm && vs1 == 0) {
+            gen_helper_vfmv_fs(cpu_env, t_vd, t_vs2);
+        } else {
+            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        }
+        break;
     case RISC_V_FUNCT_FUNARY0:
         switch (vs1) {
         case 0x0:
@@ -3792,9 +3804,9 @@ static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
-    tcg_temp_free(t_vd);
-    tcg_temp_free(t_vs2);
-    tcg_temp_free(t_vs1);
+    tcg_temp_free_i32(t_vd);
+    tcg_temp_free_i32(t_vs2);
+    tcg_temp_free_i32(t_vs1);
 }
 
 static void gen_v_opfvf(DisasContext *dc, uint8_t funct6, int vd, int rs1, int vs2, uint8_t vm)
@@ -3870,6 +3882,11 @@ static void gen_v_opfvf(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
         }
         break;
     case RISC_V_FUNCT_RFUNARY0:
+        if ((vm == 0) && (vs2 == 0)) {
+                gen_get_fpr(t_vs2, vs2);
+                gen_helper_vfmv_sf(cpu_env, t_vd, t_vs2);
+                break;
+            }
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     case RISC_V_FUNCT_FMERGE_FMV:

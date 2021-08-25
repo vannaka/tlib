@@ -1120,6 +1120,69 @@ void helper_vmsof_m(CPUState *env, uint32_t vd, uint32_t vs2)
     }
 }
 
+void helper_vfmv_fs(CPUState *env, int32_t vd, int32_t vs2)
+{
+    if (env->vstart >= env->vl)
+    {
+        // No operation is performed
+        return;
+    }
+    const target_ulong eew = env->vsew;
+    switch(eew)
+    {
+        case 32:
+           if (!riscv_has_ext(env, RISCV_FEATURE_RVF))
+           {
+               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               break;
+           }
+           uint64_t nanbox_mask =  ((uint64_t) -1) << 32;
+           env->fpr[vd] = (uint64_t)((uint32_t *)V(vs2))[0] | nanbox_mask;
+           break;
+        case 64:
+           if (!riscv_has_ext(env, RISCV_FEATURE_RVD))
+           {
+               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               break;
+           }
+           env->fpr[vd] = ((uint64_t *)V(vs2))[0];
+           break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+    }
+}
+
+void helper_vfmv_sf(CPUState *env, target_ulong vd, int64_t rs1)
+{
+    if (env->vstart >= env->vl)
+    {
+        return;
+    }
+    switch(env->vsew)
+    {
+        case 32:
+           if (!riscv_has_ext(env, RISCV_FEATURE_RVF))
+           {
+               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               break;
+           }
+           ((int32_t *)V(vd))[0] = (int32_t)rs1;
+           break;
+        case 64:
+           if (!riscv_has_ext(env, RISCV_FEATURE_RVD))
+           {
+               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               break;
+           }
+           ((int64_t *)V(vd))[0] = rs1;
+           break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+    }
+}
+
 #undef MASK_OP_GEN_OP_AND
 #undef MASK_OP_GEN_OP_NAND
 #undef MASK_OP_GEN_OP_ANDNOT

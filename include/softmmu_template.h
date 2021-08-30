@@ -126,7 +126,7 @@ redo:
     tlb_addr = cpu->tlb_table[mmu_idx][index].ADDR_READ & ~TLB_ONE_SHOT;
 
     if ((addr & TARGET_PAGE_MASK) == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
-        if (tlb_addr & ~TARGET_PAGE_MASK) {
+        if ((tlb_addr & ~TARGET_PAGE_MASK) == TLB_MMIO) {
             /* IO access */
             if ((addr & (DATA_SIZE - 1)) != 0) {
                 goto do_unaligned_access;
@@ -211,7 +211,7 @@ redo:
     tlb_addr = cpu->tlb_table[mmu_idx][index].ADDR_READ & ~TLB_ONE_SHOT;
 
     if ((addr & TARGET_PAGE_MASK) == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
-        if (tlb_addr & ~TARGET_PAGE_MASK) {
+        if ((tlb_addr & ~TARGET_PAGE_MASK) == TLB_MMIO) {
             /* IO access */
             if ((addr & (DATA_SIZE - 1)) != 0) {
                 goto do_unaligned_access;
@@ -309,7 +309,7 @@ redo:
     tlb_addr = cpu->tlb_table[mmu_idx][index].addr_write & ~TLB_ONE_SHOT;
 
     if ((addr & TARGET_PAGE_MASK) == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
-        if (tlb_addr & ~TARGET_PAGE_MASK) {
+        if ((tlb_addr & ~TARGET_PAGE_MASK) == TLB_MMIO) {
             /* IO access */
             if ((addr & (DATA_SIZE - 1)) != 0) {
                 goto do_unaligned_access;
@@ -391,7 +391,7 @@ redo:
     tlb_addr = cpu->tlb_table[mmu_idx][index].addr_write & ~TLB_ONE_SHOT;
 
     if ((addr & TARGET_PAGE_MASK) == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
-        if (tlb_addr & ~TARGET_PAGE_MASK) {
+        if ((tlb_addr & ~TARGET_PAGE_MASK) == TLB_MMIO) {
             /* IO access */
             if ((addr & (DATA_SIZE - 1)) != 0) {
                 goto do_unaligned_access;

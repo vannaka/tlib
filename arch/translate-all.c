@@ -163,8 +163,9 @@ static inline uint64_t get_max_instruction_count(CPUState *env, TranslationBlock
 
 static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_pc)
 {
+    DisasContext dcc;
     CPUBreakpoint *bp;
-    DisasContextBase *dc = (DisasContextBase *)tlib_malloc(sizeof(DisasContext));
+    DisasContextBase *dc = (DisasContextBase *)&dcc;
 
     memset((void *)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);
 
@@ -226,7 +227,6 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
         }
     }
     tb->disas_flags = gen_intermediate_code_epilogue(env, dc);
-    tlib_free(dc);
     gen_block_footer(tb);
 }
 

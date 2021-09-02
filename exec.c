@@ -1617,6 +1617,11 @@ uint32_t ldl_phys(target_phys_addr_t addr)
     ram_addr_t pd;
     PhysPageDesc *p;
 
+    if(addr % 4 != 0)
+    {
+        tlib_abortf("ldl_phys address is not aligned: %lx", addr);
+    }
+
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
     if (!p) {
         pd = IO_MEM_UNASSIGNED;
@@ -1692,6 +1697,11 @@ uint32_t lduw_phys(target_phys_addr_t addr)
     ram_addr_t pd;
     PhysPageDesc *p;
 
+    if(addr % 2 != 0)
+    {
+        tlib_abortf("lduw_phys address is not aligned: %lx", addr);
+    }
+
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
     if (!p) {
         pd = IO_MEM_UNASSIGNED;
@@ -1722,6 +1732,11 @@ void stl_phys_notdirty(target_phys_addr_t addr, uint32_t val)
     ram_addr_t pd;
     PhysPageDesc *p;
 
+    if(addr % 4 != 0)
+    {
+        tlib_abortf("stl_phys_notdirty address is not aligned: %lx", addr);
+    }
+
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
     if (!p) {
         pd = IO_MEM_UNASSIGNED;
@@ -1747,6 +1762,11 @@ void stq_phys_notdirty(target_phys_addr_t addr, uint64_t val)
     uint8_t *ptr;
     ram_addr_t pd;
     PhysPageDesc *p;
+
+    if(addr % 8 != 0)
+    {
+        tlib_abortf("stq_phys_notdirty address is not aligned: %lx", addr);
+    }
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
     if (!p) {
@@ -1779,6 +1799,11 @@ void stl_phys(target_phys_addr_t addr, uint32_t val)
     uint8_t *ptr;
     ram_addr_t pd;
     PhysPageDesc *p;
+
+    if(addr % 4 != 0)
+    {
+        tlib_abortf("stl_phys address is not aligned: %lx", addr);
+    }
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
     if (!p) {
@@ -1820,6 +1845,11 @@ void stw_phys(target_phys_addr_t addr, uint32_t val)
     uint8_t *ptr;
     ram_addr_t pd;
     PhysPageDesc *p;
+
+    if(addr % 2 != 0)
+    {
+        tlib_abortf("stw_phys address is not aligned: %lx", addr);
+    }
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
     if (!p) {

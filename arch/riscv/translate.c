@@ -178,7 +178,6 @@ static inline void gen_get_gpr(TCGv t, int reg_num)
     }
 }
 
-
 static inline void gen_get_fpr(TCGv_i64 t, int reg_num)
 {
     tcg_gen_mov_tl(t, cpu_fpr[reg_num]);
@@ -3390,7 +3389,11 @@ static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         }
         break;
     case RISC_V_FUNCT_FREDSUM:
-        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        if (vm) {
+            gen_helper_vfredsum_vs(cpu_env, t_vd, t_vs2, t_vs1);
+        } else {
+            gen_helper_vfredsum_vs_m(cpu_env, t_vd, t_vs2, t_vs1);
+        }
         break;
     case RISC_V_FUNCT_FSUB:
         if (vm) {
@@ -3400,7 +3403,11 @@ static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         }
         break;
     case RISC_V_FUNCT_FREDOSUM:
-        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        if (vm) {
+            gen_helper_vfredsum_vs(cpu_env, t_vd, t_vs2, t_vs1);
+        } else {
+            gen_helper_vfredsum_vs_m(cpu_env, t_vd, t_vs2, t_vs1);
+        }
         break;
     case RISC_V_FUNCT_FMIN:
         if (vm) {
@@ -3410,7 +3417,11 @@ static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         }
         break;
     case RISC_V_FUNCT_FREDMIN:
-        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        if (vm) {
+            gen_helper_vfredmin_vs(cpu_env, t_vd, t_vs2, t_vs1);
+        } else {
+            gen_helper_vfredmin_vs_m(cpu_env, t_vd, t_vs2, t_vs1);
+        }
         break;
     case RISC_V_FUNCT_FMAX:
         if (vm) {
@@ -3420,7 +3431,11 @@ static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         }
         break;
     case RISC_V_FUNCT_FREDMAX:
-        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        if (vm) {
+            gen_helper_vfredmax_vs(cpu_env, t_vd, t_vs2, t_vs1);
+        } else {
+            gen_helper_vfredmax_vs_m(cpu_env, t_vd, t_vs2, t_vs1);
+        }
         break;
     case RISC_V_FUNCT_FSGNJ:
         if (vm) {

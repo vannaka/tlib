@@ -97,6 +97,20 @@ uint64_t tlib_install_custom_instruction(uint64_t mask, uint64_t pattern, uint64
     return ci->id;
 }
 
+int32_t tlib_install_custom_csr(uint64_t id)
+{
+    if (id > MAX_CSR_ID) {
+        return -1;
+    }
+
+    int slotId = id / CSRS_PER_SLOT;
+    int slotOffset = id % CSRS_PER_SLOT;
+
+    cpu->custom_csrs[slotId] |= (1 << slotOffset);
+
+    return 0;
+}
+
 void helper_wfi(CPUState *env);
 void tlib_enter_wfi()
 {

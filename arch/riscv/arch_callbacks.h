@@ -5,7 +5,6 @@
 
 uint64_t tlib_get_cpu_time();
 
-int32_t tlib_has_nonstandard_csr(uint64_t csr);
 uint64_t tlib_read_csr(uint64_t csr);
 void tlib_write_csr(uint64_t csr, uint64_t value);
 void tlib_mip_changed(uint64_t value);

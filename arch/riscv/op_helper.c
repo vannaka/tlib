@@ -174,6 +174,19 @@ static inline void warn_nonexistent_csr_write(const int no, const target_ulong v
 {
     tlib_printf(LOG_LEVEL_WARNING, "Writing value 0x%X to CSR #%d that is not implemented.", val, no);
 }
+
+uint32_t has_custom_csr(CPUState *env, uint64_t id)
+{
+    if (id > MAX_CSR_ID) {
+        return 0;
+    }
+
+    int slotId = id / CSRS_PER_SLOT;
+    int slotOffset = id % CSRS_PER_SLOT;
+
+    return !!(env->custom_csrs[slotId] &= (1 << slotOffset));
+}
+
 /*
  * Handle writes to CSRs and any resulting special behavior
  *
@@ -189,7 +202,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
     // testing for non-standard CSRs here (i.e., before the switch)
     // allows us to override existing CSRs with our custom implementation;
     // this is necessary for RI5CY core
-    if (tlib_has_nonstandard_csr(csrno) != 0) {
+    if (has_custom_csr(env, csrno) != 0) {
         tlib_write_csr(csrno, val_to_write);
         return;
     }
@@ -518,7 +531,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     // testing for non-standard CSRs here (i.e., before the switch)
     // allows us to override existing CSRs with our custom implementation;
     // this is necessary for RI5CY core
-    if (tlib_has_nonstandard_csr(csrno) != 0) {
+    if (has_custom_csr(env, csrno) != 0) {
         return tlib_read_csr(csrno);
     }
 

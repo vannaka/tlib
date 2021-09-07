@@ -47,6 +47,10 @@ typedef struct custom_instruction_descriptor_t {
 } custom_instruction_descriptor_t;
 #define CPU_CUSTOM_INSTRUCTIONS_LIMIT 256
 
+#define MAX_CSR_ID 0xFFF
+#define CSRS_PER_SLOT 64
+#define CSRS_SLOTS (MAX_CSR_ID + 1) / CSRS_PER_SLOT
+
 #define VLEN_MAX (1 << 16)
 
 typedef struct DisasContext {
@@ -156,6 +160,9 @@ struct CPUState {
 
     int32_t custom_instructions_count;
     custom_instruction_descriptor_t custom_instructions[CPU_CUSTOM_INSTRUCTIONS_LIMIT];
+
+    // bitmap keeping information about CSRs that have custom external implementation
+    uint64_t custom_csrs[CSRS_SLOTS];
 
     /*
        Supported CSR validation levels:

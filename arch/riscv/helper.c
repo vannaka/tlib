@@ -43,6 +43,9 @@ void cpu_reset(CPUState *env)
     custom_instruction_descriptor_t custom_instructions[CPU_CUSTOM_INSTRUCTIONS_LIMIT];
     memcpy(custom_instructions, env->custom_instructions,
            sizeof(custom_instruction_descriptor_t) * CPU_CUSTOM_INSTRUCTIONS_LIMIT);
+    uint64_t custom_csrs[CSRS_SLOTS];
+    memcpy(custom_csrs, env->custom_csrs,
+           sizeof(uint64_t) * CSRS_SLOTS);
 
     memset(env, 0, offsetof(CPUState, breakpoints));
 
@@ -62,6 +65,8 @@ void cpu_reset(CPUState *env)
     env->custom_instructions_count = custom_instructions_count;
     memcpy(env->custom_instructions, custom_instructions,
            sizeof(custom_instruction_descriptor_t) * CPU_CUSTOM_INSTRUCTIONS_LIMIT);
+    memcpy(env->custom_csrs, custom_csrs,
+           sizeof(uint64_t) * CSRS_SLOTS);
     env->pmp_napot_grain = -1;
 
     env->vlenb = 64;

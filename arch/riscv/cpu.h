@@ -47,6 +47,8 @@ typedef struct custom_instruction_descriptor_t {
 } custom_instruction_descriptor_t;
 #define CPU_CUSTOM_INSTRUCTIONS_LIMIT 256
 
+#define VLEN_MAX (1 << 16)
+
 typedef struct DisasContext {
     struct DisasContextBase base;
     uint64_t opcode;

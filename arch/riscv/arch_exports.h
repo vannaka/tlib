@@ -17,4 +17,7 @@ void tlib_set_nmi(int32_t nmi, int32_t state);
 
 void tlib_allow_unaligned_accesses(int32_t allowed);
 
+uint32_t tlib_set_vlen(uint32_t vlen);
+uint32_t tlib_set_elen(uint32_t elen);
+
 #endif

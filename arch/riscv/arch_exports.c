@@ -205,3 +205,25 @@ void tlib_set_interrupt_mode(int32_t mode)
 
     cpu->interrupt_mode = mode;
 }
+
+uint32_t tlib_set_vlen(uint32_t vlen)
+{
+    // a power of 2 and not greater than VLEN_MAX
+    if (((vlen - 1) & vlen) != 0 || vlen > VLEN_MAX) {
+        return 1;
+    }
+    cpu->vlen = vlen;
+    cpu->vlenb = vlen / 8;
+    return 0;
+}
+
+uint32_t tlib_set_elen(uint32_t elen)
+{
+    // a power of 2 and greater or equal to 8
+    // current implementation puts upper bound of 64
+    if (((elen - 1) & elen) != 0 || elen < 8 || elen > 64) {
+        return 1;
+    }
+    cpu->elen = elen;
+    return 0;
+}

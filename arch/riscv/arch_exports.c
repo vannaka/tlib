@@ -212,7 +212,6 @@ uint32_t tlib_set_vlen(uint32_t vlen)
     if (((vlen - 1) & vlen) != 0 || vlen > VLEN_MAX) {
         return 1;
     }
-    cpu->vlen = vlen;
     cpu->vlenb = vlen / 8;
     return 0;
 }

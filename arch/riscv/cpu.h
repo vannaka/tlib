@@ -121,7 +121,6 @@ struct CPUState {
     target_ulong vlenb;
 
     /* Vector shadow state */
-    target_ulong vlen;
     target_ulong elen;
     target_ulong vlmax;
 

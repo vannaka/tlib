@@ -19,13 +19,14 @@ target_ulong helper_vsetvl(CPUState *env, target_ulong rd, target_ulong rs1, tar
     require_vec(env);
 
     target_ulong prev_csr_vl = env->vl;
+    target_ulong vlen = env->vlenb * 8;
 
     env->vtype = rs2_pass;
     env->vsew = 1 << (GET_VTYPE_VSEW(rs2_pass) + 3);
     env->vlmul = GET_VTYPE_VLMUL(rs2_pass);
     int8_t vlmul = (int8_t)(env->vlmul << 5) >> 5;
     env->vflmul = vlmul >= 0 ? 1 << vlmul : 1.0 / (1 << -vlmul);
-    env->vlmax = (target_ulong)(env->vlen / env->vsew * env->vflmul);
+    env->vlmax = (target_ulong)(vlen / env->vsew * env->vflmul);
     env->vta = GET_VTYPE_VTA(rs2_pass);
     env->vma = GET_VTYPE_VMA(rs2_pass);
 

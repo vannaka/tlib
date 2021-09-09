@@ -64,7 +64,6 @@ void cpu_reset(CPUState *env)
            sizeof(custom_instruction_descriptor_t) * CPU_CUSTOM_INSTRUCTIONS_LIMIT);
     env->pmp_napot_grain = -1;
 
-    // TODO: vlenb and elen should be alterable to match machine architectures
     env->vlenb = 64;
     env->elen = 64;
 }

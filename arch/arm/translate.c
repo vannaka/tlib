@@ -42,6 +42,7 @@
 #define ENABLE_ARCH_6K  arm_feature(env, ARM_FEATURE_V6K)
 #define ENABLE_ARCH_6T2 arm_feature(env, ARM_FEATURE_THUMB2)
 #define ENABLE_ARCH_7   arm_feature(env, ARM_FEATURE_V7)
+#define ENABLE_ARCH_8   arm_feature(env, ARM_FEATURE_V8)
 
 #define ARCH(x) do { if (!ENABLE_ARCH_##x) goto illegal_op; } while(0)
 
@@ -8347,7 +8348,17 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
                 ARCH(7);
                 op = (insn >> 4) & 0x3;
                 if (op == 2) {
-                    goto illegal_op;
+                    ARCH(8);
+                    /* LDAEX/STLEX (and variants -B,-H)
+                       LDAEX is LDREX + sync memory barrier, so might require a translation block to be finished
+                    */
+                   if(((insn >> 6) & 1) == 0)
+                   {
+                       /* LDA/STL (and variants -B,-H) stub 
+                          They are likely just Load/Store + memory barrier
+                       */
+                       tlib_abort("LDA/STL instructions are not implemented");
+                   }
                 }
                 addr = tcg_temp_local_new();
                 load_reg_var(s, addr, rn);

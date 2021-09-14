@@ -221,6 +221,8 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         env->cp15.c1_sys = 0x00c50078;
         break;
     case ARM_CPUID_CORTEXM33:
+        set_feature(env, ARM_FEATURE_V8);
+        /* fallthrough */
     case ARM_CPUID_CORTEXM3:
         set_feature(env, ARM_FEATURE_V4T);
         set_feature(env, ARM_FEATURE_V5);

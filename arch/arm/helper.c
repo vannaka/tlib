@@ -220,6 +220,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         env->cp15.c0_ccsid[2] = 0x711fe07a; /* 4096K L2 unified cache */
         env->cp15.c1_sys = 0x00c50078;
         break;
+    case ARM_CPUID_CORTEXM33:
     case ARM_CPUID_CORTEXM3:
         set_feature(env, ARM_FEATURE_V4T);
         set_feature(env, ARM_FEATURE_V5);
@@ -378,7 +379,8 @@ static const struct arm_cpu_t arm_cpu_names[] = {
     { ARM_CPUID_PXA255, "pxa255" }, { ARM_CPUID_PXA260, "pxa260" }, { ARM_CPUID_PXA261, "pxa261" },
     { ARM_CPUID_PXA262, "pxa262" }, { ARM_CPUID_PXA270, "pxa270" }, { ARM_CPUID_PXA270_A0, "pxa270-a0" },
     { ARM_CPUID_PXA270_A1, "pxa270-a1" }, { ARM_CPUID_PXA270_B0, "pxa270-b0" }, { ARM_CPUID_PXA270_B1, "pxa270-b1" },
-    { ARM_CPUID_PXA270_C0, "pxa270-c0" }, { ARM_CPUID_PXA270_C5, "pxa270-c5" }, { ARM_CPUID_ANY, "any"}, { 0, NULL}
+    { ARM_CPUID_PXA270_C0, "pxa270-c0" }, { ARM_CPUID_PXA270_C5, "pxa270-c5" }, {ARM_CPUID_CORTEXM33, "cortex-m33"},
+    { ARM_CPUID_ANY, "any"}, { 0, NULL}
 };
 
 /* return 0 if not found */

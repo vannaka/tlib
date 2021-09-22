@@ -93,7 +93,7 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
         if (likely((mapped_address & TARGET_PAGE_MASK) == masked_virtual)) {
             physical = mapped_address;
         } else {
-            tlib_printf(LOG_LEVEL_ERROR, "Failed to get physical adress for virtual adress %p", virtual);
+            tlib_printf(LOG_LEVEL_ERROR, "Failed to get physical address for virtual adress %p", virtual);
             return -1;
         }
     }

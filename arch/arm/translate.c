@@ -794,6 +794,17 @@ static inline void gen_set_pc_im(uint32_t val)
     tcg_gen_movi_i32(cpu_R[15], val);
 }
 
+/* Treat current instruction like a jump, to force instruction block end.
+   It's required for barrier instructions ISB, DSB and DMB. In a scenario
+   of software interrupt happening just before the barrier, instructions
+   following barrier have to see the changes caused by the interrupt handler.
+   This was exposed by Zephyr zero-latency interrupt tests. */
+static inline void gen_barrier(DisasContext *s)
+{
+    gen_set_pc_im(s->base.pc);
+    s->base.is_jmp = DISAS_UPDATE;
+}
+
 /* Force a TB lookup after an instruction that changes the CPU state.  */
 static inline void gen_lookup_tb(DisasContext *s)
 {
@@ -2644,6 +2655,7 @@ static int disas_cp15_insn(CPUState *env, DisasContext *s, uint32_t insn)
     case 0x0e070fba: /* 0,c7,c10,5: DMB */
         /* Barriers in both v6 and v7 */
         if (arm_feature(env, ARM_FEATURE_V6)) {
+            gen_barrier(s);
             return 0;
         }
         break;
@@ -6851,6 +6863,7 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
             case 5: /* dmb */
             case 6: /* isb */
                 ARCH(7);
+                gen_barrier(s);
                 /* We don't emulate caches so these are a no-op.  */
                 return;
             default:
@@ -8941,6 +8954,7 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
                         case 4: /* dsb */
                         case 5: /* dmb */
                         case 6: /* isb */
+                            gen_barrier(s);
                             /* These execute as NOPs.  */
                             break;
                         default:

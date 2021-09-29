@@ -1153,7 +1153,7 @@ void helper_vfmv_fs(CPUState *env, int32_t vd, int32_t vs2)
     }
 }
 
-void helper_vfmv_sf(CPUState *env, target_ulong vd, int64_t rs1)
+void helper_vfmv_sf(CPUState *env, uint32_t vd, float64 rs1)
 {
     if (env->vstart >= env->vl)
     {

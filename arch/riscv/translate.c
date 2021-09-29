@@ -797,11 +797,11 @@ static void gen_v_load(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t v
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         return;
     }
-    TCGv t_vd, t_rs1, t_rs2, t_nf;
-    t_vd = tcg_temp_new();
-    t_rs1 = tcg_temp_new();
-    t_rs2 = tcg_temp_new();
-    t_nf = tcg_temp_new();
+    TCGv_i32 t_vd, t_rs1, t_rs2, t_nf;
+    t_vd = tcg_temp_new_i32();
+    t_rs1 = tcg_temp_new_i32();
+    t_rs2 = tcg_temp_new_i32();
+    t_nf = tcg_temp_new_i32();
     tcg_gen_movi_i32(t_vd, vd);
     tcg_gen_movi_i32(t_rs1, rs1);
     tcg_gen_movi_i32(t_rs2, rs2);
@@ -960,10 +960,10 @@ static void gen_v_load(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t v
         break;
     }
     tcg_gen_movi_tl(cpu_vstart, 0);
-    tcg_temp_free(t_vd);
-    tcg_temp_free(t_rs1);
-    tcg_temp_free(t_rs2);
-    tcg_temp_free(t_nf);
+    tcg_temp_free_i32(t_vd);
+    tcg_temp_free_i32(t_rs1);
+    tcg_temp_free_i32(t_rs2);
+    tcg_temp_free_i32(t_nf);
 }
 
 static void gen_fp_store(DisasContext *dc, uint32_t opc, int rs1, int rs2, target_long imm)
@@ -1016,11 +1016,11 @@ static void gen_v_store(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t 
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         return;
     }
-    TCGv t_vd, t_rs1, t_rs2, t_nf;
-    t_vd = tcg_temp_new();
-    t_rs1 = tcg_temp_new();
-    t_rs2 = tcg_temp_new();
-    t_nf = tcg_temp_new();
+    TCGv_i32 t_vd, t_rs1, t_rs2, t_nf;
+    t_vd = tcg_temp_new_i32();
+    t_rs1 = tcg_temp_new_i32();
+    t_rs2 = tcg_temp_new_i32();
+    t_nf = tcg_temp_new_i32();
     tcg_gen_movi_i32(t_vd, vd);
     tcg_gen_movi_i32(t_rs1, rs1);
     tcg_gen_movi_i32(t_rs2, rs2);
@@ -1151,10 +1151,10 @@ static void gen_v_store(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t 
         break;
     }
     tcg_gen_movi_tl(cpu_vstart, 0);
-    tcg_temp_free(t_vd);
-    tcg_temp_free(t_rs1);
-    tcg_temp_free(t_rs2);
-    tcg_temp_free(t_nf);
+    tcg_temp_free_i32(t_vd);
+    tcg_temp_free_i32(t_rs1);
+    tcg_temp_free_i32(t_rs2);
+    tcg_temp_free_i32(t_nf);
 }
 
 static void gen_atomic(CPUState *env, DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
@@ -1878,10 +1878,10 @@ static void gen_v_cfg(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, 
 
 static void gen_v_opivv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int vs2, uint8_t vm)
 {
-    TCGv t_vd, t_vs1, t_vs2;
-    t_vd = tcg_temp_new();
-    t_vs1 = tcg_temp_new();
-    t_vs2 = tcg_temp_new();
+    TCGv_i32 t_vd, t_vs1, t_vs2;
+    t_vd = tcg_temp_new_i32();
+    t_vs1 = tcg_temp_new_i32();
+    t_vs2 = tcg_temp_new_i32();
     tcg_gen_movi_i32(t_vd, vd);
     tcg_gen_movi_i32(t_vs1, vs1);
     tcg_gen_movi_i32(t_vs2, vs2);
@@ -2169,17 +2169,17 @@ static void gen_v_opivv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
-    tcg_temp_free(t_vd);
-    tcg_temp_free(t_vs1);
-    tcg_temp_free(t_vs2);
+    tcg_temp_free_i32(t_vd);
+    tcg_temp_free_i32(t_vs1);
+    tcg_temp_free_i32(t_vs2);
 }
 
 // common or mutually exclusive operations for vi and vx
 static void gen_v_opivt(DisasContext *dc, uint8_t funct6, int vd, int vs2, TCGv t, uint8_t vm)
 {
-    TCGv t_vd, t_vs2;
-    t_vd = tcg_temp_new();
-    t_vs2 = tcg_temp_new();
+    TCGv_i32 t_vd, t_vs2;
+    t_vd = tcg_temp_new_i32();
+    t_vs2 = tcg_temp_new_i32();
     tcg_gen_movi_i32(t_vd, vd);
     tcg_gen_movi_i32(t_vs2, vs2);
 
@@ -2477,15 +2477,16 @@ static void gen_v_opivt(DisasContext *dc, uint8_t funct6, int vd, int vs2, TCGv 
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
-    tcg_temp_free(t_vd);
-    tcg_temp_free(t_vs2);
+    tcg_temp_free_i32(t_vd);
+    tcg_temp_free_i32(t_vs2);
 }
 
 static void gen_v_opivi(DisasContext *dc, uint8_t funct6, int vd, int rs1, int vs2, uint8_t vm)
 {
     int64_t simm5 = rs1;
     TCGv t_simm5;
-    t_simm5 = tcg_temp_new_i64();
+    TCGv_i32 t_vd, t_vs2;
+    t_simm5 = tcg_temp_new();
 
     switch (funct6) {
     // Common for vi and vx
@@ -2497,7 +2498,7 @@ static void gen_v_opivi(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
     case RISC_V_FUNCT_SLIDEUP:
     case RISC_V_FUNCT_SLIDEDOWN:
     case RISC_V_FUNCT_RGATHER:
-        tcg_gen_movi_i64(t_simm5, simm5);
+        tcg_gen_movi_tl(t_simm5, simm5);
         gen_v_opivt(dc, funct6, vd, vs2, t_simm5, vm);
         break;
     // sign-extended immediate
@@ -2524,52 +2525,49 @@ static void gen_v_opivi(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
     case RISC_V_FUNCT_SSRA:
     // Reserved for vx
         simm5 = rs1 >= 0x10 ? (0xffffffffffffffe0) | rs1 : rs1;
-        tcg_gen_movi_i64(t_simm5, simm5);
+        tcg_gen_movi_tl(t_simm5, simm5);
         gen_v_opivt(dc, funct6, vd, vs2, t_simm5, vm);
         break;
     // Conflicting
-    case RISC_V_FUNCT_MV_NF_R: {
-            TCGv t_vd, t_vs2;
-            t_vd = tcg_temp_new();
-            t_vs2 = tcg_temp_new();
-            tcg_gen_movi_i32(t_vd, vd);
-            tcg_gen_movi_i32(t_vs2, vs2);
+    case RISC_V_FUNCT_MV_NF_R:
+        t_vd = tcg_temp_new_i32();
+        t_vs2 = tcg_temp_new_i32();
+        tcg_gen_movi_i32(t_vd, vd);
+        tcg_gen_movi_i32(t_vs2, vs2);
 
-            switch (rs1) {
-            case 0:
-                gen_helper_vmv1r_v(cpu_env, t_vd, t_vs2);
-                break;
-            case 1:
-                gen_helper_vmv2r_v(cpu_env, t_vd, t_vs2);
-                break;
-            case 3:
-                gen_helper_vmv4r_v(cpu_env, t_vd, t_vs2);
-                break;
-            case 7:
-                gen_helper_vmv8r_v(cpu_env, t_vd, t_vs2);
-                break;
-            default:
-                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
-                break;
-            }
-            tcg_temp_free(t_vd);
-            tcg_temp_free(t_vs2);
+        switch (rs1) {
+        case 0:
+            gen_helper_vmv1r_v(cpu_env, t_vd, t_vs2);
+            break;
+        case 1:
+            gen_helper_vmv2r_v(cpu_env, t_vd, t_vs2);
+            break;
+        case 3:
+            gen_helper_vmv4r_v(cpu_env, t_vd, t_vs2);
+            break;
+        case 7:
+            gen_helper_vmv8r_v(cpu_env, t_vd, t_vs2);
+            break;
+        default:
+            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
+        tcg_temp_free_i32(t_vd);
+        tcg_temp_free_i32(t_vs2);
+        break;
     default:
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
-    tcg_temp_free_i64(t_simm5);
+    tcg_temp_free(t_simm5);
 }
 
 static void gen_v_opivx(DisasContext *dc, uint8_t funct6, int vd, int rs1, int vs2, uint8_t vm)
 {
-    TCGv t_vd, t_vs2, t_rs1, t;
-    t_rs1 = tcg_temp_new();
-    t = tcg_temp_new_i64();
-    gen_get_gpr(t_rs1, rs1);
-    tcg_gen_ext_tl_i64(t, t_rs1);
+    TCGv_i32 t_vd, t_vs2;
+    TCGv t_tl;
+    t_tl = tcg_temp_new();
+    gen_get_gpr(t_tl, rs1);
 
     switch (funct6) {
     // Common for vi and vx
@@ -2613,36 +2611,37 @@ static void gen_v_opivx(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
     case RISC_V_FUNCT_MSLT:
     case RISC_V_FUNCT_SSUBU:
     case RISC_V_FUNCT_SSUB:
-        gen_v_opivt(dc, funct6, vd, vs2, t, vm);
+        gen_v_opivt(dc, funct6, vd, vs2, t_tl, vm);
         break;
     // Conflicting
     case RISC_V_FUNCT_SMUL:
-        t_vd = tcg_temp_new();
-        t_vs2 = tcg_temp_new();
+        t_vd = tcg_temp_new_i32();
+        t_vs2 = tcg_temp_new_i32();
         tcg_gen_movi_i32(t_vd, vd);
         tcg_gen_movi_i32(t_vs2, vs2);
         if (vm) {
-            gen_helper_vsmul_ivx(cpu_env, t_vd, t_vs2, t);
+            gen_helper_vsmul_ivx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vsmul_ivx_m(cpu_env, t_vd, t_vs2, t);
+            gen_helper_vsmul_ivx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
-        tcg_temp_free(t_vd);
-        tcg_temp_free(t_vs2);
+        tcg_temp_free_i32(t_vd);
+        tcg_temp_free_i32(t_vs2);
         break;
     default:
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
-    tcg_temp_free(t_rs1);
-    tcg_temp_free_i64(t);
+    tcg_temp_free(t_tl);
 }
 
 static void gen_v_opmvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int vs2, uint8_t vm)
 {
-    TCGv t_vd, t_vs1, t_vs2;
-    t_vd = tcg_temp_new();
-    t_vs1 = tcg_temp_new();
-    t_vs2 = tcg_temp_new();
+    TCGv_i32 t_vd, t_vs1, t_vs2;
+    TCGv t_tl;
+    t_vd = tcg_temp_new_i32();
+    t_vs1 = tcg_temp_new_i32();
+    t_vs2 = tcg_temp_new_i32();
+    t_tl = tcg_temp_new();
     tcg_gen_movi_i32(t_vd, vd);
     tcg_gen_movi_i32(t_vs1, vs1);
     tcg_gen_movi_i32(t_vs2, vs2);
@@ -2736,27 +2735,27 @@ static void gen_v_opmvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         switch (vs1) {
         case 0x0:
             if (vm) {
-                gen_helper_vmv_xs(t_vd, cpu_env, t_vs2);
-                gen_set_gpr(vd, t_vd);
+                gen_helper_vmv_xs(t_tl, cpu_env, t_vs2);
+                gen_set_gpr(vd, t_tl);
             } else {
                 kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
             }
             break;
         case 0x10:
             if (vm) {
-                gen_helper_vpopc(t_vd, cpu_env, t_vs2);
+                gen_helper_vpopc(t_tl, cpu_env, t_vs2);
             } else {
-                gen_helper_vpopc_m(t_vd, cpu_env, t_vs2);
+                gen_helper_vpopc_m(t_tl, cpu_env, t_vs2);
             }
-            gen_set_gpr(vd, t_vd);
+            gen_set_gpr(vd, t_tl);
             break;
         case 0x11:
             if (vm) {
-                gen_helper_vfirst(t_vd, cpu_env, t_vs2);
+                gen_helper_vfirst(t_tl, cpu_env, t_vs2);
             } else {
-                gen_helper_vfirst_m(t_vd, cpu_env, t_vs2);
+                gen_helper_vfirst_m(t_tl, cpu_env, t_vs2);
             }
-            gen_set_gpr(vd, t_vd);
+            gen_set_gpr(vd, t_tl);
             break;
         default:
             kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
@@ -3105,269 +3104,269 @@ static void gen_v_opmvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
-    tcg_temp_free(t_vd);
-    tcg_temp_free(t_vs1);
-    tcg_temp_free(t_vs2);
+    tcg_temp_free(t_tl);
+    tcg_temp_free_i32(t_vd);
+    tcg_temp_free_i32(t_vs1);
+    tcg_temp_free_i32(t_vs2);
 }
 
 static void gen_v_opmvx(DisasContext *dc, uint8_t funct6, int vd, int rs1, int vs2, uint8_t vm)
 {
-    TCGv t_vd, t_rs1, t_vs2, t;
-    t_vd = tcg_temp_new();
-    t_vs2 = tcg_temp_new();
-    t_rs1 = tcg_temp_new();
-    t = tcg_temp_new_i64();
+    TCGv_i32 t_vd, t_vs2;
+    TCGv t_tl;
+    t_vd = tcg_temp_new_i32();
+    t_vs2 = tcg_temp_new_i32();
+    t_tl = tcg_temp_new();
     tcg_gen_movi_i32(t_vd, vd);
     tcg_gen_movi_i32(t_vs2, vs2);
-    gen_get_gpr(t_rs1, rs1);
-    tcg_gen_ext_tl_i64(t, t_rs1);
+    gen_get_gpr(t_tl, rs1);
 
     switch (funct6) {
     case RISC_V_FUNCT_AADDU:
         if (vm) {
-            gen_helper_vaaddu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vaaddu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vaaddu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vaaddu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_AADD:
         if (vm) {
-            gen_helper_vaadd_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vaadd_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vaadd_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vaadd_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_ASUBU:
         if (vm) {
-            gen_helper_vasubu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vasubu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vasubu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vasubu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_ASUB:
         if (vm) {
-            gen_helper_vasub_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vasub_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vasub_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vasub_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_SLIDE1UP:
         if (vm) {
-            gen_helper_vslide1up(cpu_env, t_vd, t_vs2, t);
+            gen_helper_vslide1up(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vslide1up_m(cpu_env, t_vd, t_vs2, t);
+            gen_helper_vslide1up_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_SLIDE1DOWN:
         if (vm) {
-            gen_helper_vslide1down(cpu_env, t_vd, t_vs2, t);
+            gen_helper_vslide1down(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vslide1down_m(cpu_env, t_vd, t_vs2, t);
+            gen_helper_vslide1down_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_RXUNARY0:
         if (vs2 == 0x0 && vm) {
-            gen_helper_vmv_sx(cpu_env, t_vd, t_rs1);
+            gen_helper_vmv_sx(cpu_env, t_vd, t_tl);
         } else {
             kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         }
         break;
     case RISC_V_FUNCT_DIVU:
         if (vm) {
-            gen_helper_vdivu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vdivu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vdivu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vdivu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_DIV:
         if (vm) {
-            gen_helper_vdiv_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vdiv_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vdiv_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vdiv_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_REMU:
         if (vm) {
-            gen_helper_vremu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vremu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vremu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vremu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_REM:
         if (vm) {
-            gen_helper_vrem_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vrem_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vrem_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vrem_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_MULHU:
         if (vm) {
-            gen_helper_vmulhu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmulhu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vmulhu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmulhu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_MUL:
         if (vm) {
-            gen_helper_vmul_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmul_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vmul_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmul_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_MULHSU:
         if (vm) {
-            gen_helper_vmulhsu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmulhsu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vmulhsu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmulhsu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_MULH:
         if (vm) {
-            gen_helper_vmulh_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmulh_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vmulh_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmulh_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_MADD:
         if (vm) {
-            gen_helper_vmadd_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmadd_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vmadd_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmadd_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_NMSUB:
         if (vm) {
-            gen_helper_vnmsub_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vnmsub_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vnmsub_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vnmsub_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_MACC:
         if (vm) {
-            gen_helper_vmacc_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmacc_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vmacc_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vmacc_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_NMSAC:
         if (vm) {
-            gen_helper_vnmsac_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vnmsac_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vnmsac_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vnmsac_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WADDU:
         if (vm) {
-            gen_helper_vwaddu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwaddu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwaddu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwaddu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WADD:
         if (vm) {
-            gen_helper_vwadd_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwadd_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwadd_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwadd_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WSUBU:
         if (vm) {
-            gen_helper_vwsubu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwsubu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwsubu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwsubu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WSUB:
         if (vm) {
-            gen_helper_vwsub_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwsub_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwsub_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwsub_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WADDUW:
         if (vm) {
-            gen_helper_vwaddu_mwx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwaddu_mwx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwaddu_mwx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwaddu_mwx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WADDW:
         if (vm) {
-            gen_helper_vwadd_mwx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwadd_mwx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwadd_mwx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwadd_mwx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WSUBUW:
         if (vm) {
-            gen_helper_vwsubu_mwx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwsubu_mwx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwsubu_mwx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwsubu_mwx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WSUBW:
         if (vm) {
-            gen_helper_vwsub_mwx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwsub_mwx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwsub_mwx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwsub_mwx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WMULU:
         if (vm) {
-            gen_helper_vwmulu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmulu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwmulu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmulu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WMULSU:
         if (vm) {
-            gen_helper_vwmulsu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmulsu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwmulsu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmulsu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WMUL:
         if (vm) {
-            gen_helper_vwmul_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmul_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwmul_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmul_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WMACCU:
         if (vm) {
-            gen_helper_vwmaccu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmaccu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwmaccu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmaccu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WMACC:
         if (vm) {
-            gen_helper_vwmacc_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmacc_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwmacc_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmacc_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WMACCUS:
         if (vm) {
-            gen_helper_vwmaccus_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmaccus_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwmaccus_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmaccus_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     case RISC_V_FUNCT_WMACCSU:
         if (vm) {
-            gen_helper_vwmaccsu_mvx(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmaccsu_mvx(cpu_env, t_vd, t_vs2, t_tl);
         } else {
-            gen_helper_vwmaccsu_mvx_m(cpu_env, t_vd, t_vs2, t_rs1);
+            gen_helper_vwmaccsu_mvx_m(cpu_env, t_vd, t_vs2, t_tl);
         }
         break;
     default:
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
-    tcg_temp_free(t_vd);
-    tcg_temp_free(t_vs2);
-    tcg_temp_free(t_rs1);
+    tcg_temp_free(t_tl);
+    tcg_temp_free_i32(t_vd);
+    tcg_temp_free_i32(t_vs2);
 }
 
 static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int vs2, uint8_t vm)
@@ -3841,8 +3840,8 @@ static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
 static void gen_v_opfvf(DisasContext *dc, uint8_t funct6, int vd, int rs1, int vs2, uint8_t vm)
 {
     TCGv t_vd, t_vs2;
-    t_vd = tcg_temp_new();
-    t_vs2 = tcg_temp_new();
+    t_vd = tcg_temp_new_i32();
+    t_vs2 = tcg_temp_new_i32();
     tcg_gen_movi_i32(t_vd, vd);
     tcg_gen_movi_i32(t_vs2, vs2);
 
@@ -4122,8 +4121,8 @@ static void gen_v_opfvf(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
     }
-    tcg_temp_free(t_vd);
-    tcg_temp_free(t_vs2);
+    tcg_temp_free_i32(t_vd);
+    tcg_temp_free_i32(t_vs2);
 }
 
 static void gen_v(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, int imm)

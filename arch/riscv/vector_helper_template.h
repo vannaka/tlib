@@ -2138,7 +2138,7 @@ void glue(helper_vslidedown_ivi, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs
     }
 }
 
-void glue(helper_vslide1up, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, uint64_t rs1)
+void glue(helper_vslide1up, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
@@ -2190,7 +2190,7 @@ void glue(helper_vslide1up, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, ui
     }
 }
 
-void glue(helper_vslide1down, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, uint64_t rs1)
+void glue(helper_vslide1down, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);

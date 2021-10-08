@@ -241,8 +241,20 @@ uint32_t tlib_set_elen(uint32_t elen)
     return 0;
 }
 
+static bool check_vector_register_number(uint32_t regn)
+{
+    if (regn >= 32) {
+        tlib_printf(LOG_LEVEL_ERROR, "Vector register number out of bounds");
+        return 1;
+    }
+    return 0;
+}
+
 static bool check_vector_access(uint32_t regn, uint32_t idx)
 {
+    if (check_vector_register_number(regn)) {
+        return 1;
+    }
     if (regn >= 32) {
         tlib_printf(LOG_LEVEL_ERROR, "Vector register number out of bounds");
         return 1;
@@ -304,5 +316,25 @@ void tlib_set_vector(uint32_t regn, uint32_t idx, uint64_t value)
         break;
     default:
         tlib_printf(LOG_LEVEL_ERROR, "Unsupported SEW (%d)", cpu->vsew);
+    }
+}
+
+uint32_t tlib_get_whole_vector(uint32_t regn, uint8_t *bytes)
+{
+    if (check_vector_register_number(regn)) {
+        return 1;
+    } else {
+        memcpy(bytes, V(regn), env->vlenb);
+        return 0;
+    }
+}
+
+uint32_t tlib_set_whole_vector(uint32_t regn, uint8_t *bytes)
+{
+    if (check_vector_register_number(regn)) {
+        return 1;
+    } else {
+        memcpy(V(regn), bytes, env->vlenb);
+        return 0;
     }
 }

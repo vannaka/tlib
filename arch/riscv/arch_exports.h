@@ -23,4 +23,7 @@ uint32_t tlib_set_elen(uint32_t elen);
 uint64_t tlib_get_vector(int regn, int idx);
 void tlib_set_vector(int regn, int idx, uint64_t value);
 
+uint32_t tlib_get_whole_vector(uint32_t regn, uint8_t *bytes);
+uint32_t tlib_set_whole_vector(uint32_t regn, uint8_t *bytes);
+
 #endif

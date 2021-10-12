@@ -203,6 +203,20 @@ static inline bool is_nfields_power_of_two(uint32_t nf)
     return (nf & (nf + 1)) == 0;
 }
 
+static inline void generate_vill_check(DisasContext *dc)
+{
+    TCGv t0 = tcg_temp_local_new();
+    int done = gen_new_label();
+
+    tcg_gen_ld_tl(t0, cpu_env, offsetof(CPUState, vill));
+    tcg_gen_brcondi_tl(TCG_COND_EQ, t0, 0x0, done);
+
+    kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+
+    gen_set_label(done);
+    tcg_temp_free(t0);
+}
+
 static void gen_mulhsu(TCGv ret, TCGv arg1, TCGv arg2)
 {
     TCGv rl = tcg_temp_new();
@@ -797,6 +811,9 @@ static void gen_v_load(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t v
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         return;
     }
+    if (MASK_OP_V_LOAD_US(dc->opcode) != OPC_RISC_VL_US_WR) {
+        generate_vill_check(dc);
+    }
     TCGv_i32 t_vd, t_rs1, t_rs2, t_nf;
     t_vd = tcg_temp_new_i32();
     t_rs1 = tcg_temp_new_i32();
@@ -844,14 +861,14 @@ static void gen_v_load(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t v
             break;
         case OPC_RISC_VL_US_WR:
             if (!vm || !is_nfields_power_of_two(nf)) {
-                generate_exception(dc, RISCV_EXCP_ILLEGAL_INST);
+                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
                 break;
             }
             gen_helper_vl_wr(cpu_env, t_vd, t_rs1, t_nf);
             break;
         case OPC_RISC_VL_US_MASK:
             if (!vm || width || nf) {
-                generate_exception(dc, RISCV_EXCP_ILLEGAL_INST);
+                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
                 break;
             }
             gen_helper_vlm(cpu_env, t_vd, t_rs1);
@@ -1016,6 +1033,9 @@ static void gen_v_store(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t 
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         return;
     }
+    if (MASK_OP_V_STORE_US(dc->opcode) != OPC_RISC_VS_US_WR) {
+        generate_vill_check(dc);
+    }
     TCGv_i32 t_vd, t_rs1, t_rs2, t_nf;
     t_vd = tcg_temp_new_i32();
     t_rs1 = tcg_temp_new_i32();
@@ -1064,14 +1084,14 @@ static void gen_v_store(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t 
             break;
         case OPC_RISC_VS_US_WR:
             if (!vm || width || !is_nfields_power_of_two(nf)) {
-                generate_exception(dc, RISCV_EXCP_ILLEGAL_INST);
+                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
                 break;
             }
             gen_helper_vs_wr(cpu_env, t_vd, t_rs1, t_nf);
             break;
         case OPC_RISC_VS_US_MASK:
             if (!vm || width || nf) {
-                generate_exception(dc, RISCV_EXCP_ILLEGAL_INST);
+                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
                 break;
             }
             gen_helper_vsm(cpu_env, t_vd, t_rs1);
@@ -1878,6 +1898,7 @@ static void gen_v_cfg(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, 
 
 static void gen_v_opivv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int vs2, uint8_t vm)
 {
+    generate_vill_check(dc);
     TCGv_i32 t_vd, t_vs1, t_vs2;
     t_vd = tcg_temp_new_i32();
     t_vs1 = tcg_temp_new_i32();
@@ -2483,6 +2504,9 @@ static void gen_v_opivt(DisasContext *dc, uint8_t funct6, int vd, int vs2, TCGv 
 
 static void gen_v_opivi(DisasContext *dc, uint8_t funct6, int vd, int rs1, int vs2, uint8_t vm)
 {
+    if (funct6 != RISC_V_FUNCT_MV_NF_R) {
+        generate_vill_check(dc);
+    }
     int64_t simm5 = rs1;
     TCGv t_simm5;
     TCGv_i32 t_vd, t_vs2;
@@ -2564,6 +2588,7 @@ static void gen_v_opivi(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
 
 static void gen_v_opivx(DisasContext *dc, uint8_t funct6, int vd, int rs1, int vs2, uint8_t vm)
 {
+    generate_vill_check(dc);
     TCGv_i32 t_vd, t_vs2;
     TCGv t_tl;
     t_tl = tcg_temp_new();
@@ -2636,6 +2661,7 @@ static void gen_v_opivx(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
 
 static void gen_v_opmvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int vs2, uint8_t vm)
 {
+    generate_vill_check(dc);
     TCGv_i32 t_vd, t_vs1, t_vs2;
     TCGv t_tl;
     t_vd = tcg_temp_new_i32();
@@ -3112,6 +3138,7 @@ static void gen_v_opmvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
 
 static void gen_v_opmvx(DisasContext *dc, uint8_t funct6, int vd, int rs1, int vs2, uint8_t vm)
 {
+    generate_vill_check(dc);
     TCGv_i32 t_vd, t_vs2;
     TCGv t_tl;
     t_vd = tcg_temp_new_i32();
@@ -3371,6 +3398,7 @@ static void gen_v_opmvx(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
 
 static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int vs2, uint8_t vm)
 {
+    generate_vill_check(dc);
     TCGv_i32 t_vd, t_vs2, t_vs1;
     t_vd = tcg_temp_new_i32();
     t_vs2 = tcg_temp_new_i32();
@@ -3839,6 +3867,7 @@ static void gen_v_opfvv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
 
 static void gen_v_opfvf(DisasContext *dc, uint8_t funct6, int vd, int rs1, int vs2, uint8_t vm)
 {
+    generate_vill_check(dc);
     TCGv t_vd, t_vs2;
     t_vd = tcg_temp_new_i32();
     t_vs2 = tcg_temp_new_i32();

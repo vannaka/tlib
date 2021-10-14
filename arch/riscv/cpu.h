@@ -73,6 +73,7 @@ struct CPUState {
     uint64_t fpr[32]; /* assume both F and D extensions */
     uint8_t vr[32 * (VLEN_MAX / 8)];
     target_ulong pc;
+    target_ulong opcode;
 
     target_ulong frm;
     target_ulong fflags;

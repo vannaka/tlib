@@ -23,7 +23,7 @@
 #include "arch_callbacks.h"
 
 /* global register indices */
-static TCGv cpu_gpr[32], cpu_pc;
+static TCGv cpu_gpr[32], cpu_pc, cpu_opcode;
 static TCGv_i64 cpu_fpr[32]; /* assume F and D extensions */
 static TCGv cpu_vstart;
 
@@ -57,6 +57,7 @@ void translate_init(void)
     }
 
     cpu_pc = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, pc), "pc");
+    cpu_opcode = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, opcode), "opcode");
     cpu_vstart = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, vstart), "vstart");
 }
 
@@ -104,6 +105,7 @@ static int ensure_fp_extension(DisasContext *dc, int precision_bit)
 static inline void gen_sync_pc(DisasContext *dc)
 {
     tcg_gen_movi_tl(cpu_pc, dc->base.pc);
+    tcg_gen_movi_tl(cpu_opcode, dc->opcode);
 }
 
 static inline uint64_t sextract64(uint64_t value, uint8_t start, uint8_t length)

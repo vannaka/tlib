@@ -520,7 +520,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
         break;
     default:
         warn_nonexistent_csr_write(csrno, val_to_write);
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        helper_raise_illegal_instruction(env);
     }
 }
 
@@ -735,7 +735,7 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
     default:
         /* used by e.g. MTIME read */
         warn_nonexistent_csr_read(csrno);
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        helper_raise_illegal_instruction(env);
     }
     return 0;
 }
@@ -753,13 +753,13 @@ void validate_csr(CPUState *env, uint64_t which, uint64_t write)
     switch (env->csr_validation_level) {
     case CSR_VALIDATION_FULL:
         if (((write) && csr_read_only) || (env->priv < csr_priv)) {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            helper_raise_illegal_instruction(env);
         }
         break;
 
     case CSR_VALIDATION_PRIV:
         if (env->priv < csr_priv) {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            helper_raise_illegal_instruction(env);
         }
         break;
 

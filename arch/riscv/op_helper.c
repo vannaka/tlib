@@ -98,6 +98,12 @@ void helper_raise_exception_mbadaddr(CPUState *env, uint32_t exception, target_u
     do_raise_exception_err(env, exception, 0, 1);
 }
 
+void helper_raise_illegal_instruction(CPUState *env)
+{
+    env->badaddr = env->opcode;
+    do_raise_exception_err(env, RISCV_EXCP_ILLEGAL_INST, 0, 1);
+}
+
 void helper_tlb_flush(CPUState *env);
 
 static inline uint64_t get_minstret_current(CPUState *env)

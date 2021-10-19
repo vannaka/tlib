@@ -245,7 +245,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
             env->fflags = val_to_write & (FSR_AEXC >> FSR_AEXC_SHIFT);
             mark_fs_dirty();
         } else {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            helper_raise_illegal_instruction(env);
         }
         break;
     case CSR_FRM:
@@ -253,7 +253,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
             env->frm = val_to_write & (FSR_RD >> FSR_RD_SHIFT);
             mark_fs_dirty();
         } else {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            helper_raise_illegal_instruction(env);
         }
         break;
     case CSR_FCSR:
@@ -262,7 +262,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
             env->frm = (val_to_write & FSR_RD) >> FSR_RD_SHIFT;
             mark_fs_dirty();
         } else {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            helper_raise_illegal_instruction(env);
         }
         break;
     case CSR_MSTATUS: {
@@ -572,21 +572,21 @@ static inline target_ulong csr_read_helper(CPUState *env, target_ulong csrno)
         if (riscv_mstatus_fs(env)) {
             return env->fflags;
         } else {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            helper_raise_illegal_instruction(env);
             break;
         }
     case CSR_FRM:
         if (riscv_mstatus_fs(env)) {
             return env->frm;
         } else {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            helper_raise_illegal_instruction(env);
             break;
         }
     case CSR_FCSR:
         if (riscv_mstatus_fs(env)) {
             return env->fflags << FSR_AEXC_SHIFT | env->frm << FSR_RD_SHIFT;
         } else {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            helper_raise_illegal_instruction(env);
             break;
         }
     case CSR_TIME:

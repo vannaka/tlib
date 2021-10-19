@@ -816,7 +816,7 @@ target_ulong helper_sret(CPUState *env, target_ulong cpu_pc_deb)
 {
     if (env->priv != PRV_S) {
         tlib_printf(LOG_LEVEL_ERROR, "Trying to execute Sret from privilege level %u.\n", env->priv);
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        helper_raise_illegal_instruction(env);
     }
 
     target_ulong retpc = env->sepc;
@@ -849,7 +849,7 @@ target_ulong helper_mret(CPUState *env, target_ulong cpu_pc_deb)
 {
     if (env->priv != PRV_M) {
         tlib_printf(LOG_LEVEL_ERROR, "Trying to execute Mret from privilege level %u.\n", env->priv);
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        helper_raise_illegal_instruction(env);
     }
 
     target_ulong retpc = env->mepc;

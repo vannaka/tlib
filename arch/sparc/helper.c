@@ -701,6 +701,22 @@ static const sparc_def_t sparc_defs[] = {
         .features = CPU_DEFAULT_FEATURES | CPU_FEATURE_TA0_SHUTDOWN |
         CPU_FEATURE_ASR | CPU_FEATURE_CACHE_CTRL,
     },
+    {
+        .name = "GR716",
+        .iu_version = 0xf3000000,
+        .fpu_version = 4 << 17, /* FPU version 4 (Meiko) */
+        .mmu_version = 0xf3000000,
+        .mmu_bm = 0x00000000,
+        //.mmu_ctpr_mask = 0x007ffff0,
+        //.mmu_cxr_mask = 0x0000003f,
+        .mmu_ctpr_mask = 0xfffffffc,
+        .mmu_cxr_mask = 0x000000ff,
+        .mmu_sfsr_mask = 0xffffffff,
+        .mmu_trcr_mask = 0xffffffff,
+        .nwindows = 31,
+        .features = CPU_DEFAULT_FEATURES | CPU_FEATURE_TA0_SHUTDOWN |
+        CPU_FEATURE_ASR | CPU_FEATURE_CACHE_CTRL,
+    },
 };
 
 /* *INDENT-ON* */

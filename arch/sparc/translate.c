@@ -1375,6 +1375,18 @@ static inline void gen_stda_asi(TCGv hi, TCGv addr, int insn, int rd)
     tcg_temp_free(r_asi);
 }
 
+/* This function assumes that IS_IMM == 0. */
+static inline void gen_cas_asi(TCGv dst, TCGv addr, TCGv val1, TCGv val2, int insn)
+{
+    int asi;
+    TCGv r_asi;
+
+    asi = GET_FIELD(insn, 19, 26);
+    r_asi = tcg_const_i32(asi);
+    gen_helper_cas_asi(dst, addr, val1, val2, r_asi);
+    tcg_temp_free(r_asi);
+}
+
 static inline void gen_ldstub_asi(TCGv dst, TCGv addr, int insn)
 {
     TCGv_i64 r_val;
@@ -2669,6 +2681,19 @@ skip_move:  ;
             case 0x36:     /* stdcq */
             case 0x37:     /* stdc */
                 goto ncp_insn;
+            case 0x3c:     /* LEON3 casa */
+                CHECK_IU_FEATURE(dc, CASA);
+
+                /* CASA with I=1 is supported by the ISA but not implemented yet due to
+                   missing WRASI, RDASI support. */
+                if(IS_IMM) {
+                    goto illegal_insn;
+                }
+
+                gen_movl_reg_TN(rd, cpu_val);
+                gen_cas_asi(cpu_tmp0, cpu_src1, cpu_src2, cpu_val, insn);
+                gen_movl_TN_reg(rd, cpu_tmp0);
+            break;
             default:
                 goto illegal_insn;
             }

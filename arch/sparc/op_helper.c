@@ -1401,6 +1401,19 @@ void helper_st_asi(target_ulong addr, uint64_t val, int asi, int size)
     }
 }
 
+target_ulong helper_cas_asi(target_ulong addr, target_ulong val1, target_ulong val2, uint32_t asi)
+{
+    target_ulong ret;
+
+    val1 &= 0xffffffffUL;
+    ret = helper_ld_asi(addr, asi, 4, 0);
+    ret &= 0xffffffffUL;
+    if (val1 == ret) {
+        helper_st_asi(addr, val2 & 0xffffffffUL, asi, 4);
+    }
+    return ret;
+}
+
 void helper_rett(void)
 {
     unsigned int cwp;

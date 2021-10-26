@@ -699,7 +699,7 @@ static const sparc_def_t sparc_defs[] = {
         .mmu_trcr_mask = 0xffffffff,
         .nwindows = 8,
         .features = CPU_DEFAULT_FEATURES | CPU_FEATURE_TA0_SHUTDOWN |
-        CPU_FEATURE_ASR | CPU_FEATURE_CACHE_CTRL,
+        CPU_FEATURE_ASR | CPU_FEATURE_CACHE_CTRL | CPU_FEATURE_CASA,
     },
     {
         .name = "GR716",
@@ -715,7 +715,7 @@ static const sparc_def_t sparc_defs[] = {
         .mmu_trcr_mask = 0xffffffff,
         .nwindows = 31,
         .features = CPU_DEFAULT_FEATURES | CPU_FEATURE_TA0_SHUTDOWN |
-        CPU_FEATURE_ASR | CPU_FEATURE_CACHE_CTRL,
+        CPU_FEATURE_ASR | CPU_FEATURE_CACHE_CTRL | CPU_FEATURE_CASA,
     },
 };
 

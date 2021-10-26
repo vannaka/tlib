@@ -190,6 +190,7 @@ typedef struct sparc_def_t {
 #define CPU_FEATURE_TA0_SHUTDOWN (1 << 14) /* Shutdown on "ta 0x0" */
 #define CPU_FEATURE_ASR          (1 << 15)
 #define CPU_FEATURE_CACHE_CTRL   (1 << 16)
+#define CPU_FEATURE_CASA         (1 << 17)
 
 #define CPU_DEFAULT_FEATURES     (CPU_FEATURE_FLOAT | CPU_FEATURE_SWAP |\
                               CPU_FEATURE_MUL | CPU_FEATURE_DIV |     \

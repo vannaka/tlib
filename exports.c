@@ -23,8 +23,14 @@
 #include "tcg.h"
 #include "tcg-additional.h"
 #include "exec-all.h"
+#include "tb-helper.h"
 
 static tcg_t stcg;
+
+void gen_helpers(void) {
+#define GEN_HELPER 2
+#include "helper.h"
+}
 
 static void init_tcg()
 {
@@ -98,8 +104,6 @@ uint32_t tlib_get_cycles_per_instruction()
 {
     return env->cycles_per_instruction;
 }
-
-void gen_helpers(void);
 
 int32_t tlib_init(char *cpu_name)
 {

@@ -11,9 +11,3 @@
 #include "helper.h"
 
 extern TCGv_ptr cpu_env;
-
-void gen_helpers(void)
-{
-#define GEN_HELPER 2
-#include "helper.h"
-}

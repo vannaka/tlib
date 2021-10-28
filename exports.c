@@ -367,7 +367,7 @@ int tlib_restore_context()
         // this happens when PC is outside RAM or ROM
         return -1;
     }
-    return cpu_restore_state(cpu, tb, pc);
+    return cpu_restore_state_from_tb(cpu, tb, pc);
 }
 
 void *tlib_export_state()

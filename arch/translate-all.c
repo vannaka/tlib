@@ -257,7 +257,7 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
 
 /* The cpu state corresponding to 'searched_pc' is restored.
  */
-int cpu_restore_state(CPUState *env, TranslationBlock *tb, uintptr_t searched_pc)
+int cpu_restore_state_from_tb(CPUState *env, TranslationBlock *tb, uintptr_t searched_pc)
 {
     TCGContext *s = tcg->ctx;
     int j, k;
@@ -298,13 +298,28 @@ int cpu_restore_state(CPUState *env, TranslationBlock *tb, uintptr_t searched_pc
 
 int cpu_restore_state_and_restore_instructions_count(CPUState *env, TranslationBlock *tb, uintptr_t searched_pc)
 {
-    int executed_instructions = cpu_restore_state(env, tb, searched_pc);
+    int executed_instructions = cpu_restore_state_from_tb(env, tb, searched_pc);
     if (executed_instructions != -1 && tb->instructions_count_dirty) {
         cpu->instructions_count_value -= (tb->icount - executed_instructions);
         cpu->instructions_count_total_value -= (tb->icount - executed_instructions);
         tb->instructions_count_dirty = 0;
     }
     return executed_instructions;
+}
+
+void cpu_restore_state(CPUState *env, void *retaddr) {
+  TranslationBlock *tb;
+  uintptr_t pc = (uintptr_t)retaddr;
+
+  if (pc) {
+    /* now we have a real cpu fault */
+    tb = tb_find_pc(pc);
+    if (tb) {
+      /* the PC is inside the translated code. It means that we have
+         a virtual CPU fault */
+      cpu_restore_state_and_restore_instructions_count(env, tb, pc);
+    }
+  }
 }
 
 void generate_opcode_count_increment(CPUState *env, uint64_t opcode)

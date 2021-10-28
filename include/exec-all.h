@@ -54,7 +54,8 @@ void setup_disas_context(DisasContextBase *dc, CPUState *env);
 void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb, int pc_pos);
 
 void cpu_gen_code(CPUState *env, struct TranslationBlock *tb, int *gen_code_size_ptr);
-int cpu_restore_state(CPUState *env, struct TranslationBlock *tb, uintptr_t searched_pc);
+int cpu_restore_state_from_tb(CPUState *env, struct TranslationBlock *tb, uintptr_t searched_pc);
+void cpu_restore_state(CPUState *env, void *retaddr);
 int cpu_restore_state_and_restore_instructions_count(CPUState *env, struct TranslationBlock *tb, uintptr_t searched_pc);
 TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_base, int flags, uint16_t cflags);
 void cpu_exec_init(CPUState *env);

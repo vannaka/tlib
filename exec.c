@@ -780,7 +780,7 @@ void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t en
                    restore the CPU state */
 
                 current_tb_modified = 1;
-                cpu_restore_state(env, current_tb, env->mem_io_pc);
+                cpu_restore_state_from_tb(env, current_tb, env->mem_io_pc);
                 cpu_get_tb_cpu_state(env, &current_pc, &current_cs_base, &current_flags);
             }
 #endif /* TARGET_HAS_PRECISE_SMC */

@@ -1643,27 +1643,9 @@ target_ulong helper_rdpsr(void)
     return get_psr();
 }
 
-/* XXX: make it generic ? */
-static void cpu_restore_state2(void *retaddr)
-{
-    TranslationBlock *tb;
-    uintptr_t pc;
-
-    if (retaddr) {
-        /* now we have a real cpu fault */
-        pc = (uintptr_t)retaddr;
-        tb = tb_find_pc(pc);
-        if (tb) {
-            /* the PC is inside the translated code. It means that we have
-               a virtual CPU fault */
-            cpu_restore_state_and_restore_instructions_count(env, tb, pc);
-        }
-    }
-}
-
 void do_unaligned_access(target_ulong addr, int is_write, int is_user, void *retaddr)
 {
-    cpu_restore_state2(retaddr);
+    cpu_restore_state(env, retaddr);
     raise_exception(TT_UNALIGNED);
 }
 
@@ -1676,7 +1658,7 @@ int tlb_fill(CPUState *env, target_ulong addr, int is_write, int mmu_idx, void *
     int ret;
     ret = cpu_handle_mmu_fault(env, addr, is_write, mmu_idx, 1);
     if (ret && !no_page_fault) {
-        cpu_restore_state2(retaddr);
+        cpu_restore_state(env, retaddr);
         cpu_loop_exit(env);
     }
     return ret;

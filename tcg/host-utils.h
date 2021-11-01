@@ -23,6 +23,9 @@
  * THE SOFTWARE.
  */
 
+#ifndef __HOST_UTILS_H__
+#define __HOST_UTILS_H__
+
 #include <stdarg.h>
 #include <stddef.h>
 
@@ -200,3 +203,5 @@ static inline int ctpop64(uint64_t val)
     return val;
 #endif
 }
+
+#endif

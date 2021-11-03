@@ -1668,6 +1668,19 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
         }
         break;
 
+    case INDEX_op_extract_i32:
+        /* On the off-chance that we can use the high-byte registers.
+           Otherwise we emit the same ext16 + shift pattern that we
+           would have gotten from the normal tcg-op.c expansion.  */
+        assert(args[2] == 8 && args[3] == 8);
+        if (args[1] < 4 && args[0] < 8) {
+            tcg_out_modrm(s, OPC_MOVZBL, args[0], args[1] + 4);
+        } else {
+            tcg_out_ext16u(s, args[0], args[1]);
+            tcg_out_shifti(s, SHIFT_SHR, args[0], 8);
+        }
+        break;
+
     default:
         tcg_abort();
     }
@@ -1729,6 +1742,8 @@ static const TCGTargetOpDef x86_op_defs[] = {
     { INDEX_op_muls2_i32, { "a", "d", "a", "r" } },
     { INDEX_op_add2_i32, { "r", "r", "0", "1", "ri", "ri" } },
     { INDEX_op_sub2_i32, { "r", "r", "0", "1", "ri", "ri" } },
+
+    { INDEX_op_extract_i32, { "r", "r" } },
 
 #if TCG_TARGET_REG_BITS == 32
     { INDEX_op_brcond2_i32, { "r", "r", "ri", "ri" } },

@@ -92,6 +92,7 @@ typedef enum {
 #define TCG_TARGET_HAS_nand_i32      0
 #define TCG_TARGET_HAS_nor_i32       0
 #define TCG_TARGET_HAS_deposit_i32   1
+#define TCG_TARGET_HAS_extract_i32   1
 #if TCG_TARGET_REG_BITS == 32
 #define TCG_TARGET_HAS_muls2_i32     1
 #define TCG_TARGET_HAS_mulu2_i32     1
@@ -127,6 +128,9 @@ typedef enum {
     (((ofs) == 0 && (len) == 8) || ((ofs) == 8 && (len) == 8) || \
      ((ofs) == 0 && (len) == 16))
 #define TCG_TARGET_deposit_i64_valid TCG_TARGET_deposit_i32_valid
+
+/* Check for the possibility of high-byte extraction.  */
+#define TCG_TARGET_extract_i32_valid(ofs, len) ((ofs) == 8 && (len) == 8)
 
 #define TCG_TARGET_HAS_GUEST_BASE
 

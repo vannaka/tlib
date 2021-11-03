@@ -478,6 +478,18 @@ static inline void tcg_gen_subi_i32(TCGv_i32 ret, TCGv_i32 arg1, int32_t arg2)
     }
 }
 
+static inline void tcg_gen_add2_i32(TCGv_i32 rl, TCGv_i32 rh, TCGv_i32 al,
+                      TCGv_i32 ah, TCGv_i32 bl, TCGv_i32 bh)
+{
+    tcg_gen_op6_i32(INDEX_op_add2_i32, rl, rh, al, ah, bl, bh);
+}
+
+static inline void tcg_gen_sub2_i32(TCGv_i32 rl, TCGv_i32 rh, TCGv_i32 al,
+                      TCGv_i32 ah, TCGv_i32 bl, TCGv_i32 bh)
+{
+    tcg_gen_op6_i32(INDEX_op_sub2_i32, rl, rh, al, ah, bl, bh);
+}
+
 static inline void tcg_gen_and_i32(TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2)
 {
     if (TCGV_EQUAL_I32(arg1, arg2)) {
@@ -2017,6 +2029,63 @@ static inline void tcg_gen_deposit_i32(TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg
     tcg_temp_free_i32(t1);
 }
 
+static inline void tcg_gen_extract_i32(TCGv_i32 ret, TCGv_i32 arg,
+                         unsigned int ofs, unsigned int len)
+{
+    assert(ofs < 32);
+    assert(len > 0);
+    assert(len <= 32);
+    assert(ofs + len <= 32);
+
+    /* Canonicalize certain special cases, even if extract is supported.  */
+    if (ofs + len == 32) {
+        tcg_gen_shri_i32(ret, arg, 32 - len);
+        return;
+    }
+    if (ofs == 0) {
+        tcg_gen_andi_i32(ret, arg, (1u << len) - 1);
+        return;
+    }
+
+    if (TCG_TARGET_HAS_extract_i32
+        && TCG_TARGET_extract_i32_valid(ofs, len)) {
+        tcg_gen_op4ii_i32(INDEX_op_extract_i32, ret, arg, ofs, len);
+        return;
+    }
+
+    /* Assume that zero-extension, if available, is cheaper than a shift.  */
+    switch (ofs + len) {
+    case 16:
+        if (TCG_TARGET_HAS_ext16u_i32) {
+            tcg_gen_ext16u_i32(ret, arg);
+            tcg_gen_shri_i32(ret, ret, ofs);
+            return;
+        }
+        break;
+    case 8:
+        if (TCG_TARGET_HAS_ext8u_i32) {
+            tcg_gen_ext8u_i32(ret, arg);
+            tcg_gen_shri_i32(ret, ret, ofs);
+            return;
+        }
+        break;
+    }
+
+    /* ??? Ideally we'd know what values are available for immediate AND.
+       Assume that 8 bits are available, plus the special case of 16,
+       so that we get ext8u, ext16u.  */
+    switch (len) {
+    case 1 ... 8: case 16:
+        tcg_gen_shri_i32(ret, arg, ofs);
+        tcg_gen_andi_i32(ret, ret, (1u << len) - 1);
+        break;
+    default:
+        tcg_gen_shli_i32(ret, arg, 32 - len - ofs);
+        tcg_gen_shri_i32(ret, ret, 32 - len);
+        break;
+    }
+}
+
 static inline void tcg_gen_movcond_i32(TCGCond cond, TCGv_i32 ret, TCGv_i32 c1, TCGv_i32 c2, TCGv_i32 v1, TCGv_i32 v2)
 {
     assert(cond == TCG_COND_EQ);
@@ -2420,6 +2489,194 @@ static inline void tcg_gen_qemu_st64(TCGv_i64 arg, TCGv addr, int mem_index)
 
 #endif /* TCG_TARGET_REG_BITS != 32 */
 
+// From tcg/tcg.c @ f713d6ad7b9f52129695d5e3e63541abcd0375c0
+static const TCGOpcode old_ld_opc[8] = {
+    [MO_UB] = INDEX_op_qemu_ld8u,
+    [MO_SB] = INDEX_op_qemu_ld8s,
+    [MO_UW] = INDEX_op_qemu_ld16u,
+    [MO_SW] = INDEX_op_qemu_ld16s,
+#if TCG_TARGET_REG_BITS == 32
+    [MO_UL] = INDEX_op_qemu_ld32,
+    [MO_SL] = INDEX_op_qemu_ld32,
+#else
+    [MO_UL] = INDEX_op_qemu_ld32u,
+    [MO_SL] = INDEX_op_qemu_ld32s,
+#endif
+    [MO_Q]  = INDEX_op_qemu_ld64,
+};
+
+static const TCGOpcode old_st_opc[4] = {
+    [MO_UB] = INDEX_op_qemu_st8,
+    [MO_UW] = INDEX_op_qemu_st16,
+    [MO_UL] = INDEX_op_qemu_st32,
+    [MO_Q]  = INDEX_op_qemu_st64,
+};
+
+static inline void tcg_gen_qemu_ld_i32(TCGv_i32 val, TCGv_i32 addr, TCGArg idx, TCGMemOp memop)
+{
+    tcg_gen_qemu_ldst_op(old_ld_opc[memop], val, addr, idx);
+}
+
+static inline void tcg_gen_qemu_st_i32(TCGv_i32 val, TCGv_i32 addr, TCGArg idx, TCGMemOp memop)
+{
+    tcg_gen_qemu_ldst_op(old_st_opc[memop], val, addr, idx);
+}
+
+static inline void tcg_gen_abs_i32(TCGv_i32 ret, TCGv_i32 a)
+{
+    TCGv_i32 t = tcg_temp_new_i32();
+
+    tcg_gen_sari_i32(t, a, 31);
+    tcg_gen_xor_i32(ret, a, t);
+    tcg_gen_sub_i32(ret, ret, t);
+    tcg_temp_free_i32(t);
+}
+
+static inline void tcg_gen_extrl_i64_i32(TCGv_i32 ret, TCGv_i64 arg)
+{
+    #if TCG_TARGET_REG_BITS == 32
+        tcg_gen_mov_i32(ret, TCGV_LOW(arg));
+    #else
+        tcg_gen_mov_i32(ret, (TCGv_i32)arg);
+    #endif
+}
+
+static inline void tcg_gen_extrh_i64_i32(TCGv_i32 ret, TCGv_i64 arg)
+{
+    #if TCG_TARGET_REG_BITS == 32
+        tcg_gen_mov_i32(ret, TCGV_HIGH(arg));
+    #else
+        TCGv_i64 t = tcg_temp_new_i64();
+        tcg_gen_shri_i64(t, arg, 32);
+        tcg_gen_mov_i32(ret, (TCGv_i32)t);
+        tcg_temp_free_i64(t);
+    #endif
+}
+
+static inline void tcg_gen_smax_i32(TCGv_i32 ret, TCGv_i32 a, TCGv_i32 b)
+{
+    tcg_gen_movcond_i32(TCG_COND_LT, ret, a, b, b, a);
+}
+
+static inline void tcg_gen_smin_i32(TCGv_i32 ret, TCGv_i32 a, TCGv_i32 b)
+{
+    tcg_gen_movcond_i32(TCG_COND_LT, ret, a, b, a, b);
+}
+
+static inline void tcg_gen_umin_i32(TCGv_i32 ret, TCGv_i32 a, TCGv_i32 b)
+{
+    tcg_gen_movcond_i32(TCG_COND_LTU, ret, a, b, a, b);
+}
+
+static inline void tcg_gen_umax_i32(TCGv_i32 ret, TCGv_i32 a, TCGv_i32 b)
+{
+    tcg_gen_movcond_i32(TCG_COND_LTU, ret, a, b, b, a);
+}
+
+static inline void tcg_gen_clrsb_i32(TCGv_i32 ret, TCGv_i32 arg)
+{
+#ifdef TCG_TARGET_HAS_clz_i32
+    if (TCG_TARGET_HAS_clz_i32) {
+        TCGv_i32 t = tcg_temp_new_i32();
+        tcg_gen_sari_i32(t, arg, 31);
+        tcg_gen_xor_i32(t, t, arg);
+        tcg_gen_clzi_i32(t, t, 32);
+        tcg_gen_subi_i32(ret, t, 1);
+        tcg_temp_free_i32(t);
+        return;
+    }
+#endif
+    gen_helper_clrsb_i32(ret, arg);
+}
+
+static inline void tcg_gen_clz_i32(TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2)
+{
+#ifdef TCG_TARGET_HAS_clz_i32
+    if (TCG_TARGET_HAS_clz_i32)
+    {
+        tcg_gen_op3_i32(INDEX_op_clz_i32, ret, arg1, arg2);
+        return;
+    }
+#endif
+    gen_helper_clz_i32(ret, arg1, arg2);
+}
+
+static inline void tcg_gen_clzi_i32(TCGv_i32 ret, TCGv_i32 arg1, uint32_t arg2)
+{
+    TCGv_i32 t = tcg_const_i32(arg2);
+    tcg_gen_clz_i32(ret, arg1, t);
+    tcg_temp_free_i32(t);
+}
+
+static inline TCGMemOp tcg_canonicalize_memop(TCGMemOp op, bool is64, bool st)
+{
+    switch (op & MO_SIZE) {
+    case MO_8:
+        op &= ~MO_BSWAP;
+        break;
+    case MO_16:
+        break;
+    case MO_32:
+        if (!is64) {
+            op &= ~MO_SIGN;
+        }
+        break;
+    case MO_64:
+        if (!is64) {
+            tcg_abort();
+        }
+        break;
+    }
+    if (st) {
+        op &= ~MO_SIGN;
+    }
+    return op;
+}
+
+static inline void tcg_gen_ext_i32(TCGv_i32 ret, TCGv_i32 val, TCGMemOp opc)
+{
+    switch (opc & MO_SSIZE) {
+    case MO_SB:
+        tcg_gen_ext8s_i32(ret, val);
+        break;
+    case MO_UB:
+        tcg_gen_ext8u_i32(ret, val);
+        break;
+    case MO_SW:
+        tcg_gen_ext16s_i32(ret, val);
+        break;
+    case MO_UW:
+        tcg_gen_ext16u_i32(ret, val);
+        break;
+    default:
+        tcg_gen_mov_i32(ret, val);
+        break;
+    }
+}
+
+static inline void tcg_gen_atomic_cmpxchg_i32(TCGv_i32 retv, TCGv addr, TCGv_i32 cmpv,
+                                TCGv_i32 newv, TCGArg idx, TCGMemOp memop)
+{
+    memop = tcg_canonicalize_memop(memop, 0, 0);
+
+    TCGv_i32 t1 = tcg_temp_new_i32();
+    TCGv_i32 t2 = tcg_temp_new_i32();
+
+    tcg_gen_ext_i32(t2, cmpv, memop & MO_SIZE);
+
+    tcg_gen_qemu_ld_i32(t1, addr, idx, memop & ~MO_SIGN);
+    tcg_gen_movcond_i32(TCG_COND_EQ, t2, t1, t2, newv, t1);
+    tcg_gen_qemu_st_i32(t2, addr, idx, memop);
+    tcg_temp_free_i32(t2);
+
+    if (memop & MO_SIGN) {
+        tcg_gen_ext_i32(retv, t1, memop);
+    } else {
+        tcg_gen_mov_i32(retv, t1);
+    }
+    tcg_temp_free_i32(t1);
+}
+
 #if TARGET_LONG_BITS == 64
 #define tcg_gen_movi_tl       tcg_gen_movi_i64
 #define tcg_gen_mov_tl        tcg_gen_mov_i64
@@ -2569,6 +2826,8 @@ static inline void tcg_gen_qemu_st64(TCGv_i64 arg, TCGv addr, int mem_index)
 #define tcg_gen_mulu2_tl      tcg_gen_mulu2_i32
 #define tcg_gen_muls2_tl      tcg_gen_muls2_i32
 #define tcg_gen_movcond_tl    tcg_gen_movcond_i32
+#define tcg_gen_qemu_ld_tl    tcg_gen_qemu_ld_i32
+#define tcg_gen_qemu_st_tl    tcg_gen_qemu_st_i32
 #endif
 
 #if TCG_TARGET_REG_BITS == 32

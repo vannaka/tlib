@@ -39,5 +39,6 @@ add_library (tcg STATIC
     additional.c
     optimize.c
     tcg.c
+    tcg-runtime.c
     )
 

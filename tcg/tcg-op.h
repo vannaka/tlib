@@ -395,6 +395,16 @@ static inline void tcg_gen_helper64(void *func, int sizemask, TCGv_i64 ret, TCGv
     tcg_temp_free_ptr(fn);
 }
 
+static inline void tcg_gen_helper32_1_arg(void *func, int sizemask, TCGv_i32 ret, TCGv_i32 a)
+{
+    TCGv_ptr fn;
+    TCGArg args[1];
+    fn = tcg_const_ptr((tcg_target_long)func);
+    args[0] = GET_TCGV_I32(a);
+    tcg_gen_callN(tcg->ctx, fn, TCG_CALL_CONST | TCG_CALL_PURE, sizemask, GET_TCGV_I32(ret), 1, args);
+    tcg_temp_free_ptr(fn);
+}
+
 /* 32 bit ops */
 
 static inline void tcg_gen_ld8u_i32(TCGv_i32 ret, TCGv_ptr arg2, tcg_target_long offset)
@@ -2586,7 +2596,11 @@ static inline void tcg_gen_clrsb_i32(TCGv_i32 ret, TCGv_i32 arg)
         return;
     }
 #endif
-    gen_helper_clrsb_i32(ret, arg);
+    int sizemask = 0;
+    /* Return value and argument are 32-bit and unsigned.  */
+    sizemask |= tcg_gen_sizemask(0, 0, 0);
+    sizemask |= tcg_gen_sizemask(1, 0, 0);
+    tcg_gen_helper32_1_arg(tcg_helper_clrsb_i32, sizemask, ret, arg);
 }
 
 static inline void tcg_gen_clz_i32(TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2)
@@ -2598,7 +2612,12 @@ static inline void tcg_gen_clz_i32(TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2)
         return;
     }
 #endif
-    gen_helper_clz_i32(ret, arg1, arg2);
+    int sizemask = 0;
+    /* Return value and both arguments are 32-bit and unsigned.  */
+    sizemask |= tcg_gen_sizemask(0, 0, 0);
+    sizemask |= tcg_gen_sizemask(1, 0, 0);
+    sizemask |= tcg_gen_sizemask(2, 0, 0);
+    tcg_gen_helper32(tcg_helper_clz_i32, sizemask, ret, arg1, arg2);
 }
 
 static inline void tcg_gen_clzi_i32(TCGv_i32 ret, TCGv_i32 arg1, uint32_t arg2)

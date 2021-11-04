@@ -66,6 +66,22 @@ void muls64(uint64_t *phigh, uint64_t *plow, int64_t a, int64_t b);
 void mulu64(uint64_t *phigh, uint64_t *plow, uint64_t a, uint64_t b);
 #endif
 
+/**
+ * clrsb32 - count leading redundant sign bits in a 32-bit value.
+ * @val: The value to search
+ *
+ * Returns the number of bits following the sign bit that are equal to it.
+ * No special cases; output range is [0-31].
+ */
+static inline int clrsb32(uint32_t val)
+{
+#if 1 /* __has_builtin(__builtin_clrsb) || !defined(__clang__) */
+    return __builtin_clrsb(val);
+#else
+    return clz32(val ^ ((int32_t)val >> 1)) - 1;
+#endif
+}
+
 /* Binary search for leading zeros.  */
 
 static inline int clz32(uint32_t val)

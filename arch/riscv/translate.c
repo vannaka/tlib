@@ -4578,6 +4578,10 @@ static int disas_insn(CPUState *env, DisasContext *dc)
 
         if ((dc->opcode & ci->mask) == ci->pattern) {
             dc->base.npc = dc->base.pc + ci->length;
+            
+            if (env->count_opcodes) {
+                generate_opcode_count_increment(env, dc->opcode);
+            }
 
             TCGv_i64 id = tcg_const_i64(ci->id);
             TCGv_i64 opcode = tcg_const_i64(dc->opcode & ((1ULL << (8 * ci->length)) - 1));
@@ -4614,6 +4618,10 @@ static int disas_insn(CPUState *env, DisasContext *dc)
     /* check for compressed insn */
     int instruction_length = (is_compressed ? 2 : 4);
     dc->base.npc = dc->base.pc + instruction_length;
+    
+    if (env->count_opcodes) {
+        generate_opcode_count_increment(env, dc->opcode);
+    }
 
     if (is_compressed) {
         decode_RV32_64C(env, dc);

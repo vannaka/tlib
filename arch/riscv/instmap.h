@@ -1,3 +1,6 @@
+#ifndef __RISCV_INSTMAP_H__
+#define __RISCV_INSTMAP_H__
+
 /*
  * Instruction decode helpers
  *
@@ -579,3 +582,5 @@ enum {
 #define GET_C_RS2(inst)          extract32(inst, 2, 5)
 #define GET_C_RS1S(inst)         (8 + extract32(inst, 7, 3))
 #define GET_C_RS2S(inst)         (8 + extract32(inst, 2, 3))
+
+#endif // __RISCV_INSTMAP_H__

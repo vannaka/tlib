@@ -499,3 +499,38 @@ void tlib_clean_wfi_proc_state(void)
     cpu->exception_index &= ~EXCP_WFI;
     cpu->wfi = 0;
 }
+
+void tlib_enable_opcodes_counting(uint32_t value)
+{
+    cpu->count_opcodes = !!value;
+}
+
+uint32_t tlib_get_opcode_counter(uint32_t opcode_id)
+{
+    return cpu->opcode_counters[opcode_id - 1].counter;
+}
+
+void tlib_reset_opcode_counters()
+{
+    for(int i = 0; i < cpu->opcode_counters_size; i++)
+    {
+        cpu->opcode_counters[i].counter = 0;
+    }
+}
+
+uint32_t tlib_install_opcode_counter(uint32_t opcode, uint32_t mask)
+{
+    if(cpu->opcode_counters_size == MAX_OPCODE_COUNTERS)
+    {
+        // value 0 should be interpreted as an error;
+        // code calling `tlib_install_opcode_counter` should
+        // handle this properly (and e.g., log an error message)
+        return 0;
+    }
+
+    cpu->opcode_counters[cpu->opcode_counters_size].opcode = opcode;
+    cpu->opcode_counters[cpu->opcode_counters_size].mask = mask;
+    cpu->opcode_counters_size++;
+    
+    return cpu->opcode_counters_size;
+}

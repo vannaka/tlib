@@ -723,7 +723,8 @@ uint_fast16_t float64_classify(uint64_t a, float_status *status)
     (!sign && subnormalOrZero &&
      fracF64UI(uiA) ==
      0)   << 4 |
-    (isNaNF64UI(uiA) &&  float64_is_signaling_nan(uiA)) << 8 | (isNaNF64UI(uiA) && !float64_is_signaling_nan(uiA)) << 9;
+    (isNaNF64UI(uiA) &&  float64_is_signaling_nan(uiA, status)) << 8 |
+    (isNaNF64UI(uiA) && !float64_is_signaling_nan(uiA, status)) << 9;
 }
 
 target_ulong helper_fclass_d(CPUState *env, uint64_t frs1)

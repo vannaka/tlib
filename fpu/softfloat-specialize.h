@@ -35,6 +35,19 @@
 
    =============================================================================*/
 
+/*
+ * Define whether architecture deviates from IEEE in not supporting
+ * signaling NaNs (so all NaNs are treated as quiet).
+ */
+static inline bool no_signaling_nans(float_status *status)
+{
+#if defined(TARGET_XTENSA)
+    return status->no_signaling_nans;
+#else
+    return false;
+#endif
+}
+
 /*----------------------------------------------------------------------------
  | The pattern for a default generated half-precision NaN.
  *----------------------------------------------------------------------------*/

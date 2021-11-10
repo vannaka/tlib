@@ -146,6 +146,9 @@ typedef struct float_status {
     /* should denormalised inputs go to zero and set the input_denormal flag? */
     flag flush_inputs_to_zero;
     flag default_nan_mode;
+    /* Used only by Xtensa. See softfloat-specialize.h for what these do. */
+    flag use_first_nan;
+    flag no_signaling_nans;
 } float_status;
 
 void set_float_rounding_mode(int val STATUS_PARAM);
@@ -165,6 +168,14 @@ INLINE void set_flush_inputs_to_zero(flag val STATUS_PARAM)
 INLINE void set_default_nan_mode(flag val STATUS_PARAM)
 {
     STATUS(default_nan_mode) = val;
+}
+INLINE void set_use_first_nan(flag val STATUS_PARAM)
+{
+    STATUS(use_first_nan) = val;
+}
+INLINE void set_no_signaling_nans(flag val STATUS_PARAM)
+{
+    STATUS(no_signaling_nans) = val;
 }
 INLINE int get_float_exception_flags(float_status *status)
 {

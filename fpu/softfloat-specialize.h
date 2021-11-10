@@ -39,12 +39,12 @@
  * Define whether architecture deviates from IEEE in not supporting
  * signaling NaNs (so all NaNs are treated as quiet).
  */
-static inline bool no_signaling_nans(float_status *status)
+static inline uint8_t no_signaling_nans(float_status *status)
 {
 #if defined(TARGET_XTENSA)
-    return status->no_signaling_nans;
+    return STATUS(no_signaling_nans);
 #else
-    return false;
+    return 0;
 #endif
 }
 

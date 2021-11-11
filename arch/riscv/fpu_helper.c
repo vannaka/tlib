@@ -444,8 +444,8 @@ uint_fast16_t float32_classify(uint32_t a, float_status *status)
         (!sign && !infOrNaN && !subnormalOrZero)            << 6 |
         (!sign && subnormalOrZero && fracF32UI(uiA))        << 5 |
         (!sign && subnormalOrZero && fracF32UI(uiA) == 0)   << 4 |
-        (isNaNF32UI(uiA) &&  float32_is_signaling_nan(uiA)) << 8 |
-        (isNaNF32UI(uiA) && !float32_is_signaling_nan(uiA)) << 9;
+        (isNaNF32UI(uiA) &&  float32_is_signaling_nan(uiA, status)) << 8 |
+        (isNaNF32UI(uiA) && !float32_is_signaling_nan(uiA, status)) << 9;
 /* *INDENT-ON* */
 }
 

@@ -2606,7 +2606,7 @@ float64 VFP_HELPER(fcvtd, s)(float32 x, CPUState *env)
     /* ARM requires that S<->D conversion of any kind of NaN generates
      * a quiet NaN by forcing the most significant frac bit to 1.
      */
-    return float64_maybe_silence_nan(r);
+    return float64_maybe_silence_nan(r, &env->vfp.fp_status);
 }
 
 float32 VFP_HELPER(fcvts, d)(float64 x, CPUState *env)
@@ -2615,7 +2615,7 @@ float32 VFP_HELPER(fcvts, d)(float64 x, CPUState *env)
     /* ARM requires that S<->D conversion of any kind of NaN generates
      * a quiet NaN by forcing the most significant frac bit to 1.
      */
-    return float32_maybe_silence_nan(r);
+    return float32_maybe_silence_nan(r, &env->vfp.fp_status);
 }
 
 /* VFP3 fixed point conversion.  */
@@ -2657,7 +2657,7 @@ static float32 do_fcvt_f16_to_f32(uint32_t a, CPUState *env, float_status *s)
     int ieee = (env->vfp.xregs[ARM_VFP_FPSCR] & (1 << 26)) == 0;
     float32 r = float16_to_float32(make_float16(a), ieee, s);
     if (ieee) {
-        return float32_maybe_silence_nan(r);
+        return float32_maybe_silence_nan(r, s);
     }
     return r;
 }
@@ -2667,7 +2667,7 @@ static uint32_t do_fcvt_f32_to_f16(float32 a, CPUState *env, float_status *s)
     int ieee = (env->vfp.xregs[ARM_VFP_FPSCR] & (1 << 26)) == 0;
     float16 r = float32_to_float16(a, ieee, s);
     if (ieee) {
-        r = float16_maybe_silence_nan(r);
+        r = float16_maybe_silence_nan(r, s);
     }
     return float16_val(r);
 }
@@ -2771,7 +2771,7 @@ float32 HELPER(recpe_f32)(float32 a, CPUState *env)
     int sign = val32 & 0x80000000;
 
     if (float32_is_any_nan(a)) {
-        if (float32_is_signaling_nan(a)) {
+        if (float32_is_signaling_nan(a, s)) {
             float_raise(float_flag_invalid, s);
         }
         return float32_default_nan;
@@ -2864,7 +2864,7 @@ float32 HELPER(rsqrte_f32)(float32 a, CPUState *env)
     val = float32_val(a);
 
     if (float32_is_any_nan(a)) {
-        if (float32_is_signaling_nan(a)) {
+        if (float32_is_signaling_nan(a, s)) {
             float_raise(float_flag_invalid, s);
         }
         return float32_default_nan;

@@ -358,100 +358,106 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     }                                                                                           \
 }
 
+#define MS_VL_MASK (env->vl - ei > 0x7) ? 0 : (0xff << (env->vl & 0x7))
 #ifdef MASKED
-#define MASK_TEST_MASK_PRE_LOOP()               \
-    uint16_t mask = 2;
-#define MASK_TEST_MASK_IN_LOOP()                \
-    mask >>= 1;                                 \
-    if (mask == 1) {                            \
-        mask = (mask << 16) | V(0)[ei >> 3];    \
-        V(vd)[ei >> 3] = 0;                     \
-    }                                           \
-    if (!(mask & 1)) {                          \
-        continue;                               \
-    }
+#define MS_MASK() (MS_VL_MASK | ~V(0)[(ei >> 3)])
+#define MS_TEST_MASK() (~mask & (1 << (ei & 0x7)))
 #else
-#define MASK_TEST_MASK_PRE_LOOP()
-#define MASK_TEST_MASK_IN_LOOP()                \
-    if (!(ei & 0x7)) {                          \
-        V(vd)[ei >> 3] = 0;                     \
-    }
+#define MS_MASK() MS_VL_MASK
+#define MS_TEST_MASK() (true)
 #endif
 
-#define VFMOP_VVX(NAME, HELPER)                                                                     \
-void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, float64 imm)      \
-{                                                                                                   \
-    const target_ulong eew = env->vsew;                                                             \
-    if (V_IDX_INVALID_EEW(vd, 8) || V_IDX_INVALID(vs2)) {                                           \
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
-    }                                                                                               \
-    switch (eew) {                                                                                  \
-    case 32:                                                                                        \
-        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {                                               \
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
-            return;                                                                                 \
-        }                                                                                           \
-        break;                                                                                      \
-    case 64:                                                                                        \
-        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                               \
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
-            return;                                                                                 \
-        }                                                                                           \
-        break;                                                                                      \
-    default:                                                                                        \
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
-        return;                                                                                     \
-    }                                                                                               \
-    MASK_TEST_MASK_PRE_LOOP()                                                                       \
-    for (int ei = 0; ei < env->vl; ++ei) {                                                          \
-        MASK_TEST_MASK_IN_LOOP()                                                                    \
-        switch (eew) {                                                                              \
-        case 32:                                                                                    \
-            V(vd)[ei >> 3] |= glue(HELPER, _s)(env, ((float32 *)V(vs2))[ei], imm) << (ei & 0x7);    \
-            break;                                                                                  \
-        case 64:                                                                                    \
-            V(vd)[ei >> 3] |= glue(HELPER, _d)(env, ((float64 *)V(vs2))[ei], imm) << (ei & 0x7);    \
-            break;                                                                                  \
-        }                                                                                           \
-    }                                                                                               \
+#define VFMOP_LOOP_PREFIX() \
+    if (!(ei & 0x7)) {      \
+        mask = MS_MASK();   \
+    }
+#define VFMOP_LOOP_SUFFIX()                             \
+    if (!((ei + 1) & 0x7) || (ei + 1) >= env->vl) {     \
+        V(vd)[(ei >> 3)] &= mask;                       \
+        V(vd)[(ei >> 3)] |= value;                      \
+        value = 0;                                      \
+    }
+
+#define VFMOP_VVX(NAME, HELPER)                                                                 \
+void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, float64 imm)  \
+{                                                                                               \
+    const target_ulong eew = env->vsew;                                                         \
+    if (V_IDX_INVALID_EEW(vd, 8) || V_IDX_INVALID(vs2)) {                                       \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
+    }                                                                                           \
+    switch (eew) {                                                                              \
+    case 32:                                                                                    \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {                                           \
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
+            return;                                                                             \
+        }                                                                                       \
+        break;                                                                                  \
+    case 64:                                                                                    \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                           \
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
+            return;                                                                             \
+        }                                                                                       \
+        break;                                                                                  \
+    default:                                                                                    \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
+        return;                                                                                 \
+    }                                                                                           \
+    uint8_t mask = 0, value = 0;                                                                \
+    for (int ei = 0; ei < env->vl; ++ei) {                                                      \
+        VFMOP_LOOP_PREFIX();                                                                    \
+        if(MS_TEST_MASK()) {                                                                    \
+            switch (eew) {                                                                      \
+            case 32:                                                                            \
+                value |= glue(HELPER, _s)(env, ((float32 *)V(vs2))[ei], imm) << (ei & 0x7);     \
+                break;                                                                          \
+            case 64:                                                                            \
+                value |= glue(HELPER, _d)(env, ((float64 *)V(vs2))[ei], imm) << (ei & 0x7);     \
+                break;                                                                          \
+            }                                                                                   \
+        }                                                                                       \
+        VFMOP_LOOP_SUFFIX();                                                                    \
+    }                                                                                           \
 }
 
-#define VFMOP_VVV(NAME, HELPER)                                                                                         \
-void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, uint32_t vs1)                         \
-{                                                                                                                       \
-    const target_ulong eew = env->vsew;                                                                                 \
-    if (V_IDX_INVALID_EEW(vd, 8) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {                                         \
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                           \
-    }                                                                                                                   \
-    switch (eew) {                                                                                                      \
-    case 32:                                                                                                            \
-        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {                                                                   \
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                       \
-            return;                                                                                                     \
-        }                                                                                                               \
-        break;                                                                                                          \
-    case 64:                                                                                                            \
-        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                                                   \
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                       \
-            return;                                                                                                     \
-        }                                                                                                               \
-        break;                                                                                                          \
-    default:                                                                                                            \
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                           \
-        return;                                                                                                         \
-    }                                                                                                                   \
-    MASK_TEST_MASK_PRE_LOOP()                                                                                           \
-    for (int ei = 0; ei < env->vl; ++ei) {                                                                              \
-        MASK_TEST_MASK_IN_LOOP()                                                                                        \
-        switch (eew) {                                                                                                  \
-        case 32:                                                                                                        \
-            V(vd)[ei >> 3] |= glue(HELPER, _s)(env, ((float32 *)V(vs2))[ei], ((float32 *)V(vs1))[ei]) << (ei & 0x7);    \
-            break;                                                                                                      \
-        case 64:                                                                                                        \
-            V(vd)[ei >> 3] |= glue(HELPER, _d)(env, ((float64 *)V(vs2))[ei], ((float64 *)V(vs1))[ei]) << (ei & 0x7);    \
-            break;                                                                                                      \
-        }                                                                                                               \
-    }                                                                                                                   \
+#define VFMOP_VVV(NAME, HELPER)                                                                                     \
+void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, uint32_t vs1)                     \
+{                                                                                                                   \
+    const target_ulong eew = env->vsew;                                                                             \
+    if (V_IDX_INVALID_EEW(vd, 8) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {                                     \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                       \
+    }                                                                                                               \
+    switch (eew) {                                                                                                  \
+    case 32:                                                                                                        \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {                                                               \
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                   \
+            return;                                                                                                 \
+        }                                                                                                           \
+        break;                                                                                                      \
+    case 64:                                                                                                        \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                                               \
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                   \
+            return;                                                                                                 \
+        }                                                                                                           \
+        break;                                                                                                      \
+    default:                                                                                                        \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                       \
+        return;                                                                                                     \
+    }                                                                                                               \
+    uint8_t mask = 0, value = 0;                                                                                    \
+    for (int ei = 0; ei < env->vl; ++ei) {                                                                          \
+        VFMOP_LOOP_PREFIX();                                                                                        \
+        if(MS_TEST_MASK()) {                                                                                        \
+            switch (eew) {                                                                                          \
+            case 32:                                                                                                \
+                value |= glue(HELPER, _s)(env, ((float32 *)V(vs2))[ei], ((float32 *)V(vs1))[ei]) << (ei & 0x7);     \
+                break;                                                                                              \
+            case 64:                                                                                                \
+                value |= glue(HELPER, _d)(env, ((float64 *)V(vs2))[ei], ((float64 *)V(vs1))[ei]) << (ei & 0x7);     \
+                break;                                                                                              \
+            }                                                                                                       \
+        }                                                                                                           \
+        VFMOP_LOOP_SUFFIX();                                                                                        \
+    }                                                                                                               \
 }
 
 #define VFOP_VV(NAME, HELPER)                                                           \
@@ -873,8 +879,9 @@ VFOP_RED_VVV(vfredmin_vs, helper_fmin)
 
 VFOP_RED_WVV(vfwredsum_vs, VFOP_FADD)
 
-#undef MASK_TEST_MASK_PRE_LOOP
-#undef MASK_TEST_MASK_IN_LOOP
+#undef MS_MASK
+#undef MS_TEST_MASK
+#undef VFMOP_LOOP_PREFIX
 #undef TEST_MASK
 #undef MASKED
 #undef POSTFIX

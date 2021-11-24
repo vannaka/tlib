@@ -146,7 +146,7 @@ typedef struct CPUBreakpoint {
     QTAILQ_ENTRY(CPUBreakpoint) entry;
 } CPUBreakpoint;
 
-#define MAX_OPCODE_COUNTERS 1024
+#define MAX_OPCODE_COUNTERS 2048
 typedef struct opcode_counter_descriptor
 {
     uint64_t opcode;

@@ -95,7 +95,7 @@ static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr, targe
 }
 
 /* handle all cases except unaligned access which span two pages */
-DATA_TYPE REGPARM glue(glue(glue(__ld, SUFFIX), _err), MMUSUFFIX)(target_ulong addr, int mmu_idx, int *err)
+__attribute__((always_inline)) inline DATA_TYPE REGPARM glue(glue(glue(__ld, SUFFIX), _err), MMUSUFFIX)(target_ulong addr, int mmu_idx, int *err)
 {
     DATA_TYPE res;
     int index;
@@ -270,7 +270,7 @@ static inline DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr
 
 #ifndef SOFTMMU_CODE_ACCESS
 
-static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr, DATA_TYPE val, int mmu_idx, void *retaddr);
+void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr, DATA_TYPE val, int mmu_idx, void *retaddr);
 
 static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr, DATA_TYPE val, target_ulong addr, void *retaddr)
 {
@@ -303,7 +303,7 @@ static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr, DATA_TYPE
 #endif /* SHIFT > 2 */
 }
 
-void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr, DATA_TYPE val, int mmu_idx)
+__attribute__((always_inline)) inline void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr, DATA_TYPE val, int mmu_idx)
 {
     target_phys_addr_t ioaddr;
     target_ulong tlb_addr;
@@ -389,7 +389,7 @@ do_unaligned_access:
 }
 
 /* handles all unaligned cases */
-static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr, DATA_TYPE val, int mmu_idx, void *retaddr)
+void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr, DATA_TYPE val, int mmu_idx, void *retaddr)
 {
     target_phys_addr_t ioaddr;
     target_ulong tlb_addr;

@@ -339,7 +339,7 @@ static inline int tcg_target_const_match(tcg_target_long val, const TCGArgConstr
 #define JCC_JLE         0xe
 #define JCC_JG          0xf
 
-static const uint8_t tcg_cond_to_jcc[10] = {
+static const uint8_t tcg_cond_to_jcc[] = {
     [TCG_COND_EQ] = JCC_JE, [TCG_COND_NE] = JCC_JNE, [TCG_COND_LT] = JCC_JL, [TCG_COND_GE] = JCC_JGE, [TCG_COND_LE] = JCC_JLE,
     [TCG_COND_GT] = JCC_JG, [TCG_COND_LTU] = JCC_JB, [TCG_COND_GEU] = JCC_JAE, [TCG_COND_LEU] = JCC_JBE, [TCG_COND_GTU] = JCC_JA,
 };

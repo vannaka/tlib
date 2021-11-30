@@ -282,18 +282,28 @@ typedef int TCGv_i64;
 #define TCG_CALL_DUMMY_TCGV     MAKE_TCGV_I32(-1)
 #define TCG_CALL_DUMMY_ARG      ((TCGArg)(-1))
 
+/* Conditions.  Note that these are laid out for easy manipulation by
+   the functions below:
+     bit 0 is used for inverting;
+     bit 1 is signed,
+     bit 2 is unsigned,
+     bit 3 is used with bit 0 for swapping signed/unsigned.  */
 typedef enum {
-    TCG_COND_EQ,
-    TCG_COND_NE,
-    TCG_COND_LT,
-    TCG_COND_GE,
-    TCG_COND_LE,
-    TCG_COND_GT,
+    /* non-signed */
+    TCG_COND_NEVER  = 0 | 0 | 0 | 0,
+    TCG_COND_ALWAYS = 0 | 0 | 0 | 1,
+    TCG_COND_EQ     = 8 | 0 | 0 | 0,
+    TCG_COND_NE     = 8 | 0 | 0 | 1,
+    /* signed */
+    TCG_COND_LT     = 0 | 0 | 2 | 0,
+    TCG_COND_GE     = 0 | 0 | 2 | 1,
+    TCG_COND_LE     = 8 | 0 | 2 | 0,
+    TCG_COND_GT     = 8 | 0 | 2 | 1,
     /* unsigned */
-    TCG_COND_LTU,
-    TCG_COND_GEU,
-    TCG_COND_LEU,
-    TCG_COND_GTU,
+    TCG_COND_LTU    = 0 | 4 | 0 | 0,
+    TCG_COND_GEU    = 0 | 4 | 0 | 1,
+    TCG_COND_LEU    = 8 | 4 | 0 | 0,
+    TCG_COND_GTU    = 8 | 4 | 0 | 1,
 } TCGCond;
 
 /* Invert the sense of the comparison.  */

@@ -209,8 +209,8 @@ typedef struct opcode_counter_descriptor
     opcode_counter_descriptor opcode_counters[MAX_OPCODE_COUNTERS];           \
                                                                               \
     int id;                                                                   \
-    /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                        \
     atomic_memory_state_t* atomic_memory_state;                               \
+    /* STARTING FROM HERE FIELDS ARE NOT SERIALIZED */                        \
     struct TranslationBlock *current_tb; /* currently executing TB  */        \
     CPU_COMMON_TLB                                                            \
     struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];                 \

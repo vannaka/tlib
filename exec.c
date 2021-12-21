@@ -347,7 +347,6 @@ static void code_gen_alloc()
 
         flags = MAP_PRIVATE | MAP_ANONYMOUS;
 #if defined(__x86_64__)
-        flags |= MAP_32BIT;
         /* Cannot map more than that */
         if (code_gen_buffer_size > (800 * 1024 * 1024)) {
             code_gen_buffer_size = (800 * 1024 * 1024);

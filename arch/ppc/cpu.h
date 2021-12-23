@@ -968,7 +968,6 @@ struct CPUState {
     int last_way;    /* Last used way used to allocate TLB in a LRU way      */
     int id_tlbs;     /* If 1, MMU has separated TLBs for instructions & data */
     int nb_pids;     /* Number of available PID registers                    */
-    ppc_tlb_t tlb;   /* TLB is optional. Allocate them only if needed        */
     /* 403 dedicated access protection registers */
     target_ulong pb[4];
 
@@ -1009,6 +1008,7 @@ struct CPUState {
 
     CPU_COMMON
 
+    ppc_tlb_t tlb;   /* TLB is optional. Allocate them only if needed        */
 #if defined(TARGET_PPC64)
     ppc_slb_t slb[64];
 #endif

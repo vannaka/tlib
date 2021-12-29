@@ -29,7 +29,7 @@ ExternalProject_Add (tcglib
     INSTALL_COMMAND "")
 
 set_property (CACHE HOST_ARCH PROPERTY STRINGS i386 arm)
-set_property (CACHE TARGET_ARCH PROPERTY STRINGS i386 arm arm-m sparc ppc riscv)
+set_property (CACHE TARGET_ARCH PROPERTY STRINGS i386 arm arm-m sparc ppc riscv xtensa)
 
 if(NOT HOST_ARCH)
     message (FATAL_ERROR "Host architecture not set")

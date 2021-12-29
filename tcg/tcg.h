@@ -244,6 +244,7 @@ typedef int TCGv_i64;
 #else
 #define TCGv_ptr TCGv_i64
 #endif
+typedef TCGv_ptr TCGv_env;
 #define MAKE_TCGV_I32(x)     (x)
 #define MAKE_TCGV_I64(x)     (x)
 #define MAKE_TCGV_PTR(x)     (x)

@@ -155,6 +155,7 @@ typedef struct opcode_counter_descriptor
 } opcode_counter_descriptor;
 
 #define CPU_TEMP_BUF_NLONGS 128
+#define cpu_common_first_field instructions_count_threshold
 #define CPU_COMMON                                                            \
     /* --------------------------------------- */                             \
     /* warning: cleared by CPU reset           */                             \

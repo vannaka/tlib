@@ -22,6 +22,9 @@
  * THE SOFTWARE.
  */
 
+#ifndef TCG_H
+#define TCG_H
+
 /// INSTEAD OF QEMU-COMMON
 #ifndef TARGET_PAGE_BITS
 extern int TARGET_PAGE_BITS;
@@ -598,3 +601,5 @@ static inline bool tcg_op_buf_full(void)
 # define tcg_tb_exec(env, tb_ptr) \
     ((uintptr_t REGPARM (*)(void *, void *))tcg->code_gen_prologue)(env, tb_ptr)
 #endif
+
+#endif //TCG_H

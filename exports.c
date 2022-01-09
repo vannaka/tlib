@@ -114,25 +114,23 @@ char *tlib_get_arch_string()
 
 char *tlib_get_arch()
 {
-   #ifdef TARGET_RISCV32
+   #if defined(TARGET_RISCV32)
    return "rv32";
-   #endif
-   #ifdef TARGET_RISCV64
+   #elif defined(TARGET_RISCV64)
    return "rv64";
-   #endif
-   #ifdef TARGET_ARM
+   #elif defined(TARGET_ARM)
    return "arm";
-   #endif
-   #ifdef TARGET_I386
+   #elif defined(TARGET_I386)
    return "i386";
-   #endif
-   #ifdef TARGET_PPC32
+   #elif defined(TARGET_PPC32)
    return "ppc";
-   #endif
-   #ifdef TARGET_PPC64
+   #elif defined(TARGET_PPC64)
    return "ppc64";
-   #endif
+   #elif defined(TARGET_XTENSA)
+   return "xtensa";
+   #else
    return "unknown";
+   #endif
 }
 
 uint32_t maximum_block_size;

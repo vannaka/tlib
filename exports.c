@@ -126,7 +126,7 @@ char *tlib_get_arch()
    #ifdef TARGET_I386
    return "i386";
    #endif
-   #ifdef TARGET_PPC
+   #ifdef TARGET_PPC32
    return "ppc";
    #endif
    #ifdef TARGET_PPC64

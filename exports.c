@@ -59,6 +59,59 @@ static void init_tcg()
     attach_free(tlib_free);
 }
 
+// tlib_get_arch_string return an arch string that is
+// *on purpose* generated compile time so that e.g.
+// strings libtlib.so | grep tlib\,arch=[a-z0-9-]*\,host=[a-z0-9-]*
+// can return the string.
+char *tlib_get_arch_string()
+{
+    return "tlib,arch="
+    #if defined(TARGET_ARM)
+    "arm"
+    #elif defined(TARGET_RISCV)
+    "riscv"
+    #elif defined(TARGET_PPC)
+    "ppc"
+    #elif defined(TARGET_XTENSA)
+    "xtensa"
+    #elif defined(TARGET_I386)
+    "i386"
+    #else
+    "unknown"
+    #endif
+    "-"
+    #if TARGET_LONG_BITS == 32
+    "32"
+    #elif TARGET_LONG_BITS == 64
+    "64"
+    #else
+    "unknown"
+    #endif
+    "-"
+    #ifdef TARGET_WORDS_BIGENDIAN
+    "big"
+    #else
+    "little"
+    #endif
+    ",host="
+    #ifdef HOST_I386
+    "i386"
+    #elif HOST_ARM
+    "arm"
+    #else
+    "unknown"
+    #endif
+    "-"
+    #if HOST_LONG_BITS == 32
+    "32"
+    #elif HOST_LONG_BITS == 64
+    "64"
+    #else
+    "unknown"
+    #endif
+    ;
+}
+
 char *tlib_get_arch()
 {
    #ifdef TARGET_RISCV32

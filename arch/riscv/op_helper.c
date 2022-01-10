@@ -216,7 +216,7 @@ uint32_t has_custom_csr(CPUState *env, uint64_t id)
     int slotId = id / CSRS_PER_SLOT;
     int slotOffset = id % CSRS_PER_SLOT;
 
-    return !!(env->custom_csrs[slotId] &= (1 << slotOffset));
+    return !!(env->custom_csrs[slotId] & (1 << slotOffset));
 }
 
 /*

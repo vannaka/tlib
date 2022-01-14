@@ -106,13 +106,17 @@ add_library (tlib SHARED ${SOURCES})
 
 add_dependencies (tlib tcglib)
 
+if("${TARGET_ACTUAL_ARCH}" STREQUAL "i386")
+    set (MATH_LIB_LINK_ARG "-lm" CACHE STRING
+      "Argument pointing linker to a math functions library. It's required to translate i386 code.")
+endif()
+
 target_link_libraries (tlib
     $<$<PLATFORM_ID:Linux>:-Wl,--wrap=memcpy>  # Decreases required glibc version
     -fPIC
     $<$<C_COMPILER_ID:GNU>:-zdefs>  # Error for undefined symbols is a default for Clang
 
+    ${MATH_LIB_LINK_ARG}
     pthread
     ${CMAKE_CURRENT_BINARY_DIR}/tcg/src/tcglib-build/libtcg.a
     )
-
-

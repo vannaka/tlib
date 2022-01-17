@@ -6,7 +6,7 @@
 
 // verify if there are instructions left to execute, update instructions count
 // and trim the block and exit to the main loop if necessary
-void HELPER(prepare_block_for_execution)(void *tb)
+uint32_t HELPER(prepare_block_for_execution)(void *tb)
 {
     cpu->current_tb = (TranslationBlock *)tb;
 
@@ -21,18 +21,21 @@ void HELPER(prepare_block_for_execution)(void *tb)
         tb_phys_invalidate(cpu->current_tb, -1);
         cpu->tb_restart_request = 1;
     }
+    return cpu->tb_restart_request;
 }
 
-void HELPER(update_instructions_count)(uint32_t current_block_size)
+void HELPER(update_instructions_count)()
 {
-    cpu->instructions_count_value += current_block_size;
-    cpu->instructions_count_total_value += current_block_size;
+    cpu->instructions_count_value += cpu->current_tb->icount;
+    cpu->instructions_count_total_value += cpu->current_tb->icount;
     cpu->current_tb->instructions_count_dirty = 1;
 }
 
-uint32_t HELPER(block_begin_event)(target_ulong address, uint32_t size)
+uint32_t HELPER(block_begin_event)()
 {
-    return tlib_on_block_begin(address, size);
+    uint32_t result = tlib_on_block_begin(cpu->current_tb->pc, cpu->current_tb->icount);
+    cpu->exit_request = 1;
+    return result;
 }
 
 void HELPER(block_finished_event)(target_ulong address, uint32_t executed_instructions)

@@ -121,9 +121,7 @@ void HELPER(waiti)(CPUState *env, uint32_t pc, uint32_t intlevel)
     env->sregs[PS] = (env->sregs[PS] & ~PS_INTLEVEL) |
         (intlevel << PS_INTLEVEL_SHIFT);
 
-    pthread_mutex_lock(&env->io_lock);
     check_interrupts(env);
-    pthread_mutex_unlock(&env->io_lock);
 
     if (env->pending_irq_level) {
         cpu_loop_exit(env);
@@ -136,9 +134,7 @@ void HELPER(waiti)(CPUState *env, uint32_t pc, uint32_t intlevel)
 
 void HELPER(check_interrupts)(CPUState *env)
 {
-    pthread_mutex_lock(&env->io_lock);
     check_interrupts(env);
-    pthread_mutex_unlock(&env->io_lock);
 }
 
 void HELPER(intset)(CPUState *env, uint32_t v)

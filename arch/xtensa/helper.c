@@ -189,7 +189,7 @@ static void init_libisa(XtensaConfig *config)
         }
 #ifdef DEBUG
         if (ops == NULL) {
-            fprintf(stderr,
+            tlib_printf(LOG_LEVEL_WARNING,
                     "opcode translator not found for %s's opcode '%s'\n",
                     config->name, opc_name);
         }
@@ -207,7 +207,7 @@ static void init_libisa(XtensaConfig *config)
         config->regfile[i] = xtensa_get_regfile_by_name(name, entries, bits);
 #ifdef DEBUG
         if (config->regfile[i] == NULL) {
-            fprintf(stderr, "regfile '%s' not found for %s\n",
+            tlib_printf(LOG_LEVEL_WARNING, "regfile '%s' not found for %s\n",
                     name, config->name);
         }
 #endif

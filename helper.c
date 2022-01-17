@@ -34,7 +34,9 @@ void HELPER(update_instructions_count)()
 uint32_t HELPER(block_begin_event)()
 {
     uint32_t result = tlib_on_block_begin(cpu->current_tb->pc, cpu->current_tb->icount);
-    cpu->exit_request = 1;
+    if (result == 0) {
+        cpu->exit_request = 1;
+    }
     return result;
 }
 

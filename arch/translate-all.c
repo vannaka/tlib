@@ -56,11 +56,6 @@ static inline void gen_block_header(TranslationBlock *tb)
     if (cpu->block_begin_hook_present) {
         block_header_interrupted_label = gen_new_label();
     }
-    flag = tcg_temp_local_new_i32();
-    tcg_gen_ld_i32(flag, cpu_env, offsetof(CPUState, exit_request));
-    tcg_gen_brcondi_i32(TCG_COND_NE, flag, 0, exit_no_hook_label);
-    tcg_temp_free_i32(flag);
-
     TCGv_ptr tb_pointer = tcg_const_ptr((tcg_target_long)tb);
     flag = tcg_temp_local_new_i32();
     gen_helper_prepare_block_for_execution(flag, tb_pointer);

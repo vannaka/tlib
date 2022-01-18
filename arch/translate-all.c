@@ -186,10 +186,10 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
             break;
         }
-        if (tb->icount >= get_max_instruction_count(env, tb)) {
+        if (dc->is_jmp) {
             break;
         }
-        if (dc->is_jmp) {
+        if (tb->icount >= get_max_instruction_count(env, tb)) {
             break;
         }
         if (tb->search_pc && tb->size == tb->original_size) {

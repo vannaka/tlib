@@ -76,14 +76,6 @@ static void xtensa_cpu_initfn(CPUState *env, XtensaConfig *config)
     env->config = config;
 
     pthread_mutex_init(&env->io_lock, NULL);
-
-    /* XXX I'm leaving this in so that we don't forget about this memory region.
-     * I assume that we will want to implement it in Renode, not here. */
-    /* env->address_space_er = g_malloc(sizeof(*env->address_space_er)); */
-    /* env->system_er = g_malloc(sizeof(*env->system_er)); */
-    /* memory_region_init_io(env->system_er, obj, NULL, env, "er", */
-    /*                       UINT64_C(0x100000000)); */
-    /* address_space_init(env->address_space_er, env->system_er, "ER"); */
 }
 
 int cpu_init(const char *cpu_model)

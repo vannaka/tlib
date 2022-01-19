@@ -14,13 +14,12 @@ uint32_t HELPER(prepare_block_for_execution)(void *tb)
         return cpu->exit_request;
     }
 
-    uint64_t instructions_left = cpu->instructions_count_threshold - cpu->instructions_count_value;
-    uint64_t current_block_size = cpu->current_tb->icount;
+    uint32_t instructions_left = cpu->instructions_count_threshold - cpu->instructions_count_value;
 
     if (instructions_left == 0) {
         // setting `tb_restart_request` to 1 will stop executing this block at the end of the header
         cpu->tb_restart_request = 1;
-    } else if (current_block_size > instructions_left) {
+    } else if (cpu->current_tb->icount > instructions_left) {
         // invalidate this block and jump back to the main loop
         tb_phys_invalidate(cpu->current_tb, -1);
         cpu->tb_restart_request = 1;

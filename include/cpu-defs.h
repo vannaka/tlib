@@ -162,8 +162,8 @@ typedef struct opcode_counter_descriptor
     /* --------------------------------------- */                             \
     /* instruction counting is used to execute callback after given \
        number of instructions */                                              \
-    uint64_t instructions_count_threshold;                                    \
-    uint64_t instructions_count_value;                                        \
+    uint32_t instructions_count_threshold;                                    \
+    uint32_t instructions_count_value;                                        \
     uint64_t instructions_count_total_value;                                  \
     /* soft mmu support */                                                    \
     /* in order to avoid passing too many arguments to the MMIO \

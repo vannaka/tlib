@@ -211,7 +211,7 @@ uint64_t tlib_get_executed_instructions()
 // This number is divided by `PerformanceInMIPS` value, but may leave a remainder, that is not reflected in `TranslationCPU` state.
 // To account for that, we have to report this remainder back to tlib, so that the next call to `tlib_get_executed_instructions`
 // includes it in the returned value.
-void tlib_reset_executed_instructions(uint64_t val)
+void tlib_reset_executed_instructions(uint32_t val)
 {
     cpu->instructions_count_value = val;
     cpu->instructions_count_threshold += val;
@@ -227,14 +227,14 @@ void tlib_reset()
     cpu_reset(cpu);
 }
 
-int32_t tlib_execute(int32_t max_insns)
+int32_t tlib_execute(uint32_t max_insns)
 {
     if (cpu->instructions_count_value != 0) {
         tlib_abortf("Tried to execute cpu without reading executed instructions count first.");
     }
     cpu->instructions_count_threshold = max_insns;
 
-    int32_t local_counter = 0;
+    uint32_t local_counter = 0;
     int32_t result = EXCP_INTERRUPT;
     while ((result == EXCP_INTERRUPT) && (cpu->instructions_count_threshold > 0)) {
         result = cpu_exec(cpu);

@@ -207,8 +207,6 @@ void translate_init(void)
     // xtensa_translate_init is called in cpu_init after sr/ur_name are set.
 }
 
-// this is my reimplementation that doesn't use g_hash_table, so probably
-// is slower
 int *xtensa_get_regfile_by_name(const char *name, int entries, int bits)
 {
     if(strcmp(name, "AR") == 0)
@@ -260,49 +258,6 @@ int *xtensa_get_regfile_by_name(const char *name, int entries, int bits)
 
     return NULL;
 }
-
-#if 0
-int *xtensa_get_regfile_by_name(const char *name, int entries, int bits)
-{
-    char *geometry_name;
-    int *res;
-
-    if (xtensa_regfile_table == NULL) {
-        xtensa_regfile_table = g_hash_table_new(g_str_hash, g_str_equal);
-        /*
-         * AR is special. Xtensa translator uses it as a current register
-         * window, but configuration overlays represent it as a complete
-         * physical register file.
-         */
-        g_hash_table_insert(xtensa_regfile_table,
-                            (void *)"AR 16x32", (void *)cpu_R);
-        g_hash_table_insert(xtensa_regfile_table,
-                            (void *)"AR 32x32", (void *)cpu_R);
-        g_hash_table_insert(xtensa_regfile_table,
-                            (void *)"AR 64x32", (void *)cpu_R);
-
-        g_hash_table_insert(xtensa_regfile_table,
-                            (void *)"MR 4x32", (void *)cpu_MR);
-
-        g_hash_table_insert(xtensa_regfile_table,
-                            (void *)"FR 16x32", (void *)cpu_FR);
-        g_hash_table_insert(xtensa_regfile_table,
-                            (void *)"FR 16x64", (void *)cpu_FRD);
-
-        g_hash_table_insert(xtensa_regfile_table,
-                            (void *)"BR 16x1", (void *)cpu_BR);
-        g_hash_table_insert(xtensa_regfile_table,
-                            (void *)"BR4 4x4", (void *)cpu_BR4);
-        g_hash_table_insert(xtensa_regfile_table,
-                            (void *)"BR8 2x8", (void *)cpu_BR8);
-    }
-
-    geometry_name = g_strdup_printf("%s %dx%d", name, entries, bits);
-    res = (int *)g_hash_table_lookup(xtensa_regfile_table, geometry_name);
-    g_free(geometry_name);
-    return res;
-}
-#endif
 
 static inline bool option_enabled(DisasContext *dc, int opt)
 {

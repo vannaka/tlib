@@ -769,9 +769,8 @@ static inline void cpu_pc_from_tb(CPUState *env, TranslationBlock *tb)
 
 static inline bool cpu_has_work(CPUState *cs)
 {
+    // TODO: Implement properly.
     return true;
-    // TODO
-    // return !cs->runstall && cs->pending_irq_level;
 }
 
 // For */xtensa-modules.c.inc from system's alsa/global.h (LGPL)

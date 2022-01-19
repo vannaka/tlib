@@ -10075,7 +10075,7 @@ undef:
 
 int disas_insn(CPUState *env, DisasContext *dc)
 {
-    tcg_gen_insn_start(dc->base.pc);
+    tcg_gen_insn_start(dc->base.pc, pack_condexec(dc));
 
     if (dc->thumb) {
         disas_thumb_insn(env, dc);
@@ -10133,10 +10133,9 @@ void setup_disas_context(DisasContextBase *base, CPUState *env)
      * (3) if we leave the TB unexpectedly (eg a data abort on a load)
      * then the CPUState will be wrong and we need to reset it.
      * This is handled in the same way as restoration of the
-     * PC in these situations: we will be called again with search_pc=1
-     * and generate a mapping of the condexec bits for each PC in
-     * tcg->gen_opc_additional[]. restore_state_to_opc() then uses
-     * this to restore the condexec bits.
+     * PC in these situations: we save the value of the condexec bits
+     * for each PC via tcg_gen_insn_start(), and restore_state_to_opc()
+     * then uses this to restore them after an exception.
      *
      * Note that there are no instructions which can read the condexec
      * bits, and none which can write non-static values to them, so
@@ -10165,8 +10164,8 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp)
 }
 
 /* generate intermediate code in gen_opc_buf and gen_opparam_buf for
-   basic block 'tb'. If search_pc is TRUE, also generate PC
-   information for each intermediate instruction. */
+   basic block 'tb'. Also generate PC information for each
+   intermediate instruction. */
 
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {

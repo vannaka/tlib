@@ -551,7 +551,6 @@ typedef struct CPUState {
 
     int exception_taken;
     int yield_needed;
-    unsigned static_vectors;
 
     /* Watchpoints for DBREAK registers */
     bool singlestep_enabled;

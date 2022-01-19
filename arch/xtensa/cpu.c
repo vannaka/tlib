@@ -46,7 +46,7 @@ static void xtensa_cpu_reset(CPUState *env)
                                       XTENSA_OPTION_DFP_COPROCESSOR);
 
     env->exception_taken = 0;
-    env->pc = env->config->exception_vector[EXC_RESET0 + env->static_vectors];
+    env->pc = env->config->exception_vector[EXC_RESET0];
     env->sregs[LITBASE] &= ~1;
     env->sregs[PS] = xtensa_option_enabled(env->config,
             XTENSA_OPTION_INTERRUPT) ? 0x1f : 0x10;

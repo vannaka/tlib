@@ -109,18 +109,18 @@ static inline void gen_block_footer(TranslationBlock *tb)
     }
 
     int finish_label = gen_new_label();
-    gen_exit_tb((uintptr_t)tb + 2, tb);
+    gen_exit_tb((uintptr_t)tb | 2, tb);
     tcg_gen_br(finish_label);
 
 
     if (cpu->block_begin_hook_present) {
         gen_set_label(block_header_interrupted_label);
-        gen_interrupt_tb((uintptr_t)tb + 2, tb);
+        gen_interrupt_tb((uintptr_t)tb | 2, tb);
         tcg_gen_br(finish_label);
     }
 
     gen_set_label(exit_no_hook_label);
-    tcg_gen_exit_tb((uintptr_t)tb + 2);
+    tcg_gen_exit_tb((uintptr_t)tb | 2);
 
     gen_set_label(finish_label);
     *gen_opc_ptr = INDEX_op_end;

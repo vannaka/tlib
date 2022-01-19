@@ -89,7 +89,7 @@ static void xtensa_cpu_initfn(CPUState *env, XtensaConfig *config)
 int cpu_init(const char *cpu_model)
 {
     XtensaConfig *config = xtensa_finalize_config(cpu_model);
-    // Has to be run after 'xtensa_finalize_config' as it calls
+    // Has to be run after 'xtensa_finalize_config' which calls
     // 'xtensa_collect_sr_names' required to initialize cpu_SR array.
     xtensa_translate_init();
     xtensa_cpu_initfn(cpu, config);

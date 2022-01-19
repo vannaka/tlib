@@ -161,6 +161,13 @@ DEF(nor_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_nor_i64))
 
 DEF(mulu2_i64, 2, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_mulu2_i64))
 DEF(muls2_i64, 2, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_muls2_i64))
+
+#if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
+DEF(insn_start, 0, 0, 2, TCG_OPF_NOT_PRESENT)
+#else
+DEF(insn_start, 0, 0, 1, TCG_OPF_NOT_PRESENT)
+#endif
+
 DEF(exit_tb, 0, 0, 1, TCG_OPF_BB_END | TCG_OPF_SIDE_EFFECTS)
 DEF(goto_tb, 0, 0, 1, TCG_OPF_BB_END | TCG_OPF_SIDE_EFFECTS)
 /* Note: even if TARGET_LONG_BITS is not defined, the INDEX_op

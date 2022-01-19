@@ -9689,6 +9689,8 @@ int disas_insn(CPUState *env, DisasContext *dc)
         dc->opcode = ldl_code(dc->base.pc);
     }
 
+    tcg_gen_insn_start(dc->base.pc);
+
     if (env->count_opcodes) {
         generate_opcode_count_increment(env, dc->opcode);
     }

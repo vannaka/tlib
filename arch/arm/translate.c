@@ -10070,6 +10070,8 @@ undef:
 
 int disas_insn(CPUState *env, DisasContext *dc)
 {
+    tcg_gen_insn_start(dc->base.pc);
+
     if (dc->thumb) {
         disas_thumb_insn(env, dc);
         if (dc->condexec_mask) {

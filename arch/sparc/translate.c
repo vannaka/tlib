@@ -2821,6 +2821,8 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
         tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = base->npc;
     }
 
+    tcg_gen_insn_start(base->pc);
+
     base->tb->size += disas_insn(env, (DisasContext *)base);
 
     /* if the next PC is different, we abort now */

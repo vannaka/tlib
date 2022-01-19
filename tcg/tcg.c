@@ -1088,6 +1088,13 @@ do_not_remove_call:
             args--;
         }
         break;
+        case INDEX_op_insn_start:
+#if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
+            args -= 2;
+#else
+            args -= 1;
+#endif
+            break;
         case INDEX_op_set_label:
             args--;
             /* mark end of basic block */
@@ -1774,6 +1781,8 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf, uint
         case INDEX_op_movi_i64:
 #endif
             tcg_reg_alloc_movi(s, args);
+            break;
+        case INDEX_op_insn_start:
             break;
         case INDEX_op_nop:
         case INDEX_op_nop1:

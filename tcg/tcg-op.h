@@ -80,6 +80,13 @@ static inline void tcg_gen_op2i_i64(TCGOpcode opc, TCGv_i64 arg1, TCGArg arg2)
     *gen_opparam_ptr++ = arg2;
 }
 
+static inline void tcg_gen_op2ii(TCGOpcode opc, TCGArg arg1, TCGArg arg2)
+{
+    *gen_opc_ptr++ = opc;
+    *gen_opparam_ptr++ = arg1;
+    *gen_opparam_ptr++ = arg2;
+}
+
 static inline void tcg_gen_op3_i32(TCGOpcode opc, TCGv_i32 arg1, TCGv_i32 arg2, TCGv_i32 arg3)
 {
     *gen_opc_ptr++ = opc;
@@ -2318,6 +2325,15 @@ static inline void tcg_gen_muls2_i64(TCGv_i64 rl, TCGv_i64 rh, TCGv_i64 arg1, TC
 #define TCGV_UNUSED(x)       TCGV_UNUSED_I64(x)
 #define TCGV_EQUAL(a, b)     TCGV_EQUAL_I64(a, b)
 #endif
+
+static inline void tcg_gen_insn_start(target_ulong pc)
+{
+#if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
+    tcg_gen_op2ii(INDEX_op_insn_start, (uint32_t)(pc), (uint32_t)(pc >> 32));
+#else
+    tcg_gen_op1i(INDEX_op_insn_start, pc);
+#endif
+}
 
 static inline void tcg_gen_exit_tb(tcg_target_long val)
 {

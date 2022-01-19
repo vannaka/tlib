@@ -4714,6 +4714,8 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp)
 
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
+    tcg_gen_insn_start(base->pc);
+
     base->tb->size += disas_insn(env, (DisasContext *)base);
 
     if ((base->pc - (base->tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {

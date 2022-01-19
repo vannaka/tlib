@@ -1242,6 +1242,8 @@ static unsigned int xtensa_tr_translate_insn(DisasContext *dc, CPUState *env)
         return 0;
     }
 
+    tcg_gen_insn_start(dc->base.pc);
+
     // TODO: Do we need this?
     if (dc->icount) {
         int label = gen_new_label();

@@ -53,9 +53,6 @@ static inline void gen_block_header(TranslationBlock *tb)
 {
     TCGv_i32 flag;
     exit_no_hook_label = gen_new_label();
-    if (cpu->block_begin_hook_present) {
-        block_header_interrupted_label = gen_new_label();
-    }
     TCGv_ptr tb_pointer = tcg_const_ptr((tcg_target_long)tb);
     flag = tcg_temp_local_new_i32();
     gen_helper_prepare_block_for_execution(flag, tb_pointer);
@@ -66,7 +63,8 @@ static inline void gen_block_header(TranslationBlock *tb)
     if (cpu->block_begin_hook_present) {
         TCGv_i32 result = tcg_temp_new_i32();
         gen_helper_block_begin_event(result);
-        tcg_gen_brcondi_i64(TCG_COND_EQ, result, 0, block_header_interrupted_label);
+        block_header_interrupted_label = gen_new_label();
+        tcg_gen_brcondi_i32(TCG_COND_EQ, result, 0, block_header_interrupted_label);
         tcg_temp_free_i32(result);
     }
 

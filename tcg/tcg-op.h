@@ -119,6 +119,14 @@ static inline void tcg_gen_op3i_i64(TCGOpcode opc, TCGv_i64 arg1, TCGv_i64 arg2,
     *gen_opparam_ptr++ = arg3;
 }
 
+static inline void tcg_gen_op3iii(TCGOpcode opc, TCGArg arg1, TCGArg arg2, TCGArg arg3)
+{
+    *gen_opc_ptr++ = opc;
+    *gen_opparam_ptr++ = arg1;
+    *gen_opparam_ptr++ = arg2;
+    *gen_opparam_ptr++ = arg3;
+}
+
 static inline void tcg_gen_ldst_op_i32(TCGOpcode opc, TCGv_i32 val, TCGv_ptr base, TCGArg offset)
 {
     *gen_opc_ptr++ = opc;
@@ -201,6 +209,15 @@ static inline void tcg_gen_op4ii_i64(TCGOpcode opc, TCGv_i64 arg1, TCGv_i64 arg2
     *gen_opc_ptr++ = opc;
     *gen_opparam_ptr++ = GET_TCGV_I64(arg1);
     *gen_opparam_ptr++ = GET_TCGV_I64(arg2);
+    *gen_opparam_ptr++ = arg3;
+    *gen_opparam_ptr++ = arg4;
+}
+
+static inline void tcg_gen_op4iiii(TCGOpcode opc, TCGArg arg1, TCGArg arg2, TCGArg arg3, TCGArg arg4)
+{
+    *gen_opc_ptr++ = opc;
+    *gen_opparam_ptr++ = arg1;
+    *gen_opparam_ptr++ = arg2;
     *gen_opparam_ptr++ = arg3;
     *gen_opparam_ptr++ = arg4;
 }
@@ -333,6 +350,18 @@ static inline void tcg_gen_op6ii_i64(TCGOpcode opc, TCGv_i64 arg1, TCGv_i64 arg2
     *gen_opparam_ptr++ = GET_TCGV_I64(arg2);
     *gen_opparam_ptr++ = GET_TCGV_I64(arg3);
     *gen_opparam_ptr++ = GET_TCGV_I64(arg4);
+    *gen_opparam_ptr++ = arg5;
+    *gen_opparam_ptr++ = arg6;
+}
+
+static inline void tcg_gen_op6iiiiii(TCGOpcode opc, TCGv_i64 arg1, TCGv_i64 arg2, TCGv_i64 arg3, TCGv_i64 arg4, TCGArg arg5,
+                                     TCGArg arg6)
+{
+    *gen_opc_ptr++ = opc;
+    *gen_opparam_ptr++ = arg1;
+    *gen_opparam_ptr++ = arg2;
+    *gen_opparam_ptr++ = arg3;
+    *gen_opparam_ptr++ = arg4;
     *gen_opparam_ptr++ = arg5;
     *gen_opparam_ptr++ = arg6;
 }
@@ -2326,14 +2355,52 @@ static inline void tcg_gen_muls2_i64(TCGv_i64 rl, TCGv_i64 rh, TCGv_i64 arg1, TC
 #define TCGV_EQUAL(a, b)     TCGV_EQUAL_I64(a, b)
 #endif
 
+#if TARGET_INSN_START_WORDS == 1
+#if TARGET_LONG_BITS <= TCG_TARGET_REG_BITS
 static inline void tcg_gen_insn_start(target_ulong pc)
 {
-#if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
-    tcg_gen_op2ii(INDEX_op_insn_start, (uint32_t)(pc), (uint32_t)(pc >> 32));
-#else
     tcg_gen_op1i(INDEX_op_insn_start, pc);
-#endif
 }
+#else
+static inline void tcg_gen_insn_start(target_ulong pc)
+{
+    tcg_gen_op2ii(INDEX_op_insn_start, (uint32_t)pc, (uint32_t)(pc >> 32));
+}
+#endif
+#elif TARGET_INSN_START_WORDS == 2
+#if TARGET_LONG_BITS <= TCG_TARGET_REG_BITS
+static inline void tcg_gen_insn_start(target_ulong pc, target_ulong a1)
+{
+    tcg_gen_op2ii(INDEX_op_insn_start, pc, a1);
+}
+#else
+static inline void tcg_gen_insn_start(target_ulong pc, target_ulong a1)
+{
+    tcg_gen_op4iiii(INDEX_op_insn_start,
+                (uint32_t)pc, (uint32_t)(pc >> 32),
+                (uint32_t)a1, (uint32_t)(a1 >> 32));
+}
+#endif
+#elif TARGET_INSN_START_WORDS == 3
+#if TARGET_LONG_BITS <= TCG_TARGET_REG_BITS
+static inline void tcg_gen_insn_start(target_ulong pc, target_ulong a1,
+                                      target_ulong a2)
+{
+    tcg_gen_op3iii(INDEX_op_insn_start, pc, a1, a2);
+}
+#else
+static inline void tcg_gen_insn_start(target_ulong pc, target_ulong a1,
+                                      target_ulong a2)
+{
+    tcg_gen_op6iiiiii(INDEX_op_insn_start,
+                (uint32_t)pc, (uint32_t)(pc >> 32),
+                (uint32_t)a1, (uint32_t)(a1 >> 32),
+                (uint32_t)a2, (uint32_t)(a2 >> 32));
+}
+#endif
+#else
+#error "Unhandled number of operands to insn_start"
+#endif
 
 static inline void tcg_gen_exit_tb(tcg_target_long val)
 {

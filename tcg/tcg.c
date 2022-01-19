@@ -1090,9 +1090,9 @@ do_not_remove_call:
         break;
         case INDEX_op_insn_start:
 #if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
-            args -= 2;
+            args -= 2 * TARGET_INSN_START_WORDS;
 #else
-            args -= 1;
+            args -= TARGET_INSN_START_WORDS;
 #endif
             break;
         case INDEX_op_set_label:

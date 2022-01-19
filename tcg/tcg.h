@@ -150,6 +150,11 @@ typedef uint64_t TCGRegSet;
 #define TCG_TARGET_HAS_div_i64  0
 #endif
 
+#ifndef TARGET_INSN_START_EXTRA_WORDS
+#define TARGET_INSN_START_WORDS 1
+#else
+#define TARGET_INSN_START_WORDS (1 + TARGET_INSN_START_EXTRA_WORDS)
+#endif
 typedef enum TCGOpcode {
 #define DEF(name, oargs, iargs, cargs, flags) INDEX_op_ ## name,
 #include "tcg-opc.h"

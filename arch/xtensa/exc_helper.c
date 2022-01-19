@@ -128,7 +128,6 @@ void HELPER(waiti)(CPUState *env, uint32_t pc, uint32_t intlevel)
         return;
     }
 
-    env->halted = 1;
     HELPER(exception)(env, EXCP_HLT);
 }
 

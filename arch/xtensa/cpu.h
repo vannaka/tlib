@@ -544,7 +544,6 @@ typedef struct CPUState {
     xtensa_tlb_entry dtlb[10][MAX_TLB_WAY_SIZE];
     xtensa_mpu_entry mpu_fg[MAX_MPU_FOREGROUND_SEGMENTS];
     unsigned autorefill_idx;
-    bool runstall;
     int pending_irq_level; /* level of last raised IRQ */
     uint64_t time_base;
     uint64_t ccount_time;
@@ -556,7 +555,6 @@ typedef struct CPUState {
 
     /* Watchpoints for DBREAK registers */
     bool singlestep_enabled;
-    bool halted;
     pthread_mutex_t io_lock;
     CPU_COMMON
 } CPUState;

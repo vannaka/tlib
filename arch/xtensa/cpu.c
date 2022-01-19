@@ -61,7 +61,6 @@ static void xtensa_cpu_reset(CPUState *env)
     env->exclusive_addr = -1;
 
     reset_mmu(env);
-    // env->halted = env->runstall; // XXX do we want to keep runstall?
     set_no_signaling_nans(!dfpu, &env->fp_status);
     set_use_first_nan(!dfpu, &env->fp_status);
 }

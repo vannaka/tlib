@@ -142,6 +142,13 @@ uint32_t maximum_block_size;
 
 uint32_t tlib_set_maximum_block_size(uint32_t size)
 {
+    if(size > TCG_MAX_INSNS)
+    {
+        tlib_printf(LOG_LEVEL_WARNING,
+            "Limiting maximum block size to %d (%" PRIu32 " requested)\n", TCG_MAX_INSNS, size);
+        size = TCG_MAX_INSNS;
+    }
+
     maximum_block_size = size;
     return maximum_block_size;
 }
@@ -181,7 +188,7 @@ int32_t tlib_init(char *cpu_name)
         tlib_free(env);
         return -1;
     }
-    tlib_set_maximum_block_size(10000);
+    tlib_set_maximum_block_size(TCG_MAX_INSNS);
     env->atomic_memory_state = NULL;
     return 0;
 }

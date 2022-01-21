@@ -589,13 +589,3 @@ uint32_t tlib_install_opcode_counter(uint32_t opcode, uint32_t mask)
     
     return cpu->opcode_counters_size;
 }
-
-void tlib_update_execution_mode(uint32_t mode)
-{
-    // Mode is defined in ExecutionMode.cs in renode-infrastructure:
-    //   0: Continuous, 1: SingleStepNonBlocking, 2: SingleStepBlocking
-#if defined(TARGET_XTENSA)
-    cpu->singlestep_enabled = mode == 1 || mode == 2;
-#endif
-}
-

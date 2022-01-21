@@ -108,6 +108,12 @@ uint32_t *get_reg_pointer_32(int reg)
     return NULL;
 }
 
+uint32_t get_masked_register_value_32(int reg_number, int offset, int width)
+{
+    uint32_t *ptr = get_reg_pointer_32(reg_number);
+    return extract32(*ptr, offset, width);
+}
+
 uint32_t tlib_get_register_value_32(int reg_number)
 {
     // Sync A --> AR to have the latest windowed register values.
@@ -115,7 +121,23 @@ uint32_t tlib_get_register_value_32(int reg_number)
     {
         xtensa_sync_phys_from_window(cpu);
     }
-    
+
+    switch(reg_number)
+    {
+        case PSCALLINC_32:
+            return get_masked_register_value_32(PS_32, 16, 2);
+        case PSEXCM_32:
+            return get_masked_register_value_32(PS_32, 4, 1);
+        case PSINTLEVEL_32:
+            return get_masked_register_value_32(PS_32, 0, 4);
+        case PSOWB_32:
+            return get_masked_register_value_32(PS_32, 8, 4);
+        case PSUM_32:
+            return get_masked_register_value_32(PS_32, 5, 1);
+        case PSWOE_32:
+            return get_masked_register_value_32(PS_32, 18, 1);
+    }
+
     uint32_t* ptr = get_reg_pointer_32(reg_number);
     if(ptr == NULL)
     {
@@ -125,8 +147,36 @@ uint32_t tlib_get_register_value_32(int reg_number)
     return *ptr;
 }
 
+void set_masked_register_value_32(int reg_number, int offset, int width, uint32_t value)
+{
+    uint32_t *ptr = get_reg_pointer_32(reg_number);
+    *ptr = deposit32(*ptr, offset, width, value);
+}
+
 void tlib_set_register_value_32(int reg_number, uint32_t value)
 {
+    switch(reg_number)
+    {
+        case PSCALLINC_32:
+            set_masked_register_value_32(PS_32, 16, 2, value);
+            return;
+        case PSEXCM_32:
+            set_masked_register_value_32(PS_32, 4, 1, value);
+            return;
+        case PSINTLEVEL_32:
+            set_masked_register_value_32(PS_32, 0, 4, value);
+            return;
+        case PSOWB_32:
+            set_masked_register_value_32(PS_32, 8, 4, value);
+            return;
+        case PSUM_32:
+            set_masked_register_value_32(PS_32, 5, 1, value);
+            return;
+        case PSWOE_32:
+            set_masked_register_value_32(PS_32, 18, 1, value);
+            return;
+    }
+
     uint32_t* ptr = get_reg_pointer_32(reg_number);
     if(ptr == NULL)
     {

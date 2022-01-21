@@ -107,4 +107,10 @@ typedef enum {
     A_13_32         = 102,
     A_14_32         = 103,
     A_15_32         = 104,
+    PSINTLEVEL_32   = 105,
+    PSUM_32         = 106,
+    PSWOE_32        = 107,
+    PSEXCM_32       = 108,
+    PSCALLINC_32    = 109,
+    PSOWB_32        = 110,
 } Registers;

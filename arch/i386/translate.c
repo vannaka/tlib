@@ -7776,8 +7776,8 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp)
 }
 
 /* generate intermediate code in gen_opc_buf and gen_opparam_buf for
-   basic block 'tb'. If search_pc is TRUE, also generate PC
-   information for each intermediate instruction. */
+   basic block 'tb'. Also generate PC information for each
+   intermediate instruction. */
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext *)base;
@@ -7786,7 +7786,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
         tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = dc->cc_op;
     }
 
-    tcg_gen_insn_start(base->pc);
+    tcg_gen_insn_start(base->pc, dc->cc_op);
 
     base->tb->size += disas_insn(env, (DisasContext *)base);
 

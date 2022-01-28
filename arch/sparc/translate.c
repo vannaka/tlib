@@ -2817,11 +2817,21 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp)
 
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
+    DisasContext *dc = (DisasContext *)base;
+
     if (base->tb->search_pc) {
         tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = base->npc;
     }
 
-    tcg_gen_insn_start(base->pc);
+    if (base->npc & JUMP_PC) {
+        /* Since jump_pc[1] is always npc + 4, we can infer after incrementing
+         * that jump_pc[1] == pc + 4.  Because of that, we can encode the branch
+         * destination into a single word, and store that in npc. */
+        assert(dc->jump_pc[1] == base->pc + 4);
+        tcg_gen_insn_start(base->pc, dc->jump_pc[0] | JUMP_PC);
+    } else {
+        tcg_gen_insn_start(base->pc, base->npc);
+    }
 
     base->tb->size += disas_insn(env, (DisasContext *)base);
 

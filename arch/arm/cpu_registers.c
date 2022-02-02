@@ -59,4 +59,44 @@ void set_thumb(int value)
     cpu->thumb = value & 0x1;
 }
 
-CPU_REGISTER_ACCESSOR(32)
+uint32_t tlib_get_register_value_32(int reg_number)
+{
+    if (reg_number == CPSR_32)
+    {
+#ifdef TARGET_PROTO_ARM_M
+        return xpsr_read(cpu);
+#else
+        return cpsr_read(cpu);
+#endif
+    }
+
+    uint32_t* ptr = get_reg_pointer_32(reg_number);
+    if (ptr == NULL)
+    {
+        tlib_abortf("Read from undefined CPU register number %d detected", reg_number);
+    }
+
+    return *ptr;
+}
+
+void tlib_set_register_value_32(int reg_number, uint32_t value)
+{
+    if (reg_number == CPSR_32)
+    {
+#ifdef TARGET_PROTO_ARM_M
+        xpsr_write(cpu, value, 0xffffffff);
+#else
+        cpsr_write(cpu, value, 0xffffffff);
+#endif
+
+        return;
+    }
+
+    uint32_t* ptr = get_reg_pointer_32(reg_number);
+    if (ptr == NULL)
+    {
+        tlib_abortf("Write to undefined CPU register number %d detected", reg_number);
+    }
+
+    *ptr = value;
+}

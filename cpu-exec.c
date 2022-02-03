@@ -322,15 +322,16 @@ int cpu_exec(CPUState *env)
                         next_tb = 0;
                     }
                 }
+
+                if (unlikely(env->exception_index != -1)) {
+                    cpu_loop_exit_without_hook(env);
+                }
                 if (unlikely(env->exit_request)) {
                     env->exception_index = EXCP_INTERRUPT;
                     cpu_loop_exit_without_hook(env);
                 }
                 if (unlikely(env->tb_restart_request)) {
                     env->tb_restart_request = 0;
-                    cpu_loop_exit_without_hook(env);
-                }
-                if (unlikely(env->exception_index != -1)) {
                     cpu_loop_exit_without_hook(env);
                 }
 

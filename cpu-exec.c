@@ -323,6 +323,13 @@ int cpu_exec(CPUState *env)
                     }
                 }
 
+#ifdef TARGET_PROTO_ARM_M
+                if (env->regs[15] >= 0xffffffe0) {
+                    do_v7m_exception_exit(env);
+                    next_tb = 0;
+                }
+#endif
+
                 if (unlikely(env->exception_index != -1)) {
                     cpu_loop_exit_without_hook(env);
                 }
@@ -334,13 +341,6 @@ int cpu_exec(CPUState *env)
                     env->tb_restart_request = 0;
                     cpu_loop_exit_without_hook(env);
                 }
-
-#ifdef TARGET_PROTO_ARM_M
-                if (env->regs[15] >= 0xffffffe0) {
-                    do_v7m_exception_exit(env);
-                    next_tb = 0;
-                }
-#endif
 
                 tb = tb_find_fast(env);
                 /* Note: we do it here to avoid a gcc bug on Mac OS X when

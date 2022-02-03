@@ -333,6 +333,9 @@ int cpu_exec(CPUState *env)
                 if (unlikely(env->exception_index != -1)) {
                     cpu_loop_exit_without_hook(env);
                 }
+                if (cpu->instructions_count_value == cpu->instructions_count_threshold) {
+                    env->exit_request = 1;
+                }
                 if (unlikely(env->exit_request)) {
                     env->exception_index = EXCP_INTERRUPT;
                     cpu_loop_exit_without_hook(env);

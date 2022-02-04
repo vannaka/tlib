@@ -589,3 +589,12 @@ uint32_t tlib_install_opcode_counter(uint32_t opcode, uint32_t mask)
     
     return cpu->opcode_counters_size;
 }
+
+uint32_t tlib_get_current_tb_disas_flags()
+{
+    if (cpu->current_tb == NULL) {
+        return 0xFFFFFFFF;
+    }
+
+    return cpu->current_tb->disas_flags;
+}

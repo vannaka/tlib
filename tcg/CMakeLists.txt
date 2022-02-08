@@ -23,8 +23,11 @@ if(BIG_ENDIAN)
     set (BIG_ENDIAN_DEF -DTARGET_WORDS_BIGENDIAN)
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_definitions(-fomit-frame-pointer)
+endif()
+
 add_definitions (
-    -fomit-frame-pointer
     -fPIC
 
     -DTARGET_LONG_BITS=${TARGET_LONG_BITS}

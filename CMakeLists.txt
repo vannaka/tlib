@@ -16,6 +16,10 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 	    "Debug" "Release" "RelWithDebInfo")
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_definitions(-fomit-frame-pointer)
+endif()
+
 option (TARGET_BIG_ENDIAN "Target big endian" OFF)
 set (TARGET_ARCH "" CACHE STRING "Target architecture")
 set (TARGET_WORD_SIZE "32" CACHE STRING "Target word size")
@@ -54,7 +58,6 @@ endif()
 string (TOUPPER "${TARGET_ACTUAL_ARCH}" TARGET_ACTUAL_ARCH_U)
 
 add_definitions (
-    -fomit-frame-pointer
     -fPIC
     -Wall
     -Wextra

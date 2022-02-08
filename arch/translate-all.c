@@ -74,14 +74,11 @@ static inline void gen_block_header(TranslationBlock *tb)
 static void gen_exit_tb_inner(uintptr_t val, TranslationBlock *tb, uint32_t instructions_count)
 {
     if (cpu->block_finished_hook_present) {
-        // This line may be missleading - we do not raport exact pc + size,
-        // as the size of the current instruction is not yet taken into account.
-        // Effectively it gives us the PC of the current instruction.
-        TCGv last_instruction = tcg_const_tl(tb->pc + tb->prev_size);
+        TCGv first_instruction = tcg_const_tl(tb->pc);
         TCGv_i32 executed_instructions = tcg_const_i32(instructions_count);
-        gen_helper_block_finished_event(last_instruction, executed_instructions);
+        gen_helper_block_finished_event(first_instruction, executed_instructions);
         tcg_temp_free_i32(executed_instructions);
-        tcg_temp_free(last_instruction);
+        tcg_temp_free(first_instruction);
     }
     tcg_gen_exit_tb(val);
 }

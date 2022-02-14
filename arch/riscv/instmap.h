@@ -532,6 +532,7 @@ enum {
 #define GET_RS1(inst)            extract32(inst, 15, 5)
 #define GET_RS2(inst)            extract32(inst, 20, 5)
 #define GET_RD(inst)             extract32(inst, 7, 5)
+#define GET_FUNCT12(inst)        extract32(inst, 20, 12)
 #define GET_IMM(inst)            sextract64(inst, 20, 12)
 
 /* RVC decoding macros */

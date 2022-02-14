@@ -1736,7 +1736,7 @@ static void gen_fp_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs
     tcg_temp_free(write_int_rd);
 }
 
-static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int csr)
+static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, int funct12)
 {
     TCGv source1, csr_store, dest, rs1_pass, imm_rs1;
     source1 = tcg_temp_new();
@@ -1747,53 +1747,70 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int csr)
     gen_get_gpr(source1, rs1);
     gen_sync_pc(dc);
     tcg_gen_movi_tl(rs1_pass, rs1);
-    tcg_gen_movi_tl(csr_store, csr); /* copy into temp reg to feed to helper */
+    tcg_gen_movi_tl(csr_store, funct12); /* copy into temp reg to feed to helper */
 
     switch (opc) {
     case OPC_RISC_ECALL:
-        switch (csr) {
-        case 0x0: /* ECALL */
-            /* always generates U-level ECALL, fixed in do_interrupt handler */
-            generate_exception(dc, RISCV_EXCP_U_ECALL);
-            gen_exit_tb_no_chaining(dc->base.tb);
-            dc->base.is_jmp = BS_BRANCH;
+        // This group uses both `I-type` and `R-type` instruction formats
+        // It's easier to start narrowing with the shorter function code
+        int funct7 = funct12 >> 5;
+        switch (funct7) {
+        case 0x0:
+            switch(rs2) {
+            case 0x0:  /* ECALL */
+                /* always generates U-level ECALL, fixed in do_interrupt handler */
+                generate_exception(dc, RISCV_EXCP_U_ECALL);
+                gen_exit_tb_no_chaining(dc->base.tb);
+                dc->base.is_jmp = BS_BRANCH;
+                break;
+            case 0x1: /* EBREAK */
+                generate_exception(dc, RISCV_EXCP_BREAKPOINT);
+                gen_exit_tb_no_chaining(dc->base.tb);
+                dc->base.is_jmp = BS_BRANCH;
+                break;
+            case 0x2: /* URET */
+                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+                break;
+            default:
+                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+                break;
+            }
             break;
-        case 0x1: /* EBREAK */
-            generate_exception(dc, RISCV_EXCP_BREAKPOINT);
-            gen_exit_tb_no_chaining(dc->base.tb);
-            dc->base.is_jmp = BS_BRANCH;
+        case 0x8:
+            switch(rs2) {
+            case 0x2: /* SRET */
+                gen_helper_sret(cpu_pc, cpu_env, cpu_pc);
+                gen_exit_tb_no_chaining(dc->base.tb);
+                dc->base.is_jmp = BS_BRANCH;
+                break;
+            case 0x4: /* SFENCE.VM */
+                gen_helper_tlb_flush(cpu_env);
+                break;
+            case 0x5: /* WFI */
+                tcg_gen_movi_tl(cpu_pc, dc->base.npc);
+                gen_helper_wfi(cpu_env);
+                gen_exit_tb_no_chaining(dc->base.tb);
+                dc->base.is_jmp = BS_BRANCH;
+                break;
+            default:
+                kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+                break;
+            }
             break;
-        case 0x002: /* URET */
+        case 0x9: /* SFENCE.VMA */
+            /* TODO: handle ASID specific fences */
+            gen_helper_tlb_flush(cpu_env);
+            break;
+        case 0x10: /* HRET */
             kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
             break;
-        case 0x102: /* SRET */
-            gen_helper_sret(cpu_pc, cpu_env, cpu_pc);
-            gen_exit_tb_no_chaining(dc->base.tb);
-            dc->base.is_jmp = BS_BRANCH;
-            break;
-        case 0x202: /* HRET */
-            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
-            break;
-        case 0x302: /* MRET */
+        case 0x18: /* MRET */
             gen_helper_mret(cpu_pc, cpu_env, cpu_pc);
             gen_exit_tb_no_chaining(dc->base.tb);
             dc->base.is_jmp = BS_BRANCH;
             break;
-        case 0x7b2: /* DRET */
+        case 0x3d: /* DRET */
             kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
-            break;
-        case 0x105: /* WFI */
-            tcg_gen_movi_tl(cpu_pc, dc->base.npc);
-            gen_helper_wfi(cpu_env);
-            gen_exit_tb_no_chaining(dc->base.tb);
-            dc->base.is_jmp = BS_BRANCH;
-            break;
-        case 0x104: /* SFENCE.VM */
-            gen_helper_tlb_flush(cpu_env);
-            break;
-        case 0x120: /* SFENCE.VMA */
-            /* TODO: handle ASID specific fences */
-            gen_helper_tlb_flush(cpu_env);
             break;
         default:
             kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
@@ -4404,7 +4421,7 @@ static void decode_RV32_64C2(CPUState *env, DisasContext *dc)
         } else {
             if (rd == 0) {
                 /* C.EBREAK -> ebreak*/
-                gen_system(dc, OPC_RISC_ECALL, 0, 0, 0x1);
+                gen_system(dc, OPC_RISC_ECALL, 0, 0, 0, 0x1);
             } else {
                 if (rs2 == 0) {
                     /* C.JALR -> jalr x1, rs1, 0*/
@@ -4557,7 +4574,7 @@ static void decode_RV32_64G(CPUState *env, DisasContext *dc)
         gen_synch(dc, MASK_OP_FENCE(dc->opcode));
         break;
     case OPC_RISC_SYSTEM:
-        gen_system(dc, MASK_OP_SYSTEM(dc->opcode), rd, rs1, (dc->opcode & 0xFFF00000) >> 20);
+        gen_system(dc, MASK_OP_SYSTEM(dc->opcode), rd, rs1, rs2, (dc->opcode & 0xFFF00000) >> 20);
         break;
     case OPC_RISC_V:
         gen_v(dc, MASK_OP_V(dc->opcode), rd, rs1, rs2, imm);

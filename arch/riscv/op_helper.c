@@ -888,11 +888,7 @@ void helper_wfi(CPUState *env)
 
 void helper_fence_i(CPUState *env)
 {
-    /* Flush TLB */
-    tlb_flush(env, 1);
-    /* ARM port seems to not know if this is okay inside a TB
-       But we need to do it */
-    tb_flush(env);
+    // do nothing
 }
 
 void helper_tlb_flush(CPUState *env)

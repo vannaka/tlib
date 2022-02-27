@@ -3689,7 +3689,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint32_t dest)
     if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)) {
         tcg_gen_goto_tb(n);
         gen_set_pc_im(dest);
-        gen_exit_tb((tcg_target_long)tb + n, tb);
+        gen_exit_tb(tb, n);
     } else {
         gen_set_pc_im(dest);
         gen_exit_tb_no_chaining(tb);

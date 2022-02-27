@@ -2301,7 +2301,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
         /* jump to same page: we can use a direct jump */
         tcg_gen_goto_tb(tb_num);
         gen_jmp_im(eip);
-        gen_exit_tb((tcg_target_long)tb + tb_num, tb);
+        gen_exit_tb(tb, tb_num);
     } else {
         /* jump to another page: currently not optimized */
         gen_jmp_im(eip);

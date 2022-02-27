@@ -161,7 +161,7 @@ static inline void gen_goto_tb(DisasContext *dc, int n, target_ulong dest)
         /* chaining is only allowed when the jump is to the same page */
         tcg_gen_goto_tb(n);
         tcg_gen_movi_tl(cpu_pc, dest);
-        gen_exit_tb((uintptr_t)dc->base.tb + n, dc->base.tb);
+        gen_exit_tb(dc->base.tb, n);
     } else {
         tcg_gen_movi_tl(cpu_pc, dest);
         gen_exit_tb_no_chaining(dc->base.tb);

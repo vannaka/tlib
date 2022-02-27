@@ -71,7 +71,7 @@ static inline void gen_block_header(TranslationBlock *tb)
     gen_helper_update_instructions_count();
 }
 
-static void gen_exit_tb_inner(uintptr_t val, TranslationBlock *tb, uint32_t instructions_count)
+static void gen_block_finished_hook(TranslationBlock *tb, uint32_t instructions_count)
 {
     if (cpu->block_finished_hook_present) {
         TCGv first_instruction = tcg_const_tl(tb->pc);
@@ -80,23 +80,29 @@ static void gen_exit_tb_inner(uintptr_t val, TranslationBlock *tb, uint32_t inst
         tcg_temp_free_i32(executed_instructions);
         tcg_temp_free(first_instruction);
     }
-    tcg_gen_exit_tb(val);
 }
 
-static void gen_interrupt_tb(uintptr_t val, TranslationBlock *tb)
+static void gen_exit_tb_inner(TranslationBlock *tb, int n, uint32_t instructions_count)
+{
+    gen_block_finished_hook(tb, instructions_count);
+    tcg_gen_exit_tb((uintptr_t)tb + n);
+}
+
+static void gen_interrupt_tb(TranslationBlock *tb, int n)
 {
     // since the block was interrupted before executing any instruction we return 0
-    gen_exit_tb_inner(val, tb, 0);
+    gen_exit_tb_inner(tb, n, 0);
 }
 
-void gen_exit_tb(uintptr_t val, TranslationBlock *tb)
+void gen_exit_tb(TranslationBlock *tb, int n)
 {
-    gen_exit_tb_inner(val, tb, tb->icount);
+    gen_exit_tb_inner(tb, n, tb->icount);
 }
 
 void gen_exit_tb_no_chaining(TranslationBlock *tb)
 {
-    gen_exit_tb_inner(0, tb, tb->icount);
+    gen_block_finished_hook(tb, tb->icount);
+    tcg_gen_exit_tb(0);
 }
 
 static inline void gen_block_footer(TranslationBlock *tb)
@@ -106,13 +112,13 @@ static inline void gen_block_footer(TranslationBlock *tb)
     }
 
     int finish_label = gen_new_label();
-    gen_exit_tb((uintptr_t)tb | 2, tb);
+    gen_exit_tb(tb, 2);
     tcg_gen_br(finish_label);
 
 
     if (cpu->block_begin_hook_present) {
         gen_set_label(block_header_interrupted_label);
-        gen_interrupt_tb((uintptr_t)tb | 2, tb);
+        gen_interrupt_tb(tb, 2);
         tcg_gen_br(finish_label);
     }
 

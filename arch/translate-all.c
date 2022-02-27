@@ -188,9 +188,11 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
             break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
+            dc->is_jmp = DISAS_NEXT;
             break;
         }
         if (tb->icount >= get_max_instruction_count(env, tb)) {
+            dc->is_jmp = DISAS_NEXT;
             break;
         }
         if (tb->search_pc && tb->size == tb->original_size) {

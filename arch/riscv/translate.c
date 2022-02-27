@@ -64,9 +64,9 @@ void translate_init(void)
 static inline void kill_unknown(DisasContext *dc, int excp);
 
 enum {
-    BS_NONE   = 0,   /* When seen outside of translation while loop, indicates
+    BS_STOP   = 0,   /* Need to exit tb for syscall, sret, etc. */
+    BS_NONE   = 1,   /* When seen outside of translation while loop, indicates
                         need to exit tb due to end of page. */
-    BS_STOP   = 1,   /* Need to exit tb for syscall, sret, etc. */
     BS_BRANCH = 2,   /* Need to exit tb for branch, jal, etc. */
 };
 

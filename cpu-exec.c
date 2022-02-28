@@ -375,7 +375,7 @@ int cpu_exec(CPUState *env)
                     tc_ptr = tb->tc_ptr;
                     /* execute the generated code */
                     next_tb = tcg_tb_exec(env, tc_ptr);
-                    if ((next_tb & 3) == 2) {
+                    if ((next_tb & 3) == EXIT_TB_FORCE) {
                         tb = (TranslationBlock *)(uintptr_t)(next_tb & ~3);
                         /* Restore PC.  */
                         cpu_pc_from_tb(env, tb);

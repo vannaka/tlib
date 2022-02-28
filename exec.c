@@ -544,7 +544,7 @@ static inline void tb_jmp_remove(TranslationBlock *tb, int n)
             if (n1 == n && tb1 == tb) {
                 break;
             }
-            if (n1 == 2) {
+            if (n1 == EXIT_TB_FORCE) {
                 ptb = &tb1->jmp_first;
             } else {
                 ptb = &tb1->jmp_next[n1];
@@ -604,7 +604,7 @@ void tb_phys_invalidate(TranslationBlock *tb, tb_page_addr_t page_addr)
     tb1 = tb->jmp_first;
     for (;;) {
         n1 = (uintptr_t)tb1 & 3;
-        if (n1 == 2) {
+        if (n1 == EXIT_TB_FORCE) {
             break;
         }
         tb1 = (TranslationBlock *)((uintptr_t)tb1 & ~3);
@@ -613,7 +613,7 @@ void tb_phys_invalidate(TranslationBlock *tb, tb_page_addr_t page_addr)
         tb1->jmp_next[n1] = NULL;
         tb1 = tb2;
     }
-    tb->jmp_first = (TranslationBlock *)((uintptr_t)tb | 2); /* fail safe */
+    tb->jmp_first = (TranslationBlock *)((uintptr_t)tb | EXIT_TB_FORCE); /* fail safe */
 
     tb_phys_invalidate_count++;
 }
@@ -657,7 +657,7 @@ static void build_page_bitmap(PageDesc *p)
         n = (uintptr_t)tb & 3;
         tb = (TranslationBlock *)((uintptr_t)tb & ~3);
         /* NOTE: this is subtle as a TB may span two physical pages */
-        if (n == 0) {
+        if (n == EXIT_TB_NO_JUMP) {
             /* NOTE: tb_end may be after the end of the page, but
                it is not a problem */
             tb_start = tb->pc & ~TARGET_PAGE_MASK;
@@ -751,7 +751,7 @@ void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t en
         tb = (TranslationBlock *)((uintptr_t)tb & ~3);
         tb_next = tb->page_next[n];
         /* NOTE: this is subtle as a TB may span two physical pages */
-        if (n == 0) {
+        if (n == EXIT_TB_NO_JUMP) {
             /* NOTE: tb_end may be after the end of the page, but
                it is not a problem */
             tb_start = tb->page_addr[0] + (tb->pc & ~TARGET_PAGE_MASK);

@@ -40,6 +40,10 @@ typedef ram_addr_t tb_page_addr_t;
 #define DISAS_UPDATE  2 /* cpu state was modified dynamically */
 #define DISAS_TB_JUMP 3 /* only pc was modified statically */
 
+#define EXIT_TB_NO_JUMP 0
+#define EXIT_TB_JUMP    1
+#define EXIT_TB_FORCE   2
+
 struct TranslationBlock;
 typedef struct TranslationBlock TranslationBlock;
 

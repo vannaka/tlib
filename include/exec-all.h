@@ -114,6 +114,7 @@ struct TranslationBlock {
     struct TranslationBlock *jmp_next[2];
     struct TranslationBlock *jmp_first;
     uint32_t icount;
+    bool was_cut;
     uintptr_t search_pc;
     // this field is necessary when restoring the state of tb (using cpu_restore_state) in order to limit the size of retranslated block not to be bigger than original one;
     // SIGSEGVs have been observed otherwise

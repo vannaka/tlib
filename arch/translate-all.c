@@ -143,6 +143,7 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
     memset((void *)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);
 
     tb->icount = 0;
+    tb->was_cut = false;
     tb->size = 0;
     tb->search_pc = search_pc;
     dc->tb = tb;
@@ -192,6 +193,7 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
             break;
         }
         if (tb->icount >= get_max_instruction_count(env, tb)) {
+            tb->was_cut = true;
             dc->is_jmp = DISAS_NEXT;
             break;
         }

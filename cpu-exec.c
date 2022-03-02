@@ -93,7 +93,6 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
         if (likely((mapped_address & TARGET_PAGE_MASK) == masked_virtual)) {
             physical = mapped_address;
         } else {
-            tlib_printf(LOG_LEVEL_ERROR, "Failed to get physical address for virtual adress %p", virtual);
             return -1;
         }
     }
@@ -106,7 +105,6 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
         p = (void *)(uintptr_t)masked_virtual + env->tlb_table[found_idx][page_index].addend;
         physical = tlib_host_ptr_to_guest_offset(p);
         if (physical == -1) {
-            tlib_printf(LOG_LEVEL_ERROR, "No host mapping for host ptr %p", p);
             return -1;
         }
     }

@@ -598,3 +598,68 @@ uint32_t tlib_get_current_tb_disas_flags()
 
     return cpu->current_tb->disas_flags;
 }
+
+void tlib_set_page_io_accessed(uint64_t address)
+{
+    if(env->io_access_regions_count == MAX_IO_ACCESS_REGIONS_COUNT)
+    {
+        tlib_abortf("Couldn't register an IO accessible page 0x%x", address);
+    }
+
+    target_ulong page_address = address & ~(TARGET_PAGE_SIZE - 1);
+
+    int i, j;
+    for(i = 0; i < env->io_access_regions_count; i++)
+    {
+        if(env->io_access_regions[i] == page_address)
+        {
+            // it's already here, just break
+            return;
+        }
+
+        // since regions are sorted ascending, this is the right place to put the new entry
+        if(env->io_access_regions[i] > page_address)
+        {
+            break;
+        }
+    }
+
+    for(j = env->io_access_regions_count; j > i; j--)
+    {
+        env->io_access_regions[j] = env->io_access_regions[j - 1];
+    }
+
+    env->io_access_regions[i] = page_address;
+    env->io_access_regions_count++;
+    
+    tlb_flush_page(env, address);
+}
+
+void tlib_clear_page_io_accessed(uint64_t address)
+{
+    target_ulong page_address = address & ~(TARGET_PAGE_SIZE - 1);
+
+    int i, j;
+    for(i = 0; i < env->io_access_regions_count; i++)
+    {
+        if(env->io_access_regions[i] == page_address)
+        {
+            break;
+        }
+    }
+    
+    if(i == env->io_access_regions_count)
+    {
+        // it was not marked as IO
+        return;
+    }
+
+    for(j = env->io_access_regions_count - 1; j > i; j--)
+    {
+        env->io_access_regions[j - 1] = env->io_access_regions[j];
+    }
+
+    env->io_access_regions_count--;
+    tlb_flush_page(env, address);
+}
+

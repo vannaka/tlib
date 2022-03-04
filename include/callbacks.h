@@ -60,7 +60,6 @@ void tlib_write_byte(uint64_t address, uint32_t value);
 void tlib_write_word(uint64_t address, uint32_t value);
 void tlib_write_double_word(uint64_t address, uint32_t value);
 void *tlib_guest_offset_to_host_ptr(uint64_t offset);
-int32_t tlib_is_io_accessed(uint64_t address);
 uint64_t tlib_host_ptr_to_guest_offset(void *ptr);
 void tlib_invalidate_tb_in_other_cpus(uintptr_t start, uintptr_t end);
 void tlib_update_instruction_counter(int32_t value);

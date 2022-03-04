@@ -1251,6 +1251,30 @@ static void tlb_add_large_page(CPUState *env, target_ulong vaddr, target_ulong s
     env->tlb_flush_mask = mask;
 }
 
+static inline int is_io_accessed(CPUState *env, target_ulong vaddr)
+{
+    target_ulong v;
+    target_ulong page_address = vaddr & ~(TARGET_PAGE_SIZE - 1);
+
+    /* binary search (cf Knuth) */
+    int32_t m_min = 0;
+    int32_t m_max = env->io_access_regions_count - 1;
+    int32_t m;
+
+    while (m_min <= m_max) {
+        m = (m_min + m_max) >> 1;
+        v = env->io_access_regions[m];
+        if (v == page_address) {
+            return 1;
+        } else if (vaddr < v) {
+            m_max = m - 1;
+        } else {
+            m_min = m + 1;
+        }
+    }
+    return 0;
+}
+
 /* Add a new TLB entry. At most one entry for a given virtual address
    is permitted. Only a single TARGET_PAGE_SIZE region is mapped, the
    supplied size is only used by tlb_flush_page.  */
@@ -1317,7 +1341,7 @@ void tlb_set_page(CPUState *env, target_ulong vaddr, target_phys_addr_t paddr, i
 
     code_address = address;
 
-    if (tlib_is_io_accessed(vaddr)) {
+    if (is_io_accessed(env, vaddr)) {
         iotlb = paddr;
         address |= TLB_MMIO;
     }

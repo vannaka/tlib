@@ -154,6 +154,8 @@ typedef struct opcode_counter_descriptor
     uint64_t counter;
 } opcode_counter_descriptor;
 
+#define MAX_IO_ACCESS_REGIONS_COUNT 1024
+
 #define CPU_TEMP_BUF_NLONGS 128
 #define cpu_common_first_field instructions_count_threshold
 #define CPU_COMMON                                                            \
@@ -177,6 +179,9 @@ typedef struct opcode_counter_descriptor
     uint32_t interrupt_request;                                               \
     volatile sig_atomic_t exit_request;                                       \
     int tb_restart_request;                                                   \
+                                                                              \
+    uint32_t io_access_regions_count;                                         \
+    uint32_t io_access_regions[MAX_IO_ACCESS_REGIONS_COUNT];                  \
                                                                               \
     /* --------------------------------------- */                             \
     /* from this point: preserved by CPU reset */                             \

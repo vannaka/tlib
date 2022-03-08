@@ -1666,9 +1666,53 @@ uint32_t ldl_phys(target_phys_addr_t addr)
     return val;
 }
 
-/* XXX: optimize */
+/* warning: addr must be aligned */
+static uint64_t ldq_phys_aligned(target_phys_addr_t addr)
+{
+    int io_index;
+    uint8_t *ptr;
+    uint64_t val;
+    ram_addr_t pd;
+    PhysPageDesc *p;
+
+    p = phys_page_find(addr >> TARGET_PAGE_BITS);
+    if (!p) {
+        pd = IO_MEM_UNASSIGNED;
+    } else {
+        pd = p->phys_offset;
+    }
+
+    if ((pd & ~TARGET_PAGE_MASK) > IO_MEM_ROM && !(pd & IO_MEM_ROMD)) {
+        /* I/O case */
+        io_index = (pd >> IO_MEM_SHIFT) & (IO_MEM_NB_ENTRIES - 1);
+        if (p) {
+            addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
+        }
+
+#ifdef TARGET_WORDS_BIGENDIAN
+        val = (uint64_t)io_mem_read[io_index][2](io_mem_opaque[io_index], addr) << 32;
+        val |= io_mem_read[io_index][2](io_mem_opaque[io_index], addr + 4);
+#else
+        val = io_mem_read[io_index][2](io_mem_opaque[io_index], addr);
+        val |= (uint64_t)io_mem_read[io_index][2](io_mem_opaque[io_index], addr + 4) << 32;
+#endif
+    } else {
+        /* RAM case */
+        ptr = get_ram_ptr(pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
+        val = ldq_p(ptr);
+    }
+    
+    return val;
+}
+
 uint64_t ldq_phys(target_phys_addr_t addr)
 {
+    if(addr % 8 == 0)
+    {
+        // use a faster method
+        return ldq_phys_aligned(addr);
+    }
+    
     uint64_t val;
     cpu_physical_memory_read(addr, &val, 8);
     return val;

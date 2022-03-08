@@ -251,7 +251,7 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical, int
         } else {
             /* set accessed and possibly dirty bits.
                we only put it in the TLB if it has the right stuff */
-            stq_phys(pte_addr, ldq_phys(pte_addr) | PTE_A | ((access_type == MMU_DATA_STORE) * PTE_D));
+            stq_phys(pte_addr, pte | PTE_A | ((access_type == MMU_DATA_STORE) * PTE_D));
 
             /* for superpage mappings, make a fake leaf PTE for the TLB's
                benefit. */

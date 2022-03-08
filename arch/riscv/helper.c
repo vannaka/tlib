@@ -233,7 +233,11 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical, int
 
         /* check that physical address of PTE is legal */
         target_ulong pte_addr = base + idx * ptesize;
+#if defined(TARGET_RISCV64)
         target_ulong pte = ldq_phys(pte_addr);
+#else
+        target_ulong pte = ldl_phys(pte_addr);
+#endif
         target_ulong ppn = pte >> PTE_PPN_SHIFT;
 
         if (PTE_TABLE(pte)) { /* next level of page table */
@@ -253,7 +257,11 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical, int
             if (pte != updated_pte) {
                 /* set accessed and possibly dirty bits.
                    we only put it in the TLB if it has the right stuff */
+#if defined(TARGET_RISCV64)
                 stq_phys(pte_addr, updated_pte);
+#else
+                stl_phys(pte_addr, updated_pte);
+#endif
             }
 
             /* for superpage mappings, make a fake leaf PTE for the TLB's

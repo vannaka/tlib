@@ -249,9 +249,12 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical, int
                    !(mxr && (pte & PTE_X)) : !((pte & PTE_R) && (pte & PTE_W))) {
             break;
         } else {
-            /* set accessed and possibly dirty bits.
-               we only put it in the TLB if it has the right stuff */
-            stq_phys(pte_addr, pte | PTE_A | ((access_type == MMU_DATA_STORE) * PTE_D));
+            target_ulong updated_pte = pte | PTE_A | ((access_type == MMU_DATA_STORE) * PTE_D);
+            if (pte != updated_pte) {
+                /* set accessed and possibly dirty bits.
+                   we only put it in the TLB if it has the right stuff */
+                stq_phys(pte_addr, updated_pte);
+            }
 
             /* for superpage mappings, make a fake leaf PTE for the TLB's
                benefit. */

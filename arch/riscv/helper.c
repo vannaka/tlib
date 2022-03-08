@@ -263,26 +263,14 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical, int
              * dirty bit on the PTE
              *
              * at this point, we assume that protection checks have occurred */
-            if (mode == PRV_S) {
-                if ((pte & PTE_X) && access_type == MMU_INST_FETCH) {
-                    *prot |= PAGE_EXEC;
-                } else if ((pte & PTE_W) && access_type == MMU_DATA_STORE) {
-                    *prot |= PAGE_WRITE;
-                } else if ((pte & PTE_R) && access_type == MMU_DATA_LOAD) {
-                    *prot |= PAGE_READ;
-                } else {
-                    tlib_abort("err in translation prots");
-                }
+            if ((pte & PTE_X) && access_type == MMU_INST_FETCH) {
+                *prot |= PAGE_EXEC;
+            } else if ((pte & PTE_W) && access_type == MMU_DATA_STORE) {
+                *prot |= PAGE_WRITE;
+            } else if ((pte & PTE_R) && access_type == MMU_DATA_LOAD) {
+                *prot |= PAGE_READ;
             } else {
-                if ((pte & PTE_X) && access_type == MMU_INST_FETCH) {
-                    *prot |= PAGE_EXEC;
-                } else if ((pte & PTE_W) && access_type == MMU_DATA_STORE) {
-                    *prot |= PAGE_WRITE;
-                } else if ((pte & PTE_R) && access_type == MMU_DATA_LOAD) {
-                    *prot |= PAGE_READ;
-                } else {
-                    tlib_abort("err in translation prots");
-                }
+                tlib_abort("err in translation prots");
             }
             return TRANSLATE_SUCCESS;
         }

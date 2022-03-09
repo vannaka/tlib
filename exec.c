@@ -1099,18 +1099,11 @@ static CPUTLBEntry s_cputlb_empty_entry = {
    implemented yet) */
 void tlb_flush(CPUState *env, int flush_global)
 {
-    int i;
-
     /* must reset current TB so that interrupts cannot modify the
        links while we are modifying them */
     env->current_tb = NULL;
 
-    for (i = 0; i < CPU_TLB_SIZE; i++) {
-        int mmu_idx;
-        for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
-            env->tlb_table[mmu_idx][i] = s_cputlb_empty_entry;
-        }
-    }
+    memset(env->tlb_table, 0xFF, CPU_TLB_SIZE * NB_MMU_MODES * sizeof (CPUTLBEntry));
 
     memset(env->tb_jmp_cache, 0, TB_JMP_CACHE_SIZE * sizeof (void *));
 

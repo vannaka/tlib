@@ -575,4 +575,14 @@ static inline void cpu_pc_from_tb(CPUState *env, TranslationBlock *tb)
 
 void do_v7m_exception_exit(CPUState *env);
 
+static inline void find_pending_irq_if_primask_unset(CPUState *env)
+{
+#ifdef TARGET_PROTO_ARM_M
+    if(!(env->uncached_cpsr & CPSR_PRIMASK))
+    {
+        tlib_nvic_find_pending_irq();
+    }
+#endif
+}
+
 #endif

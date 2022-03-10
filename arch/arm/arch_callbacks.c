@@ -34,7 +34,7 @@ DEFAULT_VOID_HANDLER1(void tlib_nvic_set_pendinq_irq, int32_t number)
 
 DEFAULT_VOID_HANDLER1(void tlib_nvic_write_basepri, int32_t number)
 
-DEFAULT_VOID_HANDLER1(void tlib_nvic_write_primask, int32_t number)
+DEFAULT_INT_HANDLER1(int32_t tlib_nvic_find_pending_irq, void)
 
 DEFAULT_INT_HANDLER1(int32_t tlib_nvic_get_pending_masked_irq, void)
 

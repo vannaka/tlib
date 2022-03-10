@@ -324,16 +324,10 @@ void cpu_reset(CPUState *env)
     env->uncached_cpsr = ARM_CPU_MODE_SVC | CPSR_A | CPSR_F | CPSR_I;
 
 #ifdef TARGET_PROTO_ARM_M
-    env->v7m.fpccr = (env->v7m.fpccr & ~ARM_FPCCR_LSPACT_MASK) | ARM_FPCCR_ASPEN_MASK | ARM_FPCCR_LSPEN_MASK;
-    tlib_nvic_write_primask((ARM_CPU_MODE_SVC | CPSR_A | CPSR_F | CPSR_I) & CPSR_PRIMASK);
-#endif
-
     /* On ARMv7-M the CPSR_I is the value of the PRIMASK register, and is
        clear at reset.  Initial SP and PC are loaded from ROM.  */
-
-#ifdef TARGET_PROTO_ARM_M
+    env->v7m.fpccr = (env->v7m.fpccr & ~ARM_FPCCR_LSPACT_MASK) | ARM_FPCCR_ASPEN_MASK | ARM_FPCCR_LSPEN_MASK;
     env->uncached_cpsr &= ~CPSR_PRIMASK;
-    tlib_nvic_write_primask(0);
 #endif
 
     env->vfp.xregs[ARM_VFP_FPEXC] = 0;
@@ -442,10 +436,7 @@ void cpsr_write(CPUState *env, uint32_t val, uint32_t mask)
     mask &= ~CACHED_CPSR_BITS;
     env->uncached_cpsr = (env->uncached_cpsr & ~mask) | (val & mask);
 
-#ifdef TARGET_PROTO_ARM_M
-    tlib_nvic_write_primask(env->uncached_cpsr & CPSR_PRIMASK);
-#endif
-
+    find_pending_irq_if_primask_unset(env);
 }
 
 /* Sign/zero extend */
@@ -756,7 +747,7 @@ static void do_interrupt_v7m(CPUState *env)
     switch_v7m_sp(env, 0);
     env->uncached_cpsr &= ~CPSR_IT;
 
-    tlib_nvic_write_primask(env->uncached_cpsr & CPSR_PRIMASK);
+    find_pending_irq_if_primask_unset(env);
 
     env->regs[14] = lr;
     addr = ldl_phys(env->v7m.vecbase + env->v7m.exception * 4);
@@ -867,9 +858,7 @@ case_EXCP_PREFETCH_ABORT:
     env->uncached_cpsr = (env->uncached_cpsr & ~CPSR_M) | new_mode;
     env->uncached_cpsr |= mask;
 
-#ifdef TARGET_PROTO_ARM_M
-    tlib_nvic_write_primask(env->uncached_cpsr & CPSR_PRIMASK);
-#endif
+    find_pending_irq_if_primask_unset(env);
 
     /* this is a lie, as the was no c1_sys on V4T/V5, but who cares
      * and we should just guard the thumb mode on V4 */
@@ -2234,10 +2223,8 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
             env->uncached_cpsr |= CPSR_PRIMASK;
         } else {
             env->uncached_cpsr &= ~CPSR_PRIMASK;
+            tlib_nvic_find_pending_irq();
         }
-
-        tlib_nvic_write_primask(val & 1);
-
         break;
     case 17: /* BASEPRI */
         env->v7m.basepri = val & 0xff;

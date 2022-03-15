@@ -62,6 +62,7 @@ int cpu_restore_state_from_tb(CPUState *env, struct TranslationBlock *tb, uintpt
 void cpu_restore_state(CPUState *env, void *retaddr);
 int cpu_restore_state_and_restore_instructions_count(CPUState *env, struct TranslationBlock *tb, uintptr_t searched_pc);
 TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_base, int flags, uint16_t cflags);
+TranslationBlock *try_find_tb_at_pc(CPUState *env, target_ulong pc);
 void cpu_exec_init(CPUState *env);
 void cpu_exec_init_all();
 void TLIB_NORETURN cpu_loop_exit(CPUState *env1);
@@ -90,6 +91,7 @@ struct TranslationBlock {
     target_ulong cs_base; /* CS base for this block */
     uint64_t flags;       /* flags defining in which context the code was generated */
     uint32_t disas_flags;
+    bool dirty_flag;      /* invalidation after write to an address from this block */
     uint16_t size;        /* size of target code for this block (1 <=
                              size <= TARGET_PAGE_SIZE) */
     uint16_t cflags;      /* compile flags */
@@ -221,6 +223,8 @@ extern CPUReadMemoryFunc *io_mem_read[IO_MEM_NB_ENTRIES][4];
 extern void *io_mem_opaque[IO_MEM_NB_ENTRIES];
 
 int tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx, void *retaddr, int no_page_fault, int access_width);
+
+void mark_tbs_containing_pc_as_dirty(target_ulong addr);
 
 #include "softmmu_defs.h"
 

@@ -8,6 +8,8 @@ DEF_HELPER_2(log, void, i32, i32)
 DEF_HELPER_1(var_log, void, tl)
 DEF_HELPER_0(abort, void)
 
+DEF_HELPER_2(mark_tbs_as_dirty, void, env, tl)
+
 DEF_HELPER_1(count_opcode_inner, void, i32)
 
 #include "def-helper.h"

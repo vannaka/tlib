@@ -713,6 +713,48 @@ TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_ba
     return tb;
 }
 
+void helper_mark_tbs_as_dirty(CPUState *env, target_ulong pc)
+{
+    if (cpu->tb_cache_disabled) {
+        return;
+    }
+
+    int n;
+    PageDesc *p;
+    tb_page_addr_t phys_pc;
+    TranslationBlock *tb, *tb_next;
+    tb_page_addr_t tb_start, tb_end;
+
+    // Try to find the page using the tlb contents
+    phys_pc = get_page_addr_code(cpu, pc, false);
+    if (phys_pc == -1 || !(p = page_find(phys_pc >> TARGET_PAGE_BITS))) {
+        if (cpu->current_tb != 0) {
+            // we are not on the same mem page, the mapping just does not exist
+            return;
+        }
+        // Find the page using the platform specific mapping function
+        // This is way slower, but it should be used only if the same page is being executed
+        phys_pc = cpu_get_phys_page_debug(cpu, pc);
+        if (phys_pc == -1 || !(p = page_find(phys_pc >> TARGET_PAGE_BITS))) {
+            return;
+        }
+    }
+
+    // Below code is a simplified version of the `tb_invalidate_phys_page_range_inner` search
+    tb = p->first_tb;
+    while (tb != NULL) {
+        n = (uintptr_t)tb & 3;
+        tb = (TranslationBlock *)((uintptr_t)tb & ~3);
+        tb_next = tb->page_next[n];
+        tb_start = tb->page_addr[0] + (tb->pc & ~TARGET_PAGE_MASK);
+        tb_end = tb_start + tb->size;
+        if (tb_start <= pc && tb_end > pc) {
+            tb->dirty_flag = true;
+        }
+        tb = tb_next;
+    }
+}
+
 /* invalidate all TBs which intersect with the target physical page
    starting in range [start;end[. NOTE: start and end must refer to
    the same physical page. 'is_cpu_write_access' should be true if called

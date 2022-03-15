@@ -4,6 +4,11 @@
 #include "debug.h"
 #include "atomic.h"
 
+void mark_tbs_containing_pc_as_dirty(target_ulong addr)
+{
+    helper_mark_tbs_as_dirty(cpu, addr);
+}
+
 // verify if there are instructions left to execute, update instructions count
 // and trim the block and exit to the main loop if necessary
 uint32_t HELPER(prepare_block_for_execution)(void *tb)
@@ -19,7 +24,7 @@ uint32_t HELPER(prepare_block_for_execution)(void *tb)
     if (instructions_left == 0) {
         // setting `tb_restart_request` to 1 will stop executing this block at the end of the header
         cpu->tb_restart_request = 1;
-    } else if (cpu->current_tb->icount > instructions_left) {
+    } else if (cpu->current_tb->icount > instructions_left || cpu->current_tb->dirty_flag) {
         // invalidate this block and jump back to the main loop
         tb_phys_invalidate(cpu->current_tb, -1);
         cpu->tb_restart_request = 1;

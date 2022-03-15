@@ -366,6 +366,7 @@ do_unaligned_access:
                 do_unaligned_access(addr, 1, mmu_idx, retaddr);
             }
 #endif
+
             addend = cpu->tlb_table[mmu_idx][index].addend;
             glue(glue(st, SUFFIX), _raw)((uint8_t *)(uintptr_t)(addr + addend), val);
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
@@ -385,6 +386,7 @@ do_unaligned_access:
         goto redo;
     }
 
+    mark_tbs_containing_pc_as_dirty(addr);
     release_global_memory_lock(cpu);
 }
 

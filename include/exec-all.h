@@ -244,10 +244,10 @@ int tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx, void 
 #undef MEMSUFFIX
 #undef env
 
-/* NOTE: this function can trigger an exception */
+/* NOTE: this function can trigger an exception when used with `map_when_needed == true` */
 /* NOTE2: the returned address is not exactly the physical address: it
    is the offset relative to phys_ram_base */
-static inline tb_page_addr_t get_page_addr_code(CPUState *env1, target_ulong addr)
+static inline tb_page_addr_t get_page_addr_code(CPUState *env1, target_ulong addr, bool map_when_needed)
 {
     int mmu_idx, page_index;
     ram_addr_t pd;
@@ -256,7 +256,14 @@ static inline tb_page_addr_t get_page_addr_code(CPUState *env1, target_ulong add
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = cpu_mmu_index(env1);
     if (unlikely(env1->tlb_table[mmu_idx][page_index].addr_code != (addr & TARGET_PAGE_MASK))) {
-        ldub_code(addr);
+        if(map_when_needed)
+        {
+            ldub_code(addr);
+        }
+        else
+        {
+            return -1;
+        }
     }
     pd = env1->tlb_table[mmu_idx][page_index].addr_code & ~TARGET_PAGE_MASK;
     if (pd > IO_MEM_ROM && !(pd & IO_MEM_ROMD)) {

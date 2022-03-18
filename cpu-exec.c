@@ -159,7 +159,7 @@ static TranslationBlock *tb_find_slow(CPUState *env, target_ulong pc, target_ulo
     tb_invalidated_flag = 0;
 
     /* find translated block using physical mappings */
-    phys_pc = get_page_addr_code(env, pc);
+    phys_pc = get_page_addr_code(env, pc, true);
     phys_page1 = phys_pc & TARGET_PAGE_MASK;
     h = tb_phys_hash_func(phys_pc);
     ptb1 = &tb_phys_hash[h];
@@ -179,7 +179,7 @@ static TranslationBlock *tb_find_slow(CPUState *env, target_ulong pc, target_ulo
                 tb_page_addr_t phys_page2;
 
                 virt_page2 = (pc & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE;
-                phys_page2 = get_page_addr_code(env, virt_page2);
+                phys_page2 = get_page_addr_code(env, virt_page2, true);
                 if (tb->page_addr[1] == phys_page2) {
                     goto found;
                 }

@@ -682,7 +682,7 @@ TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_ba
     target_ulong virt_page2;
     int code_gen_size;
 
-    phys_pc = get_page_addr_code(env, pc);
+    phys_pc = get_page_addr_code(env, pc, true);
     tb = tb_alloc(pc);
     if (!tb) {
         /* flush must be done */
@@ -706,7 +706,7 @@ TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_ba
         // size will be 0 when tb contains a breakpoint instruction; in such case no other instructions are generated and there is no page2 at all
         virt_page2 = (pc + tb->size - 1) & TARGET_PAGE_MASK;
         if ((pc & TARGET_PAGE_MASK) != virt_page2) {
-            phys_page2 = get_page_addr_code(env, virt_page2);
+            phys_page2 = get_page_addr_code(env, virt_page2, true);
         }
     }
     tb_link_page(tb, phys_pc, phys_page2);

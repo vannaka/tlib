@@ -986,3 +986,17 @@ int get_physical_address(CPUState *env, bool update_tlb,
         return 0;
     }
 }
+
+target_phys_addr_t cpu_get_phys_page_debug(CPUState *cpu, target_ulong addr)
+{
+    target_phys_addr_t phys_addr;
+    unsigned int prot;
+    uint32_t page_size;
+    int mem_idx = cpu_mmu_index(env);
+
+    if (get_physical_address(env, false, addr, 0, mem_idx, &phys_addr, &page_size, &prot)) {
+        return -1;
+    }
+    return phys_addr;
+}
+

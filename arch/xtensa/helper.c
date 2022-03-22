@@ -266,7 +266,7 @@ bool xtensa_cpu_tlb_fill(CPUState *env, vaddr address, int size,
     uint32_t paddr;
     uint32_t page_size;
     unsigned access;
-    int ret = xtensa_get_physical_addr(env, true, address, access_type,
+    int ret = get_physical_address(env, true, address, access_type,
                                        mmu_idx, &paddr, &page_size, &access);
 #if DEBUG
     tlib_printf(LOG_LEVEL_DEBUG, "%s(%08" VADDR_PRIx

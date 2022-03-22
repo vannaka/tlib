@@ -961,7 +961,7 @@ static int get_physical_addr_mpu(CPUState *env,
  *
  * \return 0 if ok, exception cause code otherwise
  */
-int xtensa_get_physical_addr(CPUState *env, bool update_tlb,
+int get_physical_address(CPUState *env, bool update_tlb,
                              uint32_t vaddr, int is_write, int mmu_idx,
                              uint32_t *paddr, uint32_t *page_size,
                              unsigned *access)

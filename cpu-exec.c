@@ -333,6 +333,11 @@ int cpu_exec(CPUState *env)
                     next_tb = 0;
                 }
 #endif
+                if(unlikely(env->mmu_fault))
+                {
+                    env->exception_index = MMU_EXTERNAL_FAULT;
+                    cpu_loop_exit_without_hook(env);
+                }
 
                 if (unlikely(env->exception_index != -1)) {
                     cpu_loop_exit_without_hook(env);

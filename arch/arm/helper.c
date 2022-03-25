@@ -1205,6 +1205,11 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, i
 static inline int get_phys_addr(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
                                 target_ulong *page_size)
 {
+    if(unlikely(cpu->external_mmu_enabled))
+    {
+        return get_external_mmu_phys_addr(env, address, access_type, phys_ptr, prot);
+    }
+
     /* Fast Context Switch Extension.  */
     if (address < 0x02000000) {
         address += env->cp15.c13_fcse;
@@ -1241,6 +1246,10 @@ int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, 
         address &= ~(uint32_t)0x3ff;
         tlb_set_page(env, address, phys_addr, prot, mmu_idx, page_size);
         return TRANSLATE_SUCCESS;
+    }
+    else if(cpu->external_mmu_enabled)
+    {
+        return TRANSLATE_FAIL;
     }
 
     if (access_type == ACCESS_INST_FETCH) {

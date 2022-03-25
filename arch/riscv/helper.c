@@ -154,6 +154,10 @@ int riscv_cpu_hw_interrupts_pending(CPUState *env)
 static int get_physical_address(CPUState *env, target_phys_addr_t *physical, int *prot, target_ulong address, int access_type,
                                 int mmu_idx)
 {
+    if(unlikely(cpu->external_mmu_enabled))
+    {
+        return get_external_mmu_phys_addr(env, address, access_type, physical, prot);
+    }
     /* NOTE: the env->pc value visible here will not be
      * correct, but the value visible to the exception handler
      * (riscv_cpu_do_interrupt) is correct */
@@ -333,7 +337,7 @@ int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, i
     target_ulong page_size = TARGET_PAGE_SIZE;
 
     ret = get_physical_address(env, &pa, &prot, address, access_type, mmu_idx);
-    if (!pmp_hart_has_privs(env, pa, access_width, 1 << access_type)) {
+    if (!cpu->external_mmu_enabled && !pmp_hart_has_privs(env, pa, access_width, 1 << access_type)) {
         ret = TRANSLATE_FAIL;
     }
     if (ret == TRANSLATE_SUCCESS) {
@@ -352,7 +356,7 @@ int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, i
         }
 
         tlb_set_page(env, address & TARGET_PAGE_MASK, pa & TARGET_PAGE_MASK, prot, mmu_idx, page_size);
-    } else if (ret == TRANSLATE_FAIL) {
+    } else if (!cpu->external_mmu_enabled && ret == TRANSLATE_FAIL) {
         raise_mmu_exception(env, address, access_type);
     }
     return ret;

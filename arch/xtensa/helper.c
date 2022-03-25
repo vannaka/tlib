@@ -268,6 +268,17 @@ int xtensa_cpu_tlb_fill(CPUState *env, vaddr address, int size,
     unsigned access;
     int ret;
 
+    if(unlikely(cpu->external_mmu_enabled))
+    {
+        if(TRANSLATE_SUCCESS == get_external_mmu_phys_addr(env, address, access_type, &paddr, &access)) {
+            page_size = TARGET_PAGE_SIZE;
+            tlb_set_page(env, address & TARGET_PAGE_MASK, paddr & TARGET_PAGE_MASK, access, mmu_idx, page_size);
+            return TRANSLATE_SUCCESS;
+        } else {
+            return TRANSLATE_FAIL;
+        }
+    }
+
     ret = get_physical_address(env, true, address, access_type,
                                        mmu_idx, &paddr, &page_size, &access);
 #if DEBUG
@@ -277,11 +288,7 @@ int xtensa_cpu_tlb_fill(CPUState *env, vaddr address, int size,
 #endif
 
     if (ret == TRANSLATE_SUCCESS) {
-set_page:
-        tlb_set_page(env,
-                     address & TARGET_PAGE_MASK,
-                     paddr & TARGET_PAGE_MASK,
-                     access, mmu_idx, page_size);
+        tlb_set_page(env, address & TARGET_PAGE_MASK, paddr & TARGET_PAGE_MASK, access, mmu_idx, page_size);
         return TRANSLATE_SUCCESS;
     } else if (probe) {
         return TRANSLATE_FAIL;

@@ -55,13 +55,6 @@ uint32_t *get_reg_pointer_32(int reg)
     }
 }
 
-void set_thumb(int value)
-{
-    cpu->thumb = value & 0x1;
-}
-
-EXC_VOID_1(set_thumb, int, value)
-
 uint32_t tlib_get_register_value_32(int reg_number)
 {
     if (reg_number == CPSR_32)

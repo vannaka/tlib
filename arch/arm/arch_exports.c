@@ -114,6 +114,13 @@ void tlib_set_event_flag(int value)
 
 EXC_VOID_1(tlib_set_event_flag, int, value)
 
+void tlib_set_thumb(int value)
+{
+    cpu->thumb = value != 0;
+}
+
+EXC_VOID_1(tlib_set_thumb, int, value)
+
 #ifdef TARGET_PROTO_ARM_M
 
 void tlib_set_interrupt_vector_base(uint32_t address)

@@ -20,6 +20,7 @@
 
 #include "cpu.h"
 #include "cpu_registers.h"
+#include "../../unwind.h"
 
 // REMARK: here we use #ifdef/#endif,#ifdef/#endif notation just to be consistent with header file; in header it is required by our parser
 
@@ -147,6 +148,8 @@ uint32_t tlib_get_register_value_32(int reg_number)
     return *ptr;
 }
 
+EXC_INT_1(uint32_t, tlib_get_register_value_32, int, reg_number)
+
 void set_masked_register_value_32(int reg_number, int offset, int width, uint32_t value)
 {
     uint32_t *ptr = get_reg_pointer_32(reg_number);
@@ -186,3 +189,4 @@ void tlib_set_register_value_32(int reg_number, uint32_t value)
     *ptr = value;
 }
 
+EXC_VOID_2(tlib_set_register_value_32, int, reg_number, uint32_t, value)

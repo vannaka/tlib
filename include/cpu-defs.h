@@ -232,6 +232,8 @@ typedef struct opcode_counter_descriptor
                                                                                              \
         return *ptr;                                                                         \
     }                                                                                        \
+                                                                                             \
+    EXC_INT_1(uint##width##_t, tlib_get_register_value_##width, int, reg_number)             \
 
 #define CPU_REGISTER_SETTER(width)                                                           \
     void tlib_set_register_value_##width(int reg_number, uint##width##_t value)              \
@@ -244,6 +246,9 @@ typedef struct opcode_counter_descriptor
                                                                                              \
         *ptr = value;                                                                        \
     }                                                                                        \
+                                                                                             \
+    EXC_VOID_2(tlib_set_register_value_##width, int, reg_number, uint##width##_t, value)     \
+
 
 #define CPU_REGISTER_ACCESSOR(width) \
         CPU_REGISTER_GETTER(width)   \

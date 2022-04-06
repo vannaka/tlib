@@ -19,6 +19,7 @@
  */
 #include <stdint.h>
 #include "cpu.h"
+#include "../../unwind.h"
 
 /* Add CPU slot number info to ASR17 register, */
 /* bit field [31:28] is for processor index */
@@ -33,21 +34,29 @@ void tlib_set_slot(uint32_t slot)
     }
 }
 
+EXC_VOID_1(tlib_set_slot, uint32_t, slot)
+
 void tlib_set_entry_point(uint32_t entry_point)
 {
     cpu->pc = entry_point;
     cpu->npc = cpu->pc + 4;
 }
 
+EXC_VOID_1(tlib_set_entry_point, uint32_t, entry_point)
+
 void tlib_clear_wfi()
 {
     cpu->wfi = 0;
 }
 
+EXC_VOID_0(tlib_clear_wfi)
+
 void tlib_set_wfi()
 {
     cpu->wfi = 1;
 }
+
+EXC_VOID_0(tlib_set_wfi)
 
 void tlib_before_save(CPUState *env)
 {
@@ -55,8 +64,12 @@ void tlib_before_save(CPUState *env)
     env->psr = cpu_get_psr(env);
 }
 
+EXC_VOID_1(tlib_before_save, CPUState *, env)
+
 void tlib_after_load(CPUState *env)
 {
     env->cwp = 0;
     cpu_put_psr(env, env->psr);
 }
+
+EXC_VOID_1(tlib_after_load, CPUState *, env)

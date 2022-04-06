@@ -19,6 +19,7 @@
  */
 #include <stdlib.h>
 #include "callbacks.h"
+#include "unwind.h"
 
 DEFAULT_VOID_HANDLER1(void tlib_on_translation_block_find_slow, uint64_t pc)
 
@@ -80,6 +81,8 @@ void tlib_set_on_block_translation_enabled(int32_t value)
 {
     tlib_is_on_block_translation_enabled = value;
 }
+
+EXC_VOID_1(tlib_set_on_block_translation_enabled, int32_t, value)
 
 void tlib_on_block_translation(uint64_t start, uint32_t size, uint32_t flags) __attribute__((weak));
 

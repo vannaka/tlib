@@ -18,16 +18,21 @@
  */
 #include <stdint.h>
 #include "cpu.h"
+#include "../../unwind.h"
 
 void tlib_set_hart_id(uint32_t id)
 {
     cpu->mhartid = id;
 }
 
+EXC_VOID_1(tlib_set_hart_id, uint32_t, id)
+
 uint32_t tlib_get_hart_id()
 {
     return cpu->mhartid;
 }
+
+EXC_INT_0(uint32_t, tlib_get_hart_id)
 
 void tlib_set_mip_bit(uint32_t position, uint32_t value)
 {
@@ -41,6 +46,8 @@ void tlib_set_mip_bit(uint32_t position, uint32_t value)
     pthread_mutex_unlock(&cpu->mip_lock);
 }
 
+EXC_VOID_2(tlib_set_mip_bit, uint32_t, position, uint32_t, value)
+
 void tlib_allow_feature(uint32_t feature_bit)
 {
     cpu->misa_mask |= (1L << feature_bit);
@@ -53,6 +60,8 @@ void tlib_allow_feature(uint32_t feature_bit)
     }
 }
 
+EXC_VOID_1(tlib_allow_feature, uint32_t, feature_bit)
+
 void tlib_mark_feature_silent(uint32_t feature_bit, uint32_t value)
 {
     if (value) {
@@ -62,15 +71,21 @@ void tlib_mark_feature_silent(uint32_t feature_bit, uint32_t value)
     }
 }
 
+EXC_VOID_2(tlib_mark_feature_silent, uint32_t, feature_bit, uint32_t, value)
+
 uint32_t tlib_is_feature_enabled(uint32_t feature_bit)
 {
     return (cpu->misa & (1L << feature_bit)) != 0;
 }
 
+EXC_INT_1(uint32_t, tlib_is_feature_enabled, uint32_t, feature_bit)
+
 uint32_t tlib_is_feature_allowed(uint32_t feature_bit)
 {
     return (cpu->misa_mask & (1L << feature_bit)) != 0;
 }
+
+EXC_INT_1(uint32_t, tlib_is_feature_allowed, uint32_t, feature_bit)
 
 void tlib_set_privilege_architecture(int32_t privilege_architecture)
 {
@@ -79,6 +94,8 @@ void tlib_set_privilege_architecture(int32_t privilege_architecture)
     }
     cpu->privilege_architecture = privilege_architecture;
 }
+
+EXC_VOID_1(tlib_set_privilege_architecture, int32_t, privilege_architecture)
 
 uint64_t tlib_install_custom_instruction(uint64_t mask, uint64_t pattern, uint64_t length)
 {
@@ -97,6 +114,8 @@ uint64_t tlib_install_custom_instruction(uint64_t mask, uint64_t pattern, uint64
     return ci->id;
 }
 
+EXC_INT_3(uint64_t, tlib_install_custom_instruction, uint64_t, mask, uint64_t, pattern, uint64_t, length)
+
 int32_t tlib_install_custom_csr(uint64_t id)
 {
     if (id > MAX_CSR_ID) {
@@ -111,11 +130,15 @@ int32_t tlib_install_custom_csr(uint64_t id)
     return 0;
 }
 
+EXC_INT_1(int32_t, tlib_install_custom_csr, uint64_t, id)
+
 void helper_wfi(CPUState *env);
 void tlib_enter_wfi()
 {
     helper_wfi(cpu);
 }
+
+EXC_VOID_0(tlib_enter_wfi)
 
 void tlib_set_csr_validation_level(uint32_t value)
 {
@@ -131,10 +154,14 @@ void tlib_set_csr_validation_level(uint32_t value)
     }
 }
 
+EXC_VOID_1(tlib_set_csr_validation_level, uint32_t, value)
+
 uint32_t tlib_get_csr_validation_level()
 {
     return cpu->csr_validation_level;
 }
+
+EXC_INT_0(uint32_t, tlib_get_csr_validation_level)
 
 void tlib_set_nmi_vector(uint64_t nmi_adress, uint32_t nmi_length)
 {
@@ -151,6 +178,8 @@ void tlib_set_nmi_vector(uint64_t nmi_adress, uint32_t nmi_length)
     }
 }
 
+EXC_VOID_2(tlib_set_nmi_vector, uint64_t, nmi_adress, uint32_t, nmi_length)
+
 void tlib_set_nmi(int32_t nmi, int32_t state)
 {
     if (state) {
@@ -160,10 +189,14 @@ void tlib_set_nmi(int32_t nmi, int32_t state)
     }
 }
 
+EXC_VOID_2(tlib_set_nmi, int32_t, nmi, int32_t, state)
+
 void tlib_allow_unaligned_accesses(int32_t allowed)
 {
     cpu->allow_unaligned_accesses = allowed;
 }
+
+EXC_VOID_1(tlib_allow_unaligned_accesses, int32_t, allowed)
 
 void tlib_set_interrupt_mode(int32_t mode)
 {
@@ -220,6 +253,8 @@ void tlib_set_interrupt_mode(int32_t mode)
     cpu->interrupt_mode = mode;
 }
 
+EXC_VOID_1(tlib_set_interrupt_mode, int32_t, mode)
+
 uint32_t tlib_set_vlen(uint32_t vlen)
 {
     // a power of 2 and not greater than VLEN_MAX
@@ -229,6 +264,8 @@ uint32_t tlib_set_vlen(uint32_t vlen)
     cpu->vlenb = vlen / 8;
     return 0;
 }
+
+EXC_INT_1(uint32_t, tlib_set_vlen, uint32_t, vlen)
 
 uint32_t tlib_set_elen(uint32_t elen)
 {
@@ -240,6 +277,8 @@ uint32_t tlib_set_elen(uint32_t elen)
     cpu->elen = elen;
     return 0;
 }
+
+EXC_INT_1(uint32_t, tlib_set_elen, uint32_t, elen)
 
 static bool check_vector_register_number(uint32_t regn)
 {
@@ -291,6 +330,8 @@ uint64_t tlib_get_vector(uint32_t regn, uint32_t idx)
     }
 }
 
+EXC_INT_2(uint64_t, tlib_get_vector, uint32_t, regn, uint32_t, idx)
+
 void tlib_set_vector(uint32_t regn, uint32_t idx, uint64_t value)
 {
     if (check_vector_access(regn, idx)) {
@@ -319,6 +360,8 @@ void tlib_set_vector(uint32_t regn, uint32_t idx, uint64_t value)
     }
 }
 
+EXC_VOID_3(tlib_set_vector, uint32_t, regn, uint32_t, idx, uint64_t, value)
+
 uint32_t tlib_get_whole_vector(uint32_t regn, uint8_t *bytes)
 {
     if (check_vector_register_number(regn)) {
@@ -329,6 +372,8 @@ uint32_t tlib_get_whole_vector(uint32_t regn, uint8_t *bytes)
     }
 }
 
+EXC_INT_2(uint32_t, tlib_get_whole_vector, uint32_t, regn, uint8_t *, bytes)
+
 uint32_t tlib_set_whole_vector(uint32_t regn, uint8_t *bytes)
 {
     if (check_vector_register_number(regn)) {
@@ -338,3 +383,5 @@ uint32_t tlib_set_whole_vector(uint32_t regn, uint8_t *bytes)
         return 0;
     }
 }
+
+EXC_INT_2(uint32_t, tlib_set_whole_vector, uint32_t, regn, uint8_t *, bytes)

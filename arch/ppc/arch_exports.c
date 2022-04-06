@@ -19,6 +19,7 @@
  */
 #include <stdint.h>
 #include "cpu.h"
+#include "../../unwind.h"
 
 int32_t tlib_set_pending_interrupt(int32_t interruptNo, int32_t level)
 {
@@ -33,6 +34,8 @@ int32_t tlib_set_pending_interrupt(int32_t interruptNo, int32_t level)
     return 0;
 }
 
+EXC_INT_2(int32_t, tlib_set_pending_interrupt, int32_t, interruptNo, int32_t, level)
+
 void tlib_set_little_endian_mode(bool mode)
 {
     if (mode) {
@@ -43,3 +46,5 @@ void tlib_set_little_endian_mode(bool mode)
         cpu->msr &= ~(1 << MSR_LE);
     }
 }
+
+EXC_VOID_1(tlib_set_little_endian_mode, bool, mode)

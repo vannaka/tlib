@@ -24,6 +24,9 @@
 #include "tcg-additional.h"
 #include "exec-all.h"
 #include "tb-helper.h"
+#include "unwind.h"
+
+__thread struct unwind_state unwind_state;
 
 static tcg_t stcg;
 
@@ -133,6 +136,8 @@ char *tlib_get_arch()
    #endif
 }
 
+EXC_POINTER_0(char *, tlib_get_arch)
+
 uint32_t maximum_block_size;
 
 uint32_t tlib_set_maximum_block_size(uint32_t size)
@@ -141,20 +146,28 @@ uint32_t tlib_set_maximum_block_size(uint32_t size)
     return maximum_block_size;
 }
 
+EXC_INT_1(uint32_t, tlib_set_maximum_block_size, uint32_t, size)
+
 uint32_t tlib_get_maximum_block_size()
 {
     return maximum_block_size;
 }
+
+EXC_INT_0(uint32_t, tlib_get_maximum_block_size)
 
 void tlib_set_cycles_per_instruction(uint32_t count)
 {
     env->cycles_per_instruction = count;
 }
 
+EXC_VOID_1(tlib_set_cycles_per_instruction, uint32_t, count)
+
 uint32_t tlib_get_cycles_per_instruction()
 {
     return env->cycles_per_instruction;
 }
+
+EXC_INT_0(uint32_t, tlib_get_cycles_per_instruction)
 
 int32_t tlib_init(char *cpu_name)
 {
@@ -173,12 +186,16 @@ int32_t tlib_init(char *cpu_name)
     return 0;
 }
 
+EXC_INT_1(int32_t, tlib_init, char *, cpu_name)
+
 void tlib_atomic_memory_state_init(int id, uintptr_t atomic_memory_state_ptr)
 {
     cpu->id = id;
     cpu->atomic_memory_state = (atomic_memory_state_t *)atomic_memory_state_ptr;
     register_in_atomic_memory_state(cpu->atomic_memory_state, id);
 }
+
+EXC_VOID_2(tlib_atomic_memory_state_init, int, id, uintptr_t, atomic_memory_state_ptr)
 
 static void free_phys_dirty()
 {
@@ -197,6 +214,8 @@ void tlib_dispose()
     tcg_dispose();
 }
 
+EXC_VOID_0(tlib_dispose)
+
 // this function returns number of instructions executed since the previous call
 // there is `cpu->instructions_count_total_value` that contains the cumulative value
 uint64_t tlib_get_executed_instructions()
@@ -206,6 +225,8 @@ uint64_t tlib_get_executed_instructions()
     cpu->instructions_count_threshold -= result;
     return result;
 }
+
+EXC_INT_0(uint64_t, tlib_get_executed_instructions)
 
 // `TranslationCPU` uses the number of executed instructions to calculate the elapsed virtual time.
 // This number is divided by `PerformanceInMIPS` value, but may leave a remainder, that is not reflected in `TranslationCPU` state.
@@ -217,14 +238,25 @@ void tlib_reset_executed_instructions(uint32_t val)
     cpu->instructions_count_threshold += val;
 }
 
+EXC_VOID_1(tlib_reset_executed_instructions, uint64_t, val)
+
 uint64_t tlib_get_total_executed_instructions()
 {
     return cpu->instructions_count_total_value;
 }
 
+EXC_INT_0(uint64_t, tlib_get_total_executed_instructions)
+
 void tlib_reset()
 {
     cpu_reset(cpu);
+}
+
+EXC_VOID_0(tlib_reset)
+
+void tlib_unwind()
+{
+    longjmp(unwind_state.envs[unwind_state.env_idx], 1);
 }
 
 int32_t tlib_execute(uint32_t max_insns)
@@ -258,6 +290,8 @@ int32_t tlib_execute(uint32_t max_insns)
     return result;
 }
 
+EXC_INT_1(int32_t, tlib_execute, int32_t, max_insns)
+
 int tlib_restore_context(void);
 
 extern void *global_retaddr;
@@ -286,20 +320,28 @@ void tlib_restart_translation_block()
     longjmp(cpu->jmp_env, 1); //for watchpoints!
 }
 
+EXC_VOID_0(tlib_restart_translation_block)
+
 void tlib_set_return_request()
 {
     cpu->exit_request = 1;
 }
+
+EXC_VOID_0(tlib_set_return_request)
 
 int32_t tlib_is_wfi()
 {
     return cpu->wfi;
 }
 
+EXC_INT_0(int32_t, tlib_is_wfi)
+
 uint32_t tlib_get_page_size()
 {
     return TARGET_PAGE_SIZE;
 }
+
+EXC_INT_0(uint32_t, tlib_get_page_size)
 
 void tlib_map_range(uint64_t start_addr, uint64_t length)
 {
@@ -327,6 +369,8 @@ void tlib_map_range(uint64_t start_addr, uint64_t length)
     cpu_register_physical_memory(start_addr, size, phys_offset | IO_MEM_RAM);
 }
 
+EXC_VOID_2(tlib_map_range, uint64_t, start_addr, uint64_t, length)
+
 void tlib_unmap_range(uint64_t start, uint64_t end)
 {
     uint64_t new_start;
@@ -340,6 +384,8 @@ void tlib_unmap_range(uint64_t start, uint64_t end)
         start = new_start;
     }
 }
+
+EXC_VOID_2(tlib_unmap_range, uint64_t, start, uint64_t, end)
 
 uint32_t tlib_is_range_mapped(uint64_t start, uint64_t end)
 {
@@ -355,10 +401,14 @@ uint32_t tlib_is_range_mapped(uint64_t start, uint64_t end)
     return 0;
 }
 
+EXC_INT_2(uint32_t, tlib_is_range_mapped, uint64_t, start, uint64_t, end)
+
 void tlib_invalidate_translation_blocks(uintptr_t start, uintptr_t end)
 {
     tb_invalidate_phys_page_range_inner(start, end, 0, 0);
 }
+
+EXC_VOID_2(tlib_invalidate_translation_blocks, uintptr_t, start, uintptr_t, end)
 
 uint64_t tlib_translate_to_physical_address(uint64_t address, uint32_t access_type)
 {
@@ -369,6 +419,8 @@ uint64_t tlib_translate_to_physical_address(uint64_t address, uint32_t access_ty
     return ret;
 }
 
+EXC_INT_2(uint64_t, tlib_translate_to_physical_address, uint64_t, address, uint32_t, access_type)
+
 void tlib_set_irq(int32_t interrupt, int32_t state)
 {
     if (state) {
@@ -378,20 +430,28 @@ void tlib_set_irq(int32_t interrupt, int32_t state)
     }
 }
 
+EXC_VOID_2(tlib_set_irq, int32_t, interrupt, int32_t, state)
+
 int32_t tlib_is_irq_set()
 {
     return cpu->interrupt_request;
 }
+
+EXC_INT_0(int32_t, tlib_is_irq_set)
 
 void tlib_add_breakpoint(uint64_t address)
 {
     cpu_breakpoint_insert(cpu, address, BP_GDB, NULL);
 }
 
+EXC_VOID_1(tlib_add_breakpoint, uint64_t, address)
+
 void tlib_remove_breakpoint(uint64_t address)
 {
     cpu_breakpoint_remove(cpu, address, BP_GDB);
 }
+
+EXC_VOID_1(tlib_remove_breakpoint, uint64_t, address)
 
 uintptr_t translation_cache_size;
 
@@ -400,12 +460,16 @@ void tlib_set_translation_cache_size(uintptr_t size)
     translation_cache_size = size;
 }
 
+EXC_VOID_1(tlib_set_translation_cache_size, uintptr_t, size)
+
 void tlib_invalidate_translation_cache()
 {
     if (cpu) {
         tb_flush(cpu);
     }
 }
+
+EXC_VOID_0(tlib_invalidate_translation_cache)
 
 int tlib_restore_context()
 {
@@ -421,10 +485,14 @@ int tlib_restore_context()
     return cpu_restore_state_from_tb(cpu, tb, pc);
 }
 
+EXC_INT_0(int, tlib_restore_context)
+
 void *tlib_export_state()
 {
     return cpu;
 }
+
+EXC_POINTER_0(void *, tlib_export_state)
 
 int32_t tlib_get_state_size()
 {
@@ -440,35 +508,49 @@ int32_t tlib_get_state_size()
     return (ssize_t)(&((CPUState *)0)->current_tb);
 }
 
+EXC_INT_0(int32_t, tlib_get_state_size)
+
 void tlib_set_chaining_enabled(uint32_t val)
 {
     cpu->chaining_disabled = !val;
 }
+
+EXC_VOID_1(tlib_set_chaining_enabled, uint32_t, val)
 
 uint32_t tlib_get_chaining_enabled()
 {
     return !cpu->chaining_disabled;
 }
 
+EXC_INT_0(uint32_t, tlib_get_chaining_enabled)
+
 void tlib_set_tb_cache_enabled(uint32_t val)
 {
     cpu->tb_cache_disabled = !val;
 }
+
+EXC_VOID_1(tlib_set_tb_cache_enabled, uint32_t, val)
 
 uint32_t tlib_get_tb_cache_enabled()
 {
     return !cpu->tb_cache_disabled;
 }
 
+EXC_INT_0(uint32_t, tlib_get_tb_cache_enabled)
+
 void tlib_set_block_finished_hook_present(uint32_t val)
 {
     cpu->block_finished_hook_present = !!val;
 }
 
+EXC_VOID_1(tlib_set_block_finished_hook_present, uint32_t, val)
+
 void tlib_set_block_begin_hook_present(uint32_t val)
 {
     cpu->block_begin_hook_present = !!val;
 }
+
+EXC_VOID_1(tlib_set_block_begin_hook_present, uint32_t, val)
 
 int32_t tlib_set_return_on_exception(int32_t value)
 {
@@ -477,10 +559,14 @@ int32_t tlib_set_return_on_exception(int32_t value)
     return previousValue;
 }
 
+EXC_INT_1(int32_t, tlib_set_return_on_exception, int32_t, value)
+
 void tlib_flush_page(uint64_t address)
 {
     tlb_flush_page(cpu, address);
 }
+
+EXC_VOID_1(tlib_flush_page, uint64_t, address)
 
 #if TARGET_LONG_BITS == 32
 uint32_t *get_reg_pointer_32(int reg_number);
@@ -511,6 +597,8 @@ uint64_t tlib_get_register_value(int reg_number)
 #endif
 }
 
+EXC_INT_1(uint64_t, tlib_get_register_value, int, reg_number)
+
 void tlib_set_register_value(int reg_number, uint64_t val)
 {
 #if TARGET_LONG_BITS == 32
@@ -532,10 +620,14 @@ void tlib_set_register_value(int reg_number, uint64_t val)
 #endif
 }
 
+EXC_VOID_2(tlib_set_register_value, int, reg_number, uint64_t, val)
+
 void tlib_set_interrupt_begin_hook_present(uint32_t val)
 {
     cpu->interrupt_begin_callback_enabled = !!val;
 }
+
+EXC_VOID_1(tlib_set_interrupt_begin_hook_present, uint32_t, val)
 
 void tlib_set_interrupt_end_hook_present(uint32_t val)
 {
@@ -543,10 +635,14 @@ void tlib_set_interrupt_end_hook_present(uint32_t val)
     cpu->interrupt_end_callback_enabled = !!val;
 }
 
+EXC_VOID_1(tlib_set_interrupt_end_hook_present, uint32_t, val)
+
 void tlib_on_memory_access_event_enabled(int32_t value)
 {
     cpu->tlib_is_on_memory_access_enabled = !!value;
 }
+
+EXC_VOID_1(tlib_on_memory_access_event_enabled, int32_t, value)
 
 void tlib_clean_wfi_proc_state(void)
 {
@@ -555,15 +651,21 @@ void tlib_clean_wfi_proc_state(void)
     cpu->wfi = 0;
 }
 
+EXC_VOID_0(tlib_clean_wfi_proc_state)
+
 void tlib_enable_opcodes_counting(uint32_t value)
 {
     cpu->count_opcodes = !!value;
 }
 
+EXC_VOID_1(tlib_enable_opcodes_counting, uint32_t, value)
+
 uint32_t tlib_get_opcode_counter(uint32_t opcode_id)
 {
     return cpu->opcode_counters[opcode_id - 1].counter;
 }
+
+EXC_INT_1(uint32_t, tlib_get_opcode_counter, uint32_t, opcode_id)
 
 void tlib_reset_opcode_counters()
 {
@@ -572,6 +674,8 @@ void tlib_reset_opcode_counters()
         cpu->opcode_counters[i].counter = 0;
     }
 }
+
+EXC_VOID_0(tlib_reset_opcode_counters)
 
 uint32_t tlib_install_opcode_counter(uint32_t opcode, uint32_t mask)
 {
@@ -590,6 +694,8 @@ uint32_t tlib_install_opcode_counter(uint32_t opcode, uint32_t mask)
     return cpu->opcode_counters_size;
 }
 
+EXC_INT_2(uint32_t, tlib_install_opcode_counter, uint32_t, opcode, uint32_t, mask)
+
 uint32_t tlib_get_current_tb_disas_flags()
 {
     if (cpu->current_tb == NULL) {
@@ -598,6 +704,8 @@ uint32_t tlib_get_current_tb_disas_flags()
 
     return cpu->current_tb->disas_flags;
 }
+
+EXC_INT_0(uint32_t, tlib_get_current_tb_disas_flags)
 
 void tlib_set_page_io_accessed(uint64_t address)
 {
@@ -635,6 +743,8 @@ void tlib_set_page_io_accessed(uint64_t address)
     tlb_flush_page(env, address);
 }
 
+EXC_VOID_1(tlib_set_page_io_accessed, uint64_t, address)
+
 void tlib_clear_page_io_accessed(uint64_t address)
 {
     target_ulong page_address = address & ~(TARGET_PAGE_SIZE - 1);
@@ -663,3 +773,4 @@ void tlib_clear_page_io_accessed(uint64_t address)
     tlb_flush_page(env, address);
 }
 
+EXC_VOID_1(tlib_clear_page_io_accessed, uint64_t, address)

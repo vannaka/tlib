@@ -21,6 +21,7 @@
 
 #include "cpu.h"
 #include "cpu_registers.h"
+#include "../../unwind.h"
 
 uint32_t *get_reg_pointer_32(int reg)
 {
@@ -59,6 +60,8 @@ void set_thumb(int value)
     cpu->thumb = value & 0x1;
 }
 
+EXC_VOID_1(set_thumb, int, value)
+
 uint32_t tlib_get_register_value_32(int reg_number)
 {
     if (reg_number == CPSR_32)
@@ -85,6 +88,8 @@ uint32_t tlib_get_register_value_32(int reg_number)
 
     return *ptr;
 }
+
+EXC_INT_1(uint32_t, tlib_get_register_value_32, int, reg_number)
 
 void tlib_set_register_value_32(int reg_number, uint32_t value)
 {
@@ -120,3 +125,5 @@ void tlib_set_register_value_32(int reg_number, uint32_t value)
 
     *ptr = value;
 }
+
+EXC_VOID_2(tlib_set_register_value_32, int, reg_number, uint32_t, value)

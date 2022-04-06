@@ -19,16 +19,21 @@
  */
 #include <stdint.h>
 #include "cpu.h"
+#include "../../unwind.h"
 
 uint32_t tlib_get_cpu_id()
 {
     return cpu->cp15.c0_cpuid;
 }
 
+EXC_INT_0(uint32_t, tlib_get_cpu_id)
+
 uint32_t tlib_get_it_state()
 {
     return cpu->condexec_bits;
 }
+
+EXC_INT_0(uint32_t, tlib_get_it_state)
 
 uint32_t tlib_evaluate_condition_code(uint32_t condition)
 {
@@ -75,10 +80,14 @@ uint32_t tlib_evaluate_condition_code(uint32_t condition)
     }
 }
 
+EXC_INT_1(uint32_t, tlib_evaluate_condition_code, uint32_t, condition)
+
 void tlib_set_cpu_id(uint32_t value)
 {
     cpu->cp15.c0_cpuid = value;
 }
+
+EXC_VOID_1(tlib_set_cpu_id, uint32_t, value)
 
 void tlib_toggle_fpu(int32_t enabled)
 {
@@ -89,15 +98,21 @@ void tlib_toggle_fpu(int32_t enabled)
     }
 }
 
+EXC_VOID_1(tlib_toggle_fpu, int32_t, enabled)
+
 void tlib_set_sev_on_pending(int32_t value)
 {
     cpu->sev_on_pending = !!value;
 }
 
+EXC_VOID_1(tlib_set_sev_on_pending, int32_t, value)
+
 void tlib_set_event_flag(int value)
 {
     cpu->sev_pending = !!value;
 }
+
+EXC_VOID_1(tlib_set_event_flag, int, value)
 
 #ifdef TARGET_PROTO_ARM_M
 
@@ -106,14 +121,20 @@ void tlib_set_interrupt_vector_base(uint32_t address)
     cpu->v7m.vecbase = address;
 }
 
+EXC_VOID_1(tlib_set_interrupt_vector_base, uint32_t, address)
+
 uint32_t tlib_get_interrupt_vector_base()
 {
     return cpu->v7m.vecbase;
 }
 
+EXC_INT_0(uint32_t, tlib_get_interrupt_vector_base)
+
 uint32_t tlib_get_xpsr()
 {
     return xpsr_read(cpu);
 }
+
+EXC_INT_0(uint32_t, tlib_get_xpsr)
 
 #endif

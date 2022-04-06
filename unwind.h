@@ -8,6 +8,13 @@
  * one less than UNWIND_MAX_DEPTH). This is because the 0th jmp_buf is unused. */
 #define UNWIND_MAX_DEPTH 16
 
+#if defined(_WIN64)
+/* This is to avoid longjmp crashing because of stack unwinding.
+ * It is incompatible with the execution of generated code. */
+#undef setjmp
+#define setjmp(env) _setjmp(env, NULL)
+#endif
+
 /* We don't use our assert() because it would call tlib_abort which is a bad idea
  * in this context. We don't use <assert.h> either because we want these checks
  * to happen in release mode too - running off of either end would cause hard to

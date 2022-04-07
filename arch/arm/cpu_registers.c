@@ -93,7 +93,6 @@ void tlib_set_register_value_32(int reg_number, uint32_t value)
 #else
         cpsr_write(cpu, value, 0xffffffff);
 #endif
-
         return;
     }
 #ifdef TARGET_PROTO_ARM_M

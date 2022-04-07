@@ -1,6 +1,12 @@
 #include "cpu-defs.h"
 
+// this is a trick to make the registers parser simpler
+#if defined(TARGET_ARM32) && defined(TARGET_PROTO_ARM_M)
+#define TARGET_PROTO_ARM32_M
+#endif
+
 typedef enum {
+#ifdef TARGET_ARM32 
     R_0_32       = 0,
     R_1_32       = 1,
     R_2_32       = 2,
@@ -21,7 +27,8 @@ typedef enum {
     R_15_32      = 15,
     PC_32        = 15,
     CPSR_32      = 25,
-#ifdef TARGET_PROTO_ARM_M
+#endif
+#ifdef TARGET_PROTO_ARM32_M
     Control_32   = 18,
     BasePri_32   = 19,
     VecBase_32   = 20,

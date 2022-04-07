@@ -23,6 +23,7 @@
 #include "cpu_registers.h"
 #include "../../unwind.h"
 
+#if defined(TARGET_ARM32)
 uint32_t *get_reg_pointer_32(int reg)
 {
     switch (reg) {
@@ -30,7 +31,7 @@ uint32_t *get_reg_pointer_32(int reg)
         return &(cpu->regs[reg]);
     case CPSR_32:
         return &(cpu->uncached_cpsr);
-#ifdef TARGET_PROTO_ARM_M
+#if defined(TARGET_ARM32) && defined(TARGET_PROTO_ARM_M)
     case Control_32:
         return &(cpu->v7m.control);
     case BasePri_32:
@@ -59,7 +60,7 @@ uint32_t tlib_get_register_value_32(int reg_number)
 {
     if (reg_number == CPSR_32)
     {
-#ifdef TARGET_PROTO_ARM_M
+#if defined(TARGET_ARM32) && defined(TARGET_PROTO_ARM_M)
         return xpsr_read(cpu);
 #else
         return cpsr_read(cpu);
@@ -88,7 +89,7 @@ void tlib_set_register_value_32(int reg_number, uint32_t value)
 {
     if (reg_number == CPSR_32)
     {
-#ifdef TARGET_PROTO_ARM_M
+#if defined(TARGET_ARM32) && defined(TARGET_PROTO_ARM_M)
         xpsr_write(cpu, value, 0xffffffff);
 #else
         cpsr_write(cpu, value, 0xffffffff);
@@ -119,3 +120,4 @@ void tlib_set_register_value_32(int reg_number, uint32_t value)
 }
 
 EXC_VOID_2(tlib_set_register_value_32, int, reg_number, uint32_t, value)
+#endif

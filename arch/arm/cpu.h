@@ -19,16 +19,18 @@
 #ifndef CPU_ARM_H
 #define CPU_ARM_H
 
-#if (TARGET_LONG_BITS != 32)
-#error "Only 32-bit target is supported."
-#endif
-
 #include <stdbool.h>
 #include <stdlib.h>
 #include "cpu-defs.h"
 
 #include "softfloat.h"
 #include "arch_callbacks.h"
+
+#if TARGET_LONG_BITS == 32
+#define TARGET_ARM32
+#else
+#error "Target arch can be only 32-bit"
+#endif
 
 #define EXCP_UDEF           1    /* undefined instruction */
 #define EXCP_SWI            2    /* software interrupt */
@@ -91,7 +93,7 @@ typedef uint32_t ARMReadCPFunc(void *opaque, int cp_info, int dstreg, int operan
 // | BEFORE >CPU_COMMON< SECTION.          |
 // +---------------------------------------+
 typedef struct CPUState {
-    /* Regs for current mode.  */
+    /* Regs for 32-bit current mode.  */
     uint32_t regs[16];
     /* Frequently accessed CPSR bits are stored separately for efficiently.
        This contains all the other bits.  Use cpsr_{read,write} to access

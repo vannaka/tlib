@@ -28,8 +28,10 @@
 
 #if TARGET_LONG_BITS == 32
 #define TARGET_ARM32
+#elif TARGET_LONG_BITS == 64
+#define TARGET_ARM64
 #else
-#error "Target arch can be only 32-bit"
+#error "Target arch can be only 32-bit or 64-bit"
 #endif
 
 #define EXCP_UDEF           1    /* undefined instruction */
@@ -84,8 +86,16 @@ typedef uint32_t ARMReadCPFunc(void *opaque, int cp_info, int dstreg, int operan
    s<2n> maps to the least significant half of d<n>
    s<2n+1> maps to the most significant half of d<n>
  */
-
-#define CPU_PC(x) x->regs[15]
+ 
+#if defined(TARGET_ARM32)
+#define CPU_PC(env) env->regs[15]
+#elif defined(TARGET_ARM64)
+#define CPU_PC(env) _CPU_PC(env)
+inline uint64_t _CPU_PC(CPUState *env) {
+    // TODO: check which mode we are in and optionally return env->regs[15]
+    return env->pc;
+}
+#endif
 
 // +---------------------------------------+
 // | ALL FIELDS WHICH STATE MUST BE STORED |
@@ -95,6 +105,11 @@ typedef uint32_t ARMReadCPFunc(void *opaque, int cp_info, int dstreg, int operan
 typedef struct CPUState {
     /* Regs for 32-bit current mode.  */
     uint32_t regs[16];
+#ifdef TARGET_ARM64
+    /* Regs for 64-bit mode. */
+    uint64_t xregs[32];
+    uint64_t pc;
+#endif
     /* Frequently accessed CPSR bits are stored separately for efficiently.
        This contains all the other bits.  Use cpsr_{read,write} to access
        the whole CPSR.  */
@@ -572,7 +587,12 @@ static inline bool cpu_has_work(CPUState *env)
 
 static inline void cpu_pc_from_tb(CPUState *env, TranslationBlock *tb)
 {
+#if defined(TARGET_ARM32)
     env->regs[15] = tb->pc;
+#elif defined(TARGET_ARM64)
+    // TODO: check mode
+    env->pc = tb->pc;
+#endif
 }
 
 void do_v7m_exception_exit(CPUState *env);

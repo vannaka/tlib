@@ -23,7 +23,23 @@
 #include "cpu_registers.h"
 #include "../../unwind.h"
 
-#if defined(TARGET_ARM32)
+#ifdef TARGET_ARM64
+uint64_t *get_reg_pointer_64(int reg)
+{
+    switch (reg) {
+    // 64-bit regs:
+    case X_0_64 ... X_31_64:
+        return &(cpu->xregs[reg-X_0_64]);
+    case PC_64:
+        return &(cpu->pc);
+    default:
+        return NULL;
+    }
+}
+
+CPU_REGISTER_ACCESSOR(64)
+#endif
+#if defined(TARGET_ARM32) || defined(TARGET_ARM64)
 uint32_t *get_reg_pointer_32(int reg)
 {
     switch (reg) {

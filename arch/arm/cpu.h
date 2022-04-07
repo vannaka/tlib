@@ -499,7 +499,7 @@ static inline int cpu_mmu_index (CPUState *env)
 static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc, target_ulong *cs_base, int *flags)
 {
     int privmode;
-    *pc = env->regs[15];
+    *pc = CPU_PC(env);
     *cs_base = 0;
     *flags = (env->thumb << ARM_TBFLAG_THUMB_SHIFT) | (env->vfp.vec_len << ARM_TBFLAG_VECLEN_SHIFT) |
              (env->vfp.vec_stride << ARM_TBFLAG_VECSTRIDE_SHIFT) | (env->condexec_bits << ARM_TBFLAG_CONDEXEC_SHIFT);

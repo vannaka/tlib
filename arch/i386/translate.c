@@ -7782,10 +7782,6 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext *)base;
 
-    if (base->tb->search_pc) {
-        tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = dc->cc_op;
-    }
-
     tcg_gen_insn_start(base->pc, dc->cc_op);
 
     base->tb->size += disas_insn(env, (DisasContext *)base);
@@ -7815,11 +7811,10 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)
     return !(dc->code32);
 }
 
-void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
+void restore_state_to_opc(CPUState *env, TranslationBlock *tb, target_ulong *data)
 {
-    int cc_op;
-    env->eip = tcg->gen_opc_pc[pc_pos] - tb->cs_base;
-    cc_op = tcg->gen_opc_additional[pc_pos];
+    int cc_op = data[1];
+    env->eip = data[0] - tb->cs_base;
     if (cc_op != CC_OP_DYNAMIC) {
         env->cc_op = cc_op;
     }

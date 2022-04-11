@@ -134,18 +134,15 @@ static inline uint32_t get_max_instruction_count(CPUState *env, TranslationBlock
     return maximum_block_size > env->instructions_count_threshold ? env->instructions_count_threshold : maximum_block_size;
 }
 
-static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_pc)
+static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb)
 {
     DisasContext dcc;
     CPUBreakpoint *bp;
     DisasContextBase *dc = (DisasContextBase *)&dcc;
 
-    memset((void *)tcg->gen_opc_instr_start, 0, OPC_BUF_SIZE);
-
     tb->icount = 0;
     tb->was_cut = false;
     tb->size = 0;
-    tb->search_pc = search_pc;
     dc->tb = tb;
     dc->is_jmp = 0;
     dc->pc = tb->pc;
@@ -165,10 +162,6 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
         }
         tb->prev_size = tb->size;
 
-        if (tb->search_pc) {
-            tcg->gen_opc_pc[gen_opc_ptr - tcg->gen_opc_buf] = dc->pc;
-            tcg->gen_opc_instr_start[gen_opc_ptr - tcg->gen_opc_buf] = 1;
-        }
         int do_break = 0;
         tb->icount++;
         if (!gen_intermediate_code(env, dc)) {
@@ -176,12 +169,6 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
         }
         if (tcg_check_temp_count()) {
             tlib_abortf("TCG temps leak detected at PC %08X", dc->pc);
-        }
-        if (!tb->search_pc) {
-            // it looks like `search_pc` is set to 1 only when restoring the state;
-            // the intention here is to set `original_size` value only during the first block generation
-            // so it can be used later when restoring the block
-            tb->original_size = tb->size;
         }
         if (do_break) {
             break;
@@ -198,27 +185,109 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
             dc->is_jmp = DISAS_NEXT;
             break;
         }
-        if (tb->search_pc && tb->size == tb->original_size) {
-            // `search_pc` is set to 1 only when restoring the block;
-            // this is to ensure that the size of restored block is not bigger than the size of the original one
-            break;
-        }
     }
     tb->disas_flags = gen_intermediate_code_epilogue(env, dc);
     gen_block_footer(tb);
 }
 
+/* Encode VAL as a signed leb128 sequence at P.
+   Return P incremented past the encoded value.  */
+static uint8_t *encode_sleb128(uint8_t *p, target_long val)
+{
+    int more, byte;
+
+    do {
+        byte = val & 0x7f;
+        val >>= 7;
+        more = !((val == 0 && (byte & 0x40) == 0)
+                 || (val == -1 && (byte & 0x40) != 0));
+        if (more) {
+            byte |= 0x80;
+        }
+        *p++ = byte;
+    } while (more);
+
+    return p;
+}
+
+/* Decode a signed leb128 sequence at *PP; increment *PP past the
+   decoded value.  Return the decoded value.  */
+static target_long decode_sleb128(uint8_t **pp)
+{
+    uint8_t *p = *pp;
+    target_long val = 0;
+    int byte, shift = 0;
+
+    do {
+        byte = *p++;
+        val |= (target_ulong)(byte & 0x7f) << shift;
+        shift += 7;
+    } while (byte & 0x80);
+    if (shift < TARGET_LONG_BITS && (byte & 0x40)) {
+        val |= -(target_ulong)1 << shift;
+    }
+
+    *pp = p;
+    return val;
+}
+
+/* Encode the data collected about the instructions while compiling TB.
+   Place the data at BLOCK, and return the number of bytes consumed.
+
+   This data will be saved after the end of the generated host code,
+   see cpu_gen_code. We need to save it because otherwise we would need
+   to retranslate the TB to find out the target PC (and other associated data)
+   corresponding to a particular host PC, which we need to do to restore
+   the CPU state up to a certain point within a block.
+
+   The logical table consists of TARGET_INSN_START_WORDS target_ulong's,
+   which come from the target's insn_start data, followed by a uintptr_t
+   which comes from the host pc of the end of the code implementing the insn.
+   The first word of insn_start data is always the guest PC of the insn.
+
+   Each line of the table is encoded as sleb128 deltas from the previous
+   line.  The seed for the first line is { tb->pc, 0..., tb->tc_ptr }.
+   That is, the first column is seeded with the guest pc, the last column
+   with the host pc, and the middle columns with zeros.
+
+   See cpu_restore_state_from_tb for how this is decoded. */
+
+static int encode_search(TranslationBlock *tb, uint8_t *block)
+{
+    uint8_t *p = block;
+    int i, j, n;
+
+    tb->tc_search = block;
+
+    for (i = 0, n = tb->icount; i < n; ++i) {
+        target_ulong prev;
+
+        for (j = 0; j < TARGET_INSN_START_WORDS; ++j) {
+            if (i == 0) {
+                prev = (j == 0 ? tb->pc : 0);
+            } else {
+                prev = tcg->gen_insn_data[i - 1][j];
+            }
+            p = encode_sleb128(p, tcg->gen_insn_data[i][j] - prev);
+        }
+        prev = (i == 0 ? 0 : tcg->gen_insn_end_off[i - 1]);
+        p = encode_sleb128(p, tcg->gen_insn_end_off[i] - prev);
+    }
+
+    return p - block;
+}
+
 /* '*gen_code_size_ptr' contains the size of the generated code (host
-   code).
+   code), '*search_size_ptr' contains the size of the search data.
  */
-void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
+void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr, int *search_size_ptr)
 {
     TCGContext *s = tcg->ctx;
     uint8_t *gen_code_buf;
-    int gen_code_size;
+    int gen_code_size, search_size;
 
     tcg_func_start(s);
-    cpu_gen_code_inner(env, tb, 0);
+    cpu_gen_code_inner(env, tb);
 
     /* generate machine code */
     gen_code_buf = tb->tc_ptr;
@@ -231,47 +300,41 @@ void cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
 
     gen_code_size = tcg_gen_code(s, gen_code_buf);
     *gen_code_size_ptr = gen_code_size;
+
+    search_size = encode_search(tb, gen_code_buf + gen_code_size);
+    *search_size_ptr = search_size;
 }
 
 /* The cpu state corresponding to 'searched_pc' is restored.
  */
 int cpu_restore_state_from_tb(CPUState *env, TranslationBlock *tb, uintptr_t searched_pc)
 {
-    TCGContext *s = tcg->ctx;
-    int j, k;
-    uintptr_t tc_ptr;
-    int instructions_executed_so_far = 0;
+    target_ulong data[TARGET_INSN_START_WORDS] = { tb->pc };
+    uintptr_t host_pc = (uintptr_t)tb->tc_ptr;
+    uint8_t *p = tb->tc_search;
+    int i, j, num_insns = tb->icount;
 
-    tcg_func_start(s);
-    cpu_gen_code_inner(env, tb, 1);
-
-    /* find opc index corresponding to search_pc */
-    tc_ptr = (uintptr_t)tb->tc_ptr;
-    if (searched_pc < tc_ptr) {
+    if (searched_pc < host_pc) {
         return -1;
     }
 
-    s->tb_next_offset = tb->tb_next_offset;
-    s->tb_jmp_offset = tb->tb_jmp_offset;
-    s->tb_next = NULL;
-    j = tcg_gen_code_search_pc(s, (uint8_t *)tc_ptr, searched_pc - tc_ptr);
-    if (j < 0) {
-        return -1;
+    /* Reconstruct the stored insn data while looking for the point at
+       which the end of the insn exceeds the searched_pc.  */
+    for (i = 1; i <= num_insns; ++i) {
+        for (j = 0; j < TARGET_INSN_START_WORDS; ++j) {
+            data[j] += decode_sleb128(&p);
+        }
+        host_pc += decode_sleb128(&p);
+        if (host_pc > searched_pc) {
+            goto found;
+        }
     }
-    /* now find start of instruction before */
-    while (tcg->gen_opc_instr_start[j] == 0) {
-        j--;
-    }
+    return -1;
 
-    k = j;
-    while (k >= 0) {
-        instructions_executed_so_far += tcg->gen_opc_instr_start[k];
-        k--;
-    }
+ found:
+    restore_state_to_opc(env, tb, data);
 
-    restore_state_to_opc(env, tb, j);
-
-    return instructions_executed_so_far;
+    return i;
 }
 
 int cpu_restore_state_and_restore_instructions_count(CPUState *env, TranslationBlock *tb, uintptr_t searched_pc)

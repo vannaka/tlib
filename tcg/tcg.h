@@ -437,6 +437,8 @@ typedef struct tcg_t {
     target_ulong *gen_opc_pc;
     target_ulong *gen_opc_additional;
     uint8_t *gen_opc_instr_start;
+    uint16_t *gen_insn_end_off;
+    target_ulong (*gen_insn_data)[TARGET_INSN_START_WORDS];
     void *ldb;
     void *ldw;
     void *ldl;
@@ -615,6 +617,12 @@ static inline bool tcg_op_buf_full(void)
 {
     //dummy implementation
     return 0;
+}
+
+/* Compute the current code size within the translation block. */
+static inline size_t tcg_current_code_size(TCGContext *s)
+{
+    return (uintptr_t)s->code_ptr - (uintptr_t)s->code_buf;
 }
 
 /* TCG targets may use a different definition of tcg_tb_exec. */

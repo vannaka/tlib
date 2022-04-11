@@ -1345,9 +1345,9 @@ static inline void restore_state_to_opc_xtensa(CPUState *env, TranslationBlock *
     env->pc = data[0];
 }
 
-void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb, int pc_pos)
+void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb, target_ulong *data)
 {
-    restore_state_to_opc_xtensa(env, tb, (target_ulong*) &pc_pos);
+    restore_state_to_opc_xtensa(env, tb, data);
 }
 
 static void translate_abs(DisasContext *dc, const OpcodeArg arg[],

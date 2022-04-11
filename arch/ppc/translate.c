@@ -9796,9 +9796,9 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)
     return env->bfd_mach | dc->le_mode << 16;
 }
 
-void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
+void restore_state_to_opc(CPUState *env, TranslationBlock *tb, target_ulong *data)
 {
-    env->nip = tcg->gen_opc_pc[pc_pos];
+    env->nip = data[0];
 }
 
 void cpu_exec_prologue(CPUState *env)

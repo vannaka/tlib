@@ -55,9 +55,9 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp);
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base);
 void do_interrupt(CPUState *env);
 void setup_disas_context(DisasContextBase *dc, CPUState *env);
-void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb, int pc_pos);
+void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb, target_ulong *data);
 
-void cpu_gen_code(CPUState *env, struct TranslationBlock *tb, int *gen_code_size_ptr);
+void cpu_gen_code(CPUState *env, struct TranslationBlock *tb, int *gen_code_size_ptr, int *search_size_ptr);
 int cpu_restore_state_from_tb(CPUState *env, struct TranslationBlock *tb, uintptr_t searched_pc);
 void cpu_restore_state(CPUState *env, void *retaddr);
 int cpu_restore_state_and_restore_instructions_count(CPUState *env, struct TranslationBlock *tb, uintptr_t searched_pc);
@@ -101,6 +101,7 @@ struct TranslationBlock {
 #define CF_COUNT_MASK 0x7fff
 
     uint8_t *tc_ptr;      /* pointer to the translated code */
+    uint8_t *tc_search;   /* pointer to search data */
     /* next matching tb for physical address. */
     struct TranslationBlock *phys_hash_next;
     /* first and second physical page containing code. The lower bit
@@ -120,10 +121,6 @@ struct TranslationBlock {
     struct TranslationBlock *jmp_first;
     uint32_t icount;
     bool was_cut;
-    uintptr_t search_pc;
-    // this field is necessary when restoring the state of tb (using cpu_restore_state) in order to limit the size of retranslated block not to be bigger than original one;
-    // SIGSEGVs have been observed otherwise
-    uint16_t original_size;
     // this field is used to keep track of the previous value of size, i.e., it shows the size of translation block without the last instruction; used by a blockend hook
     uint16_t prev_size;
     // signals that the `icount` of this tb has been added to global instructions counters

@@ -681,7 +681,7 @@ TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_ba
     uint8_t *tc_ptr;
     tb_page_addr_t phys_pc, phys_page2;
     target_ulong virt_page2;
-    int code_gen_size;
+    int code_gen_size, search_size;
 
     phys_pc = get_page_addr_code(env, pc, true);
     tb = tb_alloc(pc);
@@ -698,8 +698,9 @@ TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_ba
     tb->cs_base = cs_base;
     tb->flags = flags;
     tb->cflags = cflags;
-    cpu_gen_code(env, tb, &code_gen_size);
-    code_gen_ptr = (void *)(((uintptr_t)code_gen_ptr + code_gen_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
+    cpu_gen_code(env, tb, &code_gen_size, &search_size);
+    code_gen_ptr = (void *)(((uintptr_t)code_gen_ptr + code_gen_size
+        + search_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
 
     /* check next page if needed */
     phys_page2 = -1;

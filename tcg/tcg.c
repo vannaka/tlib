@@ -228,6 +228,9 @@ static target_ulong gen_opc_pc[OPC_BUF_SIZE];
 static target_ulong gen_opc_additional[OPC_BUF_SIZE];
 static uint8_t gen_opc_instr_start[OPC_BUF_SIZE];
 
+static uint16_t gen_insn_end_off[TCG_MAX_INSNS];
+static target_ulong gen_insn_data[TCG_MAX_INSNS][TARGET_INSN_START_WORDS];
+
 void tcg_attach(tcg_t *c)
 {
     tcg = c;
@@ -238,6 +241,8 @@ void tcg_attach(tcg_t *c)
     tcg->gen_opc_pc = gen_opc_pc;
     tcg->gen_opc_additional = gen_opc_additional;
     tcg->gen_opc_instr_start = gen_opc_instr_start;
+    tcg->gen_insn_end_off = gen_insn_end_off;
+    tcg->gen_insn_data = gen_insn_data;
 }
 
 void tcg_context_init()
@@ -1746,7 +1751,7 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def, TCGOpcode opc,
 static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf, uintptr_t search_pc)
 {
     TCGOpcode opc;
-    int op_index;
+    int i, op_index, num_insns;
     const TCGOpDef *def;
     unsigned int dead_args;
     const TCGArg *args;
@@ -1764,6 +1769,7 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf, uint
 
     args = tcg->gen_opparam_buf;
     op_index = 0;
+    num_insns = -1;
 
     for (;;) {
         opc = tcg->gen_opc_buf[op_index];
@@ -1783,6 +1789,19 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf, uint
             tcg_reg_alloc_movi(s, args);
             break;
         case INDEX_op_insn_start:
+            if (num_insns >= 0) {
+                tcg->gen_insn_end_off[num_insns] = tcg_current_code_size(s);
+            }
+            num_insns++;
+            for (i = 0; i < TARGET_INSN_START_WORDS; ++i) {
+                target_ulong a;
+#if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
+                a = ((target_ulong)args[i * 2 + 1] << 32) | args[i * 2];
+#else
+                a = args[i];
+#endif
+                tcg->gen_insn_data[num_insns][i] = a;
+            }
             break;
         case INDEX_op_nop:
         case INDEX_op_nop1:
@@ -1835,6 +1854,9 @@ next:
         op_index++;
     }
 the_end:
+    if (num_insns >= 0) {
+        tcg->gen_insn_end_off[num_insns] = tcg_current_code_size(s);
+    }
     return -1;
 }
 

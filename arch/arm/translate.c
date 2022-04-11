@@ -10171,10 +10171,6 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext *)base;
 
-    if (base->tb->search_pc) {
-        tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = (dc->condexec_cond << 4) | (dc->condexec_mask >> 1);
-    }
-
     base->tb->size += disas_insn(env, (DisasContext *)base);
 
     if (dc->condjmp && !dc->base.is_jmp) {
@@ -10238,10 +10234,10 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)
     return dc->thumb;
 }
 
-void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
+void restore_state_to_opc(CPUState *env, TranslationBlock *tb, target_ulong *data)
 {
-    env->regs[15] = tcg->gen_opc_pc[pc_pos];
-    env->condexec_bits = tcg->gen_opc_additional[pc_pos];
+    env->regs[15] = data[0];
+    env->condexec_bits = data[1];
 }
 
 int process_interrupt(int interrupt_request, CPUState *env)

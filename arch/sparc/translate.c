@@ -53,8 +53,6 @@ static TCGv_i64 cpu_tmp64;
 /* Floating point registers */
 static TCGv_i32 cpu_fpr[TARGET_FPREGS];
 
-static target_ulong gen_opc_jump_pc[2];
-
 void translate_init()
 {
     unsigned int i;
@@ -2819,10 +2817,6 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext *)base;
 
-    if (base->tb->search_pc) {
-        tcg->gen_opc_additional[gen_opc_ptr - tcg->gen_opc_buf] = base->npc;
-    }
-
     if (base->npc & JUMP_PC) {
         /* Since jump_pc[1] is always npc + 4, we can infer after incrementing
          * that jump_pc[1] == pc + 4.  Because of that, we can encode the branch
@@ -2868,21 +2862,27 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)
             gen_exit_tb_no_chaining(dc->base.tb);
         }
     }
-    if (dc->base.tb->search_pc) {
-        gen_opc_jump_pc[0] = dc->jump_pc[0];
-        gen_opc_jump_pc[1] = dc->jump_pc[1];
-    }
     return 0;
 }
 
-void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
+void restore_state_to_opc(CPUState *env, TranslationBlock *tb, target_ulong *data)
 {
-    target_ulong npc;
-    env->pc = tcg->gen_opc_pc[pc_pos];
-    npc = tcg->gen_opc_additional[pc_pos];
-    if (npc != 1) {
-        /* 1 -- dynamic NPC: already stored */
-        env->npc = (npc != 2) ? npc : gen_opc_jump_pc[env->cond ? 0 : 1];
+    target_ulong pc = data[0];
+    target_ulong npc = data[1];
+
+    env->pc = pc;
+    if (npc == DYNAMIC_PC) {
+        /* dynamic NPC: already stored */
+    } else if (npc & JUMP_PC) {
+        /* jump PC: use 'cond' and the jump targets of the translation
+         * see the comment in gen_intermediate_code for details */
+        if (env->cond) {
+            env->npc = npc & ~3;
+        } else {
+            env->npc = pc + 4;
+        }
+    } else {
+        env->npc = npc;
     }
 
     /* flush pending conditional evaluations before exposing cpu state */

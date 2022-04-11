@@ -4721,12 +4721,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
     if ((base->pc - (base->tb->pc & TARGET_PAGE_MASK)) >= TARGET_PAGE_SIZE) {
         return 0;
     }
-    if (base->tb->search_pc && base->tb->size == base->tb->original_size) {
-        // `search_pc` is set to 1 only when restoring the block;
-        // this is to ensure that the size of restored block is not bigger than the size of the original one
-        base->is_jmp = BS_STOP;
-        return 0;
-    }
+
     return 1;
 }
 
@@ -4747,9 +4742,9 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)
     return 0;
 }
 
-void restore_state_to_opc(CPUState *env, TranslationBlock *tb, int pc_pos)
+void restore_state_to_opc(CPUState *env, TranslationBlock *tb, target_ulong *data)
 {
-    env->pc = tcg->gen_opc_pc[pc_pos];
+    env->pc = data[0];
 }
 
 void cpu_set_nmi(CPUState *env, int number)

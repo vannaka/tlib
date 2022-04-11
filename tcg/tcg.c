@@ -224,9 +224,6 @@ static uint8_t code_gen_prologue[1024] code_gen_section;
 static TCGContext ctx;
 static TCGArg gen_opparam_buf[OPPARAM_BUF_SIZE];
 static uint16_t gen_opc_buf[OPC_BUF_SIZE];
-static target_ulong gen_opc_pc[OPC_BUF_SIZE];
-static target_ulong gen_opc_additional[OPC_BUF_SIZE];
-static uint8_t gen_opc_instr_start[OPC_BUF_SIZE];
 
 static uint16_t gen_insn_end_off[TCG_MAX_INSNS];
 static target_ulong gen_insn_data[TCG_MAX_INSNS][TARGET_INSN_START_WORDS];
@@ -238,9 +235,6 @@ void tcg_attach(tcg_t *c)
     tcg->code_gen_prologue = code_gen_prologue;
     tcg->gen_opparam_buf = gen_opparam_buf;
     tcg->gen_opc_buf = gen_opc_buf;
-    tcg->gen_opc_pc = gen_opc_pc;
-    tcg->gen_opc_additional = gen_opc_additional;
-    tcg->gen_opc_instr_start = gen_opc_instr_start;
     tcg->gen_insn_end_off = gen_insn_end_off;
     tcg->gen_insn_data = gen_insn_data;
 }

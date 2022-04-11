@@ -434,9 +434,6 @@ typedef struct tcg_t {
     uint16_t *gen_opc_buf;
     TCGArg *gen_opparam_buf;
     uint8_t *code_gen_prologue;
-    target_ulong *gen_opc_pc;
-    target_ulong *gen_opc_additional;
-    uint8_t *gen_opc_instr_start;
     uint16_t *gen_insn_end_off;
     target_ulong (*gen_insn_data)[TARGET_INSN_START_WORDS];
     void *ldb;

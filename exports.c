@@ -153,7 +153,16 @@ uint32_t tlib_set_maximum_block_size(uint32_t size)
     return maximum_block_size;
 }
 
+/* GCC 8.1 from MinGW-w64 complains about the size argument potentially being clobbered
+ * by a longjmp, but it will not be used after the longjmp in question. */
+#ifndef __llvm__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclobbered"
+#endif
 EXC_INT_1(uint32_t, tlib_set_maximum_block_size, uint32_t, size)
+#ifndef __llvm__
+#pragma GCC diagnostic pop
+#endif
 
 uint32_t tlib_get_maximum_block_size()
 {

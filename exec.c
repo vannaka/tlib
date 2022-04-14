@@ -372,7 +372,7 @@ static void code_gen_alloc()
     map_exec(code_gen_buffer, code_gen_buffer_size);
 #endif
     map_exec(tcg->code_gen_prologue, 1024);
-    code_gen_buffer_max_size = code_gen_buffer_size - (TCG_MAX_OP_SIZE * OPC_BUF_SIZE);
+    code_gen_buffer_max_size = code_gen_buffer_size - TCG_MAX_CODE_SIZE - TCG_MAX_SEARCH_SIZE;
     code_gen_max_blocks = code_gen_buffer_size / CODE_GEN_AVG_BLOCK_SIZE;
     tbs = tlib_malloc(code_gen_max_blocks * sizeof(TranslationBlock));
 }

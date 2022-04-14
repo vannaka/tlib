@@ -44,6 +44,12 @@ extern unsigned int sizeof_CPUTLBEntry;
    a couple of fixup instructions per argument.  */
 #define TCG_MAX_OP_SIZE       192
 
+/* The maximum size of generated code within a block. */
+#define TCG_MAX_CODE_SIZE     (TCG_MAX_OP_SIZE * OPC_BUF_SIZE)
+
+/* The maximum size of PC search data within a block. */
+#define TCG_MAX_SEARCH_SIZE   (TCG_MAX_CODE_SIZE * 0.3)
+
 #define OPPARAM_BUF_SIZE      (OPC_BUF_SIZE * MAX_OPC_PARAM)
 
 #endif

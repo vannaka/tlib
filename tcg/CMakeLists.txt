@@ -7,6 +7,7 @@ set (HOST_LONG_BITS 0 CACHE INT "Host word size (0 - autodetection)")
 set (HOST_ARCHITECTURE "i386" CACHE STRING "Host architecture")
 set_property (CACHE HOST_ARCHITECTURE PROPERTY STRINGS i386 arm)
 set (TARGET_LONG_BITS 32 CACHE INT "Target word size")
+set (TARGET_INSN_START_EXTRA_WORDS 0 CACHE INT "Number of extra words in insn_start needed by the target")
 
 if(HOST_LONG_BITS EQUAL 0)
     # Determine bitness
@@ -32,6 +33,7 @@ add_definitions (
 
     -DTARGET_LONG_BITS=${TARGET_LONG_BITS}
     -DHOST_LONG_BITS=${HOST_LONG_BITS}
+    -DTARGET_INSN_START_EXTRA_WORDS=${TARGET_INSN_START_EXTRA_WORDS}
 
     ${BIG_ENDIAN_DEF}
     )

@@ -1742,7 +1742,7 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def, TCGOpcode opc,
     return nb_iargs + nb_oargs + def->nb_cargs + 1;
 }
 
-static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf, uintptr_t search_pc)
+static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf)
 {
     TCGOpcode opc;
     int i, op_index, num_insns;
@@ -1842,9 +1842,6 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf, uint
         }
         args += def->nb_args;
 next:
-        if (search_pc < s->code_ptr - gen_code_buf) {
-            return op_index;
-        }
         op_index++;
     }
 the_end:
@@ -1856,18 +1853,9 @@ the_end:
 
 int tcg_gen_code(TCGContext *s, uint8_t *gen_code_buf)
 {
-    tcg_gen_code_common(s, gen_code_buf, -1);
+    tcg_gen_code_common(s, gen_code_buf);
 
     /* flush instruction cache */
     flush_icache_range((uintptr_t)gen_code_buf, (uintptr_t)s->code_ptr);
     return s->code_ptr -  gen_code_buf;
-}
-
-/* Return the index of the micro operation such as the pc after is <
-   offset bytes from the start of the TB.  The contents of gen_code_buf must
-   not be changed, though writing the same values is ok.
-   Return -1 if not found. */
-int tcg_gen_code_search_pc(TCGContext *s, uint8_t *gen_code_buf, uintptr_t offset)
-{
-    return tcg_gen_code_common(s, gen_code_buf, offset);
 }

@@ -4711,7 +4711,7 @@ void cpu_set_nmi(CPUState *env, int number)
         tlib_abortf("NMI index %d not valid in cpu with nmi_length = %d", number, env->nmi_length);
     } else {
         env->nmi_pending |= (1 << number);
-        env->interrupt_request = CPU_INTERRUPT_HARD;
+        set_interrupt_pending(env, CPU_INTERRUPT_HARD);
     }
 }
 

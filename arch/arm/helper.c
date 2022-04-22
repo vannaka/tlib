@@ -867,7 +867,7 @@ case_EXCP_PREFETCH_ABORT:
     }
     env->regs[14] = env->regs[15] + offset;
     env->regs[15] = addr;
-    env->interrupt_request |= CPU_INTERRUPT_EXITTB;
+    set_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
 }
 
 /* Check section/page access permissions.

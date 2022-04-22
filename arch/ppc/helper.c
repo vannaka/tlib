@@ -2015,7 +2015,7 @@ static inline void powerpc_excp(CPUState *env, int excp_model, int excp)
              * Enter checkstop state.
              */
             env->wfi = 1;
-            env->interrupt_request |= CPU_INTERRUPT_EXITTB;
+            set_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
         }
         if (0) {
             /* XXX: find a suitable condition to enable the hypervisor mode */

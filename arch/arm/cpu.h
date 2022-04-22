@@ -543,15 +543,15 @@ static inline bool is_cpu_event_pending(CPUState *env)
     // Any exception entering the Pending state if SEVONPEND in the System Control Register is set.
     event_pending |= env->sev_on_pending && tlib_nvic_get_pending_masked_irq();
     // An asynchronous exception at a priority that preempts any currently active exceptions.
-    event_pending |= env->interrupt_request & CPU_INTERRUPT_HARD;
+    event_pending |= is_interrupt_pending(env, CPU_INTERRUPT_HARD);
 #else
     uint32_t cpsr = cpsr_read(env);
     // An IRQ interrupt (even when CPSR I-bit is set, some implementations check this mask)
-    event_pending |= !!(env->interrupt_request & CPU_INTERRUPT_HARD);
+    event_pending |= is_interrupt_pending(env, CPU_INTERRUPT_HARD);
     // An FIQ interrupt (even when CPSR F-bit is set, some implementations check this mask)
-    event_pending |= !!(env->interrupt_request & CPU_INTERRUPT_FIQ);
+    event_pending |= is_interrupt_pending(env, CPU_INTERRUPT_FIQ);
     // An asynchronous abort (not when masked by the CPSR A-bit)
-    event_pending |= (env->interrupt_request & CPU_INTERRUPT_EXITTB) && (cpsr & CPSR_A);
+    event_pending |= is_interrupt_pending(env, CPU_INTERRUPT_EXITTB) && (cpsr & CPSR_A);
     // Events could be sent by implementation defined mechanisms, e.g.:
     // A CP15 maintenance request broadcast by other processors.
     // Virtual Interrupts (HCR), Hypervisor mode isn't implemented
@@ -571,7 +571,7 @@ static inline bool cpu_has_work(CPUState *env)
     if (env->wfi) {
         bool has_work = false;
 #ifndef TARGET_PROTO_ARM_M
-        has_work = !!(env->interrupt_request & (CPU_INTERRUPT_FIQ | CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB));
+        has_work = is_interrupt_pending(env, CPU_INTERRUPT_FIQ | CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB);
 #else
         has_work = tlib_nvic_get_pending_masked_irq() != 0;
 #endif

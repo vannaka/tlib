@@ -4907,7 +4907,7 @@ void helper_vmrun(int aflag, int next_eip_addend)
     env->hflags2 |= HF2_GIF_MASK;
 
     if (int_ctl & V_IRQ_MASK) {
-        env->interrupt_request |= CPU_INTERRUPT_VIRQ;
+        set_interrupt_pending(env, CPU_INTERRUPT_VIRQ);
     }
 
     /* maybe we need to inject an event */
@@ -5175,7 +5175,7 @@ void helper_vmexit(uint32_t exit_code, uint64_t exit_info_1)
     int_ctl = ldl_phys(env->vm_vmcb + offsetof(struct vmcb, control.int_ctl));
     int_ctl &= ~(V_TPR_MASK | V_IRQ_MASK);
     int_ctl |= env->v_tpr & V_TPR_MASK;
-    if (env->interrupt_request & CPU_INTERRUPT_VIRQ) {
+    if (is_interrupt_pending(env, CPU_INTERRUPT_VIRQ)) {
         int_ctl |= V_IRQ_MASK;
     }
     stl_phys(env->vm_vmcb + offsetof(struct vmcb, control.int_ctl), int_ctl);
@@ -5193,7 +5193,7 @@ void helper_vmexit(uint32_t exit_code, uint64_t exit_info_1)
     env->hflags &= ~HF_SVMI_MASK;
     env->intercept = 0;
     env->intercept_exceptions = 0;
-    env->interrupt_request &= ~CPU_INTERRUPT_VIRQ;
+    clear_interrupt_pending(env, CPU_INTERRUPT_VIRQ);
     env->tsc_offset = 0;
 
     env->gdt.base = ldq_phys(env->vm_hsave + offsetof(struct vmcb, save.gdtr.base));

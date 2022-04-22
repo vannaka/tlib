@@ -301,7 +301,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
         pthread_mutex_unlock(&env->mip_lock);
         tlib_mip_changed(env->mip);
         if (env->mip != 0) {
-            env->interrupt_request = CPU_INTERRUPT_HARD;
+            set_interrupt_pending(env, CPU_INTERRUPT_HARD);
         }
         break;
     }

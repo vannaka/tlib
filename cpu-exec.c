@@ -305,8 +305,8 @@ int cpu_exec(CPUState *env)
             for (;;) {
                 interrupt_request = env->interrupt_request;
                 if (unlikely(interrupt_request)) {
-                    if (interrupt_request & CPU_INTERRUPT_DEBUG) {
-                        env->interrupt_request &= ~CPU_INTERRUPT_DEBUG;
+                    if (is_interrupt_pending(env, CPU_INTERRUPT_DEBUG)) {
+                        clear_interrupt_pending(env, CPU_INTERRUPT_DEBUG);
                         env->exception_index = EXCP_DEBUG;
                         cpu_loop_exit_without_hook(env);
                     }
@@ -319,8 +319,8 @@ int cpu_exec(CPUState *env)
                     env->exception_index = -1;
                     /* Don't use the cached interrupt_request value,
                        do_interrupt may have updated the EXITTB flag. */
-                    if (env->interrupt_request & CPU_INTERRUPT_EXITTB) {
-                        env->interrupt_request &= ~CPU_INTERRUPT_EXITTB;
+                    if (is_interrupt_pending(env, CPU_INTERRUPT_EXITTB)) {
+                        clear_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
                         /* ensure that no TB jump will be modified as
                            the program flow was changed */
                         next_tb = 0;

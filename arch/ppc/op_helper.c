@@ -1565,7 +1565,7 @@ void helper_store_msr (target_ulong val)
 {
     val = hreg_store_msr(env, val, 0);
     if (val != 0) {
-        env->interrupt_request |= CPU_INTERRUPT_EXITTB;
+        set_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
         helper_raise_exception(val);
     }
 }
@@ -1593,7 +1593,7 @@ static inline void do_rfi(target_ulong nip, target_ulong msr, target_ulong msrm,
     /* No need to raise an exception here,
      * as rfi is always the last insn of a TB
      */
-    env->interrupt_request |= CPU_INTERRUPT_EXITTB;
+    set_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
 }
 
 void helper_rfi (void)

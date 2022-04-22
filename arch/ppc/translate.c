@@ -9813,7 +9813,7 @@ int process_interrupt(int interrupt_request, CPUState *env)
     if (interrupt_request & CPU_INTERRUPT_HARD) {
         ppc_hw_interrupt(env);
         if (env->pending_interrupts == 0) {
-            env->interrupt_request &= ~CPU_INTERRUPT_HARD;
+            clear_interrupt_pending(env, CPU_INTERRUPT_HARD);
         }
         return 1;
     }

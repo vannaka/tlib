@@ -376,7 +376,7 @@ void do_interrupt(CPUState *env)
     }
 
     if (env->exception_index == RISCV_EXCP_BREAKPOINT) {
-        env->interrupt_request |= CPU_INTERRUPT_EXITTB;
+        set_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
         return;
     }
 

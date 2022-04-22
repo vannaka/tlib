@@ -740,10 +740,10 @@ int cpu_init(const char *cpu_model)
 
 void do_cpu_init(CPUState *env)
 {
-    int sipi = env->interrupt_request & CPU_INTERRUPT_SIPI;
+    int sipi = is_interrupt_pending(env, CPU_INTERRUPT_SIPI);
     uint64_t pat = env->pat;
     cpu_reset(env);
-    env->interrupt_request = sipi;
+    set_interrupt_pending(env, sipi);
     env->pat = pat;
     apic_init_reset(env->apic_state);
     env->wfi = !cpu_is_bsp(env);

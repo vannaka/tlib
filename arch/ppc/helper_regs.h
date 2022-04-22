@@ -78,7 +78,7 @@ static inline int hreg_store_msr(CPUState *env, target_ulong value, int alter_hv
         /* Flush all tlb when changing translation mode */
         tlb_flush(env, 1);
         excp = POWERPC_EXCP_NONE;
-        env->interrupt_request |= CPU_INTERRUPT_EXITTB;
+        set_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
     }
     if (unlikely((env->flags & POWERPC_FLAG_TGPR) && ((value ^ env->msr) & (1 << MSR_TGPR)))) {
         /* Swap temporary saved registers with GPRs */

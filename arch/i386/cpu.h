@@ -980,8 +980,8 @@ static inline int cpu_mmu_index (CPUState *env)
 static inline bool cpu_has_work(CPUState *env)
 {
     // clear WFI if waking up condition is met
-    env->wfi &= !(((env->interrupt_request & CPU_INTERRUPT_HARD) && (env->eflags & IF_MASK)) ||
-        (env->interrupt_request & (CPU_INTERRUPT_NMI | CPU_INTERRUPT_INIT | CPU_INTERRUPT_SIPI | CPU_INTERRUPT_MCE)));
+    env->wfi &= !((is_interrupt_pending(env, CPU_INTERRUPT_HARD) && (env->eflags & IF_MASK)) ||
+        is_interrupt_pending(env, CPU_INTERRUPT_NMI | CPU_INTERRUPT_INIT | CPU_INTERRUPT_SIPI | CPU_INTERRUPT_MCE));
     return !env->wfi;
 }
 

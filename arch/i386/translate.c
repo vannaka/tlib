@@ -7854,16 +7854,16 @@ int process_interrupt(int interrupt_request, CPUState *env)
     } else if (env->hflags2 & HF2_GIF_MASK) {
         if ((interrupt_request & CPU_INTERRUPT_SMI) && !(env->hflags & HF_SMM_MASK)) {
             svm_check_intercept(env, SVM_EXIT_SMI);
-            env->interrupt_request &= ~CPU_INTERRUPT_SMI;
+            clear_interrupt_pending(env, CPU_INTERRUPT_SMI);
             do_smm_enter(env);
             return 1;
         } else if ((interrupt_request & CPU_INTERRUPT_NMI) && !(env->hflags2 & HF2_NMI_MASK)) {
-            env->interrupt_request &= ~CPU_INTERRUPT_NMI;
+            clear_interrupt_pending(env, CPU_INTERRUPT_NMI);
             env->hflags2 |= HF2_NMI_MASK;
             do_interrupt_x86_hardirq(env, EXCP02_NMI, 1);
             return 1;
         } else if (interrupt_request & CPU_INTERRUPT_MCE) {
-            env->interrupt_request &= ~CPU_INTERRUPT_MCE;
+            clear_interrupt_pending(env, CPU_INTERRUPT_MCE);
             do_interrupt_x86_hardirq(env, EXCP12_MCHK, 0);
             return 1;
         } else if ((interrupt_request & CPU_INTERRUPT_HARD) &&
@@ -7871,7 +7871,7 @@ int process_interrupt(int interrupt_request, CPUState *env)
                     (!(env->hflags2 & HF2_VINTR_MASK) && (env->eflags & IF_MASK && !(env->hflags & HF_INHIBIT_IRQ_MASK))))) {
             int intno;
             svm_check_intercept(env, SVM_EXIT_INTR);
-            env->interrupt_request &= ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_VIRQ);
+            clear_interrupt_pending(env, CPU_INTERRUPT_HARD | CPU_INTERRUPT_VIRQ);
             intno = cpu_get_pic_interrupt(env);
             do_interrupt_x86_hardirq(env, intno, 1);
             /* ensure that no TB jump will be modified as
@@ -7883,7 +7883,7 @@ int process_interrupt(int interrupt_request, CPUState *env)
             svm_check_intercept(env, SVM_EXIT_VINTR);
             intno = ldl_phys(env->vm_vmcb + offsetof(struct vmcb, control.int_vector));
             do_interrupt_x86_hardirq(env, intno, 1);
-            env->interrupt_request &= ~CPU_INTERRUPT_VIRQ;
+            clear_interrupt_pending(env, CPU_INTERRUPT_VIRQ);
             return 1;
         }
     }

@@ -2043,7 +2043,7 @@ extern void (*cpu_ppc_hypercall)(CPUState *);
 static inline bool cpu_has_work(CPUState *env)
 {
     // clear WFI if waking up condition is met
-    env->wfi &= !(msr_ee && (env->interrupt_request & CPU_INTERRUPT_HARD));
+    env->wfi &= !(msr_ee && is_interrupt_pending(env, CPU_INTERRUPT_HARD));
     return !env->wfi;
 }
 

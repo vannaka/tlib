@@ -389,7 +389,7 @@ static inline bool tb_am_enabled(int tb_flags)
 static inline bool cpu_has_work(CPUState *env)
 {
     // clear WFI if waking up condition is met
-    env->wfi &= !((env->interrupt_request & CPU_INTERRUPT_HARD) && cpu_interrupts_enabled(env));
+    env->wfi &= !(is_interrupt_pending(env, CPU_INTERRUPT_HARD) && cpu_interrupts_enabled(env));
     return !env->wfi;
 }
 

@@ -1067,11 +1067,27 @@ void cpu_breakpoint_remove_all(CPUState *env, int mask)
     }
 }
 
+bool is_interrupt_pending(CPUState *env, int mask)
+{
+    uint32_t interrupt_request;
+    __atomic_load(&env->interrupt_request, &interrupt_request, __ATOMIC_SEQ_CST);
+    return (interrupt_request & mask) != 0;
+}
+
+void set_interrupt_pending(CPUState *env, int mask)
+{
+    __atomic_or_fetch(&env->interrupt_request, mask, __ATOMIC_SEQ_CST);
+}
+
+void clear_interrupt_pending(CPUState *env, int mask)
+{
+    __atomic_and_fetch(&env->interrupt_request, ~mask, __ATOMIC_SEQ_CST);
+}
+
 /* mask must never be zero, except for A20 change call */
 static void handle_interrupt(CPUState *env, int mask)
 {
-    env->interrupt_request |= mask;
-
+    set_interrupt_pending(env, mask);
     env->exit_request = 1;
 }
 
@@ -1079,7 +1095,7 @@ CPUInterruptHandler cpu_interrupt_handler = handle_interrupt;
 
 void cpu_reset_interrupt(CPUState *env, int mask)
 {
-    env->interrupt_request &= ~mask;
+    clear_interrupt_pending(env, mask);
 }
 
 static QLIST_HEAD(memory_client_list, CPUPhysMemoryClient) memory_client_list

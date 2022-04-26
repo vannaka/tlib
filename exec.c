@@ -1890,16 +1890,11 @@ void stq_phys_notdirty(target_phys_addr_t addr, uint64_t val)
 }
 
 /* warning: addr must be aligned */
-void stl_phys(target_phys_addr_t addr, uint32_t val)
+static void stl_phys_aligned(target_phys_addr_t addr, uint32_t val)
 {
     uint8_t *ptr;
     ram_addr_t pd;
     PhysPageDesc *p;
-
-    if(addr % 4 != 0)
-    {
-        tlib_abortf("stl_phys address is not aligned: %lx", addr);
-    }
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
     if (!p) {
@@ -1926,6 +1921,19 @@ void stl_phys(target_phys_addr_t addr, uint32_t val)
             cpu_physical_memory_set_dirty_flags(addr1, (0xff & ~CODE_DIRTY_FLAG));
         }
     }
+}
+
+void stl_phys(target_phys_addr_t addr, uint32_t val)
+{
+    if(addr % 4 == 0)
+    {
+        // use a faster method
+        stl_phys_aligned(addr, val);
+        return;
+    }
+    
+    val = tswap32(val);
+    cpu_physical_memory_write(addr, &val, 4);
 }
 
 /* XXX: optimize */

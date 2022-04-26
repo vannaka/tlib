@@ -1684,17 +1684,12 @@ void cpu_physical_memory_write_rom(target_phys_addr_t addr, const uint8_t *buf, 
 }
 
 /* warning: addr must be aligned */
-uint32_t ldl_phys(target_phys_addr_t addr)
+static uint32_t ldl_phys_aligned(target_phys_addr_t addr)
 {
     uint8_t *ptr;
     uint32_t val;
     ram_addr_t pd;
     PhysPageDesc *p;
-
-    if(addr % 4 != 0)
-    {
-        tlib_abortf("ldl_phys address is not aligned: %lx", addr);
-    }
 
     p = phys_page_find(addr >> TARGET_PAGE_BITS);
     if (!p) {
@@ -1714,6 +1709,19 @@ uint32_t ldl_phys(target_phys_addr_t addr)
         ptr = get_ram_ptr(pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
         val = ldl_p(ptr);
     }
+    return val;
+}
+
+uint32_t ldl_phys(target_phys_addr_t addr)
+{
+    if(addr % 4 == 0)
+    {
+        // use a faster method
+        return ldl_phys_aligned(addr);
+    }
+    
+    uint32_t val;
+    cpu_physical_memory_read(addr, &val, 4);
     return val;
 }
 

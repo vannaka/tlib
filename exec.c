@@ -32,6 +32,7 @@
 #define SMC_BITMAP_USE_THRESHOLD 10
 
 CPUState *env;
+extern void* global_retaddr;
 
 static TranslationBlock *tbs;
 static int code_gen_max_blocks;
@@ -1029,6 +1030,30 @@ int cpu_breakpoint_insert(CPUState *env, target_ulong pc, int flags, CPUBreakpoi
         *breakpoint = bp;
     }
     return 0;
+}
+
+void interrupt_current_translation_block(CPUState *env, int exeception_type)
+{
+    target_ulong pc, cs_base;
+    int cpu_flags;
+    TranslationBlock *tb;
+    int executed_instructions = -1;
+
+    tb = tb_find_pc((uintptr_t)global_retaddr);
+    if (tb != 0) {
+        executed_instructions = cpu_restore_state_and_restore_instructions_count(cpu, tb, (uintptr_t)global_retaddr);
+    }
+
+    cpu_get_tb_cpu_state(cpu, &pc, &cs_base, &cpu_flags);
+    tb_phys_invalidate(cpu->current_tb, -1);
+    tb_gen_code(cpu, pc, cs_base, cpu_flags, 0);
+
+    if (cpu->block_finished_hook_present) {
+        tlib_on_block_finished(pc, executed_instructions);
+    }
+
+    cpu->exception_index = exeception_type;
+    longjmp(cpu->jmp_env, 1);
 }
 
 /* Remove a specific breakpoint.  */

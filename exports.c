@@ -298,26 +298,7 @@ extern void *global_retaddr;
 
 void tlib_restart_translation_block()
 {
-    target_ulong pc, cs_base;
-    int cpu_flags;
-    TranslationBlock *tb;
-    int executed_instructions = -1;
-
-    tb = tb_find_pc((uintptr_t)global_retaddr);
-    if (tb != 0) {
-        executed_instructions = cpu_restore_state_and_restore_instructions_count(cpu, tb, (uintptr_t)global_retaddr);
-    }
-
-    cpu_get_tb_cpu_state(cpu, &pc, &cs_base, &cpu_flags);
-    tb_phys_invalidate(cpu->current_tb, -1);
-    tb_gen_code(cpu, pc, cs_base, cpu_flags, 0);
-
-    if (cpu->block_finished_hook_present) {
-        tlib_on_block_finished(pc, executed_instructions);
-    }
-
-    cpu->exception_index = EXCP_WATCHPOINT;
-    longjmp(cpu->jmp_env, 1); //for watchpoints!
+    interrupt_current_translation_block(cpu, EXCP_WATCHPOINT);
 }
 
 EXC_VOID_0(tlib_restart_translation_block)

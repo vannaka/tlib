@@ -19,6 +19,7 @@
 #endif
 
 #include "cpu_bits.h"
+#include "cpu_registers.h"
 
 #define RV(x) ((target_ulong)1 << (x - 'A'))
 

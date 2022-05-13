@@ -1,5 +1,6 @@
+#if !defined (__RISCV_CPU_REGISTERS__)
+#define __RISCV_CPU_REGISTERS__
 #include "cpu-defs.h"
-
 // REMARK: we use #ifdef/#endif, #ifdef/#endif instead of #ifdef/#else/#endif notation due to the limitation of `RegisterEnumParser.cs`
 typedef enum {
 #ifdef TARGET_RISCV64
@@ -261,3 +262,12 @@ typedef enum {
     VLENB_32    = 0xc22,
 #endif
 } Registers;
+
+#if TARGET_LONG_BITS == 64
+#define RA   RA_64
+#endif
+#if TARGET_LONG_BITS == 32
+#define RA   RA_32
+#endif
+
+#endif

@@ -546,6 +546,15 @@ extern uintptr_t tlib_host_page_mask;
 
 #define CPU_DUMP_CODE  0x00010000
 
+/* Denotes that the TCGv cpu_pc chould be used in stack change announcement */
+#define PROFILER_TCG_PC ((target_ulong)-1lu)
+
+enum GUEST_PROFILER_ANNOUNCEMENT
+{
+    STACK_FRAME_POP = 0,
+    STACK_FRAME_ADD = 1,
+};
+
 void cpu_abort(CPUState *env, const char *fmt, ...);
 extern CPUState *cpu;
 
@@ -695,3 +704,10 @@ void clear_interrupt_pending(CPUState *env, int mask);
 void set_interrupt_pending(CPUState *env, int mask);
 
 #endif /* CPU_ALL_H */
+
+#if TARGET_LONG_BITS == 64
+uint64_t *get_reg_pointer_64(int reg);
+#endif
+#if TARGET_LONG_BITS == 32
+uint32_t *get_reg_pointer_32(int reg);
+#endif

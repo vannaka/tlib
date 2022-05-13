@@ -149,6 +149,7 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb, int search_p
     dc->tb = tb;
     dc->is_jmp = 0;
     dc->pc = tb->pc;
+    dc->guest_profile = env->guest_profiler_enabled;
 
     gen_block_header(tb);
     setup_disas_context(dc, env);
@@ -353,5 +354,14 @@ inline void set_register_value(int reg_number, uint64_t val)
         *ptr = val;
     #else
     #error "Unknown number of bits"
+    #endif
+}
+
+void tlib_announce_stack_change(target_ulong address, int change_type)
+{
+    #ifdef SUPPORTS_GUEST_PROFILING
+    tlib_profiler_announce_stack_change(address, get_register_value(RA), cpu->instructions_count_total_value, change_type);
+    #else
+    tlib_abortf("This architecture does not support the profiler");
     #endif
 }

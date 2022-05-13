@@ -21,6 +21,7 @@
 #include "instmap.h"
 #include "debug.h"
 #include "arch_callbacks.h"
+#include "cpu_registers.h"
 
 /* global register indices */
 static TCGv cpu_gpr[32], cpu_pc, cpu_opcode;
@@ -588,12 +589,47 @@ static void gen_arith_imm(DisasContext *dc, uint32_t opc, int rd, int rs1, targe
     tcg_temp_free(source1);
 }
 
+static inline void generate_stack_announcement(target_ulong pc, int type)
+{
+    TCGv_i32 helper_type = tcg_const_i32(type);
+    if (pc == PROFILER_TCG_PC) {
+        gen_helper_announce_stack_change(cpu_pc, helper_type);
+    } else {
+        TCGv_i64 helper_pc = tcg_const_i64(pc);
+        gen_helper_announce_stack_change(helper_pc, helper_type);
+        tcg_temp_free_i32(helper_pc);
+    }
+    tcg_temp_free_i64(helper_type);
+}
+
+static inline int is_jal_an_ret_pseudoinsn(int rd, int rs1, int imm)
+{
+    // ret => jalr x0, 0(x1)
+    return (rs1 == 1) && (rd == 0) && (imm == 0);
+}
+
+static inline int is_jal_RA_based(int rd)
+{
+    // jalr x1, NN(XX)
+    return (rd == 1);
+}
+
+static inline void announce_if_jump_or_ret(int rd, int rs1, target_long imm, target_ulong next_pc)
+{
+    if (is_jal_an_ret_pseudoinsn(rd, rs1, imm)) {
+        generate_stack_announcement(next_pc, STACK_FRAME_POP);
+    } else if (is_jal_RA_based(rd)) {
+        generate_stack_announcement(next_pc, STACK_FRAME_ADD);
+    }
+}
+
 static void gen_jal(CPUState *env, DisasContext *dc, int rd, target_ulong imm)
 {
     target_ulong next_pc;
 
     /* check misaligned: */
     next_pc = dc->base.pc + imm;
+
     if (!riscv_has_ext(env, RISCV_FEATURE_RVC)) {
         if ((next_pc & 0x3) != 0) {
             generate_exception_mbadaddr(dc, RISCV_EXCP_INST_ADDR_MIS);
@@ -601,6 +637,10 @@ static void gen_jal(CPUState *env, DisasContext *dc, int rd, target_ulong imm)
     }
     if (rd != 0) {
         tcg_gen_movi_tl(cpu_gpr[rd], dc->base.npc);
+    }
+
+    if (unlikely(dc->base.guest_profile)) {
+        announce_if_jump_or_ret(rd, RA, imm, next_pc);
     }
 
     gen_goto_tb(dc, 0, dc->base.pc + imm); /* must use this for safety */
@@ -629,6 +669,11 @@ static void gen_jalr(CPUState *env, DisasContext *dc, uint32_t opc, int rd, int 
         if (rd != 0) {
             tcg_gen_movi_tl(cpu_gpr[rd], dc->base.npc);
         }
+
+        if (unlikely(dc->base.guest_profile)) {
+            announce_if_jump_or_ret(rd, rs1, imm, PROFILER_TCG_PC);
+        }
+
         gen_exit_tb_no_chaining(dc->base.tb);
 
         gen_set_label(misaligned);
@@ -4597,7 +4642,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
 
         if ((dc->opcode & ci->mask) == ci->pattern) {
             dc->base.npc = dc->base.pc + ci->length;
-            
+
             if (env->count_opcodes) {
                 generate_opcode_count_increment(env, dc->opcode);
             }
@@ -4637,7 +4682,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
     /* check for compressed insn */
     int instruction_length = (is_compressed ? 2 : 4);
     dc->base.npc = dc->base.pc + instruction_length;
-    
+
     if (env->count_opcodes) {
         generate_opcode_count_increment(env, dc->opcode);
     }

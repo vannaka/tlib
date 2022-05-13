@@ -286,7 +286,7 @@ int32_t tlib_execute(uint32_t max_insns)
     // as this is might be accessed after calling `tlib_execute`
     // to read the progress
     cpu->instructions_count_value = local_counter;
-    
+
     return result;
 }
 
@@ -639,11 +639,17 @@ uint32_t tlib_install_opcode_counter(uint32_t opcode, uint32_t mask)
     cpu->opcode_counters[cpu->opcode_counters_size].opcode = opcode;
     cpu->opcode_counters[cpu->opcode_counters_size].mask = mask;
     cpu->opcode_counters_size++;
-    
+
     return cpu->opcode_counters_size;
 }
 
 EXC_INT_2(uint32_t, tlib_install_opcode_counter, uint32_t, opcode, uint32_t, mask)
+
+void tlib_enable_guest_profiler(int value)
+{
+    cpu->guest_profiler_enabled = !!value;
+}
+EXC_VOID_1(tlib_enable_guest_profiler, int32_t, value)
 
 uint32_t tlib_get_current_tb_disas_flags()
 {
@@ -688,7 +694,7 @@ void tlib_set_page_io_accessed(uint64_t address)
 
     env->io_access_regions[i] = page_address;
     env->io_access_regions_count++;
-    
+
     tlb_flush_page(env, address);
 }
 
@@ -706,7 +712,7 @@ void tlib_clear_page_io_accessed(uint64_t address)
             break;
         }
     }
-    
+
     if(i == env->io_access_regions_count)
     {
         // it was not marked as IO

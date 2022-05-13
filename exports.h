@@ -47,6 +47,8 @@ uint64_t tlib_get_total_executed_instructions(void);
 void tlib_set_translation_cache_size(uintptr_t size);
 void tlib_invalidate_translation_cache(void);
 
+void tlib_enable_guest_profiler(int value);
+
 int tlib_restore_context(void);
 void *tlib_export_state(void);
 int32_t tlib_get_state_size(void);

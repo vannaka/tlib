@@ -477,6 +477,10 @@ void do_interrupt(CPUState *env)
         csr_write_helper(env, s, CSR_SSTATUS);
         riscv_set_mode(env, PRV_S);
     }
+
+    if (unlikely(env->guest_profiler_enabled)) {
+        tlib_announce_stack_change(env->pc, STACK_FRAME_ADD);
+    }
     /* TODO yield load reservation  */
     env->exception_index = EXCP_NONE; /* mark as handled */
 }

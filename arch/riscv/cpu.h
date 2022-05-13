@@ -5,6 +5,8 @@
 #include "softfloat.h"
 #include "host-utils.h"
 
+#define SUPPORTS_GUEST_PROFILING
+
 #define TARGET_PAGE_BITS            12/* 4 KiB Pages */
 #if TARGET_LONG_BITS == 64
 #define TARGET_RISCV64

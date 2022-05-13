@@ -76,6 +76,7 @@ typedef struct DisasContextBase {
     target_ulong npc;
     int mem_idx;
     int is_jmp;
+    int guest_profile;
 } DisasContextBase;
 
 #define HOST_LONG_SIZE      (HOST_LONG_BITS / 8)
@@ -220,6 +221,7 @@ typedef struct ExtMmuRange
     int32_t tlib_is_on_memory_access_enabled;                                 \
     int allow_unaligned_accesses;                                             \
                                                                               \
+    bool guest_profiler_enabled;                                              \
     bool count_opcodes;                                                       \
     uint32_t opcode_counters_size;                                            \
     opcode_counter_descriptor opcode_counters[MAX_OPCODE_COUNTERS];           \

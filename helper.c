@@ -92,3 +92,8 @@ void HELPER(count_opcode_inner)(uint32_t instruction_id)
 {
    cpu->opcode_counters[instruction_id].counter++;
 }
+
+void HELPER(announce_stack_change)(target_ulong pc, uint32_t state)
+{
+    tlib_announce_stack_change(pc, state);
+}

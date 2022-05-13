@@ -313,3 +313,45 @@ void generate_opcode_count_increment(CPUState *env, uint64_t opcode)
         }
     }
 }
+
+inline uint64_t get_register_value(int reg_number)
+{
+#if TARGET_LONG_BITS == 32
+    uint32_t *ptr = get_reg_pointer_32(reg_number);
+    if (ptr == NULL) {
+        tlib_abortf("Read from undefined CPU register number %d detected", reg_number);
+        return 0;
+    }
+    return (uint64_t)*ptr;
+#elif TARGET_LONG_BITS == 64
+    uint64_t *ptr = get_reg_pointer_64(reg_number);
+    if (ptr == NULL) {
+        tlib_abortf("Read from undefined CPU register number %d detected", reg_number);
+        return 0;
+    }
+    return *ptr;
+#else
+#error "Unknown number of bits"
+#endif
+}
+
+inline void set_register_value(int reg_number, uint64_t val)
+{
+    #if TARGET_LONG_BITS == 32
+        uint32_t *ptr = get_reg_pointer_32(reg_number);
+        if (ptr == NULL) {
+            tlib_abortf("Write to undefined CPU register number %d detected", reg_number);
+            return;
+        }
+        *ptr = val & 0xFFFFFFFF;
+    #elif TARGET_LONG_BITS == 64
+        uint64_t *ptr = get_reg_pointer_64(reg_number);
+        if (ptr == NULL) {
+            tlib_abortf("Write to undefined CPU register number %d detected", reg_number);
+            return;
+        }
+        *ptr = val;
+    #else
+    #error "Unknown number of bits"
+    #endif
+}

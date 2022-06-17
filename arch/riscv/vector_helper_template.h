@@ -217,30 +217,36 @@ void glue(glue(helper_vlse, BITS), POSTFIX)(CPUState *env, uint32_t vd, uint32_t
 
 void glue(glue(helper_vlxei, BITS), POSTFIX)(CPUState *env, uint32_t vd, uint32_t rs1, uint32_t vs2, uint32_t nf)
 {
-    const target_ulong emul = EMUL(SHIFT);
-    if (emul == 0x4 || V_IDX_INVALID(vd) || V_IDX_INVALID_EMUL(vs2, emul) || V_INVALID_NF(vd, nf, emul)) {
+    // vd  has EEW=SEW, EMUL=LMUL
+    // vs2 has EEW encoded in the instruction with EMUL=(EEW/SEW)*LMUL
+    const target_ulong data_emul = EMUL(SEW());
+    const target_ulong index_emul = EMUL(SHIFT);
+    if (index_emul == 0x4 || data_emul == 0x4 || V_IDX_INVALID_EMUL(vd, data_emul) || V_IDX_INVALID_EMUL(vs2, index_emul) || V_INVALID_NF(vd, nf, data_emul)) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    target_ulong src_addr = env->gpr[rs1];
-    DATA_TYPE *offsets = (DATA_TYPE *)V(vs2);
     const target_ulong dst_eew = env->vsew;
+    const target_ulong dst_shift = SEW();
+    const target_ulong src_addr = env->gpr[rs1];
+    const DATA_TYPE *offsets = (DATA_TYPE *)V(vs2);
 
     for (int ei = env->vstart; ei < env->vl; ++ei) {
         TEST_MASK(ei)
         env->vstart = ei;
         for (int fi = 0; fi <= nf; ++fi) {
+            int fi_offset = fi << dst_shift;
+            target_ulong addr = src_addr + (target_ulong)offsets[ei] + fi_offset;
             switch (dst_eew) {
             case 8:
-                V(vd + (fi << SHIFT))[ei] = ldub(src_addr + (target_ulong)offsets[ei] + fi);
+                ((uint8_t *)V(vd + fi_offset))[ei] = ldub(addr);
                 break;
             case 16:
-                ((uint16_t *)V(vd + (fi << SHIFT)))[ei] = lduw(src_addr + (target_ulong)offsets[ei] + sizeof(DATA_TYPE) * fi);
+                ((uint16_t *)V(vd + fi_offset))[ei] = lduw(addr);
                 break;
             case 32:
-                ((uint32_t *)V(vd + (fi << SHIFT)))[ei] = ldl(src_addr + (target_ulong)offsets[ei] + sizeof(DATA_TYPE) * fi);
+                ((uint32_t *)V(vd + fi_offset))[ei] = ldl(addr);
                 break;
             case 64: 
-                ((uint64_t *)V(vd + (fi << SHIFT)))[ei] = ldq(src_addr + (target_ulong)offsets[ei] + sizeof(DATA_TYPE) * fi);
+                ((uint64_t *)V(vd + fi_offset))[ei] = ldq(addr);
                 break;
             default:
                 helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);

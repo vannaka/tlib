@@ -2071,13 +2071,13 @@ static void gen_v_opivv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int v
         break;
     case RISC_V_FUNCT_SBC:
         if (vm) {
+            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        } else {
             if (!vd) {
                 kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
                 break;
             }
             gen_helper_vsbc_vvm(cpu_env, t_vd, t_vs2, t_vs1);
-        } else {
-            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         }
         break;
     case RISC_V_FUNCT_MSBC:

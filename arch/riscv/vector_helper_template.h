@@ -2114,8 +2114,9 @@ void glue(helper_vslidedown_ivi, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
-    const int src_max = env->vl < env->vlmax - rs1 ? env->vl : env->vlmax - rs1;
-    for (int ei = env->vstart; ei < src_max; ++ei) {
+    const int src_max = rs1 > env->vlmax ? 0 : (env->vl < env->vlmax - rs1 ? env->vl : env->vlmax - rs1);
+    int ei = env->vstart;
+    for (; ei < src_max; ++ei) {
         TEST_MASK(ei)
         switch (eew) {
         case 8:
@@ -2135,7 +2136,7 @@ void glue(helper_vslidedown_ivi, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs
             break;
         }
     }
-    for (int ei = src_max; ei < env->vl; ++ei) {
+    for (; ei < env->vl; ++ei) {
         TEST_MASK(ei)
         switch (eew) {
         case 8:

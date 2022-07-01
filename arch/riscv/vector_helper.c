@@ -893,6 +893,8 @@ target_long helper_vfirst_m(CPUState *env, uint32_t vs2)
 }
 
 static uint8_t set_before_first_bit(uint8_t a) {
+    // set least significant continoues seqence of zeros
+    // and unset anything else
     return (a & -a) - 1;
 }
 
@@ -921,10 +923,9 @@ void helper_vmsbf(CPUState *env, uint32_t vd, uint32_t vs2)
         return;
     }
 
-    V(vd)[i] |= tmp;
-    V(vd)[i] &= tmp;
+    V(vd)[i] = tmp;
 
-    for (; i < env->vl >> 3; ++i) {
+    for (++i; i < env->vl >> 3; ++i) {
         V(vd)[i] &= 0xff;
     }
     if (env->vl & 0x7) {
@@ -960,7 +961,7 @@ void helper_vmsbf_m(CPUState *env, uint32_t vd, uint32_t vs2)
     V(vd)[i] |= V(0)[i] & tmp;
     V(vd)[i] &= ~V(0)[i] | tmp;
 
-    for (; i < env->vl >> 3; ++i) {
+    for (++i; i < env->vl >> 3; ++i) {
         V(vd)[i] &= ~V(0)[i];
     }
     if (env->vl & 0x7) {
@@ -995,10 +996,9 @@ void helper_vmsif(CPUState *env, uint32_t vd, uint32_t vs2)
     }
 
     tmp = tmp << 1 | 1;
-    V(vd)[i] |= tmp;
-    V(vd)[i] &= tmp;
+    V(vd)[i] = tmp;
 
-    for (; i < env->vl >> 3; ++i) {
+    for (++i; i < env->vl >> 3; ++i) {
         V(vd)[i] &= 0xff;
     }
     if (env->vl & 0x7) {
@@ -1036,7 +1036,7 @@ void helper_vmsif_m(CPUState *env, uint32_t vd, uint32_t vs2)
     V(vd)[i] |= V(0)[i] & tmp;
     V(vd)[i] &= ~V(0)[i] | tmp;
 
-    for (; i < env->vl >> 3; ++i) {
+    for (++i; i < env->vl >> 3; ++i) {
         V(vd)[i] &= ~V(0)[i];
     }
     if (env->vl & 0x7) {
@@ -1071,10 +1071,9 @@ void helper_vmsof(CPUState *env, uint32_t vd, uint32_t vs2)
     }
 
     tmp = (tmp << 1 | 1) ^ tmp;
-    V(vd)[i] |= tmp;
-    V(vd)[i] &= tmp;
+    V(vd)[i] = tmp;
 
-    for (; i < env->vl >> 3; ++i) {
+    for (++i; i < env->vl >> 3; ++i) {
         V(vd)[i] = 0;
     }
     if (env->vl & 0x7) {
@@ -1112,7 +1111,7 @@ void helper_vmsof_m(CPUState *env, uint32_t vd, uint32_t vs2)
     V(vd)[i] |= V(0)[i] & tmp;
     V(vd)[i] &= ~V(0)[i] | tmp;
 
-    for (; i < env->vl >> 3; ++i) {
+    for (++i; i < env->vl >> 3; ++i) {
         V(vd)[i] &= ~V(0)[i];
     }
     if (env->vl & 0x7) {

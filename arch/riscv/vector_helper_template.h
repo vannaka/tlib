@@ -801,32 +801,6 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     }                                                                                                   \
 }
 
-#define VOP_SIGNED_UNSIGNED_WWX(NAME, OP)                                                               \
-void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, target_ulong imm)     \
-{                                                                                                       \
-    const target_ulong eew = env->vsew;                                                                 \
-    if (V_IDX_INVALID_EEW(vd, eew << 1) || V_IDX_INVALID_EEW(vs2, eew << 1)) {                          \
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                           \
-    }                                                                                                   \
-    for (int ei = env->vstart; ei < env->vl; ++ei) {                                                    \
-        TEST_MASK(ei)                                                                                   \
-        switch (eew) {                                                                                  \
-        case 8:                                                                                         \
-            ((int16_t *)V(vd))[ei] = OP(((int16_t *)V(vs2))[ei], (uint16_t)((uint8_t)imm));             \
-            break;                                                                                      \
-        case 16:                                                                                        \
-            ((int32_t *)V(vd))[ei] = OP(((int32_t *)V(vs2))[ei], (uint32_t)((uint16_t)imm));            \
-            break;                                                                                      \
-        case 32:                                                                                        \
-            ((int64_t *)V(vd))[ei] = OP(((int64_t *)V(vs2))[ei], (uint64_t)((uint32_t)imm));            \
-            break;                                                                                      \
-        default:                                                                                        \
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
-            break;                                                                                      \
-        }                                                                                               \
-    }                                                                                                   \
-}
-
 #define VOP_UNSIGNED_WWV(NAME, OP)                                                                          \
 void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, uint32_t vs1)             \
 {                                                                                                           \
@@ -871,32 +845,6 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
             break;                                                                                      \
         case 32:                                                                                        \
             ((int64_t *)V(vd))[ei] = OP(((int64_t *)V(vs2))[ei], (int64_t)((int32_t *)V(vs1))[ei]);     \
-            break;                                                                                      \
-        default:                                                                                        \
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
-            break;                                                                                      \
-        }                                                                                               \
-    }                                                                                                   \
-}
-
-#define VOP_SIGNED_UNSIGNED_WWV(NAME, OP)                                                               \
-void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, uint32_t vs1)         \
-{                                                                                                       \
-    const target_ulong eew = env->vsew;                                                                 \
-    if (V_IDX_INVALID_EEW(vd, eew << 1) || V_IDX_INVALID_EEW(vs2, eew << 1) || V_IDX_INVALID(vs1)) {    \
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                           \
-    }                                                                                                   \
-    for (int ei = env->vstart; ei < env->vl; ++ei) {                                                    \
-        TEST_MASK(ei)                                                                                   \
-        switch (eew) {                                                                                  \
-        case 8:                                                                                         \
-            ((int16_t *)V(vd))[ei] = OP(((int16_t *)V(vs2))[ei], (uint16_t)((uint8_t *)V(vs1))[ei]);    \
-            break;                                                                                      \
-        case 16:                                                                                        \
-            ((int32_t *)V(vd))[ei] = OP(((int32_t *)V(vs2))[ei], (uint32_t)((uint16_t *)V(vs1))[ei]);   \
-            break;                                                                                      \
-        case 32:                                                                                        \
-            ((int64_t *)V(vd))[ei] = OP(((int64_t *)V(vs2))[ei], (uint64_t)((uint32_t *)V(vs1))[ei]);   \
             break;                                                                                      \
         default:                                                                                        \
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
@@ -957,32 +905,6 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     }                                                                                                   \
 }
 
-#define VOP_SIGNED_UNSIGNED_VWX(NAME, OP)                                                               \
-void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, target_ulong imm)     \
-{                                                                                                       \
-    const target_ulong eew = env->vsew;                                                                 \
-    if (V_IDX_INVALID(vd) || V_IDX_INVALID_EEW(vs2, eew << 1)) {                                        \
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                           \
-    }                                                                                                   \
-    for (int ei = env->vstart; ei < env->vl; ++ei) {                                                    \
-        TEST_MASK(ei)                                                                                   \
-        switch (eew) {                                                                                  \
-        case 8:                                                                                         \
-            ((int8_t *)V(vd))[ei] = OP(((int16_t *)V(vs2))[ei], (uint16_t)((uint8_t)imm));              \
-            break;                                                                                      \
-        case 16:                                                                                        \
-            ((int16_t *)V(vd))[ei] = OP(((int32_t *)V(vs2))[ei], (uint32_t)((uint16_t)imm));            \
-            break;                                                                                      \
-        case 32:                                                                                        \
-            ((int32_t *)V(vd))[ei] = OP(((int64_t *)V(vs2))[ei], (uint64_t)((uint32_t)imm));            \
-            break;                                                                                      \
-        default:                                                                                        \
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
-            break;                                                                                      \
-        }                                                                                               \
-    }                                                                                                   \
-}
-
 #define VOP_UNSIGNED_VWV(NAME, OP)                                                                      \
 void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, uint32_t vs1)         \
 {                                                                                                       \
@@ -1027,32 +949,6 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
             break;                                                                                      \
         case 32:                                                                                        \
             ((int32_t *)V(vd))[ei] = OP(((int64_t *)V(vs2))[ei], (int64_t)((int32_t *)V(vs1))[ei]);     \
-            break;                                                                                      \
-        default:                                                                                        \
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
-            break;                                                                                      \
-        }                                                                                               \
-    }                                                                                                   \
-}
-
-#define VOP_SIGNED_UNSIGNED_VWV(NAME, OP)                                                               \
-void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, uint32_t vs1)         \
-{                                                                                                       \
-    const target_ulong eew = env->vsew;                                                                 \
-    if (V_IDX_INVALID(vd) || V_IDX_INVALID_EEW(vs2, eew << 1) || V_IDX_INVALID(vs1)) {                  \
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                           \
-    }                                                                                                   \
-    for (int ei = env->vstart; ei < env->vl; ++ei) {                                                    \
-        TEST_MASK(ei)                                                                                   \
-        switch (eew) {                                                                                  \
-        case 8:                                                                                         \
-            ((int8_t *)V(vd))[ei] = OP(((int16_t *)V(vs2))[ei], (uint16_t)((uint8_t *)V(vs1))[ei]);     \
-            break;                                                                                      \
-        case 16:                                                                                        \
-            ((int16_t *)V(vd))[ei] = OP(((int32_t *)V(vs2))[ei], (uint32_t)((uint16_t *)V(vs1))[ei]);   \
-            break;                                                                                      \
-        case 32:                                                                                        \
-            ((int32_t *)V(vd))[ei] = OP(((int64_t *)V(vs2))[ei], (uint64_t)((uint32_t *)V(vs1))[ei]);   \
             break;                                                                                      \
         default:                                                                                        \
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
@@ -1214,35 +1110,6 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     }                                                                                                   \
 }
 
-#define V3OP_UNSIGNED_VVX(NAME, OP)                                                                             \
-void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, target_ulong imm)             \
-{                                                                                                               \
-    const target_ulong eew = env->vsew;                                                                         \
-    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {                                                              \
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                   \
-    }                                                                                                           \
-    for (int ei = env->vstart; ei < env->vl; ++ei) {                                                            \
-        TEST_MASK(ei)                                                                                           \
-        switch (eew) {                                                                                          \
-        case 8:                                                                                                 \
-            ((uint8_t *)V(vd))[ei] = OP(((uint8_t *)V(vd))[ei], ((uint8_t *)V(vs2))[ei], ((uint8_t)imm));       \
-            break;                                                                                              \
-        case 16:                                                                                                \
-            ((uint16_t *)V(vd))[ei] = OP(((uint16_t *)V(vd))[ei], ((uint16_t *)V(vs2))[ei], ((uint16_t)imm));   \
-            break;                                                                                              \
-        case 32:                                                                                                \
-            ((uint32_t *)V(vd))[ei] = OP(((uint32_t *)V(vd))[ei], ((uint32_t *)V(vs2))[ei], ((uint32_t)imm));   \
-            break;                                                                                              \
-        case 64:                                                                                                \
-            ((uint64_t *)V(vd))[ei] = OP(((uint64_t *)V(vd))[ei], ((uint64_t *)V(vs2))[ei], ((uint64_t)imm));   \
-            break;                                                                                              \
-        default:                                                                                                \
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                               \
-            break;                                                                                              \
-        }                                                                                                       \
-    }                                                                                                           \
-}
-
 #define V3OP_SIGNED_VVX(NAME, OP)                                                                           \
 void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, target_ulong imm)         \
 {                                                                                                           \
@@ -1270,35 +1137,6 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
             break;                                                                                          \
         }                                                                                                   \
     }                                                                                                       \
-}
-
-#define V3OP_UNSIGNED_VVV(NAME, OP)                                                                                     \
-void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, uint32_t vs1)                         \
-{                                                                                                                       \
-    const target_ulong eew = env->vsew;                                                                                 \
-    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {                                                \
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                           \
-    }                                                                                                                   \
-    for (int ei = env->vstart; ei < env->vl; ++ei) {                                                                    \
-        TEST_MASK(ei)                                                                                                   \
-        switch (eew) {                                                                                                  \
-        case 8:                                                                                                         \
-            ((uint8_t *)V(vd))[ei] = OP(((uint8_t *)V(vd))[ei], ((uint8_t *)V(vs2))[ei], ((uint8_t *)V(vs1))[ei]);      \
-            break;                                                                                                      \
-        case 16:                                                                                                        \
-            ((uint16_t *)V(vd))[ei] = OP(((uint16_t *)V(vd))[ei], ((uint16_t *)V(vs2))[ei], ((uint16_t *)V(vs1))[ei]);  \
-            break;                                                                                                      \
-        case 32:                                                                                                        \
-            ((uint32_t *)V(vd))[ei] = OP(((uint32_t *)V(vd))[ei], ((uint32_t *)V(vs2))[ei], ((uint32_t *)V(vs1))[ei]);  \
-            break;                                                                                                      \
-        case 64:                                                                                                        \
-            ((uint64_t *)V(vd))[ei] = OP(((uint64_t *)V(vd))[ei], ((uint64_t *)V(vs2))[ei], ((uint64_t *)V(vs1))[ei]);  \
-            break;                                                                                                      \
-        default:                                                                                                        \
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                       \
-            break;                                                                                                      \
-        }                                                                                                               \
-    }                                                                                                                   \
 }
 
 #define V3OP_SIGNED_VVV(NAME, OP)                                                                                   \

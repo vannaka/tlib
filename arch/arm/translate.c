@@ -683,11 +683,45 @@ static const uint8_t table_logic_cc[16] = {
     1, /* mvn */
 };
 
+/* Generates a stack announcement on the address stored in var. var is NOT marked as dead. */
+static inline void gen_stack_announcement(DisasContext *s, TCGv var, int type)
+{
+    if (unlikely(s->base.guest_profile)) {
+        /* Check if the announcement should be generated */
+        if (type == STACK_FRAME_NO_CHANGE) {
+            return;
+        }
+
+        TCGv jump_target = tcg_temp_new_i32();
+        TCGv ann_type = tcg_const_i32(type);
+        /* bx and blx use the last bit to change instruction mode.
+        last bit = 0 - change to Arm mode
+        last bit = 1 - change to Thumb mode
+        This bit has to be cleared if it is set to 1 since it will produce an invalid address
+        (PC has to be alligned to 4 bytes in Arm mode and to 2 bytes in Thumb mode, in both cases
+        the last bit should be set to 0) */
+        tcg_gen_andi_i32(jump_target, var, ~1);
+        gen_helper_announce_stack_change(jump_target, ann_type);
+        tcg_temp_free(jump_target);
+        tcg_temp_free(ann_type);
+    }
+}
+
+/* Generates a stack announcement to an immediate address. */
+static inline void gen_stack_announcement_im(DisasContext *s, uint32_t addr, int type)
+{
+    if (unlikely(s->base.guest_profile)) {
+        TCGv jump_target = tcg_const_i32(addr);
+        gen_stack_announcement(s, jump_target, type);
+        tcg_temp_free(jump_target);
+    }
+}
+
 /* Set PC and Thumb state from an immediate address.  */
-static inline void gen_bx_im(DisasContext *s, uint32_t addr)
+static inline void gen_bx_im(DisasContext *s, uint32_t addr, int stack_announcement_type)
 {
     TCGv tmp;
-
+    gen_stack_announcement_im(s, addr, stack_announcement_type);
     s->base.is_jmp = DISAS_UPDATE;
     if (s->thumb != (addr & 1)) {
         tmp = tcg_temp_new_i32();
@@ -699,8 +733,9 @@ static inline void gen_bx_im(DisasContext *s, uint32_t addr)
 }
 
 /* Set PC and Thumb state from var.  var is marked as dead.  */
-static inline void gen_bx(DisasContext *s, TCGv var)
+static inline void gen_bx(DisasContext *s, TCGv var, int stack_announcement_type)
 {
+    gen_stack_announcement(s, var, stack_announcement_type);
     s->base.is_jmp = DISAS_UPDATE;
     tcg_gen_andi_i32(cpu_R[15], var, ~1);
     tcg_gen_andi_i32(var, var, 1);
@@ -713,7 +748,8 @@ static inline void gen_bx(DisasContext *s, TCGv var)
 static inline void store_reg_bx(CPUState *env, DisasContext *s, int reg, TCGv var)
 {
     if (reg == 15 && ENABLE_ARCH_7) {
-        gen_bx(s, var);
+        /* Mostly arithmetic on the PC, so no stack changes can be detected */
+        gen_bx(s, var, STACK_FRAME_NO_CHANGE);
     } else {
         store_reg(s, reg, var);
     }
@@ -723,10 +759,10 @@ static inline void store_reg_bx(CPUState *env, DisasContext *s, int reg, TCGv va
  * to r15 in ARM architecture v5T and above. This is used for storing
  * the results of a LDR/LDM/POP into r15, and corresponds to the cases
  * in the ARM ARM which use the LoadWritePC() pseudocode function. */
-static inline void store_reg_from_load(CPUState *env, DisasContext *s, int reg, TCGv var)
+static inline void store_reg_from_load(CPUState *env, DisasContext *s, int reg, TCGv var, int stack_announcement_type)
 {
     if (reg == 15 && ENABLE_ARCH_5) {
-        gen_bx(s, var);
+        gen_bx(s, var, stack_announcement_type);
     } else {
         store_reg(s, reg, var);
     }
@@ -3696,8 +3732,9 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint32_t dest)
     }
 }
 
-static inline void gen_jmp (DisasContext *s, uint32_t dest)
+static inline void gen_jmp(DisasContext *s, uint32_t dest, int stack_announcement_type)
 {
+    gen_stack_announcement_im(s, dest, stack_announcement_type);
     gen_goto_tb(s, 0, dest);
     s->base.is_jmp = DISAS_TB_JUMP;
 }
@@ -6990,7 +7027,8 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
             /* pipeline offset */
             val += 4;
             /* protected by ARCH(5); above, near the start of uncond block */
-            gen_bx_im(s, val);
+            /* New stack frame, return address stored in LR */
+            gen_bx_im(s, val, STACK_FRAME_ADD);
             return;
         } else if ((insn & 0x0e000f00) == 0x0c000100) {
             if (arm_feature(env, ARM_FEATURE_IWMMXT)) {
@@ -7115,7 +7153,8 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
                 /* branch/exchange thumb (bx).  */
                 ARCH(4T);
                 tmp = load_reg(s, rm);
-                gen_bx(s, tmp);
+                /* Exit from subroutine if the target register is LR (r14)  */
+                gen_bx(s, tmp, rm == 14 ? STACK_FRAME_POP : STACK_FRAME_NO_CHANGE);
             } else if (op1 == 3) {
                 /* clz */
                 ARCH(5);
@@ -7132,7 +7171,8 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
                 ARCH(5J); /* bxj */
                 /* Trivial implementation equivalent to bx.  */
                 tmp = load_reg(s, rm);
-                gen_bx(s, tmp);
+                /* Same as bx */
+                gen_bx(s, tmp, rm == 14 ? STACK_FRAME_POP : STACK_FRAME_NO_CHANGE);
             } else {
                 goto illegal_op;
             }
@@ -7148,7 +7188,8 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
             tmp2 = tcg_temp_new_i32();
             tcg_gen_movi_i32(tmp2, s->base.pc);
             store_reg(s, 14, tmp2);
-            gen_bx(s, tmp);
+            /* Branch with link - new stack frame */
+            gen_bx(s, tmp, STACK_FRAME_ADD);
             break;
         case 0x5: /* saturating add/subtract */
             ARCH(5TE);
@@ -7972,7 +8013,8 @@ do_ldst:
             }
             if (insn & (1 << 20)) {
                 /* Complete the load.  */
-                store_reg_from_load(env, s, rd, tmp);
+                /* Should be POP - loading PC form stack */
+                store_reg_from_load(env, s, rd, tmp, STACK_FRAME_POP);
             }
             break;
         case 0x08:
@@ -8038,7 +8080,8 @@ do_ldst:
                             loaded_var = tmp;
                             loaded_base = 1;
                         } else {
-                            store_reg_from_load(env, s, i, tmp);
+                            /* Should be pop when loading PC form stack */
+                            store_reg_from_load(env, s, i, tmp, STACK_FRAME_POP);
                         }
                     } else {
                         /* store */
@@ -8118,7 +8161,8 @@ do_ldst:
                 }
                 offset = (((int32_t)insn << 8) >> 8);
                 val += (offset << 2) + 4;
-                gen_jmp(s, val);
+                /* Check if link bit is set and announce stack change accordingly */
+                gen_jmp(s, val, insn & (1 << 24) ? STACK_FRAME_ADD : STACK_FRAME_NO_CHANGE);
             }
             break;
         case 0xc:
@@ -8262,7 +8306,8 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
             tmp2 = tcg_temp_new_i32();
             tcg_gen_movi_i32(tmp2, s->base.pc | 1);
             store_reg(s, 14, tmp2);
-            gen_bx(s, tmp);
+            /* Branch with link - new stack frame */
+            gen_bx(s, tmp, STACK_FRAME_ADD);
             return 0;
         }
         if (insn & (1 << 11)) {
@@ -8274,7 +8319,8 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
             tmp2 = tcg_temp_new_i32();
             tcg_gen_movi_i32(tmp2, s->base.pc | 1);
             store_reg(s, 14, tmp2);
-            gen_bx(s, tmp);
+            /* Branch with link - new stack frame */
+            gen_bx(s, tmp, STACK_FRAME_ADD);
             return 0;
         }
         if ((s->base.pc & ~TARGET_PAGE_MASK) == 0) {
@@ -8492,7 +8538,8 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
                         /* Load.  */
                         tmp = gen_ld32(addr, s->user);
                         if (i == 15) {
-                            gen_bx(s, tmp);
+                            /* pop - loading PC form stack */
+                            gen_bx(s, tmp, STACK_FRAME_POP);
                         } else if (i == rn) {
                             loaded_var = tmp;
                             loaded_base = 1;
@@ -8889,12 +8936,14 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
                 offset += s->base.pc;
                 if (insn & (1 << 12)) {
                     /* b/bl */
-                    gen_jmp(s, offset);
+                    /* Check if this jump is b or bl */
+                    gen_jmp(s, offset, insn & (1 << 14) ? STACK_FRAME_ADD : STACK_FRAME_NO_CHANGE);
                 } else {
                     /* blx */
                     offset &= ~(uint32_t)2;
                     /* thumb2 bx, no need to check */
-                    gen_bx_im(s, offset);
+                    /* Branch with link - new stack frame */
+                    gen_bx_im(s, offset, STACK_FRAME_ADD);
                 }
             } else if (((insn >> 23) & 7) == 7) {
                 /* Misc control */
@@ -8980,7 +9029,7 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
                     case 4: /* bxj */
                         /* Trivial implementation equivalent to bx.  */
                         tmp = load_reg(s, rn);
-                        gen_bx(s, tmp);
+                        gen_bx(s, tmp, rn == 14 ? STACK_FRAME_POP : STACK_FRAME_NO_CHANGE);
                         break;
                     case 5: /* Exception return.  */
                         if (s->user) {
@@ -9035,7 +9084,7 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
                 offset |= (insn & (1 << 11)) << 8;
 
                 /* jump to the offset */
-                gen_jmp(s, s->base.pc + offset);
+                gen_jmp(s, s->base.pc + offset, STACK_FRAME_NO_CHANGE);
             }
         } else {
             /* Data processing immediate.  */
@@ -9322,7 +9371,8 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
                 goto illegal_op;
             }
             if (rs == 15) {
-                gen_bx(s, tmp);
+                /* Stack pop - loading PC form stack */
+                gen_bx(s, tmp, STACK_FRAME_POP);
             } else {
                 store_reg(s, rs, tmp);
             }
@@ -9507,7 +9557,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
                 break;
             case 3:/* branch [and link] exchange thumb register */
                 tmp = load_reg(s, rm);
-                if (insn & (1 << 7)) {
+                if (insn & (1 << 7)) { /* Link bit set */
                     ARCH(5);
                     val = (uint32_t)s->base.pc | 1;
                     tmp2 = tcg_temp_new_i32();
@@ -9515,7 +9565,10 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
                     store_reg(s, 14, tmp2);
                 }
                 /* already thumb, no need to check */
-                gen_bx(s, tmp);
+                /* Check the link bit if set then add frame (blx), 
+                   else check if the target register is link then remove frame (bx)
+                   else there was no stack change (custom jump) */
+                gen_bx(s, tmp, insn & (1 << 7) ? STACK_FRAME_ADD : (rm == 14 ? STACK_FRAME_POP : STACK_FRAME_NO_CHANGE));
                 break;
             }
             break;
@@ -9890,7 +9943,8 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
             store_reg(s, 13, addr);
             /* set the new PC value */
             if ((insn & 0x0900) == 0x0900) {
-                store_reg_from_load(env, s, 15, tmp);
+                /* Stack pop - loading the PC from memory */
+                store_reg_from_load(env, s, 15, tmp, STACK_FRAME_POP);
             }
             break;
 
@@ -9908,7 +9962,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
             offset = ((insn & 0xf8) >> 2) | (insn & 0x200) >> 3;
             val = (uint32_t)s->base.pc + 2;
             val += offset;
-            gen_jmp(s, val);
+            gen_jmp(s, val, STACK_FRAME_NO_CHANGE);
             break;
 
         case 15: /* IT, nop-hint.  */
@@ -10039,7 +10093,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
         val = (uint32_t)s->base.pc + 2;
         offset = ((int32_t)insn << 24) >> 24;
         val += offset << 1;
-        gen_jmp(s, val);
+        gen_jmp(s, val, STACK_FRAME_NO_CHANGE);
         break;
 
     case 14:
@@ -10059,7 +10113,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
             val = (uint32_t)s->base.pc;
             offset = ((int32_t)insn << 21) >> 21;
             val += (offset << 1) + 2;
-            gen_jmp(s, val);
+            gen_jmp(s, val, STACK_FRAME_NO_CHANGE);
         }
         break;
     case 15:

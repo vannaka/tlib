@@ -1,3 +1,6 @@
+#ifndef __ARM_CPU_REGISTERS__
+#define __ARM_CPU_REGISTERS__
+
 #include "cpu-defs.h"
 
 // this is a trick to make the registers parser simpler
@@ -96,3 +99,13 @@ typedef enum {
     X_31_64      = 63
 #endif
 } Registers;
+
+/* The return address is stored here */
+#if TARGET_LONG_BITS == 64
+#define RA   X_30_64
+#endif
+#if TARGET_LONG_BITS == 32
+#define RA   R_14_32
+#endif
+
+#endif /* #ifndef __ARM_CPU_REGISTERS__ */

@@ -542,6 +542,13 @@ void switch_mode(CPUState *env, int mode)
     env->spsr = env->banked_spsr[i];
 }
 
+static inline void arm_announce_stack_change()
+{
+    if (unlikely(env->guest_profiler_enabled)) {
+        tlib_announce_stack_change(CPU_PC(env), STACK_FRAME_ADD);
+    }
+}
+
 #ifdef TARGET_PROTO_ARM_M
 static void v7m_push(CPUState *env, uint32_t val)
 {
@@ -755,6 +762,8 @@ static void do_interrupt_v7m(CPUState *env)
     addr = ldl_phys(env->v7m.vecbase + env->v7m.exception * 4);
     env->regs[15] = addr & 0xfffffffe;
     env->thumb = addr & 1;
+
+    arm_announce_stack_change();
 }
 #endif
 
@@ -870,6 +879,8 @@ case_EXCP_PREFETCH_ABORT:
     env->regs[14] = env->regs[15] + offset;
     env->regs[15] = addr;
     set_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
+
+    arm_announce_stack_change();
 }
 
 /* Check section/page access permissions.

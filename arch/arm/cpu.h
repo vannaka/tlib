@@ -26,6 +26,8 @@
 #include "softfloat.h"
 #include "arch_callbacks.h"
 
+#define SUPPORTS_GUEST_PROFILING
+
 #if TARGET_LONG_BITS == 32
 #define TARGET_ARM32
 #elif TARGET_LONG_BITS == 64
@@ -33,6 +35,8 @@
 #else
 #error "Target arch can be only 32-bit or 64-bit"
 #endif
+
+#include "cpu_registers.h"
 
 #define EXCP_UDEF           1    /* undefined instruction */
 #define EXCP_SWI            2    /* software interrupt */

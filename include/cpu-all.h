@@ -553,6 +553,7 @@ enum GUEST_PROFILER_ANNOUNCEMENT
 {
     STACK_FRAME_POP = 0,
     STACK_FRAME_ADD = 1,
+    STACK_FRAME_NO_CHANGE = 2,
 };
 
 void cpu_abort(CPUState *env, const char *fmt, ...);

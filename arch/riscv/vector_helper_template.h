@@ -2768,7 +2768,7 @@ void glue(helper_vasubu_mvv, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, i
     }
 }
 
-void glue(helper_vasubu_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
+void glue(helper_vasubu_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
@@ -2780,22 +2780,22 @@ void glue(helper_vasubu_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, t
         switch (eew) {
         case 8: {
                 uint16_t a = ((uint8_t *)V(vs2))[ei];
-                ((uint8_t *)V(vd))[ei] = roundoff_u16(a - (uint16_t)rs1, 1, rm);
+                ((uint8_t *)V(vd))[ei] = roundoff_u16(a - (uint16_t)((int8_t)rs1 & UINT8_MAX), 1, rm);
                 break;
             }
         case 16: {
                 uint32_t a = ((uint16_t *)V(vs2))[ei];
-                ((uint16_t *)V(vd))[ei] = roundoff_u32(a - (uint32_t)rs1, 1, rm);
+                ((uint16_t *)V(vd))[ei] = roundoff_u32(a - (uint32_t)((int16_t)rs1 & UINT16_MAX), 1, rm);
                 break;
             }
         case 32: {
                 uint64_t a = ((uint32_t *)V(vs2))[ei];
-                ((uint32_t *)V(vd))[ei] = roundoff_u64(a - (uint64_t)rs1, 1, rm);
+                ((uint32_t *)V(vd))[ei] = roundoff_u64(a - (uint64_t)((int32_t)rs1 & UINT32_MAX), 1, rm);
                 break;
             }
         case 64: {
                 __uint128_t a = ((uint64_t *)V(vs2))[ei];
-                ((uint64_t *)V(vd))[ei] = roundoff_u128(a - (__uint128_t)rs1, 1, rm);
+                ((uint64_t *)V(vd))[ei] = roundoff_u128(a - (__uint128_t)((int64_t)rs1 & UINT64_MAX), 1, rm);
                 break;
             }
         default:

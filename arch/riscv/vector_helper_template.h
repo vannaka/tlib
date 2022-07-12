@@ -957,7 +957,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     }                                                                                                   \
 }
 
-#define MS_VL_MASK (env->vl - ei > 0x7) ? 0 : (0xff << (env->vl & 0x7))
+#define MS_VL_MASK ((env->vl - ei > 0x7) ? 0 : (0xff << (env->vl & 0x7)))
 #ifdef MASKED
 #define MS_MASK() (MS_VL_MASK | ~V(0)[(ei >> 3)])
 #define MS_TEST_MASK() (~mask & (1 << (ei & 0x7)))

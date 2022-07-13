@@ -812,36 +812,32 @@ static uint8_t bitcnt(uint8_t a)
 
 target_ulong helper_vpopc(CPUState *env, uint32_t vs2)
 {
-    target_ulong cnt = 0;
-    int i = env->vstart >> 3;
-    if (env->vl - env->vstart < 8) {
-        return bitcnt(((0xffu << (env->vstart & 0x7)) & (0xffu >> (env->vl & 0x7))) & V(vs2)[i]);
+    if (env->vstart) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    cnt += bitcnt((0xffu << (env->vstart & 0x7)) & V(vs2)[i]);
-
+    target_ulong cnt = 0;
+    int i = 0;
     for (; i < env->vl >> 3; ++i) {
         cnt += bitcnt(V(vs2)[i]);
     }
     if (env->vl & 0x7) {
-        cnt += bitcnt((0xffu >> (env->vl & 0x7)) & V(vs2)[i]);
+        cnt += bitcnt(~(0xffu >> (env->vl & 0x7)) & V(vs2)[i]);
     }
     return cnt;
 }
 
 target_ulong helper_vpopc_m(CPUState *env, uint32_t vs2)
 {
-    target_ulong cnt = 0;
-    int i = env->vstart >> 3;
-    if (env->vl - env->vstart < 8) {
-        return bitcnt(((0xffu << (env->vstart & 0x7)) & (0xffu >> (env->vl & 0x7))) & V(0)[i] & V(vs2)[i]);
+    if (env->vstart) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    cnt += bitcnt((0xffu << (env->vstart & 0x7)) & V(0)[i] & V(vs2)[i]);
-
+    target_ulong cnt = 0;
+    int i = 0;
     for (; i < env->vl >> 3; ++i) {
         cnt += bitcnt(V(0)[i] & V(vs2)[i]);
     }
     if (env->vl & 0x7) {
-        cnt += bitcnt((0xffu >> (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
+        cnt += bitcnt(~(0xffu >> (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
     }
     return cnt;
 }
@@ -868,7 +864,7 @@ target_long helper_vfirst(CPUState *env, uint32_t vs2)
         }
     }
     if (env->vl & 0x7) {
-        tmp = first_bit((0xffu >> (env->vl & 0x7)) & V(vs2)[i]);
+        tmp = first_bit(~(0xffu >> (env->vl & 0x7)) & V(vs2)[i]);
     }
     return ~tmp ? (i << 3) + tmp : tmp;
 }
@@ -887,7 +883,7 @@ target_long helper_vfirst_m(CPUState *env, uint32_t vs2)
         }
     }
     if (env->vl & 0x7) {
-        tmp = first_bit((0xffu >> (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
+        tmp = first_bit(~(0xffu >> (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
     }
     return ~tmp ? (i << 3) + tmp : tmp;
 }

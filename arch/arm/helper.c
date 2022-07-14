@@ -579,6 +579,10 @@ void do_v7m_exception_exit(CPUState *env)
         tlib_nvic_complete_irq(env->v7m.exception);
     }
 
+    if(env->interrupt_end_callback_enabled) {
+        tlib_on_interrupt_end(env->exception_index);
+    }
+
     /* Switch to the target stack.  */
     switch_v7m_sp(env, (type & 4) != 0);
     /* Pop registers.  */

@@ -2026,7 +2026,7 @@ void glue(helper_vslide1up, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, ta
             break;
         }
     }
-    for (int ei = env->vstart; ei < env->vl; ++ei) {
+    for (int ei = (env->vstart ? env->vstart : 1); ei < env->vl; ++ei) {
         TEST_MASK(ei)
         switch (eew) {
         case 8:

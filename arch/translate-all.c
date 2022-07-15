@@ -49,6 +49,36 @@ CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc)
     return NULL;
 }
 
+static inline void gen_update_instructions_count(TranslationBlock *tb)
+{
+    // Assumption: tb == cpu->current_tb when this block is executed
+    // This is ensured by the prepare_block_for_execution helper
+    TCGv_i64 tmp = tcg_temp_new_i64();
+    TCGv_i64 icount = tcg_temp_new_i64();
+    TCGv_ptr tb_pointer = tcg_const_ptr((tcg_target_long)tb);
+
+    // (uint32_t) tb->icount
+    tcg_gen_ld32u_i64(icount, tb_pointer, offsetof(TranslationBlock, icount));
+
+    // (uint32_t) cpu->instructions_count_value += tb->icount
+    tcg_gen_ld32u_i64(tmp, cpu_env, offsetof(CPUState, instructions_count_value));
+    tcg_gen_add_i64(tmp, tmp, icount);
+    tcg_gen_st32_i64(tmp, cpu_env, offsetof(CPUState, instructions_count_value));
+
+    // (uint64_t) cpu->instructions_count_total_value += tb->icount
+    tcg_gen_ld_i64(tmp, cpu_env, offsetof(CPUState, instructions_count_total_value));
+    tcg_gen_add_i64(tmp, tmp, icount);
+    tcg_gen_st_i64(tmp, cpu_env, offsetof(CPUState, instructions_count_total_value));
+
+    // (uint32_t) tb->instructions_count_dirty = 1
+    tcg_gen_movi_i64(tmp, 1);
+    tcg_gen_st32_i64(tmp, tb_pointer, offsetof(TranslationBlock, instructions_count_dirty));
+
+    tcg_temp_free_ptr(tb_pointer);
+    tcg_temp_free_i64(icount);
+    tcg_temp_free_i64(tmp);
+}
+
 static inline void gen_block_header(TranslationBlock *tb)
 {
     TCGv_i32 flag;
@@ -68,7 +98,7 @@ static inline void gen_block_header(TranslationBlock *tb)
         tcg_temp_free_i32(result);
     }
 
-    gen_helper_update_instructions_count();
+    gen_update_instructions_count(tb);
 }
 
 static void gen_block_finished_hook(TranslationBlock *tb, uint32_t instructions_count)

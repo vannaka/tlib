@@ -119,12 +119,14 @@ struct TranslationBlock {
        jmp_first */
     struct TranslationBlock *jmp_next[2];
     struct TranslationBlock *jmp_first;
+    // the type of this field needs to match the TCG-generated access in `gen_update_instructions_count` in translate-all.c
     uint32_t icount;
     bool was_cut;
     // this field is used to keep track of the previous value of size, i.e., it shows the size of translation block without the last instruction; used by a blockend hook
     uint16_t prev_size;
     // signals that the `icount` of this tb has been added to global instructions counters
     // in case of exiting this tb before the end (e.g., in case of an exception, watchpoint etc.) the value of counters must be rebuilt
+    // the type of this field needs to match the TCG-generated access in `gen_update_instructions_count` in translate-all.c
     uint32_t instructions_count_dirty;
 #if DEBUG
     uint32_t lock_active;

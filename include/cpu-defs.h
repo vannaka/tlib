@@ -171,6 +171,8 @@ typedef struct ExtMmuRange
     /* --------------------------------------- */                             \
     /* instruction counting is used to execute callback after given \
        number of instructions */                                              \
+    /* the types of instructions_count_* need to match the TCG-generated      \
+       accesses in `gen_update_instructions_count` in translate-all.c */      \
     uint32_t instructions_count_threshold;                                    \
     uint32_t instructions_count_value;                                        \
     uint64_t instructions_count_total_value;                                  \

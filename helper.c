@@ -32,13 +32,6 @@ uint32_t HELPER(prepare_block_for_execution)(void *tb)
     return cpu->tb_restart_request;
 }
 
-void HELPER(update_instructions_count)()
-{
-    cpu->instructions_count_value += cpu->current_tb->icount;
-    cpu->instructions_count_total_value += cpu->current_tb->icount;
-    cpu->current_tb->instructions_count_dirty = 1;
-}
-
 uint32_t HELPER(block_begin_event)()
 {
     uint32_t result = tlib_on_block_begin(cpu->current_tb->pc, cpu->current_tb->icount);

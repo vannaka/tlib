@@ -86,7 +86,7 @@ typedef uint32_t ARMReadCPFunc(void *opaque, int cp_info, int dstreg, int operan
    s<2n> maps to the least significant half of d<n>
    s<2n+1> maps to the most significant half of d<n>
  */
- 
+
 #if defined(TARGET_ARM32)
 #define CPU_PC(env) env->regs[15]
 #elif defined(TARGET_ARM64)
@@ -266,7 +266,7 @@ typedef struct CPUState {
 
 void switch_mode(CPUState *, int);
 
-int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int rw, int mmu_idx);
+int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int rw, int mmu_idx, int no_page_fault);
 
 #define CPSR_M           (0x1f)
 #define CPSR_T           (1 << 5)

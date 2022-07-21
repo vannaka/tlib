@@ -152,11 +152,11 @@ int riscv_cpu_hw_interrupts_pending(CPUState *env)
  *
  */
 static int get_physical_address(CPUState *env, target_phys_addr_t *physical, int *prot, target_ulong address, int access_type,
-                                int mmu_idx)
+                                int mmu_idx, int no_page_fault)
 {
     if(unlikely(cpu->external_mmu_enabled))
     {
-        return get_external_mmu_phys_addr(env, address, access_type, physical, prot);
+        return get_external_mmu_phys_addr(env, address, access_type, physical, prot, no_page_fault);
     }
     /* NOTE: the env->pc value visible here will not be
      * correct, but the value visible to the exception handler
@@ -319,7 +319,7 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
     int prot;
     int mem_idx = cpu_mmu_index(env);
 
-    if (get_physical_address(env, &phys_addr, &prot, addr, ACCESS_DATA_LOAD, mem_idx)) {
+    if (get_physical_address(env, &phys_addr, &prot, addr, ACCESS_DATA_LOAD, mem_idx, 0)) {
         return -1;
     }
     return phys_addr;
@@ -328,7 +328,7 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
 /*
  * Assuming system mode, only called in tlb_fill
  */
-int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, int mmu_idx, int access_width)
+int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, int mmu_idx, int access_width, int no_page_fault)
 {
     target_phys_addr_t pa = 0;
     int prot;
@@ -336,7 +336,7 @@ int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, i
     int ret = TRANSLATE_FAIL;
     target_ulong page_size = TARGET_PAGE_SIZE;
 
-    ret = get_physical_address(env, &pa, &prot, address, access_type, mmu_idx);
+    ret = get_physical_address(env, &pa, &prot, address, access_type, mmu_idx, no_page_fault);
     if (!cpu->external_mmu_enabled && !pmp_hart_has_privs(env, pa, access_width, 1 << access_type)) {
         ret = TRANSLATE_FAIL;
     }

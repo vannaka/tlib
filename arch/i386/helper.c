@@ -246,7 +246,7 @@ void cpu_x86_update_cr4(CPUState *env, uint32_t new_cr4)
    0  = nothing more to do
    1  = generate PF fault
  */
-int cpu_handle_mmu_fault(CPUState *env, target_ulong addr, int access_type, int mmu_idx)
+int cpu_handle_mmu_fault(CPUState *env, target_ulong addr, int access_type, int mmu_idx, int no_page_fault)
 {
     uint64_t ptep, pte;
     target_ulong pde_addr, pte_addr;
@@ -513,7 +513,7 @@ int cpu_handle_mmu_fault(CPUState *env, target_ulong addr, int access_type, int 
         }
     }
 do_external_mmu_mapping:
-    if(get_external_mmu_phys_addr(env, addr, access_type, &paddr, &prot) == TRANSLATE_FAIL)
+    if(get_external_mmu_phys_addr(env, addr, access_type, &paddr, &prot, no_page_fault) == TRANSLATE_FAIL)
     {
         error_code = 0;
         return TRANSLATE_FAIL;

@@ -55,7 +55,7 @@ int tlb_fill(CPUState *env1, target_ulong addr, int access_type, int mmu_idx, vo
 
     saved_env = env;
     env = env1;
-    ret = cpu_handle_mmu_fault(env, addr, access_type, mmu_idx);
+    ret = cpu_handle_mmu_fault(env, addr, access_type, mmu_idx, no_page_fault);
     if (unlikely(ret == TRANSLATE_FAIL && !no_page_fault)) {
         // access_type == CODE ACCESS - do not fire block_end hooks!
         cpu_loop_exit_restore(env, (uintptr_t)retaddr, access_type != ACCESS_INST_FETCH);

@@ -1656,7 +1656,7 @@ void do_unaligned_access(target_ulong addr, int is_write, int is_user, void *ret
 int tlb_fill(CPUState *env, target_ulong addr, int access_type, int mmu_idx, void *retaddr, int no_page_fault, int access_width)
 {
     int ret;
-    ret = cpu_handle_mmu_fault(env, addr, access_type, mmu_idx, 1);
+    ret = cpu_handle_mmu_fault(env, addr, access_type, mmu_idx, 1, no_page_fault);
     if (ret == TRANSLATE_FAIL && !no_page_fault) {
         cpu_restore_state(env, retaddr);
         cpu_loop_exit(env);

@@ -166,7 +166,7 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical, int
 }
 
 /* Perform address translation */
-int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, int mmu_idx, int is_softmmu)
+int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, int mmu_idx, int is_softmmu, int no_page_fault)
 {
     target_phys_addr_t paddr;
     target_ulong vaddr;
@@ -175,7 +175,7 @@ int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, 
 
     if(unlikely(cpu->external_mmu_enabled))
     {
-        if(TRANSLATE_SUCCESS == get_external_mmu_phys_addr(env, address, access_type, &paddr, &prot))
+        if(TRANSLATE_SUCCESS == get_external_mmu_phys_addr(env, address, access_type, &paddr, &prot, no_page_fault))
         {
             page_size = TARGET_PAGE_SIZE;
             goto set_page;

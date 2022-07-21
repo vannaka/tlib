@@ -1203,11 +1203,11 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, i
 }
 
 static inline int get_phys_addr(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
-                                target_ulong *page_size)
+                                target_ulong *page_size, int no_page_fault)
 {
     if(unlikely(cpu->external_mmu_enabled))
     {
-        return get_external_mmu_phys_addr(env, address, access_type, phys_ptr, prot);
+        return get_external_mmu_phys_addr(env, address, access_type, phys_ptr, prot, no_page_fault);
     }
 
     /* Fast Context Switch Extension.  */
@@ -1231,7 +1231,7 @@ static inline int get_phys_addr(CPUState *env, uint32_t address, int access_type
     }
 }
 
-int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, int mmu_idx)
+int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, int mmu_idx, int no_page_fault)
 {
     uint32_t phys_addr = 0;
     target_ulong page_size = 0;
@@ -1239,7 +1239,7 @@ int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, 
     int ret, is_user;
 
     is_user = mmu_idx == MMU_USER_IDX;
-    ret = get_phys_addr(env, address, access_type, is_user, &phys_addr, &prot, &page_size);
+    ret = get_phys_addr(env, address, access_type, is_user, &phys_addr, &prot, &page_size, no_page_fault);
     if (ret == TRANSLATE_SUCCESS) {
         /* Map a single [sub]page.  */
         phys_addr &= ~(uint32_t)0x3ff;
@@ -1274,7 +1274,7 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
     int prot = 0;
     int ret;
 
-    ret = get_phys_addr(env, addr, 0, 0, &phys_addr, &prot, &page_size);
+    ret = get_phys_addr(env, addr, 0, 0, &phys_addr, &prot, &page_size, 0);
 
     if (ret != 0) {
         return -1;
@@ -1516,7 +1516,7 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
                     /* Other states are only available with TrustZone */
                     goto bad_reg;
                 }
-                ret = get_phys_addr(env, val, access_type, is_user, &phys_addr, &prot, &page_size);
+                ret = get_phys_addr(env, val, access_type, is_user, &phys_addr, &prot, &page_size, 0);
                 if (ret == 0) {
                     /* We do not set any attribute bits in the PAR */
                     if (page_size == (1 << 24) && arm_feature(env, ARM_FEATURE_V7)) {

@@ -141,7 +141,7 @@ xtensa_find_opcode_ops(const XtensaOpcodeTranslators *t,
 {
     static TTable *translators;
     TTable *translator;
-   
+
 
     if (translators == NULL) {
         translators = calloc(MAX_TTABLE_SIZE, sizeof(TTable));
@@ -149,7 +149,7 @@ xtensa_find_opcode_ops(const XtensaOpcodeTranslators *t,
     translator = ttable_lookup_value_eq(translators, (void*)t);
     if (translator == NULL) {
         translator = hash_opcode_translators(t);
-        
+
         ttable_insert(translators, (void *)t, translator);
     }
     return (XtensaOpcodeOps*) ttable_lookup_value_strcmp(translator, (void*) name);
@@ -261,7 +261,7 @@ void do_unaligned_access(target_ulong addr, MMUAccessType access_type,
 
 int xtensa_cpu_tlb_fill(CPUState *env, vaddr address, int size,
                          MMUAccessType access_type, int mmu_idx,
-                         bool probe, uintptr_t retaddr)
+                         bool probe, uintptr_t retaddr, int no_page_fault)
 {
     uint32_t paddr;
     uint32_t page_size;
@@ -269,7 +269,7 @@ int xtensa_cpu_tlb_fill(CPUState *env, vaddr address, int size,
 
     if(unlikely(cpu->external_mmu_enabled))
     {
-        if(TRANSLATE_SUCCESS == get_external_mmu_phys_addr(env, address, access_type, &paddr, &access)) {
+        if(TRANSLATE_SUCCESS == get_external_mmu_phys_addr(env, address, access_type, &paddr, &access, no_page_fault)) {
             page_size = TARGET_PAGE_SIZE;
             tlb_set_page(env, address & TARGET_PAGE_MASK, paddr & TARGET_PAGE_MASK, access, mmu_idx, page_size);
             return TRANSLATE_SUCCESS;
@@ -300,7 +300,7 @@ int xtensa_cpu_tlb_fill(CPUState *env, vaddr address, int size,
 int tlb_fill(CPUState *env, target_ulong addr, int is_write, int mmu_idx, void *retaddr, int no_page_fault, int access_width)
 {
     // TODO: we don't use access_width?!
-    return xtensa_cpu_tlb_fill(env, addr, 0 /* size not used anyway */, is_write, mmu_idx, no_page_fault, (uintptr_t)retaddr);
+    return xtensa_cpu_tlb_fill(env, addr, 0 /* size not used anyway */, is_write, mmu_idx, no_page_fault, (uintptr_t)retaddr, no_page_fault);
 }
 
 void tlib_arch_dispose()

@@ -3638,7 +3638,7 @@ int tlb_fill(CPUState *env1, target_ulong addr, int access_type, int mmu_idx, vo
 
     saved_env = env;
     env = env1;
-    ret = cpu_handle_mmu_fault(env, addr, access_type, mmu_idx);
+    ret = cpu_handle_mmu_fault(env, addr, access_type, mmu_idx, no_page_fault);
     if (unlikely(ret != TRANSLATE_SUCCESS && !no_page_fault)) {
         if (likely(retaddr)) {
             /* now we have a real cpu fault */

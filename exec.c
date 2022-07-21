@@ -1801,7 +1801,7 @@ uint32_t ldl_phys(target_phys_addr_t addr)
         // use a faster method
         return ldl_phys_aligned(addr);
     }
-    
+
     uint32_t val;
     cpu_physical_memory_read(addr, &val, 4);
     return val;
@@ -1842,7 +1842,7 @@ static uint64_t ldq_phys_aligned(target_phys_addr_t addr)
         ptr = get_ram_ptr(pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
         val = ldq_p(ptr);
     }
-    
+
     return val;
 }
 
@@ -1853,7 +1853,7 @@ uint64_t ldq_phys(target_phys_addr_t addr)
         // use a faster method
         return ldq_phys_aligned(addr);
     }
-    
+
     uint64_t val;
     cpu_physical_memory_read(addr, &val, 8);
     return val;
@@ -2013,7 +2013,7 @@ void stl_phys(target_phys_addr_t addr, uint32_t val)
         stl_phys_aligned(addr, val);
         return;
     }
-    
+
     val = tswap32(val);
     cpu_physical_memory_write(addr, &val, 4);
 }

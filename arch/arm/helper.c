@@ -2173,6 +2173,10 @@ uint32_t HELPER(v7m_mrs)(CPUState * env, uint32_t reg)
         return env->v7m.current_sp ? env->v7m.other_sp : env->regs[13];
     case 9:  /* PSP */
         return env->v7m.current_sp ? env->regs[13] : env->v7m.other_sp;
+    case 10: /* MSPLIM - armv8-m specific */
+        return env->v7m.msplim;
+    case 11: /* PSPLIM - armv8-m specific */
+        return env->v7m.psplim;
     case 16: /* PRIMASK */
         return (env->uncached_cpsr & 1) != 0;
     case 17: /* BASEPRI */
@@ -2214,6 +2218,12 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
         xpsr_write(env, val, 0x0600fc00);
         break;
     case 8: /* MSP */
+        if (val < env->v7m.msplim) {
+            // raise Usage Fault
+            env->exception_index = ARMV7M_EXCP_USAGE;
+            cpu_loop_exit(env);
+        }
+        
         if (env->v7m.current_sp) {
             env->v7m.other_sp = val;
         } else {
@@ -2221,11 +2231,23 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
         }
         break;
     case 9: /* PSP */
+        if (val < env->v7m.psplim) {
+            // raise Usage Fault
+            env->exception_index = ARMV7M_EXCP_USAGE;
+            cpu_loop_exit(env);
+        }
+        
         if (env->v7m.current_sp) {
             env->regs[13] = val;
         } else {
             env->v7m.other_sp = val;
         }
+        break;
+    case 10: /* MSPLIM - armv8-m specific */
+        env->v7m.msplim = val;
+        break;
+    case 11: /* PSPLIM - armv8-m specific */
+        env->v7m.psplim = val;
         break;
     case 16: /* PRIMASK */
         if (val & 1) {

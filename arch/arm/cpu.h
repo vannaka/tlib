@@ -198,6 +198,9 @@ typedef struct CPUState {
         uint32_t fpccr;
         uint32_t fpcar;
         uint32_t fpdscr;
+        /* msplim/psplim are armv8-m specific */
+        uint32_t msplim;
+        uint32_t psplim;
     } v7m;
 #endif
 

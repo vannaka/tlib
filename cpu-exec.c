@@ -328,7 +328,7 @@ int cpu_exec(CPUState *env)
                 }
 
 #ifdef TARGET_PROTO_ARM_M
-                if (env->regs[15] >= 0xffffffe0) {
+                if (env->regs[15] >= 0xffffff00) {
                     do_v7m_exception_exit(env);
                     next_tb = 0;
                 }

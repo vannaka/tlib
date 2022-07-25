@@ -1584,10 +1584,11 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
 #define VOP_SSUB(A, B) ({                                                               \
     typeof(A) a = A;                                                                    \
     typeof(a) b = B;                                                                    \
-    typeof(a) sat_value = SMAX(typeof(a)) + (a < 0);                                    \
-    bool sat = b < 0 ? a < 0 && b - 1 > sat_value + a : a >= 0 && b <= sat_value + a;   \
+    typeof(a) result = a - b;                                                           \
+    a = SMAX(typeof(a)) + (a < 0);                                                      \
+    bool sat = ((a ^ b) & (a ^ result)) < 0;                                            \
     env->vxsat |= sat;                                                                  \
-    sat ? sat_value : a - b; })
+    sat ? a : result; })
 
 VOP_UNSIGNED_VVX(vadd_ivi, OP_ADD)
 VOP_UNSIGNED_VVX(vrsub_ivi, OP_RSUB)

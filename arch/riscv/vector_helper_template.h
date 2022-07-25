@@ -2861,57 +2861,25 @@ void glue(helper_vsmul_ivv, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, in
         case 8: {
                 int16_t a = ((int8_t *)V(vs2))[ei];
                 int16_t b = ((int8_t *)V(vs1))[ei];
-                int16_t res = roundoff_i16(a * b, shift, rm);
-                if (res < INT8_MIN) {
-                    res = INT8_MIN;
-                    env->vxsat |= 1;
-                } else if (res > INT8_MAX) {
-                    res = INT8_MAX;
-                    env->vxsat |= 1;
-                }
-                ((int8_t *)V(vd))[ei] = res;
+                ((int8_t *)V(vd))[ei] = clipto_i8(roundoff_i16(a * b, shift, rm));
                 break;
             }
         case 16: {
                 int32_t a = ((int16_t *)V(vs2))[ei];
                 int32_t b = ((int16_t *)V(vs1))[ei];
-                int32_t res = roundoff_i32(a * b, shift, rm);
-                if (res < INT16_MIN) {
-                    res = INT16_MIN;
-                    env->vxsat |= 1;
-                } else if (res > INT16_MAX) {
-                    res = INT16_MAX;
-                    env->vxsat |= 1;
-                }
-                ((int16_t *)V(vd))[ei] = res;
+                ((int16_t *)V(vd))[ei] = clipto_i16(roundoff_i32(a * b, shift, rm));
                 break;
             }
         case 32: {
                 int64_t a = ((int32_t *)V(vs2))[ei];
                 int64_t b = ((int32_t *)V(vs1))[ei];
-                int64_t res = roundoff_i64(a * b, shift, rm);
-                if (res < INT32_MIN) {
-                    res = INT32_MIN;
-                    env->vxsat |= 1;
-                } else if (res > INT32_MAX) {
-                    res = INT32_MAX;
-                    env->vxsat |= 1;
-                }
-                ((int32_t *)V(vd))[ei] = res;
+                ((int32_t *)V(vd))[ei] = clipto_i32(roundoff_i64(a * b, shift, rm));
                 break;
             }
         case 64: {
                 __int128_t a = ((int64_t *)V(vs2))[ei];
                 __int128_t b = ((int64_t *)V(vs1))[ei];
-                __int128_t res = roundoff_i128(a * b, shift, rm);
-                if (res < INT64_MIN) {
-                    res = INT64_MIN;
-                    env->vxsat |= 1;
-                } else if (res > INT64_MAX) {
-                    res = INT64_MAX;
-                    env->vxsat |= 1;
-                }
-                ((int64_t *)V(vd))[ei] = res;
+                ((int64_t *)V(vd))[ei] = clipto_i64(roundoff_i128(a * b, shift, rm));
                 break;
             }
         default:
@@ -2934,54 +2902,22 @@ void glue(helper_vsmul_ivx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, ta
         switch (eew) {
         case 8: {
                 int16_t a = ((int8_t *)V(vs2))[ei];
-                int16_t res = roundoff_i16(a * (int16_t)((int8_t)rs1 & UINT8_MAX), shift, rm);
-                if (res < INT8_MIN) {
-                    res = INT8_MIN;
-                    env->vxsat |= 1;
-                } else if (res > INT8_MAX) {
-                    res = INT8_MAX;
-                    env->vxsat |= 1;
-                }
-                ((int8_t *)V(vd))[ei] = res;
+                ((int8_t *)V(vd))[ei] = clipto_i8(roundoff_i16(a * (int16_t)((int8_t)rs1 & UINT8_MAX), shift, rm));
                 break;
             }
         case 16: {
                 int32_t a = ((int16_t *)V(vs2))[ei];
-                int32_t res = roundoff_i32(a * (int32_t)((int16_t)rs1 & UINT16_MAX), shift, rm);
-                if (res < INT16_MIN) {
-                    res = INT16_MIN;
-                    env->vxsat |= 1;
-                } else if (res > INT16_MAX) {
-                    res = INT16_MAX;
-                    env->vxsat |= 1;
-                }
-                ((int16_t *)V(vd))[ei] = res;
+                ((int16_t *)V(vd))[ei] = clipto_i16(roundoff_i32(a * (int32_t)((int16_t)rs1 & UINT16_MAX), shift, rm));
                 break;
             }
         case 32: {
                 int64_t a = ((int32_t *)V(vs2))[ei];
-                int64_t res = roundoff_i64(a * (int64_t)((int32_t)rs1 & UINT32_MAX), shift, rm);
-                if (res < INT32_MIN) {
-                    res = INT32_MIN;
-                    env->vxsat |= 1;
-                } else if (res > INT32_MAX) {
-                    res = INT32_MAX;
-                    env->vxsat |= 1;
-                }
-                ((int32_t *)V(vd))[ei] = res;
+                ((int32_t *)V(vd))[ei] = clipto_i32(roundoff_i64(a * (int64_t)((int32_t)rs1 & UINT32_MAX), shift, rm));
                 break;
             }
         case 64: {
                 __int128_t a = ((int64_t *)V(vs2))[ei];
-                __int128_t res = roundoff_i128(a * (__int128_t)((int64_t)rs1 & UINT64_MAX), shift, rm);
-                if (res < INT64_MIN) {
-                    res = INT64_MIN;
-                    env->vxsat |= 1;
-                } else if (res > INT64_MAX) {
-                    res = INT64_MAX;
-                    env->vxsat |= 1;
-                }
-                ((int64_t *)V(vd))[ei] = res;
+                ((int64_t *)V(vd))[ei] = clipto_i64(roundoff_i128(a * (__int128_t)((int64_t)rs1 & UINT64_MAX), shift, rm));
                 break;
             }
         default:

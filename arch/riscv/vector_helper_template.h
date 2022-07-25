@@ -30,29 +30,49 @@ if (!(V(0)[(ei) >> 3] & (1 << ((ei) & 0x7)))) {     \
 #endif
 
 #if DATA_SIZE == 8
-#define BITS       64
-#define SUFFIX     q
-#define USUFFIX    q
-#define DATA_TYPE  uint64_t
-#define DATA_STYPE int64_t
+#define BITS               64
+#define SUFFIX             q
+#define USUFFIX            q
+#define DATA_TYPE          uint64_t
+#define DATA_TYPE_MAX      UINT64_MAX
+#define DATA_TYPE_DOUBLED  __uint128_t
+#define DATA_STYPE         int64_t
+#define DATA_STYPE_MAX     INT64_MAX
+#define DATA_STYPE_MIN     INT64_MIN
+#define DATA_STYPE_DOUBLED __int128_t
 #elif DATA_SIZE == 4
-#define BITS       32
-#define SUFFIX     l
-#define USUFFIX    l
-#define DATA_TYPE  uint32_t
-#define DATA_STYPE int32_t
+#define BITS               32
+#define SUFFIX             l
+#define USUFFIX            l
+#define DATA_TYPE          uint32_t
+#define DATA_TYPE_MAX      UINT32_MAX
+#define DATA_TYPE_DOUBLED  uint64_t
+#define DATA_STYPE         int32_t
+#define DATA_STYPE_MAX     INT32_MAX
+#define DATA_STYPE_MIN     INT32_MIN
+#define DATA_STYPE_DOUBLED int64_t
 #elif DATA_SIZE == 2
-#define BITS       16
-#define SUFFIX     w
-#define USUFFIX    uw
-#define DATA_TYPE  uint16_t
-#define DATA_STYPE int16_t
+#define BITS               16
+#define SUFFIX             w
+#define USUFFIX            uw
+#define DATA_TYPE          uint16_t
+#define DATA_TYPE_MAX      UINT16_MAX
+#define DATA_TYPE_DOUBLED  uint32_t
+#define DATA_STYPE         int16_t
+#define DATA_STYPE_MAX     INT16_MAX
+#define DATA_STYPE_MIN     INT16_MIN
+#define DATA_STYPE_DOUBLED int32_t
 #elif DATA_SIZE == 1
-#define BITS       8
-#define SUFFIX     b
-#define USUFFIX    ub
-#define DATA_TYPE  uint8_t
-#define DATA_STYPE int8_t
+#define BITS               8
+#define SUFFIX             b
+#define USUFFIX            ub
+#define DATA_TYPE          uint8_t
+#define DATA_TYPE_MAX      UINT8_MAX
+#define DATA_TYPE_DOUBLED  uint16_t
+#define DATA_STYPE         int8_t
+#define DATA_STYPE_MAX     INT8_MAX
+#define DATA_STYPE_MIN     INT8_MIN
+#define DATA_STYPE_DOUBLED int16_t
 #else
 #error unsupported data size
 #endif
@@ -103,6 +123,27 @@ static inline DATA_STYPE glue(roundoff_i, BITS)(DATA_STYPE v, uint16_t d, uint8_
         break;
     }
     return (v >> d) + r;
+}
+
+static inline DATA_TYPE glue(clipto_u, BITS)(DATA_TYPE_DOUBLED val)
+{
+    if (val > DATA_TYPE_MAX) {
+        env->vxsat |= 1;
+        return DATA_TYPE_MAX;
+    }
+    return (DATA_TYPE) val;
+}
+
+static inline DATA_STYPE glue(clipto_i, BITS)(DATA_STYPE_DOUBLED val)
+{
+    if(val < DATA_STYPE_MIN) {
+        env->vxsat |= 1;
+        return DATA_STYPE_MIN;
+    } else if (val > DATA_STYPE_MAX) {
+        env->vxsat |= 1;
+        return DATA_STYPE_MAX;
+    }
+    return (DATA_STYPE) val;
 }
 
 static inline DATA_TYPE glue(divu_, BITS)(DATA_TYPE dividend, DATA_TYPE divisor)
@@ -1822,13 +1863,13 @@ void glue(helper_vnclipu_ivv, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2,
         TEST_MASK(ei)
         switch (eew) {
         case 8:
-            ((uint8_t *)V(vd))[ei] = roundoff_u16(((uint16_t *)V(vs2))[ei], ((uint8_t *)V(vs1))[ei] & v1_mask, rm);
+            ((uint8_t *)V(vd))[ei] = clipto_u8(roundoff_u16(((uint16_t *)V(vs2))[ei], ((uint8_t *)V(vs1))[ei] & v1_mask, rm));
             break;
         case 16:
-            ((uint16_t *)V(vd))[ei] = roundoff_u32(((uint32_t *)V(vs2))[ei], ((uint16_t *)V(vs1))[ei] & v1_mask, rm);
+            ((uint16_t *)V(vd))[ei] = clipto_u16(roundoff_u32(((uint32_t *)V(vs2))[ei], ((uint16_t *)V(vs1))[ei] & v1_mask, rm));
             break;
         case 32:
-            ((uint32_t *)V(vd))[ei] = roundoff_u64(((uint64_t *)V(vs2))[ei], ((uint32_t *)V(vs1))[ei] & v1_mask, rm);
+            ((uint32_t *)V(vd))[ei] = clipto_u32(roundoff_u64(((uint64_t *)V(vs2))[ei], ((uint32_t *)V(vs1))[ei] & v1_mask, rm));
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
@@ -1849,13 +1890,13 @@ void glue(helper_vnclipu_ivi, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2,
         TEST_MASK(ei)
         switch (eew) {
         case 8:
-            ((uint8_t *)V(vd))[ei] = roundoff_u16(((uint16_t *)V(vs2))[ei], shift, rm);
+            ((uint8_t *)V(vd))[ei] = clipto_u8(roundoff_u16(((uint16_t *)V(vs2))[ei], shift, rm));
             break;
         case 16:
-            ((uint16_t *)V(vd))[ei] = roundoff_u32(((uint32_t *)V(vs2))[ei], shift, rm);
+            ((uint16_t *)V(vd))[ei] = clipto_u16(roundoff_u32(((uint32_t *)V(vs2))[ei], shift, rm));
             break;
         case 32:
-            ((uint32_t *)V(vd))[ei] = roundoff_u64(((uint64_t *)V(vs2))[ei], shift, rm);
+            ((uint32_t *)V(vd))[ei] = clipto_u32(roundoff_u64(((uint64_t *)V(vs2))[ei], shift, rm));
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
@@ -1876,13 +1917,13 @@ void glue(helper_vnclip_ivv, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, 
         TEST_MASK(ei)
         switch (eew) {
         case 8:
-            ((int8_t *)V(vd))[ei] = roundoff_i16(((int16_t *)V(vs2))[ei], ((uint8_t *)V(vs1))[ei] & v1_mask, rm);
+            ((int8_t *)V(vd))[ei] = clipto_i8(roundoff_i16(((int16_t *)V(vs2))[ei], ((uint8_t *)V(vs1))[ei] & v1_mask, rm));
             break;
         case 16:
-            ((int16_t *)V(vd))[ei] = roundoff_i32(((int32_t *)V(vs2))[ei], ((uint16_t *)V(vs1))[ei] & v1_mask, rm);
+            ((int16_t *)V(vd))[ei] = clipto_i16(roundoff_i32(((int32_t *)V(vs2))[ei], ((uint16_t *)V(vs1))[ei] & v1_mask, rm));
             break;
         case 32:
-            ((int32_t *)V(vd))[ei] = roundoff_i64(((int64_t *)V(vs2))[ei], ((uint32_t *)V(vs1))[ei] & v1_mask, rm);
+            ((int32_t *)V(vd))[ei] = clipto_i32(roundoff_i64(((int64_t *)V(vs2))[ei], ((uint32_t *)V(vs1))[ei] & v1_mask, rm));
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
@@ -1903,13 +1944,13 @@ void glue(helper_vnclip_ivi, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, 
         TEST_MASK(ei)
         switch (eew) {
         case 8:
-            ((int8_t *)V(vd))[ei] = roundoff_i16(((int16_t *)V(vs2))[ei], shift, rm);
+            ((int8_t *)V(vd))[ei] = clipto_i8(roundoff_i16(((int16_t *)V(vs2))[ei], shift, rm));
             break;
         case 16:
-            ((int16_t *)V(vd))[ei] = roundoff_i32(((int32_t *)V(vs2))[ei], shift, rm);
+            ((int16_t *)V(vd))[ei] = clipto_i16(roundoff_i32(((int32_t *)V(vs2))[ei], shift, rm));
             break;
         case 32:
-            ((int32_t *)V(vd))[ei] = roundoff_i64(((int64_t *)V(vs2))[ei], shift, rm);
+            ((int32_t *)V(vd))[ei] = clipto_i32(roundoff_i64(((int64_t *)V(vs2))[ei], shift, rm));
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
@@ -3139,7 +3180,12 @@ void glue(helper_vid, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2)
 
 #undef SHIFT
 #undef DATA_TYPE
+#undef DATA_TYPE_MAX
+#undef DATA_TYPE_DOUBLED
 #undef DATA_STYPE
+#undef DATA_STYPE_MAX
+#undef DATA_STYPE_MIN
+#undef DATA_STYPE_DOUBLED
 #undef BITS
 #undef SUFFIX
 #undef USUFFIX

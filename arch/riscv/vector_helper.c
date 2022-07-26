@@ -844,10 +844,13 @@ target_ulong helper_vpopc_m(CPUState *env, uint32_t vs2)
 
 static target_long first_bit(uint8_t a)
 {
-    target_long idx = a & 0xf ? 4 : 0;
-    idx += (a >> idx) & 0x3 ? 2 : 0; 
-    idx += (a >> idx) & 0x1 ? 1 : 0; 
-    return idx - 1;
+    if(a == 0) {
+        return -1;
+    }
+    target_long idx = a & 0xf ? 0 : 4;
+    idx += (a >> idx) & 0x3 ? 0 : 2; 
+    idx += (a >> idx) & 0x1 ? 0 : 1; 
+    return idx;
 }
 
 target_long helper_vfirst(CPUState *env, uint32_t vs2)
@@ -859,14 +862,14 @@ target_long helper_vfirst(CPUState *env, uint32_t vs2)
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = first_bit(V(vs2)[i]);
-        if (~tmp) {
+        if (tmp != -1) {
             return (i << 3) + tmp;
         }
     }
     if (env->vl & 0x7) {
-        tmp = first_bit(~(0xffu >> (env->vl & 0x7)) & V(vs2)[i]);
+        tmp = first_bit(~(0xffu << (env->vl & 0x7)) & V(vs2)[i]);
     }
-    return ~tmp ? (i << 3) + tmp : tmp;
+    return tmp != -1 ? (i << 3) + tmp : tmp;
 }
 
 target_long helper_vfirst_m(CPUState *env, uint32_t vs2)
@@ -878,14 +881,14 @@ target_long helper_vfirst_m(CPUState *env, uint32_t vs2)
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = first_bit(V(0)[i] & V(vs2)[i]);
-        if (~tmp) {
+        if (tmp != -1) {
             return (i << 3) + tmp;
         }
     }
     if (env->vl & 0x7) {
-        tmp = first_bit(~(0xffu >> (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
+        tmp = first_bit(~(0xffu << (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
     }
-    return ~tmp ? (i << 3) + tmp : tmp;
+    return tmp != -1 ? (i << 3) + tmp : tmp;
 }
 
 static uint8_t set_before_first_bit(uint8_t a) {

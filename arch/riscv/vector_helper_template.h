@@ -1354,7 +1354,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
 void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, uint32_t vs1)         \
 {                                                                                                       \
     const target_ulong eew = env->vsew;                                                                 \
-    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {                                \
+    if (V_IDX_INVALID(vs2)) {                                                                           \
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                           \
     }                                                                                                   \
     uint64_t acc = 0;                                                                                   \
@@ -1412,7 +1412,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
 void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, uint32_t vs1)         \
 {                                                                                                       \
     const target_ulong eew = env->vsew;                                                                 \
-    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {                                \
+    if (V_IDX_INVALID(vs2)) {                                                                           \
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                           \
     }                                                                                                   \
     int64_t acc = 0;                                                                                    \

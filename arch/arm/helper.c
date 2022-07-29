@@ -2218,12 +2218,6 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
         xpsr_write(env, val, 0x0600fc00);
         break;
     case 8: /* MSP */
-        if (val < env->v7m.msplim) {
-            // raise Usage Fault
-            env->exception_index = ARMV7M_EXCP_USAGE;
-            cpu_loop_exit(env);
-        }
-        
         if (env->v7m.current_sp) {
             env->v7m.other_sp = val;
         } else {
@@ -2231,12 +2225,6 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
         }
         break;
     case 9: /* PSP */
-        if (val < env->v7m.psplim) {
-            // raise Usage Fault
-            env->exception_index = ARMV7M_EXCP_USAGE;
-            cpu_loop_exit(env);
-        }
-        
         if (env->v7m.current_sp) {
             env->regs[13] = val;
         } else {

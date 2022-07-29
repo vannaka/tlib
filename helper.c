@@ -90,3 +90,8 @@ void HELPER(announce_stack_change)(target_ulong pc, uint32_t state)
 {
     tlib_announce_stack_change(pc, state);
 }
+
+void HELPER(on_interrupt_end_event)(uint64_t exception_index)
+{
+    tlib_on_interrupt_end(exception_index);
+}

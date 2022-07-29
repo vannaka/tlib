@@ -3797,6 +3797,12 @@ static int gen_set_psr_im(DisasContext *s, uint32_t mask, int spsr, uint32_t val
 static void gen_exception_return(DisasContext *s, TCGv pc)
 {
     TCGv tmp;
+    // Exception index is always -1 in exception returns for consistency with RISC-V
+    if (env->interrupt_end_callback_enabled) {
+        TCGv_i64 exception_index = tcg_const_i64(-1);
+        gen_helper_on_interrupt_end_event(exception_index);
+        tcg_temp_free_i64(exception_index);
+    }
     store_reg(s, 15, pc);
     tmp = load_cpu_field(spsr);
     gen_set_cpsr(tmp, 0xffffffff);

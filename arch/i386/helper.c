@@ -49,8 +49,6 @@ void cpu_reset(CPUState *env)
 
     memset(env, 0, offsetof(CPUState, breakpoints));
 
-    tlb_flush(env, 1);
-
     env->old_exception = -1;
 
     /* init to reset state */

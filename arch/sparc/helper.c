@@ -348,7 +348,6 @@ void do_interrupt(CPUState *env)
 
 void cpu_reset(CPUState *env)
 {
-    tlb_flush(env, 1);
     env->cwp = 0;
     env->wim = 1;
     env->regwptr = env->regbase + (env->cwp * 16);

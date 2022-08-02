@@ -31,8 +31,6 @@
 
 void cpu_reset(CPUState *env)
 {
-    tlb_flush(env, 1);
-
     int32_t interrupt_mode = env->interrupt_mode;
     int32_t csr_validation_level = env->csr_validation_level;
     int privilege = env->privilege_architecture;

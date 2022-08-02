@@ -265,6 +265,8 @@ EXC_INT_0(uint64_t, tlib_get_total_executed_instructions)
 
 void tlib_reset()
 {
+    tb_flush(cpu);
+    tlb_flush(cpu, 1);
     cpu_reset(cpu);
 }
 

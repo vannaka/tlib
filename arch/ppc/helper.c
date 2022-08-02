@@ -2608,8 +2608,6 @@ void cpu_reset(CPUState *env)
     env->pending_interrupts = 0;
     env->exception_index = POWERPC_EXCP_NONE;
     env->error_code = 0;
-    /* Flush all TLBs */
-    tlb_flush(env, 1);
 }
 
 int cpu_init (const char *cpu_model)

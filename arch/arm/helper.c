@@ -341,8 +341,6 @@ void cpu_reset(CPUState *env)
     set_default_nan_mode(1, &env->vfp.standard_fp_status);
     set_float_detect_tininess(float_tininess_before_rounding, &env->vfp.fp_status);
     set_float_detect_tininess(float_tininess_before_rounding, &env->vfp.standard_fp_status);
-    tlb_flush(env, 1);
-    tb_flush(env);
 }
 
 int cpu_init(const char *cpu_model)

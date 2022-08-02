@@ -801,13 +801,13 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         TEST_MASK(ei)                                                                                   \
         switch (eew) {                                                                                  \
         case 8:                                                                                         \
-            ((uint16_t *)V(vd))[ei] = OP(((uint16_t *)V(vs2))[ei], (uint16_t)((int16_t)imm));           \
+            ((uint16_t *)V(vd))[ei] = OP(((uint16_t *)V(vs2))[ei], (uint8_t)((int8_t)imm));             \
             break;                                                                                      \
         case 16:                                                                                        \
-            ((uint32_t *)V(vd))[ei] = OP(((uint32_t *)V(vs2))[ei], (uint32_t)((int32_t)imm));           \
+            ((uint32_t *)V(vd))[ei] = OP(((uint32_t *)V(vs2))[ei], (uint16_t)((int16_t)imm));           \
             break;                                                                                      \
         case 32:                                                                                        \
-            ((uint64_t *)V(vd))[ei] = OP(((uint64_t *)V(vs2))[ei], (uint64_t)((int64_t)imm));           \
+            ((uint64_t *)V(vd))[ei] = OP(((uint64_t *)V(vs2))[ei], (uint32_t)((int32_t)imm));           \
             break;                                                                                      \
         default:                                                                                        \
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
@@ -827,13 +827,13 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         TEST_MASK(ei)                                                                                   \
         switch (eew) {                                                                                  \
         case 8:                                                                                         \
-            ((int16_t *)V(vd))[ei] = OP(((int16_t *)V(vs2))[ei], (int16_t)(imm));                       \
+            ((int16_t *)V(vd))[ei] = OP(((int16_t *)V(vs2))[ei], (int8_t)(imm));                        \
             break;                                                                                      \
         case 16:                                                                                        \
-            ((int32_t *)V(vd))[ei] = OP(((int32_t *)V(vs2))[ei], (int32_t)(imm));                       \
+            ((int32_t *)V(vd))[ei] = OP(((int32_t *)V(vs2))[ei], (int16_t)(imm));                       \
             break;                                                                                      \
         case 32:                                                                                        \
-            ((int64_t *)V(vd))[ei] = OP(((int64_t *)V(vs2))[ei], (int64_t)(imm));                       \
+            ((int64_t *)V(vd))[ei] = OP(((int64_t *)V(vs2))[ei], (int32_t)(imm));                       \
             break;                                                                                      \
         default:                                                                                        \
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \

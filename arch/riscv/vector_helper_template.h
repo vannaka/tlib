@@ -2902,22 +2902,22 @@ void glue(helper_vsmul_ivx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, ta
         switch (eew) {
         case 8: {
                 int16_t a = ((int8_t *)V(vs2))[ei];
-                ((int8_t *)V(vd))[ei] = clipto_i8(roundoff_i16(a * (int16_t)((int8_t)rs1 & UINT8_MAX), shift, rm));
+                ((int8_t *)V(vd))[ei] = clipto_i8(roundoff_i16(a * (int16_t)((int8_t)(rs1 & UINT8_MAX)), shift, rm));
                 break;
             }
         case 16: {
                 int32_t a = ((int16_t *)V(vs2))[ei];
-                ((int16_t *)V(vd))[ei] = clipto_i16(roundoff_i32(a * (int32_t)((int16_t)rs1 & UINT16_MAX), shift, rm));
+                ((int16_t *)V(vd))[ei] = clipto_i16(roundoff_i32(a * (int32_t)((int16_t)(rs1 & UINT16_MAX)), shift, rm));
                 break;
             }
         case 32: {
                 int64_t a = ((int32_t *)V(vs2))[ei];
-                ((int32_t *)V(vd))[ei] = clipto_i32(roundoff_i64(a * (int64_t)((int32_t)rs1 & UINT32_MAX), shift, rm));
+                ((int32_t *)V(vd))[ei] = clipto_i32(roundoff_i64(a * (int64_t)((int32_t)(rs1 & UINT32_MAX)), shift, rm));
                 break;
             }
         case 64: {
                 __int128_t a = ((int64_t *)V(vs2))[ei];
-                ((int64_t *)V(vd))[ei] = clipto_i64(roundoff_i128(a * (__int128_t)((int64_t)rs1 & UINT64_MAX), shift, rm));
+                ((int64_t *)V(vd))[ei] = clipto_i64(roundoff_i128(a * (__int128_t)((int64_t)(rs1 & UINT64_MAX)), shift, rm));
                 break;
             }
         default:

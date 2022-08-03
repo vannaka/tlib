@@ -504,16 +504,16 @@ void helper_vadc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
         uint8_t carry = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
         switch (eew) {
         case 8:
-            ((uint8_t *)V(vd))[i] = ((uint8_t *)V(vs2))[i] + rs1 + carry;
+            ((uint8_t *)V(vd))[i] = ((uint8_t *)V(vs2))[i] + (uint8_t)rs1 + carry;
             break;
         case 16:
-            ((uint16_t *)V(vd))[i] = ((uint16_t *)V(vs2))[i] + rs1 + carry;
+            ((uint16_t *)V(vd))[i] = ((uint16_t *)V(vs2))[i] + (uint16_t)rs1 + carry;
             break;
         case 32:
-            ((uint32_t *)V(vd))[i] = ((uint32_t *)V(vs2))[i] + rs1 + carry;
+            ((uint32_t *)V(vd))[i] = ((uint32_t *)V(vs2))[i] + (uint32_t)rs1 + carry;
             break;
         case 64:
-            ((uint64_t *)V(vd))[i] = ((uint64_t *)V(vs2))[i] + rs1 + carry;
+            ((uint64_t *)V(vd))[i] = ((uint64_t *)V(vs2))[i] + (uint64_t)rs1 + carry;
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
@@ -535,22 +535,22 @@ void helper_vmadc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
         switch (eew) {
         case 8: {
                 uint8_t a = ((uint8_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + rs1 < a) << (i & 0x7);
+                V(vd)[i >> 3] |= (a + (uint8_t)rs1 < a) << (i & 0x7);
                 break;
             }
         case 16: {
                 uint16_t a = ((uint16_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + rs1 < a) << (i & 0x7);
+                V(vd)[i >> 3] |= (a + (uint16_t)rs1 < a) << (i & 0x7);
                 break;
             }
         case 32: {
                 uint32_t a = ((uint32_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + rs1 < a) << (i & 0x7);
+                V(vd)[i >> 3] |= (a + (uint32_t)rs1 < a) << (i & 0x7);
                 break;
             }
         case 64: {
                 uint64_t a = ((uint64_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + rs1 < a) << (i & 0x7);
+                V(vd)[i >> 3] |= (a + (uint64_t)rs1 < a) << (i & 0x7);
                 break;
             }
         default:
@@ -574,25 +574,25 @@ void helper_vmadc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
         switch (eew) {
         case 8: {
                 uint8_t a = ((uint8_t *)V(vs2))[i];
-                uint64_t ab = a + rs1;
+                uint64_t ab = a + (uint8_t)rs1;
                 V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
                 break;
             }
         case 16: {
                 uint16_t a = ((uint16_t *)V(vs2))[i];
-                uint64_t ab = a + rs1;
+                uint64_t ab = a + (uint16_t)rs1;
                 V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
                 break;
             }
         case 32: {
                 uint32_t a = ((uint32_t *)V(vs2))[i];
-                uint32_t ab = a + rs1;
+                uint32_t ab = a + (uint32_t)rs1;
                 V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
                 break;
             }
         case 64: {
                 uint64_t a = ((uint64_t *)V(vs2))[i];
-                uint64_t ab = a + rs1;
+                uint64_t ab = a + (uint64_t)rs1;
                 V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
                 break;
             }
@@ -613,16 +613,16 @@ void helper_vsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
         uint8_t borrow = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
         switch (eew) {
         case 8:
-            ((uint8_t *)V(vd))[i] = ((uint8_t *)V(vs2))[i] - rs1 - borrow;
+            ((uint8_t *)V(vd))[i] = ((uint8_t *)V(vs2))[i] - (uint8_t)rs1 - borrow;
             break;
         case 16:
-            ((uint16_t *)V(vd))[i] = ((uint16_t *)V(vs2))[i] - rs1 - borrow;
+            ((uint16_t *)V(vd))[i] = ((uint16_t *)V(vs2))[i] - (uint16_t)rs1 - borrow;
             break;
         case 32:
-            ((uint32_t *)V(vd))[i] = ((uint32_t *)V(vs2))[i] - rs1 - borrow;
+            ((uint32_t *)V(vd))[i] = ((uint32_t *)V(vs2))[i] - (uint32_t)rs1 - borrow;
             break;
         case 64:
-            ((uint64_t *)V(vd))[i] = ((uint64_t *)V(vs2))[i] - rs1 - borrow;
+            ((uint64_t *)V(vd))[i] = ((uint64_t *)V(vs2))[i] - (uint64_t)rs1 - borrow;
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
@@ -643,16 +643,16 @@ void helper_vmsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
         }
         switch (eew) {
         case 8:
-            V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < rs1) << (i & 0x7);
+            V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < (uint8_t)rs1) << (i & 0x7);
             break;
         case 16:
-            V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < rs1) << (i & 0x7);
+            V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < (uint16_t)rs1) << (i & 0x7);
             break;
         case 32:
-            V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < rs1) << (i & 0x7);
+            V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < (uint32_t)rs1) << (i & 0x7);
             break;
         case 64:
-            V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < rs1) << (i & 0x7);
+            V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < (uint64_t)rs1) << (i & 0x7);
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
@@ -674,16 +674,16 @@ void helper_vmsbc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
         uint8_t borrow = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
         switch (eew) {
         case 8:
-            V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < rs1 || (borrow && !(rs1 + 1))) << (i & 0x7);
+            V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < (uint8_t)rs1 || (borrow && !((uint8_t)rs1 + 1))) << (i & 0x7);
             break;
         case 16:
-            V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < rs1 || (borrow && !(rs1 + 1))) << (i & 0x7);
+            V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < (uint16_t)rs1 || (borrow && !((uint16_t)rs1 + 1))) << (i & 0x7);
             break;
         case 32:
-            V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < rs1 || (borrow && !(rs1 + 1))) << (i & 0x7);
+            V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < (uint32_t)rs1 || (borrow && !((uint32_t)rs1 + 1))) << (i & 0x7);
             break;
         case 64:
-            V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < rs1 || (borrow && !(rs1 + 1))) << (i & 0x7);
+            V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < (uint64_t)rs1 || (borrow && !((uint64_t)rs1 + 1))) << (i & 0x7);
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);

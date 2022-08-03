@@ -325,6 +325,9 @@ void helper_vmadc_vv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
     for (int i = 0; i < env->vl; ++i) {
         if (!(i & 0x7)) {
             V(vd)[i >> 3] = 0;
+            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
+               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
+            }
         }
         switch (eew) {
         case 8: {
@@ -363,6 +366,9 @@ void helper_vmadc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
     for (int i = 0; i < env->vl; ++i) {
         if (!(i & 0x7)) {
             V(vd)[i >> 3] = 0;
+            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
+               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
+            }
         }
         uint8_t carry = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
         switch (eew) {
@@ -434,6 +440,9 @@ void helper_vmsbc_vv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
     for (int i = 0; i < env->vl; ++i) {
         if (!(i & 0x7)) {
             V(vd)[i >> 3] = 0;
+            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
+               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
+            }
         }
         switch (eew) {
         case 8:
@@ -464,6 +473,9 @@ void helper_vmsbc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
     for (int i = 0; i < env->vl; ++i) {
         if (!(i & 0x7)) {
             V(vd)[i >> 3] = 0;
+            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
+               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
+            }
         }
         uint8_t borrow = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
         switch (eew) {
@@ -531,6 +543,9 @@ void helper_vmadc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
     for (int i = 0; i < env->vl; ++i) {
         if (!(i & 0x7)) {
             V(vd)[i >> 3] = 0;
+            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
+               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
+            }
         }
         switch (eew) {
         case 8: {
@@ -569,6 +584,9 @@ void helper_vmadc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
     for (int i = 0; i < env->vl; ++i) {
         if (!(i & 0x7)) {
             V(vd)[i >> 3] = 0;
+            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
+               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
+            }
         }
         uint8_t carry = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
         switch (eew) {
@@ -640,6 +658,9 @@ void helper_vmsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
     for (int i = 0; i < env->vl; ++i) {
         if (!(i & 0x7)) {
             V(vd)[i >> 3] = 0;
+            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
+               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
+            }
         }
         switch (eew) {
         case 8:
@@ -670,6 +691,9 @@ void helper_vmsbc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
     for (int i = 0; i < env->vl; ++i) {
         if (!(i & 0x7)) {
             V(vd)[i >> 3] = 0;
+            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
+               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
+            }
         }
         uint8_t borrow = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
         switch (eew) {

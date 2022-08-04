@@ -2588,22 +2588,22 @@ void glue(helper_vaadd_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, ta
         switch (eew) {
         case 8: {
                 int16_t a = ((int8_t *)V(vs2))[ei];
-                ((int8_t *)V(vd))[ei] = roundoff_i16(a + (int16_t)((int8_t)rs1 & UINT8_MAX), 1, rm);
+                ((int8_t *)V(vd))[ei] = roundoff_i16(a + (int16_t)((int8_t)(rs1 & UINT8_MAX)), 1, rm);
                 break;
             }
         case 16: {
                 int32_t a = ((int16_t *)V(vs2))[ei];
-                ((int16_t *)V(vd))[ei] = roundoff_i32(a + (int32_t)((int16_t)rs1 & UINT16_MAX), 1, rm);
+                ((int16_t *)V(vd))[ei] = roundoff_i32(a + (int32_t)((int16_t)(rs1 & UINT16_MAX)), 1, rm);
                 break;
             }
         case 32: {
                 int64_t a = ((int32_t *)V(vs2))[ei];
-                ((int32_t *)V(vd))[ei] = roundoff_i64(a + (int64_t)((int32_t)rs1 & UINT32_MAX), 1, rm);
+                ((int32_t *)V(vd))[ei] = roundoff_i64(a + (int64_t)((int32_t)(rs1 & UINT32_MAX)), 1, rm);
                 break;
             }
         case 64: {
                 __int128_t a = ((int64_t *)V(vs2))[ei];
-                ((int64_t *)V(vd))[ei] = roundoff_i128(a + (__int128_t)((int64_t)rs1 & UINT64_MAX), 1, rm);
+                ((int64_t *)V(vd))[ei] = roundoff_i128(a + (__int128_t)((int64_t)(rs1 & UINT64_MAX)), 1, rm);
                 break;
             }
         default:
@@ -2666,22 +2666,22 @@ void glue(helper_vaaddu_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, t
         switch (eew) {
         case 8: {
                 uint16_t a = ((uint8_t *)V(vs2))[ei];
-                ((uint8_t *)V(vd))[ei] = roundoff_u16(a + (uint16_t)((int8_t)rs1 & UINT8_MAX), 1, rm);
+                ((uint8_t *)V(vd))[ei] = roundoff_u16(a + (uint16_t)((uint8_t)(rs1 & UINT8_MAX)), 1, rm);
                 break;
             }
         case 16: {
                 uint32_t a = ((uint16_t *)V(vs2))[ei];
-                ((uint16_t *)V(vd))[ei] = roundoff_u32(a + (uint32_t)((int16_t)rs1 & UINT16_MAX), 1, rm);
+                ((uint16_t *)V(vd))[ei] = roundoff_u32(a + (uint32_t)((uint16_t)(rs1 & UINT16_MAX)), 1, rm);
                 break;
             }
         case 32: {
                 uint64_t a = ((uint32_t *)V(vs2))[ei];
-                ((uint32_t *)V(vd))[ei] = roundoff_u64(a + (uint64_t)((int32_t)rs1 & UINT32_MAX), 1, rm);
+                ((uint32_t *)V(vd))[ei] = roundoff_u64(a + (uint64_t)((uint32_t)(rs1 & UINT32_MAX)), 1, rm);
                 break;
             }
         case 64: {
                 __uint128_t a = ((uint64_t *)V(vs2))[ei];
-                ((uint64_t *)V(vd))[ei] = roundoff_u128(a + (__uint128_t)((int64_t)rs1 & UINT64_MAX), 1, rm);
+                ((uint64_t *)V(vd))[ei] = roundoff_u128(a + (__uint128_t)((uint64_t)(rs1 & UINT64_MAX)), 1, rm);
                 break;
             }
         default:
@@ -2744,22 +2744,22 @@ void glue(helper_vasub_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, ta
         switch (eew) {
         case 8: {
                 int16_t a = ((int8_t *)V(vs2))[ei];
-                ((int8_t *)V(vd))[ei] = roundoff_i16(a - (int16_t)((int8_t)rs1 & UINT8_MAX), 1, rm);
+                ((int8_t *)V(vd))[ei] = roundoff_i16(a - (int16_t)((int8_t)(rs1 & UINT8_MAX)), 1, rm);
                 break;
             }
         case 16: {
                 int32_t a = ((int16_t *)V(vs2))[ei];
-                ((int16_t *)V(vd))[ei] = roundoff_i32(a - (int32_t)((int16_t)rs1 & UINT16_MAX), 1, rm);
+                ((int16_t *)V(vd))[ei] = roundoff_i32(a - (int32_t)((int16_t)(rs1 & UINT16_MAX)), 1, rm);
                 break;
             }
         case 32: {
                 int64_t a = ((int32_t *)V(vs2))[ei];
-                ((int32_t *)V(vd))[ei] = roundoff_i64(a - (int64_t)((int32_t)rs1 & UINT32_MAX), 1, rm);
+                ((int32_t *)V(vd))[ei] = roundoff_i64(a - (int64_t)((int32_t)(rs1 & UINT32_MAX)), 1, rm);
                 break;
             }
         case 64: {
                 __int128_t a = ((int64_t *)V(vs2))[ei];
-                ((int64_t *)V(vd))[ei] = roundoff_i128(a - (__int128_t)((int64_t)rs1 & UINT64_MAX), 1, rm);
+                ((int64_t *)V(vd))[ei] = roundoff_i128(a - (__int128_t)((int64_t)(rs1 & UINT64_MAX)), 1, rm);
                 break;
             }
         default:
@@ -2822,22 +2822,22 @@ void glue(helper_vasubu_mvx, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, t
         switch (eew) {
         case 8: {
                 uint16_t a = ((uint8_t *)V(vs2))[ei];
-                ((uint8_t *)V(vd))[ei] = roundoff_u16(a - (uint16_t)((int8_t)rs1 & UINT8_MAX), 1, rm);
+                ((uint8_t *)V(vd))[ei] = roundoff_u16(a - (uint16_t)((uint8_t)(rs1 & UINT8_MAX)), 1, rm);
                 break;
             }
         case 16: {
                 uint32_t a = ((uint16_t *)V(vs2))[ei];
-                ((uint16_t *)V(vd))[ei] = roundoff_u32(a - (uint32_t)((int16_t)rs1 & UINT16_MAX), 1, rm);
+                ((uint16_t *)V(vd))[ei] = roundoff_u32(a - (uint32_t)((uint16_t)(rs1 & UINT16_MAX)), 1, rm);
                 break;
             }
         case 32: {
                 uint64_t a = ((uint32_t *)V(vs2))[ei];
-                ((uint32_t *)V(vd))[ei] = roundoff_u64(a - (uint64_t)((int32_t)rs1 & UINT32_MAX), 1, rm);
+                ((uint32_t *)V(vd))[ei] = roundoff_u64(a - (uint64_t)((uint32_t)(rs1 & UINT32_MAX)), 1, rm);
                 break;
             }
         case 64: {
                 __uint128_t a = ((uint64_t *)V(vs2))[ei];
-                ((uint64_t *)V(vd))[ei] = roundoff_u128(a - (__uint128_t)((int64_t)rs1 & UINT64_MAX), 1, rm);
+                ((uint64_t *)V(vd))[ei] = roundoff_u128(a - (__uint128_t)((uint64_t)(rs1 & UINT64_MAX)), 1, rm);
                 break;
             }
         default:

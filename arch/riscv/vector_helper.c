@@ -933,7 +933,7 @@ void helper_vmsbf(CPUState *env, uint32_t vd, uint32_t vs2)
         if (tmp != 0xff) {
             break;
         }
-        V(vd)[i] |= 0xff;
+        V(vd)[i] = 0xff;
     }
     if (tmp == 0xff && env->vl & 0x7) {
         tmp = set_before_first_bit(~(0xffu << (env->vl & 0x7)) & V(vs2)[i]);
@@ -952,7 +952,7 @@ void helper_vmsbf(CPUState *env, uint32_t vd, uint32_t vs2)
     }
 
     for (++i; i < env->vl >> 3; ++i) {
-        V(vd)[i] &= 0x00;
+        V(vd)[i] = 0x00;
     }
     if (env->vl & 0x7) {
         V(vd)[i] &= 0xffu << (env->vl & 0x7);
@@ -1007,31 +1007,34 @@ void helper_vmsif(CPUState *env, uint32_t vd, uint32_t vs2)
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = set_before_first_bit(V(vs2)[i]);
-        if (~tmp) {
+        if (tmp != 0xff) {
             break;
         }
-        V(vd)[i] |= 0xff;
+        V(vd)[i] = 0xff;
     }
-    if (!~tmp && env->vl & 0x7) {
-        tmp = set_before_first_bit((0xffu >> (env->vl & 0x7)) & V(vs2)[i]);
-        if (~tmp) {
-            tmp = tmp << 1 | 1;
-            V(vd)[i] |= (0xffu >> (env->vl & 0x7)) & tmp;
-            V(vd)[i] &= ~(0xffu >> (env->vl & 0x7)) | tmp;
+    if (tmp == 0xff && env->vl & 0x7) {
+        tmp = set_before_first_bit(~(0xffu << (env->vl & 0x7)) & V(vs2)[i]);
+        if (tmp != 0xff) {
+            tmp = tmp << 1 | 0b1;
+            V(vd)[i] |= ~(0xffu << (env->vl & 0x7)) & tmp;
+            V(vd)[i] &= (0xffu << (env->vl & 0x7)) | tmp;
         } else {
-            V(vd)[i] |= (0xffu >> (env->vl & 0x7));
+            V(vd)[i] |= ~(0xffu << (env->vl & 0x7));
         }
         return;
     }
 
-    tmp = tmp << 1 | 1;
-    V(vd)[i] = tmp;
+    if(i < env->vl >> 3)
+    {
+        tmp = tmp << 1 | 0b1;
+        V(vd)[i] = tmp;
+    }
 
     for (++i; i < env->vl >> 3; ++i) {
-        V(vd)[i] &= 0xff;
+        V(vd)[i] = 0x00;
     }
     if (env->vl & 0x7) {
-        V(vd)[i] &= ~(0xffu >> (env->vl & 0x7));
+        V(vd)[i] &= 0xffu << (env->vl & 0x7);
     }
 }
 
@@ -1044,32 +1047,35 @@ void helper_vmsif_m(CPUState *env, uint32_t vd, uint32_t vs2)
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = set_before_first_bit(V(0)[i] & V(vs2)[i]);
-        if (~tmp) {
+        if (tmp != 0xff) {
             break;
         }
         V(vd)[i] |= V(0)[i];
     }
-    if (!~tmp && env->vl & 0x7) {
-        tmp = set_before_first_bit((0xffu >> (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
-        if (~tmp) {
-            tmp = tmp << 1 | 1;
-            V(vd)[i] |= (0xffu >> (env->vl & 0x7)) & V(0)[i] & tmp;
-            V(vd)[i] &= ~(0xffu >> (env->vl & 0x7)) | ~V(0)[i] | tmp;
+    if (tmp == 0xff && env->vl & 0x7) {
+        tmp = set_before_first_bit(~(0xffu << (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
+        if (tmp != 0xff) {
+            tmp = tmp << 1 | 0b1;
+            V(vd)[i] |= ~(0xffu << (env->vl & 0x7)) & V(0)[i] & tmp;
+            V(vd)[i] &= (0xffu << (env->vl & 0x7)) | ~V(0)[i] | tmp;
         } else {
-            V(vd)[i] |= (0xffu >> (env->vl & 0x7)) & V(0)[i];
+            V(vd)[i] |= ~(0xffu << (env->vl & 0x7)) & V(0)[i];
         }
         return;
     }
 
-    tmp = tmp << 1 | 1;
-    V(vd)[i] |= V(0)[i] & tmp;
-    V(vd)[i] &= ~V(0)[i] | tmp;
+    if(i < env->vl >> 3)
+    {
+        tmp = tmp << 1 | 0b1;
+        V(vd)[i] |= V(0)[i] & tmp;
+        V(vd)[i] &= ~V(0)[i] | tmp;
+    }
 
     for (++i; i < env->vl >> 3; ++i) {
         V(vd)[i] &= ~V(0)[i];
     }
     if (env->vl & 0x7) {
-        V(vd)[i] &= ~(0xffu >> (env->vl & 0x7)) | ~V(0)[i];
+        V(vd)[i] &= (0xffu << (env->vl & 0x7)) | ~V(0)[i];
     }
 }
 
@@ -1082,31 +1088,34 @@ void helper_vmsof(CPUState *env, uint32_t vd, uint32_t vs2)
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = set_before_first_bit(V(vs2)[i]);
-        if (~tmp) {
+        if (tmp != 0xff) {
             break;
         }
         V(vd)[i] = 0;
     }
-    if (!~tmp && env->vl & 0x7) {
-        tmp = set_before_first_bit((0xffu >> (env->vl & 0x7)) & V(vs2)[i]);
-        if (~tmp) {
-            tmp = (tmp << 1 | 1) ^ tmp;
-            V(vd)[i] |= (0xffu >> (env->vl & 0x7)) & tmp;
-            V(vd)[i] &= ~(0xffu >> (env->vl & 0x7)) | tmp;
+    if (tmp == 0xff && env->vl & 0x7) {
+        tmp = set_before_first_bit(~(0xffu << (env->vl & 0x7)) & V(vs2)[i]);
+        if (tmp != 0xff) {
+            tmp = (tmp << 1 | 0b1) ^ tmp;
+            V(vd)[i] |= ~(0xffu << (env->vl & 0x7)) & tmp;
+            V(vd)[i] &= (0xffu << (env->vl & 0x7)) | tmp;
         } else {
-            V(vd)[i] |= (0xffu >> (env->vl & 0x7));
+            V(vd)[i] &= 0xffu << (env->vl & 0x7);
         }
         return;
     }
 
-    tmp = (tmp << 1 | 1) ^ tmp;
-    V(vd)[i] = tmp;
+    if(i < env->vl >> 3)
+    {
+        tmp = (tmp << 1 | 0b1) ^ tmp;
+        V(vd)[i] = tmp;
+    }
 
     for (++i; i < env->vl >> 3; ++i) {
         V(vd)[i] = 0;
     }
     if (env->vl & 0x7) {
-        V(vd)[i] &= ~(0xffu >> (env->vl & 0x7));
+        V(vd)[i] &= 0xffu << (env->vl & 0x7);
     }
 }
 
@@ -1119,32 +1128,35 @@ void helper_vmsof_m(CPUState *env, uint32_t vd, uint32_t vs2)
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = set_before_first_bit(V(0)[i] & V(vs2)[i]);
-        if (~tmp) {
+        if (tmp != 0xff) {
             break;
         }
         V(vd)[i] &= ~V(0)[i];
     }
-    if (!~tmp && env->vl & 0x7) {
-        tmp = set_before_first_bit((0xffu >> (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
-        if (~tmp) {
-            tmp = (tmp << 1 | 1) ^ tmp;
-            V(vd)[i] |= (0xffu >> (env->vl & 0x7)) & V(0)[i] & tmp;
-            V(vd)[i] &= ~(0xffu >> (env->vl & 0x7)) | ~V(0)[i] | tmp;
+    if (tmp == 0xff && env->vl & 0x7) {
+        tmp = set_before_first_bit(~(0xffu << (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
+        if (tmp != 0xff) {
+            tmp = (tmp << 1 | 0b1) ^ tmp;
+            V(vd)[i] |= ~(0xffu << (env->vl & 0x7)) & V(0)[i] & tmp;
+            V(vd)[i] &= (0xffu << (env->vl & 0x7)) | ~V(0)[i] | tmp;
         } else {
-            V(vd)[i] |= (0xffu >> (env->vl & 0x7)) & V(0)[i];
+            V(vd)[i] &= (0xffu << (env->vl & 0x7)) | ~V(0)[i];
         }
         return;
     }
 
-    tmp = (tmp << 1 | 1) ^ tmp;
-    V(vd)[i] |= V(0)[i] & tmp;
-    V(vd)[i] &= ~V(0)[i] | tmp;
+    if(i < env->vl >> 3)
+    {
+        tmp = (tmp << 1 | 0b1) ^ tmp;
+        V(vd)[i] |= V(0)[i] & tmp;
+        V(vd)[i] &= ~V(0)[i] | tmp;
+    }
 
     for (++i; i < env->vl >> 3; ++i) {
         V(vd)[i] &= ~V(0)[i];
     }
     if (env->vl & 0x7) {
-        V(vd)[i] &= ~(0xffu >> (env->vl & 0x7)) | ~V(0)[i];
+        V(vd)[i] &= (0xffu << (env->vl & 0x7)) | ~V(0)[i];
     }
 }
 

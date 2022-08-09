@@ -1640,7 +1640,6 @@ VOP_UNSIGNED_VVX(vsll_ivi, OP_SHL)
 VOP_UNSIGNED_VVX(vsrl_ivi, OP_SHR)
 VOP_UNSIGNED_VVX(vsaddu_ivi, VOP_SADDU)
 VOP_UNSIGNED_VVX(vssubu_ivi, VOP_SSUBU)
-VOP_UNSIGNED_VVX(vrgather_ivi, OP_GATHER)
 
 VOP_SIGNED_VVX(vmul_mvx, OP_MUL)
 VOP_SIGNED_VVX(vmulh_mvx, OP_MULH)
@@ -2143,6 +2142,34 @@ void glue(helper_vslide1down, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, 
 #endif
 }
 
+void glue(helper_vrgather_ivi, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, target_long imm)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    for (int ei = env->vstart; ei < env->vl; ++ei) {
+        TEST_MASK(ei)
+        switch (eew) {
+        case 8:
+            ((int8_t *)V(vd))[ei] = imm >= env->vlmax ? 0 : ((int8_t *)V(vs2))[imm];
+            break;
+        case 16:
+            ((int16_t *)V(vd))[ei] = imm >= env->vlmax ? 0 : ((int16_t *)V(vs2))[imm];
+            break;
+        case 32:
+            ((int32_t *)V(vd))[ei] = imm >= env->vlmax ? 0 : ((int32_t *)V(vs2))[imm];
+            break;
+        case 64:
+            ((int64_t *)V(vd))[ei] = imm >= env->vlmax ? 0 : ((int64_t *)V(vs2))[imm];
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+}
+
 void glue(helper_vrgatherei16_ivv, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
@@ -2154,16 +2181,16 @@ void glue(helper_vrgatherei16_ivv, POSTFIX)(CPUState *env, uint32_t vd, int32_t 
         uint16_t idx = ((uint16_t *)V(vs1))[ei];
         switch (eew) {
         case 8:
-            ((int8_t *)V(vs2))[ei] = idx >= env->vlmax ? 0 : ((int8_t *)V(vs2))[idx];
+            ((int8_t *)V(vd))[ei] = idx >= env->vlmax ? 0 : ((int8_t *)V(vs2))[idx];
             break;
         case 16:
-            ((int16_t *)V(vs2))[ei] = idx >= env->vlmax ? 0 : ((int16_t *)V(vs2))[idx];
+            ((int16_t *)V(vd))[ei] = idx >= env->vlmax ? 0 : ((int16_t *)V(vs2))[idx];
             break;
         case 32:
-            ((int32_t *)V(vs2))[ei] = idx >= env->vlmax ? 0 : ((int32_t *)V(vs2))[idx];
+            ((int32_t *)V(vd))[ei] = idx >= env->vlmax ? 0 : ((int32_t *)V(vs2))[idx];
             break;
         case 64:
-            ((int64_t *)V(vs2))[ei] = idx >= env->vlmax ? 0 : ((int64_t *)V(vs2))[idx];
+            ((int64_t *)V(vd))[ei] = idx >= env->vlmax ? 0 : ((int64_t *)V(vs2))[idx];
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);

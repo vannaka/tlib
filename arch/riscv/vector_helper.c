@@ -926,7 +926,7 @@ void helper_vmsbf(CPUState *env, uint32_t vd, uint32_t vs2)
     if (env->vstart) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    target_long tmp = 0;
+    target_long tmp = 0xff;
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = set_before_first_bit(V(vs2)[i]);
@@ -964,7 +964,7 @@ void helper_vmsbf_m(CPUState *env, uint32_t vd, uint32_t vs2)
     if (env->vstart) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    target_long tmp = 0;
+    target_long tmp = 0xff;
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = set_before_first_bit(V(0)[i] & V(vs2)[i]);
@@ -1003,7 +1003,7 @@ void helper_vmsif(CPUState *env, uint32_t vd, uint32_t vs2)
     if (env->vstart) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    target_long tmp = 0;
+    target_long tmp = 0xff;
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = set_before_first_bit(V(vs2)[i]);
@@ -1043,7 +1043,7 @@ void helper_vmsif_m(CPUState *env, uint32_t vd, uint32_t vs2)
     if (env->vstart) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    target_long tmp = 0;
+    target_long tmp = 0xff;
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = set_before_first_bit(V(0)[i] & V(vs2)[i]);
@@ -1084,7 +1084,7 @@ void helper_vmsof(CPUState *env, uint32_t vd, uint32_t vs2)
     if (env->vstart) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    target_long tmp = 0;
+    target_long tmp = 0xff;
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = set_before_first_bit(V(vs2)[i]);
@@ -1124,7 +1124,7 @@ void helper_vmsof_m(CPUState *env, uint32_t vd, uint32_t vs2)
     if (env->vstart) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    target_long tmp = 0;
+    target_long tmp = 0xff;
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = set_before_first_bit(V(0)[i] & V(vs2)[i]);

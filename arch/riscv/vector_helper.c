@@ -845,7 +845,7 @@ target_ulong helper_vpopc(CPUState *env, uint32_t vs2)
         cnt += bitcnt(V(vs2)[i]);
     }
     if (env->vl & 0x7) {
-        cnt += bitcnt(~(0xffu >> (env->vl & 0x7)) & V(vs2)[i]);
+        cnt += bitcnt(~(0xffu << (env->vl & 0x7)) & V(vs2)[i]);
     }
     return cnt;
 }
@@ -861,7 +861,7 @@ target_ulong helper_vpopc_m(CPUState *env, uint32_t vs2)
         cnt += bitcnt(V(0)[i] & V(vs2)[i]);
     }
     if (env->vl & 0x7) {
-        cnt += bitcnt(~(0xffu >> (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
+        cnt += bitcnt(~(0xffu << (env->vl & 0x7)) & V(0)[i] & V(vs2)[i]);
     }
     return cnt;
 }

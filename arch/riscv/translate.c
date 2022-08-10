@@ -2588,6 +2588,11 @@ static void gen_v_opivi(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
     case RISC_V_FUNCT_SLIDEUP:
     case RISC_V_FUNCT_SLIDEDOWN:
     case RISC_V_FUNCT_RGATHER:
+    case RISC_V_FUNCT_SLL:
+    case RISC_V_FUNCT_SRL:
+    case RISC_V_FUNCT_SRA:
+    case RISC_V_FUNCT_SSRL:
+    case RISC_V_FUNCT_SSRA:
         tcg_gen_movi_tl(t_simm5, simm5);
         gen_v_opivt(dc, funct6, vd, vs2, t_simm5, vm);
         break;
@@ -2608,11 +2613,6 @@ static void gen_v_opivi(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
     case RISC_V_FUNCT_MSGT:
     case RISC_V_FUNCT_SADDU:
     case RISC_V_FUNCT_SADD:
-    case RISC_V_FUNCT_SLL:
-    case RISC_V_FUNCT_SRL:
-    case RISC_V_FUNCT_SRA:
-    case RISC_V_FUNCT_SSRL:
-    case RISC_V_FUNCT_SSRA:
     // Reserved for vx
         simm5 = rs1 >= 0x10 ? (0xffffffffffffffe0) | rs1 : rs1;
         tcg_gen_movi_tl(t_simm5, simm5);

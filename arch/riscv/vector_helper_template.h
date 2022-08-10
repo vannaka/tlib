@@ -3095,7 +3095,7 @@ void glue(helper_viota, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2)
             ((uint32_t *)V(vd))[ei] = cnt;
             break;
         case 64:
-            ((uint64_t *)V(vs2))[ei] = cnt;
+            ((uint64_t *)V(vd))[ei] = cnt;
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);

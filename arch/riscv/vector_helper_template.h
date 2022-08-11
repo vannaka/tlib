@@ -210,6 +210,9 @@ void glue(glue(glue(helper_vle, BITS), ff), POSTFIX)(CPUState *env, uint32_t vd,
     if (emul == RESERVED_EMUL || V_IDX_INVALID_EMUL(vd, emul) || V_INVALID_NF(vd, nf, emul)) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
+    if(env->vl == 0) {
+        return;
+    }
     target_ulong src_addr = env->gpr[rs1];
     int ei = env->vstart;
     if (ei == 0
@@ -1398,6 +1401,9 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     if (V_IDX_INVALID(vs2)) {                                                                           \
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                           \
     }                                                                                                   \
+    if(env->vl == 0) {                                                                                  \
+        return;                                                                                         \
+    }                                                                                                   \
     uint64_t acc = 0;                                                                                   \
     switch (eew) {                                                                                      \
     case 8:                                                                                             \
@@ -1455,6 +1461,9 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     const target_ulong eew = env->vsew;                                                                 \
     if (V_IDX_INVALID(vs2)) {                                                                           \
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                           \
+    }                                                                                                   \
+    if(env->vl == 0) {                                                                                  \
+        return;                                                                                         \
     }                                                                                                   \
     int64_t acc = 0;                                                                                    \
     switch (eew) {                                                                                      \
@@ -1776,6 +1785,10 @@ void glue(helper_vwredsumu_ivv, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2
     if (V_IDX_INVALID_EEW(vd, eew << 1) || V_IDX_INVALID(vs2) || V_IDX_INVALID_EEW(vs1, eew << 1)) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
+    if(env->vl == 0)
+    {
+        return;
+    }
     uint64_t acc = 0;
     for (int ei = env->vstart; ei < env->vl; ++ei) {
         TEST_MASK(ei)
@@ -1815,6 +1828,10 @@ void glue(helper_vwredsum_ivv, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2,
     const target_ulong eew = env->vsew;
     if (V_IDX_INVALID_EEW(vd, eew << 1) || V_IDX_INVALID(vs2) || V_IDX_INVALID_EEW(vs1, eew << 1)) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    if(env->vl == 0)
+    {
+        return;
     }
     int64_t acc = 0;
     for (int ei = env->vstart; ei < env->vl; ++ei) {
@@ -2043,7 +2060,10 @@ void glue(helper_vslide1up, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, ta
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
-
+    if(env->vl == 0) {
+        return;
+    }
+    
     if (env->vstart == 0
 #ifdef MASKED
         && (V(0)[0] & 0x1)
@@ -2096,6 +2116,9 @@ void glue(helper_vslide1down, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, 
     }
     const target_ulong eew = env->vsew;
     const int src_max = env->vl - 1;
+    if(env->vl == 0) {
+        return;
+    }
 
     for (int ei = env->vstart; ei < src_max; ++ei) {
         TEST_MASK(ei)

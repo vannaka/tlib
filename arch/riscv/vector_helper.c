@@ -736,23 +736,25 @@ target_long helper_vmv_xs(CPUState *env, int32_t vs2)
 
 void helper_vmv_sx(CPUState *env, uint32_t vd, target_ulong rs1)
 {
-    const target_ulong eew = env->vsew;
-    switch (eew) {
-    case 8:
-        ((uint8_t *)V(vd))[0] = rs1;
-        break;
-    case 16:
-        ((uint16_t *)V(vd))[0] = rs1;
-        break;
-    case 32:
-        ((uint32_t *)V(vd))[0] = rs1;
-        break;
-    case 64:
-        ((uint64_t *)V(vd))[0] = rs1;
-        break;
-    default:
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
-        break;
+    if(env->vstart < env->vl) {
+        const target_ulong eew = env->vsew;
+        switch (eew) {
+        case 8:
+            ((uint8_t *)V(vd))[0] = rs1;
+            break;
+        case 16:
+            ((uint16_t *)V(vd))[0] = rs1;
+            break;
+        case 32:
+            ((uint32_t *)V(vd))[0] = rs1;
+            break;
+        case 64:
+            ((uint64_t *)V(vd))[0] = rs1;
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
     }
 }
 
@@ -882,7 +884,7 @@ target_long helper_vfirst(CPUState *env, uint32_t vs2)
     if (env->vstart) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    target_long tmp = 0;
+    target_long tmp = -1;
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = first_bit(V(vs2)[i]);
@@ -901,7 +903,7 @@ target_long helper_vfirst_m(CPUState *env, uint32_t vs2)
     if (env->vstart) {
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
-    target_long tmp = 0;
+    target_long tmp = -1;
     int i = 0;
     for (; i < env->vl >> 3; ++i) {
         tmp = first_bit(V(0)[i] & V(vs2)[i]);

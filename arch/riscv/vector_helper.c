@@ -734,22 +734,22 @@ target_long helper_vmv_xs(CPUState *env, int32_t vs2)
     }
 }
 
-void helper_vmv_sx(CPUState *env, uint32_t vd, target_ulong rs1)
+void helper_vmv_sx(CPUState *env, uint32_t vd, target_long rs1)
 {
     if(env->vstart < env->vl) {
         const target_ulong eew = env->vsew;
         switch (eew) {
         case 8:
-            ((uint8_t *)V(vd))[0] = rs1;
+            ((int8_t *)V(vd))[0] = rs1;
             break;
         case 16:
-            ((uint16_t *)V(vd))[0] = rs1;
+            ((int16_t *)V(vd))[0] = rs1;
             break;
         case 32:
-            ((uint32_t *)V(vd))[0] = rs1;
+            ((int32_t *)V(vd))[0] = rs1;
             break;
         case 64:
-            ((uint64_t *)V(vd))[0] = rs1;
+            ((int64_t *)V(vd))[0] = rs1;
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);

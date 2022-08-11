@@ -90,13 +90,13 @@ static inline DATA_TYPE glue(roundoff_u, BITS)(DATA_TYPE v, uint16_t d, uint8_t 
         r = (v >> (d - 1)) & 0b1;
         break;
     case 0b01: // rne
-        r = ((v >> (d - 1)) & 0b1) && (((v >> d) & 0b1) || (d > 1 && (v & ((1 << (d - 1)) - 1))));
+        r = ((v >> (d - 1)) & 0b1) && (((v >> d) & 0b1) || (d > 1 && (v & (((DATA_TYPE) 1 << (d - 1)) - 1))));
         break;
     case 0b10: // rdn
         r = 0;
         break;
     case 0b11: // rod
-        r = !((v >> d) & 0b1) && (v & ((1 << d) - 1));
+        r = !((v >> d) & 0b1) && (v & (((DATA_TYPE) 1 << d) - 1));
         break;
     }
     return (v >> d) + r;
@@ -113,13 +113,13 @@ static inline DATA_STYPE glue(roundoff_i, BITS)(DATA_STYPE v, uint16_t d, uint8_
         r = (v >> (d - 1)) & 0b1;
         break;
     case 0b01: // rne
-        r = ((v >> (d - 1)) & 0b1) && (((v >> d) & 0b1) || (d > 1 && (v & ((1 << (d - 1)) - 1))));
+        r = ((v >> (d - 1)) & 0b1) && (((v >> d) & 0b1) || (d > 1 && (v & (((DATA_STYPE) 1 << (d - 1)) - 1))));
         break;
     case 0b10: // rdn
         r = 0;
         break;
     case 0b11: // rod
-        r = !((v >> d) & 0b1) && (v & ((1 << d) - 1));
+        r = !((v >> d) & 0b1) && (v & (((DATA_STYPE) 1 << d) - 1));
         break;
     }
     return (v >> d) + r;

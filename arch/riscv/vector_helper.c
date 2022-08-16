@@ -75,7 +75,7 @@ target_ulong helper_vsetvl(CPUState *env, target_ulong rd, target_ulong rs1,
     return env->vl;
 }
 
-void helper_vmv_ivi(CPUState *env, uint32_t vd, int64_t imm)
+void helper_vmv_ivi(CPUState *env, uint32_t vd, target_long imm)
 {
     const target_ulong eew = env->vsew;
     if (V_IDX_INVALID(vd)) {
@@ -84,16 +84,16 @@ void helper_vmv_ivi(CPUState *env, uint32_t vd, int64_t imm)
     for (int ei = env->vstart; ei < env->vl; ++ei) {
         switch (eew) {
         case 8:
-            ((uint8_t *)V(vd))[ei] = imm;
+            ((int8_t *)V(vd))[ei] = imm;
             break;
         case 16:
-            ((uint16_t *)V(vd))[ei] = imm;
+            ((int16_t *)V(vd))[ei] = imm;
             break;
         case 32:
-            ((uint32_t *)V(vd))[ei] = imm;
+            ((int32_t *)V(vd))[ei] = imm;
             break;
         case 64:
-            ((uint64_t *)V(vd))[ei] = imm;
+            ((int64_t *)V(vd))[ei] = imm;
             break;
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);

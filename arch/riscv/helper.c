@@ -271,19 +271,19 @@ static int get_physical_address(CPUState *env, target_phys_addr_t *physical, int
             target_ulong vpn = addr >> PGSHIFT;
             *physical = (ppn | (vpn & ((1L << ptshift) - 1))) << PGSHIFT;
 
-            /* we do not give all prots indicated by the PTE
-             * this is because future accesses need to do things like set the
-             * dirty bit on the PTE
+            /* we only give write permission for write accesses
+             * (when we've just marked the PTE as dirty)
+             * or if it was already dirty
              *
              * at this point, we assume that protection checks have occurred */
-            if ((pte & PTE_X) && access_type == ACCESS_INST_FETCH) {
+            if (pte & PTE_X) {
                 *prot |= PAGE_EXEC;
-            } else if ((pte & PTE_W) && access_type == ACCESS_DATA_STORE) {
+            }
+            if ((pte & PTE_W) && (access_type == ACCESS_DATA_STORE || (pte & PTE_D))) {
                 *prot |= PAGE_WRITE;
-            } else if ((pte & PTE_R) && access_type == ACCESS_DATA_LOAD) {
+            }
+            if ((pte & PTE_R) || ((pte & PTE_X) && mxr)) {
                 *prot |= PAGE_READ;
-            } else {
-                tlib_abort("err in translation prots");
             }
             return TRANSLATE_SUCCESS;
         }

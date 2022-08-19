@@ -808,7 +808,6 @@ void riscv_set_mode(CPUState *env, target_ulong newpriv)
     if (newpriv == PRV_H) {
         newpriv = PRV_U;
     }
-    helper_tlb_flush(env);
     env->priv = newpriv;
 }
 

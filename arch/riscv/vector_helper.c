@@ -323,31 +323,34 @@ void helper_vmadc_vv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
-        if (!(i & 0x7)) {
-            V(vd)[i >> 3] = 0;
-            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
-               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
-            }
-        }
+        uint8_t mask = ~(1 << (i & 0x7));
         switch (eew) {
         case 8: {
                 uint8_t a = ((uint8_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + ((uint8_t *)V(vs1))[i] < a) << (i & 0x7);
+                uint8_t ab = a + ((uint8_t *)V(vs1))[i];
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a) << (i & 0x7);
                 break;
             }
         case 16: {
                 uint16_t a = ((uint16_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + ((uint16_t *)V(vs1))[i] < a) << (i & 0x7);
+                uint16_t ab = a + ((uint16_t *)V(vs1))[i];
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a) << (i & 0x7);
                 break;
             }
         case 32: {
                 uint32_t a = ((uint32_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + ((uint32_t *)V(vs1))[i] < a) << (i & 0x7);
+                uint32_t ab = a + ((uint32_t *)V(vs1))[i];
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a) << (i & 0x7);
                 break;
             }
         case 64: {
                 uint64_t a = ((uint64_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + ((uint64_t *)V(vs1))[i] < a) << (i & 0x7);
+                uint64_t ab = a + ((uint64_t *)V(vs1))[i];
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a) << (i & 0x7);
                 break;
             }
         default:
@@ -364,36 +367,35 @@ void helper_vmadc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
-        if (!(i & 0x7)) {
-            V(vd)[i >> 3] = 0;
-            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
-               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
-            }
-        }
         uint8_t carry = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
+        uint8_t mask = ~(1 << (i & 0x7));
         switch (eew) {
         case 8: {
                 uint8_t a = ((uint8_t *)V(vs2))[i];
                 uint8_t ab = a + ((uint8_t *)V(vs1))[i];
-                V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a || (carry && !(uint8_t)(ab + 1))) << (i & 0x7);
                 break;
             }
         case 16: {
                 uint16_t a = ((uint16_t *)V(vs2))[i];
                 uint16_t ab = a + ((uint16_t *)V(vs1))[i];
-                V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a || (carry && !(uint16_t)(ab + 1))) << (i & 0x7);
                 break;
             }
         case 32: {
                 uint32_t a = ((uint32_t *)V(vs2))[i];
                 uint32_t ab = a + ((uint32_t *)V(vs1))[i];
-                V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a || (carry && !(uint32_t)(ab + 1))) << (i & 0x7);
                 break;
             }
         case 64: {
                 uint64_t a = ((uint64_t *)V(vs2))[i];
                 uint64_t ab = a + ((uint64_t *)V(vs1))[i];
-                V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a || (carry && !(uint64_t)(ab + 1))) << (i & 0x7);
                 break;
             }
         default:
@@ -438,25 +440,28 @@ void helper_vmsbc_vv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
-        if (!(i & 0x7)) {
-            V(vd)[i >> 3] = 0;
-            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
-               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
-            }
-        }
+        uint8_t mask = ~(1 << (i & 0x7));
         switch (eew) {
-        case 8:
-            V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < ((uint8_t *)V(vs1))[i]) << (i & 0x7);
-            break;
-        case 16:
-            V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < ((uint16_t *)V(vs1))[i]) << (i & 0x7);
-            break;
-        case 32:
-            V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < ((uint32_t *)V(vs1))[i]) << (i & 0x7);
-            break;
-        case 64:
-            V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < ((uint64_t *)V(vs1))[i]) << (i & 0x7);
-            break;
+        case 8: {
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < ((uint8_t *)V(vs1))[i]) << (i & 0x7);
+                break;
+            }
+        case 16: {
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < ((uint16_t *)V(vs1))[i]) << (i & 0x7);
+                break;
+            }
+        case 32: {
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < ((uint32_t *)V(vs1))[i]) << (i & 0x7);
+                break;
+            }
+        case 64: {
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < ((uint64_t *)V(vs1))[i]) << (i & 0x7);
+                break;
+            }
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
             break;
@@ -471,32 +476,35 @@ void helper_vmsbc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
-        if (!(i & 0x7)) {
-            V(vd)[i >> 3] = 0;
-            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
-               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
-            }
-        }
+        uint8_t mask = ~(1 << (i & 0x7));
         uint8_t borrow = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
         switch (eew) {
         case 8: {
+                uint8_t a = ((uint8_t *)V(vs2))[i];
                 uint8_t b = ((uint8_t *)V(vs1))[i];
-                V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < b || (borrow && !(b + 1))) << (i & 0x7);
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (a < b || (borrow && a == b)) << (i & 0x7);
                 break;
             }
         case 16: {
+                uint16_t a = ((uint16_t *)V(vs2))[i];
                 uint16_t b = ((uint16_t *)V(vs1))[i];
-                V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < b || (borrow && !(b + 1))) << (i & 0x7);
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (a < b || (borrow && a == b)) << (i & 0x7);
                 break;
             }
         case 32: {
+                uint32_t a = ((uint32_t *)V(vs2))[i];
                 uint32_t b = ((uint32_t *)V(vs1))[i];
-                V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < b || (borrow && !(b + 1))) << (i & 0x7);
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (a < b || (borrow && a == b)) << (i & 0x7);
                 break;
             }
         case 64: {
+                uint64_t a = ((uint64_t *)V(vs2))[i];
                 uint64_t b = ((uint64_t *)V(vs1))[i];
-                V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < b || (borrow && !(b + 1))) << (i & 0x7);
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (a < b || (borrow && a == b)) << (i & 0x7);
                 break;
             }
         default:
@@ -541,31 +549,34 @@ void helper_vmadc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
-        if (!(i & 0x7)) {
-            V(vd)[i >> 3] = 0;
-            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
-               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
-            }
-        }
+        uint8_t mask = ~(1 << (i & 0x7));
         switch (eew) {
         case 8: {
                 uint8_t a = ((uint8_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + (uint8_t)rs1 < a) << (i & 0x7);
+                uint8_t ab = a + (uint8_t)rs1;
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a) << (i & 0x7);
                 break;
             }
         case 16: {
                 uint16_t a = ((uint16_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + (uint16_t)rs1 < a) << (i & 0x7);
+                uint16_t ab = a + (uint16_t)rs1;
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a) << (i & 0x7);
                 break;
             }
         case 32: {
                 uint32_t a = ((uint32_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + (uint32_t)rs1 < a) << (i & 0x7);
+                uint32_t ab = a + (uint32_t)rs1;
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a) << (i & 0x7);
                 break;
             }
         case 64: {
                 uint64_t a = ((uint64_t *)V(vs2))[i];
-                V(vd)[i >> 3] |= (a + (uint64_t)rs1 < a) << (i & 0x7);
+                uint64_t ab = a + (uint64_t)rs1;
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a) << (i & 0x7);
                 break;
             }
         default:
@@ -582,36 +593,35 @@ void helper_vmadc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
-        if (!(i & 0x7)) {
-            V(vd)[i >> 3] = 0;
-            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
-               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
-            }
-        }
+        uint8_t mask = ~(1 << (i & 0x7));
         uint8_t carry = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
         switch (eew) {
         case 8: {
                 uint8_t a = ((uint8_t *)V(vs2))[i];
-                uint64_t ab = a + (uint8_t)rs1;
-                V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
+                uint8_t ab = a + (uint8_t)rs1;
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a || (carry && !(uint8_t)(ab + 1))) << (i & 0x7);
                 break;
             }
         case 16: {
                 uint16_t a = ((uint16_t *)V(vs2))[i];
-                uint64_t ab = a + (uint16_t)rs1;
-                V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
+                uint16_t ab = a + (uint16_t)rs1;
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a || (carry && !(uint16_t)(ab + 1))) << (i & 0x7);
                 break;
             }
         case 32: {
                 uint32_t a = ((uint32_t *)V(vs2))[i];
                 uint32_t ab = a + (uint32_t)rs1;
-                V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a || (carry && !(uint32_t)(ab + 1))) << (i & 0x7);
                 break;
             }
         case 64: {
                 uint64_t a = ((uint64_t *)V(vs2))[i];
                 uint64_t ab = a + (uint64_t)rs1;
-                V(vd)[i >> 3] |= (ab < a || (carry && !(ab + 1))) << (i & 0x7);
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (ab < a || (carry && !(uint64_t)(ab + 1))) << (i & 0x7);
                 break;
             }
         default:
@@ -656,25 +666,28 @@ void helper_vmsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
-        if (!(i & 0x7)) {
-            V(vd)[i >> 3] = 0;
-            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
-               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
-            }
-        }
+        uint8_t mask = ~(1 << (i & 0x7));
         switch (eew) {
-        case 8:
-            V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < (uint8_t)rs1) << (i & 0x7);
-            break;
-        case 16:
-            V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < (uint16_t)rs1) << (i & 0x7);
-            break;
-        case 32:
-            V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < (uint32_t)rs1) << (i & 0x7);
-            break;
-        case 64:
-            V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < (uint64_t)rs1) << (i & 0x7);
-            break;
+        case 8: {
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < (uint8_t)rs1) << (i & 0x7);
+                break;
+            }
+        case 16: {
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < (uint16_t)rs1) << (i & 0x7);
+                break;
+            }
+        case 32: {
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < (uint32_t)rs1) << (i & 0x7);
+                break;
+            }
+        case 64: {
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < (uint64_t)rs1) << (i & 0x7);
+                break;
+            }
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
             break;
@@ -689,26 +702,33 @@ void helper_vmsbc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_ulong rs1)
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
-        if (!(i & 0x7)) {
-            V(vd)[i >> 3] = 0;
-            if((env->vl & 0x7) && i >> 3 == env->vl >> 3) {
-               V(vd)[i >> 3] = 0xff << (env->vl & 0x7);
-            }
-        }
+        uint8_t mask = ~(1 << (i & 0x7));
         uint8_t borrow = !!(V(0)[i >> 3] & (1 << (i & 0x7)));
         switch (eew) {
-        case 8:
-            V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < (uint8_t)rs1 || (borrow && !((uint8_t)rs1 + 1))) << (i & 0x7);
-            break;
-        case 16:
-            V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < (uint16_t)rs1 || (borrow && !((uint16_t)rs1 + 1))) << (i & 0x7);
-            break;
-        case 32:
-            V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < (uint32_t)rs1 || (borrow && !((uint32_t)rs1 + 1))) << (i & 0x7);
-            break;
-        case 64:
-            V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < (uint64_t)rs1 || (borrow && !((uint64_t)rs1 + 1))) << (i & 0x7);
-            break;
+        case 8: {
+                uint8_t a = ((uint8_t *)V(vs2))[i];
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (a < (uint8_t)rs1 || (borrow && a == (uint8_t)rs1)) << (i & 0x7);
+                break;
+            }
+        case 16: {
+                uint16_t a = ((uint16_t *)V(vs2))[i];
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (a < (uint16_t)rs1 || (borrow && a == (uint16_t)rs1)) << (i & 0x7);
+                break;
+            }
+        case 32: {
+                uint32_t a = ((uint32_t *)V(vs2))[i];
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (a < (uint32_t)rs1 || (borrow && a == (uint32_t)rs1)) << (i & 0x7);
+                break;
+            }
+        case 64: {
+                uint64_t a = ((uint64_t *)V(vs2))[i];
+                V(vd)[i >> 3] &= mask;
+                V(vd)[i >> 3] |= (a < (uint64_t)rs1 || (borrow && a == (uint64_t)rs1)) << (i & 0x7);
+                break;
+            }
         default:
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
             break;

@@ -1155,7 +1155,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
 }
 
 #define V3OP_SIGNED_VVX(NAME, OP)                                                                           \
-void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, target_ulong imm)         \
+void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, target_long imm)         \
 {                                                                                                           \
     const target_ulong eew = env->vsew;                                                                     \
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {                                                          \

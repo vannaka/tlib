@@ -714,14 +714,14 @@ VF3OP_VVV(vfnmsub_vv, VFOP_NMSUB)
 VF3OP_WVX(vfwmacc_vf, VFOP_MACC)
 VF3OP_WVV(vfwmacc_vv, VFOP_MACC)
 
-VF3OP_WVX(vfwnmacc_vv, VFOP_NMACC)
-VF3OP_WVV(vfwnmacc_vf, VFOP_NMACC)
+VF3OP_WVX(vfwnmacc_vf, VFOP_NMACC)
+VF3OP_WVV(vfwnmacc_vv, VFOP_NMACC)
 
-VF3OP_WVX(vfwmsac_vv, VFOP_MSAC)
-VF3OP_WVV(vfwmsac_vf, VFOP_MSAC)
+VF3OP_WVX(vfwmsac_vf, VFOP_MSAC)
+VF3OP_WVV(vfwmsac_vv, VFOP_MSAC)
 
-VF3OP_WVX(vfwnmsac_vv, VFOP_NMSAC)
-VF3OP_WVV(vfwnmsac_vf, VFOP_NMSAC)
+VF3OP_WVX(vfwnmsac_vf, VFOP_NMSAC)
+VF3OP_WVV(vfwnmsac_vv, VFOP_NMSAC)
 
 #define VFOP_FMIN_s(ENV, A, B, FRM) helper_fmin_s(ENV, A, B)
 #define VFOP_FMIN_d(ENV, A, B, FRM) helper_fmin_d(ENV, A, B)

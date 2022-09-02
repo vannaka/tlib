@@ -129,7 +129,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         TEST_MASK(ei)                                                                                                                   \
         switch (eew) {                                                                                                                  \
         case 32:                                                                                                                        \
-            ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env, helper_fcvt_s_d(env, ((float32 *)V(vs2))[ei], env->frm), imm, env->frm);     \
+            ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env, helper_fcvt_d_s(env, ((float32 *)V(vs2))[ei], env->frm), imm, env->frm);     \
             break;                                                                                                                      \
         }                                                                                                                               \
     }                                                                                                                                   \
@@ -157,8 +157,8 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         TEST_MASK(ei)                                                                                                       \
         switch (eew) {                                                                                                      \
         case 32:                                                                                                            \
-            ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env, helper_fcvt_s_d(env, ((float32 *)V(vs2))[ei], env->frm),         \
-                                                    helper_fcvt_s_d(env, ((float32 *)V(vs1))[ei], env->frm), env->frm);     \
+            ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env, helper_fcvt_d_s(env, ((float32 *)V(vs2))[ei], env->frm),         \
+                                                    helper_fcvt_d_s(env, ((float32 *)V(vs1))[ei], env->frm), env->frm);     \
             break;                                                                                                          \
         }                                                                                                                   \
     }                                                                                                                       \
@@ -215,7 +215,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         TEST_MASK(ei)                                                                                                                                       \
         switch (eew) {                                                                                                                                      \
         case 32:                                                                                                                                            \
-            ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env, ((float64 *)V(vs2))[ei], helper_fcvt_s_d(env, ((float32 *)V(vs1))[ei], env->frm), env->frm);     \
+            ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env, ((float64 *)V(vs2))[ei], helper_fcvt_d_s(env, ((float32 *)V(vs1))[ei], env->frm), env->frm);     \
             break;                                                                                                                                          \
         }                                                                                                                                                   \
     }                                                                                                                                                       \
@@ -320,7 +320,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         case 32:                                                                                    \
             ((float64 *)V(vd))[ei] = glue(HELPER, _s)(env,                                          \
                 ((float64 *)V(vd))[ei],                                                             \
-                helper_fcvt_s_d(env, ((float32 *)V(vs2))[ei], env->frm),                            \
+                helper_fcvt_d_s(env, ((float32 *)V(vs2))[ei], env->frm),                            \
                 imm, env->frm);                                                                     \
             break;                                                                                  \
         }                                                                                           \
@@ -351,8 +351,8 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         case 32:                                                                                \
             ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env,                                      \
                 ((float64 *)V(vd))[ei],                                                         \
-                helper_fcvt_s_d(env, ((float32 *)V(vs2))[ei], env->frm),                        \
-                helper_fcvt_s_d(env, ((float32 *)V(vs1))[ei], env->frm), env->frm);             \
+                helper_fcvt_d_s(env, ((float32 *)V(vs2))[ei], env->frm),                        \
+                helper_fcvt_d_s(env, ((float32 *)V(vs1))[ei], env->frm), env->frm);             \
             break;                                                                              \
         }                                                                                       \
     }                                                                                           \
@@ -626,7 +626,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         TEST_MASK(ei)                                                                                   \
         switch (eew) {                                                                                  \
         case 32:                                                                                        \
-            acc = glue(HELPER, _s)(env, acc, helper_fcvt_s_d(env, ((float32 *)V(vs2))[ei], env->frm));  \
+            acc = glue(HELPER, _s)(env, acc, helper_fcvt_d_s(env, ((float32 *)V(vs2))[ei], env->frm));  \
             break;                                                                                      \
         }                                                                                               \
     }                                                                                                   \

@@ -837,6 +837,7 @@ static void gen_fp_load(DisasContext *dc, uint32_t opc, int rd, int rs1, target_
     switch (opc) {
     case OPC_RISC_FLW:
         tcg_gen_qemu_ld32u(cpu_fpr[rd], t0, dc->base.mem_idx);
+        tcg_gen_ori_i64(cpu_fpr[rd], cpu_fpr[rd], ~(int64_t)UINT32_MAX);
         break;
     case OPC_RISC_FLD:
         tcg_gen_qemu_ld64(cpu_fpr[rd], t0, dc->base.mem_idx);

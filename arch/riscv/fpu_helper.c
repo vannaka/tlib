@@ -64,6 +64,14 @@ unsigned int ieee_rm[] = {
     float_round_nearest_even, float_round_to_zero, float_round_down, float_round_up, float_round_ties_away
 };
 
+typedef enum {
+    riscv_float_round_nearest_even = 0, 
+    riscv_float_round_to_zero = 1, 
+    riscv_float_round_down = 2, 
+    riscv_float_round_up = 3, 
+    riscv_float_round_ties_away = 4
+} riscv_float_round_mode;
+
 /* convert RISC-V Vector Fixed-Point Rounding Mode to IEEE library numbers */
 unsigned int ieee_vxrm[] = {
     float_round_up, float_round_nearest_even, float_round_down

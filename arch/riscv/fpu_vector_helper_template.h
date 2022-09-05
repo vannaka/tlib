@@ -797,20 +797,20 @@ VFOP_VV(vfcvt_xuf_v, VFOP_FCVT_XUF)
         : helper_fcvt_l_d(ENV, OP1, ieee_vxrm[env->vxrm]); })
 VFOP_VV(vfcvt_xf_v, VFOP_FCVT_XF)
 
-#define VFOP_FCVT_RTZ_XUF_s(ENV, OP1) helper_fcvt_wu_s(ENV, OP1, float_round_to_zero)
-#define VFOP_FCVT_RTZ_XUF_d(ENV, OP1) helper_fcvt_lu_d(ENV, OP1, float_round_to_zero)
+#define VFOP_FCVT_RTZ_XUF_s(ENV, OP1) helper_fcvt_wu_s(ENV, OP1, riscv_float_round_to_zero)
+#define VFOP_FCVT_RTZ_XUF_d(ENV, OP1) helper_fcvt_lu_d(ENV, OP1, riscv_float_round_to_zero)
 VFOP_VV(vfcvt_rtz_xuf_v, VFOP_FCVT_RTZ_XUF)
 
-#define VFOP_FCVT_RTZ_XF_s(ENV, OP1) helper_fcvt_w_s(ENV, OP1, float_round_to_zero)
-#define VFOP_FCVT_RTZ_XF_d(ENV, OP1) helper_fcvt_l_d(ENV, OP1, float_round_to_zero)
+#define VFOP_FCVT_RTZ_XF_s(ENV, OP1) helper_fcvt_w_s(ENV, OP1, riscv_float_round_to_zero)
+#define VFOP_FCVT_RTZ_XF_d(ENV, OP1) helper_fcvt_l_d(ENV, OP1, riscv_float_round_to_zero)
 VFOP_VV(vfcvt_rtz_xf_v, VFOP_FCVT_RTZ_XF)
 
-#define VFOP_FCVT_FXU_s(ENV, OP1) helper_fcvt_s_wu(ENV, OP1, float_round_to_zero)
-#define VFOP_FCVT_FXU_d(ENV, OP1) helper_fcvt_d_lu(ENV, OP1, float_round_to_zero)
+#define VFOP_FCVT_FXU_s(ENV, OP1) helper_fcvt_s_wu(ENV, OP1, riscv_float_round_to_zero)
+#define VFOP_FCVT_FXU_d(ENV, OP1) helper_fcvt_d_lu(ENV, OP1, riscv_float_round_to_zero)
 VFOP_VV(vfcvt_fxu_v, VFOP_FCVT_FXU)
 
-#define VFOP_FCVT_FX_s(ENV, OP1) helper_fcvt_s_w(ENV, OP1, float_round_to_zero)
-#define VFOP_FCVT_FX_d(ENV, OP1) helper_fcvt_d_l(ENV, OP1, float_round_to_zero)
+#define VFOP_FCVT_FX_s(ENV, OP1) helper_fcvt_s_w(ENV, OP1, riscv_float_round_to_zero)
+#define VFOP_FCVT_FX_d(ENV, OP1) helper_fcvt_d_l(ENV, OP1, riscv_float_round_to_zero)
 VFOP_VV(vfcvt_fx_v, VFOP_FCVT_FX)
 
 #define VFOP_FWCVT_XUF_s(ENV, OP1) ({                           \
@@ -825,16 +825,16 @@ VFOP_WV(vfwcvt_xuf_v, VFOP_FWCVT_XUF)
         : helper_fcvt_l_s(ENV, OP1, ieee_vxrm[env->vxrm]); })
 VFOP_WV(vfwcvt_xf_v, VFOP_FWCVT_XF)
 
-#define VFOP_FWCVT_RTZ_XUF_s(ENV, OP1) helper_fcvt_lu_s(ENV, OP1, float_round_to_zero)
+#define VFOP_FWCVT_RTZ_XUF_s(ENV, OP1) helper_fcvt_lu_s(ENV, OP1, riscv_float_round_to_zero)
 VFOP_WV(vfwcvt_rtz_xuf_v, VFOP_FWCVT_RTZ_XUF)
 
-#define VFOP_FWCVT_RTZ_XF_s(ENV, OP1) helper_fcvt_l_s(ENV, OP1, float_round_to_zero)
+#define VFOP_FWCVT_RTZ_XF_s(ENV, OP1) helper_fcvt_l_s(ENV, OP1, riscv_float_round_to_zero)
 VFOP_WV(vfwcvt_rtz_xf_v, VFOP_FWCVT_RTZ_XF)
 
-#define VFOP_FWCVT_FXU_s(ENV, OP1) helper_fcvt_d_wu(ENV, OP1, float_round_to_zero)
+#define VFOP_FWCVT_FXU_s(ENV, OP1) helper_fcvt_d_wu(ENV, OP1, riscv_float_round_to_zero)
 VFOP_WV(vfwcvt_fxu_v, VFOP_FWCVT_FXU)
 
-#define VFOP_FWCVT_FX_s(ENV, OP1) helper_fcvt_d_w(ENV, OP1, float_round_to_zero)
+#define VFOP_FWCVT_FX_s(ENV, OP1) helper_fcvt_d_w(ENV, OP1, riscv_float_round_to_zero)
 VFOP_WV(vfwcvt_fx_v, VFOP_FWCVT_FX)
 
 #define VFOP_FWCVT_FF_s(ENV, OP1) helper_fcvt_d_s(ENV, OP1, env->frm)
@@ -852,16 +852,16 @@ VFOP_VW(vfncvt_xuf_w, VFOP_FNCVT_XUF)
         : helper_fcvt_w_d(ENV, OP1, ieee_vxrm[env->vxrm]); })
 VFOP_VW(vfncvt_xf_w, VFOP_FNCVT_XF)
 
-#define VFOP_FNCVT_RTZ_XUF_s(ENV, OP1) helper_fcvt_wu_d(ENV, OP1, float_round_to_zero)
+#define VFOP_FNCVT_RTZ_XUF_s(ENV, OP1) helper_fcvt_wu_d(ENV, OP1, riscv_float_round_to_zero)
 VFOP_VW(vfncvt_rtz_xuf_w, VFOP_FNCVT_RTZ_XUF)
 
-#define VFOP_FNCVT_RTZ_XF_s(ENV, OP1) helper_fcvt_w_d(ENV, OP1, float_round_to_zero)
+#define VFOP_FNCVT_RTZ_XF_s(ENV, OP1) helper_fcvt_w_d(ENV, OP1, riscv_float_round_to_zero)
 VFOP_VW(vfncvt_rtz_xf_w, VFOP_FNCVT_RTZ_XF)
 
-#define VFOP_FNCVT_FXU_s(ENV, OP1) helper_fcvt_s_lu(ENV, OP1, float_round_to_zero)
+#define VFOP_FNCVT_FXU_s(ENV, OP1) helper_fcvt_s_lu(ENV, OP1, riscv_float_round_to_zero)
 VFOP_VW(vfncvt_fxu_w, VFOP_FNCVT_FXU)
 
-#define VFOP_FNCVT_FX_s(ENV, OP1) helper_fcvt_s_l(ENV, OP1, float_round_to_zero)
+#define VFOP_FNCVT_FX_s(ENV, OP1) helper_fcvt_s_l(ENV, OP1, riscv_float_round_to_zero)
 VFOP_VW(vfncvt_fx_w, VFOP_FNCVT_FX)
 
 #define VFOP_FNCVT_FF_s(ENV, OP1) helper_fcvt_s_d(ENV, OP1, ENV->frm)

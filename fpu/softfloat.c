@@ -7318,7 +7318,8 @@ invalid:
 // Same as roundAndPackFloat32 but assumes round-to-odd (OR bits into LSB, aka "jam") rounding mode
 static float32 rodAndPackFloat32(flag zSign, int16 zExp, uint32_t zSig STATUS_PARAM)
 {
-    int8 roundIncrement, roundBits;
+    uint8 roundIncrement;
+    int8 roundBits;
     flag isTiny;
 
     roundBits = zSig & 0x7F;

@@ -612,11 +612,11 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     float64 acc;                                                                                        \
     switch (eew) {                                                                                      \
     case 32:                                                                                            \
-        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {                                                   \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                                   \
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
             return;                                                                                     \
         }                                                                                               \
-        acc = helper_fcvt_s_d(env, ((float32 *)V(vs1))[0], env->frm);                                   \
+        acc = ((float64 *)V(vs1))[0];                                                                   \
         break;                                                                                          \
     default:                                                                                            \
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                           \
@@ -626,7 +626,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         TEST_MASK(ei)                                                                                   \
         switch (eew) {                                                                                  \
         case 32:                                                                                        \
-            acc = glue(HELPER, _s)(env, acc, helper_fcvt_d_s(env, ((float32 *)V(vs2))[ei], env->frm));  \
+            acc = glue(HELPER, _d)(env, acc, helper_fcvt_d_s(env, ((float32 *)V(vs2))[ei], env->frm));  \
             break;                                                                                      \
         }                                                                                               \
     }                                                                                                   \

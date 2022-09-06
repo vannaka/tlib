@@ -4006,9 +4006,9 @@ static void gen_v_opfvf(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
         }
         break;
     case RISC_V_FUNCT_RFUNARY0:
-        if ((vm == 0) && (vs2 == 0)) {
+        if (vm && vs2 == 0) {
                 gen_get_fpr(t_vs2, vs2);
-                gen_helper_vfmv_sf(cpu_env, t_vd, t_vs2);
+                gen_helper_vfmv_sf(cpu_env, t_vd, cpu_fpr[rs1]);
                 break;
             }
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);

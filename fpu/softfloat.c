@@ -1520,6 +1520,24 @@ int16 float32_to_int16_round_to_zero(float32 a STATUS_PARAM)
 
 }
 
+uint16 float32_to_int16(float32 a STATUS_PARAM)
+{
+    int64_t v;
+    uint16 res;
+
+    v = float32_to_int64(a STATUS_VAR);
+    if (v < INT16_MIN) {
+        res = INT16_MIN;
+        float_raise(float_flag_invalid STATUS_VAR);
+    } else if (v > INT16_MAX) {
+        res = INT16_MAX;
+        float_raise(float_flag_invalid STATUS_VAR);
+    } else {
+        res = v;
+    }
+    return res;
+}
+
 /*----------------------------------------------------------------------------
  | Returns the result of converting the single-precision floating-point value
  | `a' to the 64-bit two's complement integer format.  The conversion is
@@ -6646,6 +6664,24 @@ uint32 float32_to_uint32_round_to_zero(float32 a STATUS_PARAM)
         float_raise(float_flag_invalid STATUS_VAR);
     } else if (v > 0xffffffff) {
         res = 0xffffffff;
+        float_raise(float_flag_invalid STATUS_VAR);
+    } else {
+        res = v;
+    }
+    return res;
+}
+
+uint16 float32_to_uint16(float32 a STATUS_PARAM)
+{
+    int64_t v;
+    uint16 res;
+
+    v = float32_to_int64(a STATUS_VAR);
+    if (v < 0) {
+        res = 0;
+        float_raise(float_flag_invalid STATUS_VAR);
+    } else if (v > UINT16_MAX) {
+        res = UINT16_MAX;
         float_raise(float_flag_invalid STATUS_VAR);
     } else {
         res = v;

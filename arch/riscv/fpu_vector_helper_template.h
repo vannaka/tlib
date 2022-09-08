@@ -498,7 +498,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     }                                                                                   \
 }
 
-#define VFOP_WV(NAME, HELPER)                                                                   \
+#define VFOP_WV_FF(NAME, HELPER)                                                                \
 void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)               \
 {                                                                                               \
     const target_ulong eew = env->vsew;                                                         \
@@ -507,7 +507,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     }                                                                                           \
     switch (eew) {                                                                              \
     case 32:                                                                                    \
-        if (!riscv_has_ext(env, RISCV_FEATURE_RVF) || !riscv_has_ext(env, RISCV_FEATURE_RVD)) { \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) { \
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
             return;                                                                             \
         }                                                                                       \
@@ -520,13 +520,50 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         TEST_MASK(ei)                                                                           \
         switch (eew) {                                                                          \
         case 32:                                                                                \
-            ((float64 *)V(vd))[ei] = glue(HELPER, _s)(env, ((float32 *)V(vs2))[ei]);            \
+            ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env, ((float32 *)V(vs2))[ei]);            \
             break;                                                                              \
         }                                                                                       \
     }                                                                                           \
 }
 
-#define VFOP_VW(NAME, HELPER)                                                                   \
+#define VFOP_WV_FX(NAME, HELPER)                                                                \
+void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)               \
+{                                                                                               \
+    const target_ulong eew = env->vsew;                                                         \
+    if (V_IDX_INVALID_EEW(vd, eew << 1) || V_IDX_INVALID(vs2)) {                                \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
+    }                                                                                           \
+    switch (eew) {                                                                              \
+    case 16:                                                                                    \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) { \
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
+            return;                                                                             \
+        }                                                                                       \
+        break;                                                                                  \
+    case 32:                                                                                    \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) { \
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
+            return;                                                                             \
+        }                                                                                       \
+        break;                                                                                  \
+    default:                                                                                    \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
+        return;                                                                                 \
+    }                                                                                           \
+    for (int ei = env->vstart; ei < env->vl; ++ei) {                                            \
+        TEST_MASK(ei)                                                                           \
+        switch (eew) {                                                                          \
+        case 16:                                                                                \
+            ((float32 *)V(vd))[ei] = glue(HELPER, _s)(env, ((uint16_t *)V(vs2))[ei]);           \
+            break;                                                                              \
+        case 32:                                                                                \
+            ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env, ((uint32_t *)V(vs2))[ei]);           \
+            break;                                                                              \
+        }                                                                                       \
+    }                                                                                           \
+}
+
+#define VFOP_WV_XF(NAME, HELPER)                                                                \
 void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)               \
 {                                                                                               \
     const target_ulong eew = env->vsew;                                                         \
@@ -535,7 +572,35 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     }                                                                                           \
     switch (eew) {                                                                              \
     case 32:                                                                                    \
-        if (!riscv_has_ext(env, RISCV_FEATURE_RVF) || !riscv_has_ext(env, RISCV_FEATURE_RVD)) { \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) { \
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
+            return;                                                                             \
+        }                                                                                       \
+        break;                                                                                  \
+    default:                                                                                    \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
+        return;                                                                                 \
+    }                                                                                           \
+    for (int ei = env->vstart; ei < env->vl; ++ei) {                                            \
+        TEST_MASK(ei)                                                                           \
+        switch (eew) {                                                                          \
+        case 32:                                                                                \
+            ((uint64_t *)V(vd))[ei] = glue(HELPER, _d)(env, ((float32 *)V(vs2))[ei]);           \
+            break;                                                                              \
+        }                                                                                       \
+    }                                                                                           \
+}
+
+#define VFOP_VW_FF(NAME, HELPER)                                                                \
+void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)               \
+{                                                                                               \
+    const target_ulong eew = env->vsew;                                                         \
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID_EEW(vs2, eew << 1)) {                                \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
+    }                                                                                           \
+    switch (eew) {                                                                              \
+    case 32:                                                                                    \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                           \
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
             return;                                                                             \
         }                                                                                       \
@@ -549,6 +614,71 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         switch (eew) {                                                                          \
         case 32:                                                                                \
             ((float32 *)V(vd))[ei] = glue(HELPER, _s)(env, ((float64 *)V(vs2))[ei]);            \
+            break;                                                                              \
+        }                                                                                       \
+    }                                                                                           \
+}
+
+#define VFOP_VW_FX(NAME, HELPER)                                                                \
+void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)               \
+{                                                                                               \
+    const target_ulong eew = env->vsew;                                                         \
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID_EEW(vs2, eew << 1)) {                                \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
+    }                                                                                           \
+    switch (eew) {                                                                              \
+    case 32:                                                                                    \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                           \
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
+            return;                                                                             \
+        }                                                                                       \
+        break;                                                                                  \
+    default:                                                                                    \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
+        return;                                                                                 \
+    }                                                                                           \
+    for (int ei = env->vstart; ei < env->vl; ++ei) {                                            \
+        TEST_MASK(ei)                                                                           \
+        switch (eew) {                                                                          \
+        case 32:                                                                                \
+            ((float32 *)V(vd))[ei] = glue(HELPER, _s)(env, ((uint64_t *)V(vs2))[ei]);           \
+            break;                                                                              \
+        }                                                                                       \
+    }                                                                                           \
+}
+
+#define VFOP_VW_XF(NAME, HELPER)                                                                \
+void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)               \
+{                                                                                               \
+    const target_ulong eew = env->vsew;                                                         \
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID_EEW(vs2, eew << 1)) {                                \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
+    }                                                                                           \
+    switch (eew) {                                                                              \
+    case 16:                                                                                    \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {                                           \
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
+            return;                                                                             \
+        }                                                                                       \
+        break;                                                                                  \
+    case 32:                                                                                    \
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                           \
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
+            return;                                                                             \
+        }                                                                                       \
+        break;                                                                                  \
+    default:                                                                                    \
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
+        return;                                                                                 \
+    }                                                                                           \
+    for (int ei = env->vstart; ei < env->vl; ++ei) {                                            \
+        TEST_MASK(ei)                                                                           \
+        switch (eew) {                                                                          \
+        case 16:                                                                                \
+            ((uint16_t *)V(vd))[ei] = glue(HELPER, _s)(env, ((float32 *)V(vs2))[ei]);           \
+            break;                                                                              \
+        case 32:                                                                                \
+            ((uint32_t *)V(vd))[ei] = glue(HELPER, _d)(env, ((float64 *)V(vs2))[ei]);           \
             break;                                                                              \
         }                                                                                       \
     }                                                                                           \
@@ -777,24 +907,12 @@ VFOP_VV(vfsqrt_v, VFOP_SQRT)
 
 VFOP_VV(vfclass_v, helper_fclass)
 
-#define VFOP_FCVT_XUF_s(ENV, OP1) ({                            \
-    (ENV->vxrm == 0b11)                                         \
-        ? helper_fcvt_wu_s_rod(ENV, OP1)                        \
-        : helper_fcvt_wu_s(ENV, OP1, ieee_vxrm[ENV->vxrm]); })
-#define VFOP_FCVT_XUF_d(ENV, OP1) ({                            \
-    (ENV->vxrm == 0b11)                                         \
-        ? helper_fcvt_lu_d_rod(ENV, OP1)                        \
-        : helper_fcvt_lu_d(ENV, OP1, ieee_vxrm[ENV->vxrm]); })
+#define VFOP_FCVT_XUF_s(ENV, OP1) helper_fcvt_wu_s(ENV, OP1, ENV->frm)
+#define VFOP_FCVT_XUF_d(ENV, OP1) helper_fcvt_lu_d(ENV, OP1, ENV->frm)
 VFOP_VV(vfcvt_xuf_v, VFOP_FCVT_XUF)
 
-#define VFOP_FCVT_XF_s(ENV, OP1) ({                             \
-    (ENV->vxrm == 0b11)                                         \
-        ? helper_fcvt_w_s_rod(ENV, OP1)                         \
-        : helper_fcvt_w_s(ENV, OP1, ieee_vxrm[ENV->vxrm]); })
-#define VFOP_FCVT_XF_d(ENV, OP1) ({                             \
-    (ENV->vxrm == 0b11)                                         \
-        ? helper_fcvt_l_d_rod(ENV, OP1)                         \
-        : helper_fcvt_l_d(ENV, OP1, ieee_vxrm[ENV->vxrm]); })
+#define VFOP_FCVT_XF_s(ENV, OP1) helper_fcvt_w_s(ENV, OP1, ENV->frm)
+#define VFOP_FCVT_XF_d(ENV, OP1) helper_fcvt_l_d(ENV, OP1, ENV->frm)
 VFOP_VV(vfcvt_xf_v, VFOP_FCVT_XF)
 
 #define VFOP_FCVT_RTZ_XUF_s(ENV, OP1) helper_fcvt_wu_s(ENV, OP1, riscv_float_round_to_zero)
@@ -813,62 +931,56 @@ VFOP_VV(vfcvt_fxu_v, VFOP_FCVT_FXU)
 #define VFOP_FCVT_FX_d(ENV, OP1) helper_fcvt_d_l(ENV, OP1, ENV->frm)
 VFOP_VV(vfcvt_fx_v, VFOP_FCVT_FX)
 
-#define VFOP_FWCVT_XUF_s(ENV, OP1) ({                           \
-    (ENV->vxrm == 0b11)                                         \
-        ? helper_fcvt_lu_s_rod(ENV, OP1)                        \
-        : helper_fcvt_lu_s(ENV, OP1, ieee_vxrm[env->vxrm]); })
-VFOP_WV(vfwcvt_xuf_v, VFOP_FWCVT_XUF)
+#define VFOP_FWCVT_XUF_d(ENV, OP1) helper_fcvt_lu_s(ENV, OP1, ENV->frm)
+VFOP_WV_XF(vfwcvt_xuf_v, VFOP_FWCVT_XUF)
 
-#define VFOP_FWCVT_XF_s(ENV, OP1) ({                            \
-    (ENV->vxrm == 0b11)                                         \
-        ? helper_fcvt_l_s_rod(ENV, OP1)                         \
-        : helper_fcvt_l_s(ENV, OP1, ieee_vxrm[env->vxrm]); })
-VFOP_WV(vfwcvt_xf_v, VFOP_FWCVT_XF)
+#define VFOP_FWCVT_XF_d(ENV, OP1) helper_fcvt_l_s(ENV, OP1, ENV->frm)
+VFOP_WV_XF(vfwcvt_xf_v, VFOP_FWCVT_XF)
 
-#define VFOP_FWCVT_RTZ_XUF_s(ENV, OP1) helper_fcvt_lu_s(ENV, OP1, riscv_float_round_to_zero)
-VFOP_WV(vfwcvt_rtz_xuf_v, VFOP_FWCVT_RTZ_XUF)
+#define VFOP_FWCVT_RTZ_XUF_d(ENV, OP1) helper_fcvt_lu_s(ENV, OP1, riscv_float_round_to_zero)
+VFOP_WV_XF(vfwcvt_rtz_xuf_v, VFOP_FWCVT_RTZ_XUF)
 
-#define VFOP_FWCVT_RTZ_XF_s(ENV, OP1) helper_fcvt_l_s(ENV, OP1, riscv_float_round_to_zero)
-VFOP_WV(vfwcvt_rtz_xf_v, VFOP_FWCVT_RTZ_XF)
+#define VFOP_FWCVT_RTZ_XF_d(ENV, OP1) helper_fcvt_l_s(ENV, OP1, riscv_float_round_to_zero)
+VFOP_WV_XF(vfwcvt_rtz_xf_v, VFOP_FWCVT_RTZ_XF)
 
-#define VFOP_FWCVT_FXU_s(ENV, OP1) helper_fcvt_d_wu(ENV, OP1, ENV->frm)
-VFOP_WV(vfwcvt_fxu_v, VFOP_FWCVT_FXU)
+#define VFOP_FWCVT_FXU_s(ENV, OP1) helper_fcvt_s_hwu(ENV, OP1, ENV->frm)
+#define VFOP_FWCVT_FXU_d(ENV, OP1) helper_fcvt_d_wu(ENV, OP1, ENV->frm)
+VFOP_WV_FX(vfwcvt_fxu_v, VFOP_FWCVT_FXU)
 
-#define VFOP_FWCVT_FX_s(ENV, OP1) helper_fcvt_d_w(ENV, OP1, ENV->frm)
-VFOP_WV(vfwcvt_fx_v, VFOP_FWCVT_FX)
+#define VFOP_FWCVT_FX_s(ENV, OP1) helper_fcvt_s_hw(ENV, OP1, ENV->frm)
+#define VFOP_FWCVT_FX_d(ENV, OP1) helper_fcvt_d_w(ENV, OP1, ENV->frm)
+VFOP_WV_FX(vfwcvt_fx_v, VFOP_FWCVT_FX)
 
-#define VFOP_FWCVT_FF_s(ENV, OP1) helper_fcvt_d_s(ENV, OP1, ENV->frm)
-VFOP_WV(vfwcvt_ff_v, VFOP_FWCVT_FF)
+#define VFOP_FWCVT_FF_d(ENV, OP1) helper_fcvt_d_s(ENV, OP1, ENV->frm)
+VFOP_WV_FF(vfwcvt_ff_v, VFOP_FWCVT_FF)
 
-#define VFOP_FNCVT_XUF_s(ENV, OP1) ({                           \
-    (ENV->vxrm == 0b11)                                         \
-        ? helper_fcvt_wu_d_rod(ENV, OP1)                        \
-        : helper_fcvt_wu_d(ENV, OP1, ieee_vxrm[env->vxrm]); })
-VFOP_VW(vfncvt_xuf_w, VFOP_FNCVT_XUF)
+#define VFOP_FNCVT_XUF_s(ENV, OP1) helper_fcvt_hwu_s(ENV, OP1, ENV->frm)
+#define VFOP_FNCVT_XUF_d(ENV, OP1) helper_fcvt_wu_d(ENV, OP1, ENV->frm)
+VFOP_VW_XF(vfncvt_xuf_w, VFOP_FNCVT_XUF)
 
-#define VFOP_FNCVT_XF_s(ENV, OP1) ({                            \
-    (ENV->vxrm == 0b11)                                         \
-        ? helper_fcvt_w_d_rod(ENV, OP1)                         \
-        : helper_fcvt_w_d(ENV, OP1, ieee_vxrm[env->vxrm]); })
-VFOP_VW(vfncvt_xf_w, VFOP_FNCVT_XF)
+#define VFOP_FNCVT_XF_s(ENV, OP1) helper_fcvt_hw_s(ENV, OP1, ENV->frm)
+#define VFOP_FNCVT_XF_d(ENV, OP1) helper_fcvt_w_d(ENV, OP1, ENV->frm)
+VFOP_VW_XF(vfncvt_xf_w, VFOP_FNCVT_XF)
 
-#define VFOP_FNCVT_RTZ_XUF_s(ENV, OP1) helper_fcvt_wu_d(ENV, OP1, riscv_float_round_to_zero)
-VFOP_VW(vfncvt_rtz_xuf_w, VFOP_FNCVT_RTZ_XUF)
+#define VFOP_FNCVT_RTZ_XUF_s(ENV, OP1) helper_fcvt_hwu_s(ENV, OP1, riscv_float_round_to_zero)
+#define VFOP_FNCVT_RTZ_XUF_d(ENV, OP1) helper_fcvt_wu_d(ENV, OP1, riscv_float_round_to_zero)
+VFOP_VW_XF(vfncvt_rtz_xuf_w, VFOP_FNCVT_RTZ_XUF)
 
-#define VFOP_FNCVT_RTZ_XF_s(ENV, OP1) helper_fcvt_w_d(ENV, OP1, riscv_float_round_to_zero)
-VFOP_VW(vfncvt_rtz_xf_w, VFOP_FNCVT_RTZ_XF)
+#define VFOP_FNCVT_RTZ_XF_s(ENV, OP1) helper_fcvt_hw_s(ENV, OP1, riscv_float_round_to_zero)
+#define VFOP_FNCVT_RTZ_XF_d(ENV, OP1) helper_fcvt_w_d(ENV, OP1, riscv_float_round_to_zero)
+VFOP_VW_XF(vfncvt_rtz_xf_w, VFOP_FNCVT_RTZ_XF)
 
 #define VFOP_FNCVT_FXU_s(ENV, OP1) helper_fcvt_s_lu(ENV, OP1, ENV->frm)
-VFOP_VW(vfncvt_fxu_w, VFOP_FNCVT_FXU)
+VFOP_VW_FX(vfncvt_fxu_w, VFOP_FNCVT_FXU)
 
 #define VFOP_FNCVT_FX_s(ENV, OP1) helper_fcvt_s_l(ENV, OP1, ENV->frm)
-VFOP_VW(vfncvt_fx_w, VFOP_FNCVT_FX)
+VFOP_VW_FX(vfncvt_fx_w, VFOP_FNCVT_FX)
 
 #define VFOP_FNCVT_FF_s(ENV, OP1) helper_fcvt_s_d(ENV, OP1, ENV->frm)
-VFOP_VW(vfncvt_ff_w, VFOP_FNCVT_FF)
+VFOP_VW_FF(vfncvt_ff_w, VFOP_FNCVT_FF)
 
 #define VFOP_FNCVT_ROD_FF_s(ENV, OP1) helper_fcvt_s_d_rod(ENV, OP1)
-VFOP_VW(vfncvt_rod_ff_w, VFOP_FNCVT_ROD_FF)
+VFOP_VW_FF(vfncvt_rod_ff_w, VFOP_FNCVT_ROD_FF)
 
 #define VFOP_FADD_s(ENV, A, B) helper_fadd_s(ENV, A, B, ENV->frm)
 #define VFOP_FADD_d(ENV, A, B) helper_fadd_d(ENV, A, B, ENV->frm)

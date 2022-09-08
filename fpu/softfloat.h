@@ -237,6 +237,8 @@ extern const float16 float16_default_nan;
 /*----------------------------------------------------------------------------
  | Software IEC/IEEE single-precision conversion routines.
  *----------------------------------------------------------------------------*/
+int16 float32_to_int16(float32 STATUS_PARAM);
+uint16 float32_to_uint16(float32 STATUS_PARAM);
 int16 float32_to_int16_round_to_zero(float32 STATUS_PARAM);
 uint16 float32_to_uint16_round_to_zero(float32 STATUS_PARAM);
 int32 float32_to_int32(float32 STATUS_PARAM);

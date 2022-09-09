@@ -45,6 +45,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
             return;                                                                                     \
         }                                                                                               \
+        imm = unbox_float32(imm);                                                                       \
         break;                                                                                          \
     case 64:                                                                                            \
         if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                                   \
@@ -119,7 +120,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                                       \
             return;                                                                                                                     \
         }                                                                                                                               \
-        imm = helper_fcvt_d_s(env, (float32)imm, env->frm);                                                                                      \
+        imm = helper_fcvt_d_s(env, unbox_float32(imm), env->frm);                                                                       \
         break;                                                                                                                          \
     default:                                                                                                                            \
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                                           \
@@ -177,7 +178,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
             return;                                                                                     \
         }                                                                                               \
-        imm = helper_fcvt_s_d(env, imm, env->frm);                                                      \
+        imm = helper_fcvt_d_s(env, unbox_float32(imm), env->frm);                                       \
         break;                                                                                          \
     default:                                                                                            \
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                           \
@@ -234,6 +235,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                                                           \
             return;                                                                                                                         \
         }                                                                                                                                   \
+        imm = unbox_float32(imm);                                                                                                           \
         break;                                                                                                                              \
     case 64:                                                                                                                                \
         if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                                                                       \
@@ -249,10 +251,10 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
         TEST_MASK(ei)                                                                                                                       \
         switch (eew) {                                                                                                                      \
         case 32:                                                                                                                            \
-            ((float32 *)V(vd))[ei] = glue(HELPER, _s)(env, ((float32 *)V(vd))[ei], ((float32 *)V(vs2))[ei], ((uint32_t)imm), env->frm);     \
+            ((float32 *)V(vd))[ei] = glue(HELPER, _s)(env, ((float32 *)V(vd))[ei], ((float32 *)V(vs2))[ei], imm, env->frm);                 \
             break;                                                                                                                          \
         case 64:                                                                                                                            \
-            ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env, ((float64 *)V(vd))[ei], ((float64 *)V(vs2))[ei], ((float64)imm), env->frm);      \
+            ((float64 *)V(vd))[ei] = glue(HELPER, _d)(env, ((float64 *)V(vd))[ei], ((float64 *)V(vs2))[ei], imm, env->frm);                 \
             break;                                                                                                                          \
         }                                                                                                                                   \
     }                                                                                                                                       \
@@ -308,7 +310,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                   \
             return;                                                                                 \
         }                                                                                           \
-        imm = helper_fcvt_d_s(env, (float32)imm, env->frm);                                         \
+        imm = helper_fcvt_d_s(env, unbox_float32(imm), env->frm);                                   \
         break;                                                                                      \
     default:                                                                                        \
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                                       \
@@ -391,6 +393,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
             helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);                               \
             return;                                                                             \
         }                                                                                       \
+        imm = unbox_float32(imm);                                                               \
         break;                                                                                  \
     case 64:                                                                                    \
         if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {                                           \

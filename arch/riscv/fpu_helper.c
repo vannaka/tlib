@@ -94,6 +94,9 @@ ieee_rm[rm]; })
     helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST); \
 }
 
+#define is_box_valid_float32(f) (((uint64_t) f >> 32) == UINT32_MAX)
+#define unbox_float32(f) (is_box_valid_float32(f) ? (float32)f : float32_default_nan)
+
 /* convert softfloat library flag numbers to RISC-V */
 unsigned int softfloat_flags_to_riscv(unsigned int flags)
 {
@@ -747,6 +750,103 @@ uint64_t helper_fcvt_s_d_rod(CPUState *env, uint64_t rs1)
     set_fp_exceptions();
     mark_fs_dirty();
     return rs1;
+}
+
+void helper_vfmv_vf(CPUState *env, uint32_t vd, uint64_t f1)
+{
+    require_fp;
+    if (V_IDX_INVALID(vd)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    switch (eew) {
+    case 32:
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            return;
+        }
+        f1 = unbox_float32(f1);
+        break;
+    case 64:
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            return;
+        }
+        break;
+    default:
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        return;
+    }
+    for (int ei = 0; ei < env->vl; ++ei) {
+        switch (eew) {
+        case 32:
+            ((uint32_t *)V(vd))[ei] = f1;
+            break;
+        case 64:
+            ((uint64_t *)V(vd))[ei] = f1;
+            break;
+        }
+    }
+}
+
+void helper_vfmv_fs(CPUState *env, int32_t vd, int32_t vs2)
+{
+    require_fp;
+    const target_ulong eew = env->vsew;
+    switch(eew)
+    {
+        case 32:
+           if (!riscv_has_ext(env, RISCV_FEATURE_RVF))
+           {
+               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               break;
+           }
+           uint64_t nanbox_mask =  ((uint64_t) -1) << 32;
+           env->fpr[vd] = (uint64_t)((uint32_t *)V(vs2))[0] | nanbox_mask;
+           break;
+        case 64:
+           if (!riscv_has_ext(env, RISCV_FEATURE_RVD))
+           {
+               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               break;
+           }
+           env->fpr[vd] = ((uint64_t *)V(vs2))[0];
+           break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+    }
+}
+
+void helper_vfmv_sf(CPUState *env, uint32_t vd, float64 rs1)
+{
+    require_fp;
+    if (env->vstart >= env->vl)
+    {
+        return;
+    }
+    switch(env->vsew)
+    {
+        case 32:
+           if (!riscv_has_ext(env, RISCV_FEATURE_RVF))
+           {
+               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               break;
+           }
+           ((int32_t *)V(vd))[0] = unbox_float32(rs1);
+           break;
+        case 64:
+           if (!riscv_has_ext(env, RISCV_FEATURE_RVD))
+           {
+               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               break;
+           }
+           ((int64_t *)V(vd))[0] = rs1;
+           break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+    }
 }
 
 /* adapted from spike */

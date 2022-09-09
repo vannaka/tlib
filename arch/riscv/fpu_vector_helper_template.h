@@ -890,8 +890,8 @@ VFMOP_VVX(vflt_vf, helper_flt)
 VFMOP_VVV(vfle_vv, helper_fle)
 VFMOP_VVX(vfle_vf, helper_fle)
 
-VFMOP_VVX(vfgt_vf, !helper_fle)
-VFMOP_VVX(vfge_vf, !helper_flt)
+VFMOP_VVX(vfgt_vf, helper_fgt)
+VFMOP_VVX(vfge_vf, helper_fge)
 
 #define VFOP_RSQRT7_s(ENV, OP1) f32_rsqrte7(ENV, OP1)
 #define VFOP_RSQRT7_d(ENV, OP1) f64_rsqrte7(ENV, OP1)

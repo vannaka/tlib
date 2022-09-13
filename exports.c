@@ -677,6 +677,18 @@ EXC_INT_2(uint32_t, tlib_install_opcode_counter, uint32_t, opcode, uint32_t, mas
 
 void tlib_enable_guest_profiler(int value)
 {
+    if(cpu->guest_profiler_enabled == value)
+    {
+        return;
+    }
+
+    // When the state of the guest profiler is changed we have to
+    // invalidate the cache for two reasons:
+    // When the profiler is enabled: to ensure that no block that don't
+    // signal stack changes will be used (function calls will not be detected)
+    // When the profiler is disabled: to ensure that no blocks that 
+    // signal stack changes will be used (events will be sent to a null object)
+    tlib_invalidate_translation_cache();
     cpu->guest_profiler_enabled = !!value;
 }
 EXC_VOID_1(tlib_enable_guest_profiler, int32_t, value)

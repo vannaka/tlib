@@ -91,7 +91,7 @@ void tlib_on_block_translation(uint64_t start, uint32_t size, uint32_t flags)
 
 }
 
-DEFAULT_VOID_HANDLER2(void tlib_on_memory_access, uint32_t operation, uint64_t address)
+DEFAULT_VOID_HANDLER3(void tlib_on_memory_access, uint64_t pc, uint32_t operation, uint64_t address)
 
 DEFAULT_INT_HANDLER1(uint32_t tlib_is_in_debug_mode, void)
 

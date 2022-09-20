@@ -138,7 +138,7 @@ redo:
             res = glue(io_read, SUFFIX)(ioaddr, addr, retaddr);
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
             {
-                tlib_on_memory_access(MEMORY_IO_READ, addr);
+                tlib_on_memory_access(CPU_PC(cpu), MEMORY_IO_READ, addr);
             }
         } else if (((addr & ~TARGET_PAGE_MASK) + DATA_SIZE - 1) >= TARGET_PAGE_SIZE) {
             /* slow unaligned access (it spans two pages or IO) */
@@ -152,7 +152,7 @@ do_unaligned_access:
             res = glue(glue(glue(slow_ld, SUFFIX), _err), MMUSUFFIX)(addr, mmu_idx, retaddr, err);
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
             {
-                tlib_on_memory_access(MEMORY_READ, addr);
+                tlib_on_memory_access(CPU_PC(cpu), MEMORY_READ, addr);
             }
         } else {
             /* unaligned/aligned access in the same page */
@@ -166,7 +166,7 @@ do_unaligned_access:
             res = glue(glue(ld, USUFFIX), _raw)((uint8_t *)(uintptr_t)(addr + addend));
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
             {
-                tlib_on_memory_access(MEMORY_READ, addr);
+                tlib_on_memory_access(CPU_PC(cpu), MEMORY_READ, addr);
             }
         }
     } else {
@@ -343,7 +343,7 @@ redo:
             glue(io_write, SUFFIX)(ioaddr, val, addr, retaddr);
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
             {
-                tlib_on_memory_access(MEMORY_IO_WRITE, addr);
+                tlib_on_memory_access(CPU_PC(cpu), MEMORY_IO_WRITE, addr);
             }
         } else if (((addr & ~TARGET_PAGE_MASK) + DATA_SIZE - 1) >= TARGET_PAGE_SIZE) {
 do_unaligned_access:
@@ -356,7 +356,7 @@ do_unaligned_access:
             glue(glue(slow_st, SUFFIX), MMUSUFFIX)(addr, val, mmu_idx, retaddr);
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
             {
-                tlib_on_memory_access(MEMORY_WRITE, addr);
+                tlib_on_memory_access(CPU_PC(cpu), MEMORY_WRITE, addr);
             }
         } else {
             /* aligned/unaligned access in the same page */
@@ -371,7 +371,7 @@ do_unaligned_access:
             glue(glue(st, SUFFIX), _raw)((uint8_t *)(uintptr_t)(addr + addend), val);
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
             {
-                tlib_on_memory_access(MEMORY_WRITE, addr);
+                tlib_on_memory_access(CPU_PC(cpu), MEMORY_WRITE, addr);
             }
         }
     } else {

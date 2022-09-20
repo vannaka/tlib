@@ -61,6 +61,7 @@ extern void *global_retaddr;
 #define MEMORY_IO_WRITE 1
 #define MEMORY_READ 2
 #define MEMORY_WRITE 3
+#define INSN_FETCH 4
 
 #ifdef ALIGNED_ONLY
 void do_unaligned_access(target_ulong addr, int is_write, int is_user, void *retaddr);
@@ -103,6 +104,7 @@ __attribute__((always_inline)) inline DATA_TYPE REGPARM glue(glue(glue(__ld, SUF
     target_phys_addr_t ioaddr;
     void *retaddr;
     uintptr_t addend;
+    bool is_insn_fetch = (env->current_tb == NULL);
 
     acquire_global_memory_lock(cpu);
     register_address_access(cpu, addr);
@@ -152,7 +154,7 @@ do_unaligned_access:
             res = glue(glue(glue(slow_ld, SUFFIX), _err), MMUSUFFIX)(addr, mmu_idx, retaddr, err);
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
             {
-                tlib_on_memory_access(CPU_PC(cpu), MEMORY_READ, addr);
+                tlib_on_memory_access(CPU_PC(cpu), is_insn_fetch ? INSN_FETCH : MEMORY_READ, addr);
             }
         } else {
             /* unaligned/aligned access in the same page */
@@ -166,7 +168,7 @@ do_unaligned_access:
             res = glue(glue(ld, USUFFIX), _raw)((uint8_t *)(uintptr_t)(addr + addend));
             if(unlikely(cpu->tlib_is_on_memory_access_enabled != 0))
             {
-                tlib_on_memory_access(CPU_PC(cpu), MEMORY_READ, addr);
+                tlib_on_memory_access(CPU_PC(cpu), is_insn_fetch ? INSN_FETCH : MEMORY_READ, addr);
             }
         }
     } else {

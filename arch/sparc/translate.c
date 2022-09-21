@@ -2567,12 +2567,15 @@ skip_move:  ;
             gen_movl_reg_TN(rd, cpu_val);
             switch (xop) {
             case 0x4:     /* st, store word */
+                save_state(dc, cpu_cond);
                 tcg_gen_qemu_st32(cpu_val, cpu_addr, dc->base.mem_idx);
                 break;
             case 0x5:     /* stb, store byte */
+                save_state(dc, cpu_cond);
                 tcg_gen_qemu_st8(cpu_val, cpu_addr, dc->base.mem_idx);
                 break;
             case 0x6:     /* sth, store halfword */
+                save_state(dc, cpu_cond);
                 tcg_gen_qemu_st16(cpu_val, cpu_addr, dc->base.mem_idx);
                 break;
             case 0x7:     /* std, store double word */

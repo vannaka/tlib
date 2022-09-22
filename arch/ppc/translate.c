@@ -192,6 +192,11 @@ static inline void gen_update_nip(DisasContext *s, target_ulong nip)
     tcg_gen_movi_tl(cpu_nip, (uint32_t)nip);
 }
 
+static inline void gen_sync_pc(DisasContext *dc)
+{
+    tcg_gen_movi_tl(cpu_nip, dc->base.pc);
+}
+
 static inline void gen_exception_err(DisasContext *s, uint32_t excp, uint32_t error)
 {
     TCGv_i32 t0, t1;
@@ -2384,11 +2389,13 @@ static inline void gen_check_align(DisasContext *s, TCGv EA, int mask)
 /***                             Integer load                              ***/
 static inline void gen_qemu_ld8u(DisasContext *s, TCGv arg1, TCGv arg2)
 {
+    gen_sync_pc(s);
     tcg_gen_qemu_ld8u(arg1, arg2, s->base.mem_idx);
 }
 
 static inline void gen_qemu_ld16u(DisasContext *s, TCGv arg1, TCGv arg2)
 {
+    gen_sync_pc(s);
     tcg_gen_qemu_ld16u(arg1, arg2, s->base.mem_idx);
     if (unlikely(s->le_mode)) {
         tcg_gen_bswap16_tl(arg1, arg1);
@@ -2397,6 +2404,7 @@ static inline void gen_qemu_ld16u(DisasContext *s, TCGv arg1, TCGv arg2)
 
 static inline void gen_qemu_ld16s(DisasContext *s, TCGv arg1, TCGv arg2)
 {
+    gen_sync_pc(s);
     if (unlikely(s->le_mode)) {
         tcg_gen_qemu_ld16u(arg1, arg2, s->base.mem_idx);
         tcg_gen_bswap16_tl(arg1, arg1);
@@ -2408,6 +2416,7 @@ static inline void gen_qemu_ld16s(DisasContext *s, TCGv arg1, TCGv arg2)
 
 static inline void gen_qemu_ld32u(DisasContext *s, TCGv arg1, TCGv arg2)
 {
+    gen_sync_pc(s);
     tcg_gen_qemu_ld32u(arg1, arg2, s->base.mem_idx);
     if (unlikely(s->le_mode)) {
         tcg_gen_bswap32_tl(arg1, arg1);
@@ -2417,6 +2426,7 @@ static inline void gen_qemu_ld32u(DisasContext *s, TCGv arg1, TCGv arg2)
 #if defined(TARGET_PPC64)
 static inline void gen_qemu_ld32s(DisasContext *s, TCGv arg1, TCGv arg2)
 {
+    gen_sync_pc(s);
     if (unlikely(s->le_mode)) {
         tcg_gen_qemu_ld32u(arg1, arg2, s->base.mem_idx);
         tcg_gen_bswap32_tl(arg1, arg1);
@@ -2429,6 +2439,7 @@ static inline void gen_qemu_ld32s(DisasContext *s, TCGv arg1, TCGv arg2)
 
 static inline void gen_qemu_ld64(DisasContext *s, TCGv_i64 arg1, TCGv arg2)
 {
+    gen_sync_pc(s);
     tcg_gen_qemu_ld64(arg1, arg2, s->base.mem_idx);
     if (unlikely(s->le_mode)) {
         tcg_gen_bswap64_i64(arg1, arg1);
@@ -2437,11 +2448,13 @@ static inline void gen_qemu_ld64(DisasContext *s, TCGv_i64 arg1, TCGv arg2)
 
 static inline void gen_qemu_st8(DisasContext *s, TCGv arg1, TCGv arg2)
 {
+    gen_sync_pc(s);
     tcg_gen_qemu_st8(arg1, arg2, s->base.mem_idx);
 }
 
 static inline void gen_qemu_st16(DisasContext *s, TCGv arg1, TCGv arg2)
 {
+    gen_sync_pc(s);
     if (unlikely(s->le_mode)) {
         TCGv t0 = tcg_temp_new();
         tcg_gen_ext16u_tl(t0, arg1);
@@ -2455,6 +2468,7 @@ static inline void gen_qemu_st16(DisasContext *s, TCGv arg1, TCGv arg2)
 
 static inline void gen_qemu_st32(DisasContext *s, TCGv arg1, TCGv arg2)
 {
+    gen_sync_pc(s);
     if (unlikely(s->le_mode)) {
         TCGv t0 = tcg_temp_new();
         tcg_gen_ext32u_tl(t0, arg1);
@@ -2468,6 +2482,7 @@ static inline void gen_qemu_st32(DisasContext *s, TCGv arg1, TCGv arg2)
 
 static inline void gen_qemu_st64(DisasContext *s, TCGv_i64 arg1, TCGv arg2)
 {
+    gen_sync_pc(s);
     if (unlikely(s->le_mode)) {
         TCGv_i64 t0 = tcg_temp_new_i64();
         tcg_gen_bswap64_i64(t0, arg1);
@@ -2482,6 +2497,7 @@ static inline void gen_qemu_st64(DisasContext *s, TCGv_i64 arg1, TCGv arg2)
 static void glue(gen_, name)(DisasContext *s)                                       \
 {                                                                             \
     TCGv EA;                                                                  \
+    gen_sync_pc(s);                                                           \
     gen_set_access_type(s, ACCESS_INT);                                     \
     EA = tcg_temp_new();                                                      \
     gen_addr_imm_index(s, EA, 0);                                           \
@@ -2493,6 +2509,7 @@ static void glue(gen_, name)(DisasContext *s)                                   
 static void glue(gen_, name##u)(DisasContext *s)                                    \
 {                                                                             \
     TCGv EA;                                                                  \
+    gen_sync_pc(s);                                                           \
     if (unlikely(rA(s->opcode) == 0 ||                                      \
                  rA(s->opcode) == rD(s->opcode))) {                       \
         gen_inval_exception(s, POWERPC_EXCP_INVAL_INVAL);                   \
@@ -2513,6 +2530,7 @@ static void glue(gen_, name##u)(DisasContext *s)                                
 static void glue(gen_, name##ux)(DisasContext *s)                                   \
 {                                                                             \
     TCGv EA;                                                                  \
+    gen_sync_pc(s);                                                           \
     if (unlikely(rA(s->opcode) == 0 ||                                      \
                  rA(s->opcode) == rD(s->opcode))) {                       \
         gen_inval_exception(s, POWERPC_EXCP_INVAL_INVAL);                   \
@@ -2530,6 +2548,7 @@ static void glue(gen_, name##ux)(DisasContext *s)                               
 static void glue(gen_, name##x)(DisasContext *s)                            \
 {                                                                             \
     TCGv EA;                                                                  \
+    gen_sync_pc(s);                                                           \
     gen_set_access_type(s, ACCESS_INT);                                     \
     EA = tcg_temp_new();                                                      \
     gen_addr_reg_index(s, EA);                                              \
@@ -2623,6 +2642,7 @@ static void gen_lq(DisasContext *s)
 static void glue(gen_, name)(DisasContext *s)                                       \
 {                                                                             \
     TCGv EA;                                                                  \
+    gen_sync_pc(s);                                                           \
     gen_set_access_type(s, ACCESS_INT);                                     \
     EA = tcg_temp_new();                                                      \
     gen_addr_imm_index(s, EA, 0);                                           \
@@ -2634,6 +2654,7 @@ static void glue(gen_, name)(DisasContext *s)                                   
 static void glue(gen_, stop##u)(DisasContext *s)                                    \
 {                                                                             \
     TCGv EA;                                                                  \
+    gen_sync_pc(s);                                                           \
     if (unlikely(rA(s->opcode) == 0)) {                                     \
         gen_inval_exception(s, POWERPC_EXCP_INVAL_INVAL);                   \
         return;                                                               \
@@ -2653,6 +2674,7 @@ static void glue(gen_, stop##u)(DisasContext *s)                                
 static void glue(gen_, name##ux)(DisasContext *s)                                   \
 {                                                                             \
     TCGv EA;                                                                  \
+    gen_sync_pc(s);                                                           \
     if (unlikely(rA(s->opcode) == 0)) {                                     \
         gen_inval_exception(s, POWERPC_EXCP_INVAL_INVAL);                   \
         return;                                                               \
@@ -2669,6 +2691,7 @@ static void glue(gen_, name##ux)(DisasContext *s)                               
 static void glue(gen_, name##x)(DisasContext *s)                                    \
 {                                                                             \
     TCGv EA;                                                                  \
+    gen_sync_pc(s);                                                           \
     gen_set_access_type(s, ACCESS_INT);                                     \
     EA = tcg_temp_new();                                                      \
     gen_addr_reg_index(s, EA);                                              \

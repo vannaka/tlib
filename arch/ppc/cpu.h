@@ -896,7 +896,8 @@ struct ppc_def_t {
 };
 
 #define CPU_STATE_SIZE ((size_t) &((CPUState *) 0)->current_tb)
-#define CPU_PC(x) x->nip
+// This ought to be the pc, not the next pc
+#define CPU_PC(x) x->nip - 4
 
 // +---------------------------------------+
 // | ALL FIELDS WHICH STATE MUST BE STORED |

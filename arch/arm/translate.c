@@ -75,6 +75,9 @@ void translate_init(void)
     cpu_control = tcg_global_mem_new_i32(TCG_AREG0, offsetof(CPUState, v7m.control), "control");
     cpu_fpccr = tcg_global_mem_new_i32(TCG_AREG0, offsetof(CPUState, v7m.fpccr), "fpccr");
 #endif
+#ifdef TARGET_ARM64
+    cpu_pc = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, pc), "pc");
+#endif
     cpu_exclusive_addr = tcg_global_mem_new_i32(TCG_AREG0, offsetof(CPUState, exclusive_addr), "exclusive_addr");
     cpu_exclusive_val = tcg_global_mem_new_i32(TCG_AREG0, offsetof(CPUState, exclusive_val), "exclusive_val");
     cpu_exclusive_high = tcg_global_mem_new_i32(TCG_AREG0, offsetof(CPUState, exclusive_high), "exclusive_high");
@@ -85,6 +88,15 @@ void translate_init(void)
 #define DISAS_WFI 4
 #define DISAS_SWI 5
 #define DISAS_WFE 6
+
+static inline void gen_sync_pc(target_ulong value)
+{
+#if defined(TARGET_ARM32)
+    tcg_gen_movi_i32(cpu_R[15], value);
+#elif defined(TARGET_ARM64)
+    tcg_gen_movi_tl(cpu_pc, value);
+#endif
+}
 
 static inline TCGv load_cpu_offset(int offset)
 {
@@ -6832,6 +6844,7 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
     TCGv tmp3;
     TCGv addr;
     TCGv_i64 tmp64;
+    target_ulong current_pc = s->base.pc;
 
     insn = ldl_code(s->base.pc);
     
@@ -6870,6 +6883,7 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
             if (!arm_feature(env, ARM_FEATURE_NEON)) {
                 goto illegal_op;
             }
+            gen_sync_pc(current_pc);
 
             if (disas_neon_ls_insn(env, s, insn)) {
                 goto illegal_op;
@@ -7033,6 +7047,7 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
         } else if ((insn & 0x0e000f00) == 0x0c000100) {
             if (arm_feature(env, ARM_FEATURE_IWMMXT)) {
                 /* iWMMXt register transfer.  */
+                gen_sync_pc(current_pc);
                 if (env->cp15.c15_cpar & (1 << 1)) {
                     if (!disas_iwmmxt_insn(env, s, insn)) {
                         return;
@@ -7460,6 +7475,7 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
     } else {
         /* other instructions */
         op1 = (insn >> 24) & 0xf;
+        gen_sync_pc(current_pc);
         switch (op1) {
         case 0x0:
         case 0x1:
@@ -8169,6 +8185,7 @@ do_ldst:
         case 0xd:
         case 0xe:
             /* Coprocessor.  */
+            gen_sync_pc(current_pc);
             if (disas_coproc_insn(env, s, insn)) {
                 goto illegal_op;
             }
@@ -8290,6 +8307,7 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
     int shiftop;
     int conds;
     int logic_cc;
+    target_ulong current_pc = s->base.pc;
 #ifndef TARGET_PROTO_ARM_M
     if (!arm_feature(env, ARM_FEATURE_THUMB2)) {
         /* Thumb-1 cores may need to treat bl and blx as a pair of
@@ -8357,6 +8375,7 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
             /* Other load/store, table branch.  */
             if (insn & 0x01200000) {
                 /* Load/store doubleword.  */
+                gen_sync_pc(current_pc);
                 if (rn == 15) {
                     addr = tcg_temp_new_i32();
                     tcg_gen_movi_i32(addr, s->base.pc & ~3);
@@ -8458,6 +8477,7 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
             }
         } else {
             /* Load/store multiple, RFE, SRS.  */
+            gen_sync_pc(current_pc);
             if (((insn >> 23) & 1) == ((insn >> 24) & 1)) {
                 /* Not available in user mode.  */
                 if (s->user) {
@@ -9414,6 +9434,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
     TCGv tmp;
     TCGv tmp2;
     TCGv addr;
+    target_ulong current_pc = s->base.pc;
 
     if (s->condexec_mask) {
         cond = s->condexec_cond;
@@ -9736,6 +9757,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
             tmp = load_reg(s, rd);
         }
 
+        gen_sync_pc(current_pc);
         switch (op) {
         case 0: /* str */
             gen_st32(tmp, addr, s->user);

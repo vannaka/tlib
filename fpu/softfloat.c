@@ -366,7 +366,7 @@ static float32 roundAndPackFloat32(flag zSign, int16 zExp, uint32_t zSig STATUS_
     roundingMode = STATUS(float_rounding_mode);
     roundNearestEven = (roundingMode == float_round_nearest_even);
     roundIncrement = 0x40;
-    if (!roundNearestEven) {
+    if (!roundNearestEven && roundingMode != float_round_ties_away) {
         if (roundingMode == float_round_to_zero) {
             roundIncrement = 0;
         } else {
@@ -552,7 +552,7 @@ static float64 roundAndPackFloat64(flag zSign, int16 zExp, uint64_t zSig STATUS_
     roundingMode = STATUS(float_rounding_mode);
     roundNearestEven = (roundingMode == float_round_nearest_even);
     roundIncrement = 0x200;
-    if (!roundNearestEven) {
+    if (!roundNearestEven && roundingMode != float_round_ties_away) {
         if (roundingMode == float_round_to_zero) {
             roundIncrement = 0;
         } else {

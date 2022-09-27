@@ -1541,23 +1541,26 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
 // +     0     | (a0*b1)_1 | (a0*b1)_0 |     0
 // +     0     | (a1*b0)_1 | (a1*b0)_0 |     0
 // +     0     |     0     | (a0*b0)_1 | (a0*b0)_0
+
+// In some cases the B operand is unsigned, so a common type is type of the B operand.
+
 #define OP_MULHU(A, B) ({                                                                                       \
-    typeof(A) a = A;                                                                                            \
-    typeof(a) b = B;                                                                                            \
-    typeof(a) a1b1 = HBITS(a, sizeof(a) << 2) * HBITS(b, sizeof(a) << 2);                                       \
-    typeof(a) a1b0 = HBITS(a, sizeof(a) << 2) * LBITS(b, sizeof(a) << 2);                                       \
-    typeof(a) a0b1 = LBITS(a, sizeof(a) << 2) * HBITS(b, sizeof(a) << 2);                                       \
-    typeof(a) a0b0 = LBITS(a, sizeof(a) << 2) * LBITS(b, sizeof(a) << 2);                                       \
+    typeof(B) a = A;                                                                                            \
+    typeof(B) b = B;                                                                                            \
+    typeof(a) a1b1 = HBITS(a, sizeof(a) << 2) * HBITS(b, sizeof(b) << 2);                                       \
+    typeof(a) a1b0 = HBITS(a, sizeof(a) << 2) * LBITS(b, sizeof(b) << 2);                                       \
+    typeof(a) a0b1 = LBITS(a, sizeof(a) << 2) * HBITS(b, sizeof(b) << 2);                                       \
+    typeof(a) a0b0 = LBITS(a, sizeof(a) << 2) * LBITS(b, sizeof(b) << 2);                                       \
     typeof(a) ab_1 = HBITS(a0b0, sizeof(a) << 2) + LBITS(a1b0, sizeof(a) << 2) + LBITS(a0b1, sizeof(a) << 2);   \
         a1b1 + HBITS(a1b0, sizeof(a) << 2) + HBITS(a0b1, sizeof(a) << 2) + HBITS(ab_1, sizeof(a) << 2); })
 
 #define OP_NEG_MULHU(A, B) ({                                                                                   \
-    typeof(A) a = A;                                                                                            \
-    typeof(a) b = B;                                                                                            \
-    typeof(a) a1b1 = HBITS(a, sizeof(a) << 2) * HBITS(b, sizeof(a) << 2);                                       \
-    typeof(a) a1b0 = HBITS(a, sizeof(a) << 2) * LBITS(b, sizeof(a) << 2);                                       \
-    typeof(a) a0b1 = LBITS(a, sizeof(a) << 2) * HBITS(b, sizeof(a) << 2);                                       \
-    typeof(a) a0b0 = LBITS(a, sizeof(a) << 2) * LBITS(b, sizeof(a) << 2);                                       \
+    typeof(B) a = A;                                                                                            \
+    typeof(B) b = B;                                                                                            \
+    typeof(a) a1b1 = HBITS(a, sizeof(a) << 2) * HBITS(b, sizeof(b) << 2);                                       \
+    typeof(a) a1b0 = HBITS(a, sizeof(a) << 2) * LBITS(b, sizeof(b) << 2);                                       \
+    typeof(a) a0b1 = LBITS(a, sizeof(a) << 2) * HBITS(b, sizeof(b) << 2);                                       \
+    typeof(a) a0b0 = LBITS(a, sizeof(a) << 2) * LBITS(b, sizeof(b) << 2);                                       \
     typeof(a) ab_1 = HBITS(a0b0, sizeof(a) << 2) + LBITS(a1b0, sizeof(a) << 2) + LBITS(a0b1, sizeof(a) << 2);   \
     typeof(a) ab_0 = LBITS(a0b0, sizeof(a) << 2);                                                               \
         ~(a1b1 + HBITS(a1b0, sizeof(a) << 2) + HBITS(a0b1, sizeof(a) << 2) + HBITS(ab_1, sizeof(a) << 2))       \

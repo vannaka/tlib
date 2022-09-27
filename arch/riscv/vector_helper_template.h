@@ -1056,7 +1056,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
 }
 
 #define VMOP_SIGNED_VX(NAME, OP)                                                                        \
-void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, target_ulong imm)     \
+void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, target_long imm)      \
 {                                                                                                       \
     const target_ulong eew = env->vsew;                                                                 \
     if (V_IDX_INVALID_EEW(vd, 8) || V_IDX_INVALID(vs2)) {                                               \

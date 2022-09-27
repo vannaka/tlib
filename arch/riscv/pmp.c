@@ -250,9 +250,9 @@ int pmp_find_overlapping(CPUState *env, target_ulong addr, target_ulong size, in
 }
 
 /*
- * Check if the address has required RWX privs to complete desired operation
+ * Find and return PMP configuration matching memory address
  */
-bool pmp_hart_has_privs(CPUState *env, target_ulong addr, target_ulong size, pmp_priv_t privs)
+int pmp_get_access(CPUState *env, target_ulong addr, target_ulong size)
 {
     int i = 0;
     int ret = -1;
@@ -262,7 +262,7 @@ bool pmp_hart_has_privs(CPUState *env, target_ulong addr, target_ulong size, pmp
 
     /* Short cut if no rules */
     if (0 == pmp_get_num_rules(env)) {
-        return true;
+        return PMP_READ | PMP_WRITE | PMP_EXEC;
     }
 
     /* 1.10 draft priv spec states there is an implicit order
@@ -286,22 +286,16 @@ bool pmp_hart_has_privs(CPUState *env, target_ulong addr, target_ulong size, pmp
             if ((env->priv != PRV_M) || pmp_is_locked(env, i)) {
                 allowed_privs &= env->pmp_state.pmp[i].cfg_reg;
             }
-
-            if ((privs & allowed_privs) == privs) {
-                ret = 1;
-                break;
-            } else {
-                ret = 0;
-                break;
-            }
+            ret = allowed_privs;
+            break;
         }
     }
 
     /* No rule matched */
     if (ret == -1) {
         if (env->priv == PRV_M) {
-            ret = 1; /* Privileged spec v1.10 states if no PMP entry matches an
-                      * M-Mode access, the access succeeds */
+            ret = PMP_READ | PMP_WRITE | PMP_EXEC; /* Privileged spec v1.10 states if no PMP entry matches an
+                                                    * M-Mode access, the access succeeds */
         } else {
             ret = 0; /* Other modes are not allowed to succeed if they don't
                       * match a rule, but there are rules.  We've checked for
@@ -309,7 +303,7 @@ bool pmp_hart_has_privs(CPUState *env, target_ulong addr, target_ulong size, pmp
         }
     }
 
-    return ret == 1 ? true : false;
+    return ret;
 }
 
 /*

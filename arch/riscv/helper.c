@@ -330,12 +330,15 @@ int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, i
 {
     target_phys_addr_t pa = 0;
     int prot;
+    int pmp_prot;
+    int pmp_access_type = 1 << access_type;
     int overlapping_region_id;
     int ret = TRANSLATE_FAIL;
     target_ulong page_size = TARGET_PAGE_SIZE;
 
     ret = get_physical_address(env, &pa, &prot, address, access_type, mmu_idx, no_page_fault);
-    if (!cpu->external_mmu_enabled && !pmp_hart_has_privs(env, pa, access_width, 1 << access_type)) {
+    pmp_prot = pmp_get_access(env, pa, access_width);
+    if (!cpu->external_mmu_enabled && !((pmp_access_type & pmp_prot) == pmp_access_type)) {
         ret = TRANSLATE_FAIL;
     }
     if (ret == TRANSLATE_SUCCESS) {
@@ -343,13 +346,19 @@ int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, i
 
         // are there any PMP regions defined for this page?
         if (overlapping_region_id != -1) {
-            // does the PMP region cover the whole page?
+            // does the PMP region cover only a part of the page?
             if (env->pmp_state.addr[overlapping_region_id].sa > (pa & TARGET_PAGE_MASK)
                 || env->pmp_state.addr[overlapping_region_id].ea < (pa & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE - 1)
             {
                 // this effectively makes the tlb page entry one-shot:
                 // thanks to this every access to this page will be verified against PMP
                 page_size = access_width;
+            }
+            else
+            {
+                // PMP region covers the entire page, we can safely propagate restrictions
+                // to the page level (PAGE_xxxx follows the same notation as PMP_xxxx)
+                prot &= pmp_prot;
             }
         }
 

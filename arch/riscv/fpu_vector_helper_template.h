@@ -770,6 +770,129 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
     }                                                                                                   \
 }
 
+void glue(helper_vfslide1up, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, float64 imm)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    switch (eew) {
+    case 32:
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            return;
+        }
+        break;
+    case 64:
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            return;
+        }
+        break;
+    default:
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        return;
+    }
+
+    if(env->vl == 0) {
+        return;
+    }
+
+    if (env->vstart == 0
+#ifdef MASKED
+        && (V(0)[0] & 0x1)
+#endif
+    ) {
+        switch (eew) {
+        case 32:
+            ((float32 *)V(vd))[0] = unbox_float32(imm);
+            break;
+        case 64:
+            ((float64 *)V(vd))[0] = imm;
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+    for (int ei = (env->vstart ? env->vstart : 1); ei < env->vl; ++ei) {
+        TEST_MASK(ei)
+        switch (eew) {
+        case 32:
+            ((float32 *)V(vd))[ei] = ((float32 *)V(vs2))[ei - 1];
+            break;
+        case 64:
+            ((float64 *)V(vd))[ei] = ((float64 *)V(vs2))[ei - 1];
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+}
+
+void glue(helper_vfslide1down, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, float64 imm)
+{
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+    }
+    const target_ulong eew = env->vsew;
+    switch (eew) {
+    case 32:
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            return;
+        }
+        break;
+    case 64:
+        if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            return;
+        }
+        break;
+    default:
+        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        return;
+    }
+
+    const int src_max = env->vl - 1;
+    if(env->vl == 0) {
+        return;
+    }
+
+    for (int ei = env->vstart; ei < src_max; ++ei) {
+        TEST_MASK(ei)
+        switch (eew) {
+        case 32:
+            ((float32 *)V(vd))[ei] = ((float32 *)V(vs2))[ei + 1];
+            break;
+        case 64:
+            ((float64 *)V(vd))[ei] = ((float64 *)V(vs2))[ei + 1];
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+    }
+#ifdef MASKED
+    if(V(0)[src_max >> 3] & (1 << (src_max & 0x7))) {
+#endif
+        switch (eew) {
+        case 32:
+            ((float32 *)V(vd))[src_max] = unbox_float32(imm);
+            break;
+        case 64:
+            ((float64 *)V(vd))[src_max] = imm;
+            break;
+        default:
+            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            break;
+        }
+#ifdef MASKED
+    }
+#endif
+}
+
 VFOP_VVV(vfadd_vv, helper_fadd)
 VFOP_VVX(vfadd_vf, helper_fadd)
 VFOP_VVV(vfsub_vv, helper_fsub)

@@ -3993,16 +3993,16 @@ static void gen_v_opfvf(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
         break;
     case RISC_V_FUNCT_FSLIDE1UP:
         if (vm) {
-            gen_helper_vslide1up(cpu_env, t_vd, t_vs2, cpu_fpr[rs1]);
+            gen_helper_vfslide1up(cpu_env, t_vd, t_vs2, cpu_fpr[rs1]);
         } else {
-            gen_helper_vslide1up_m(cpu_env, t_vd, t_vs2, cpu_fpr[rs1]);
+            gen_helper_vfslide1up_m(cpu_env, t_vd, t_vs2, cpu_fpr[rs1]);
         }
         break;
     case RISC_V_FUNCT_FSLIDE1DOWN:
         if (vm) {
-            gen_helper_vslide1down(cpu_env, t_vd, t_vs2, cpu_fpr[rs1]);
+            gen_helper_vfslide1down(cpu_env, t_vd, t_vs2, cpu_fpr[rs1]);
         } else {
-            gen_helper_vslide1down_m(cpu_env, t_vd, t_vs2, cpu_fpr[rs1]);
+            gen_helper_vfslide1down_m(cpu_env, t_vd, t_vs2, cpu_fpr[rs1]);
         }
         break;
     case RISC_V_FUNCT_RFUNARY0:

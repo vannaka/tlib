@@ -297,5 +297,6 @@ uint64_t get_register_value(int reg_number);
 void set_register_value(int reg_number, uint64_t val);
 void tlib_announce_stack_change(target_ulong pc, int state);
 void prepare_stack_change_announcement(target_ulong pc, int state);
+void tlib_announce_context_change(target_ulong context_id);
 
 #endif

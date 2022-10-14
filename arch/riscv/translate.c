@@ -4694,6 +4694,22 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         decode_RV32_64G(env, dc);
     }
 
+    if(unlikely(env->are_post_opcode_execution_hooks_enabled))
+    {
+        for(int index = 0; index < env->post_opcode_execution_hooks_count; index++)
+        {
+            opcode_hook_mask_t opcode_def = env->post_opcode_execution_hook_masks[index];
+            if((dc->opcode & opcode_def.mask) == opcode_def.value)
+            {
+                gen_sync_pc(dc);
+                TCGv_i32 hook_id = tcg_const_i32(index);
+                gen_helper_handle_post_opcode_execution_hook(hook_id, cpu_pc);
+                tcg_temp_free_i32(hook_id);
+                break;
+            }
+        }
+    }
+
     dc->base.pc = dc->base.npc;
     return instruction_length;
 }

@@ -43,6 +43,13 @@ typedef struct custom_instruction_descriptor_t {
 } custom_instruction_descriptor_t;
 #define CPU_CUSTOM_INSTRUCTIONS_LIMIT 256
 
+typedef struct opcode_hook_mask_t 
+{
+    target_ulong mask;
+    target_ulong value;
+} opcode_hook_mask_t;
+#define CPU_HOOKS_MASKS_LIMIT 256
+
 #define MAX_CSR_ID 0xFFF
 #define CSRS_PER_SLOT 64
 #define CSRS_SLOTS (MAX_CSR_ID + 1) / CSRS_PER_SLOT
@@ -192,6 +199,10 @@ struct CPUState {
     int32_t interrupt_mode;
 
     CPU_COMMON
+
+    int8_t are_post_opcode_execution_hooks_enabled;
+    int32_t post_opcode_execution_hooks_count;
+    opcode_hook_mask_t post_opcode_execution_hook_masks[CPU_HOOKS_MASKS_LIMIT];
 };
 
 void riscv_set_mode(CPUState *env, target_ulong newpriv);

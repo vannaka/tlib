@@ -2711,10 +2711,6 @@ uint32_t HELPER(vfp_fcvt_f32_to_f16)(float32 a, CPUState *env)
     return do_fcvt_f32_to_f16(a, env, &env->vfp.fp_status);
 }
 
-#define float32_two            make_float32(0x40000000)
-#define float32_three          make_float32(0x40400000)
-#define float32_one_point_five make_float32(0x3fc00000)
-
 float32 HELPER(recps_f32)(float32 a, float32 b, CPUState *env)
 {
     float_status *s = &env->vfp.standard_fp_status;

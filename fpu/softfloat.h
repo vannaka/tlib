@@ -336,6 +336,10 @@ INLINE float32 float32_set_sign(float32 a, int sign)
 #define float32_half     make_float32(0x3f000000)
 #define float32_infinity make_float32(0x7f800000)
 
+#define float32_two            make_float32(0x40000000)
+#define float32_three          make_float32(0x40400000)
+#define float32_one_point_five make_float32(0x3fc00000)
+
 /*----------------------------------------------------------------------------
  | The pattern for a default generated single-precision NaN.
  *----------------------------------------------------------------------------*/

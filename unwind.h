@@ -12,7 +12,9 @@
 /* This is to avoid longjmp crashing because of stack unwinding.
  * It is incompatible with the execution of generated code. */
 #undef setjmp
-#define setjmp(env) _setjmp(env, NULL)
+#define setjmp(env) __builtin_setjmp(env)
+#undef longjmp
+#define longjmp(buf, val) __builtin_longjmp(buf, val)
 #endif
 
 /* We don't use our assert() because it would call tlib_abort which is a bad idea

@@ -47,15 +47,19 @@ typedef ram_addr_t tb_page_addr_t;
 struct TranslationBlock;
 typedef struct TranslationBlock TranslationBlock;
 
+// Architecture-specific
+void do_interrupt(CPUState *env);
+int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp);
+int gen_intermediate_code(CPUState *env, DisasContextBase *base);
+uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base);
+void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb, target_ulong *data);
+void setup_disas_context(DisasContextBase *dc, CPUState *env);
+int tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx, void *retaddr, int no_page_fault, int access_width);
+
+// All the other functions declared in this header are common for all architectures.
 void gen_exit_tb(TranslationBlock *, int);
 void gen_exit_tb_no_chaining(TranslationBlock *);
 CPUBreakpoint *process_breakpoints(CPUState *env, target_ulong pc);
-int gen_intermediate_code(CPUState *env, DisasContextBase *base);
-int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp);
-uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base);
-void do_interrupt(CPUState *env);
-void setup_disas_context(DisasContextBase *dc, CPUState *env);
-void restore_state_to_opc(CPUState *env, struct TranslationBlock *tb, target_ulong *data);
 
 void cpu_gen_code(CPUState *env, struct TranslationBlock *tb, int *gen_code_size_ptr, int *search_size_ptr);
 int cpu_restore_state_from_tb(CPUState *env, struct TranslationBlock *tb, uintptr_t searched_pc);
@@ -219,8 +223,6 @@ TranslationBlock *tb_find_pc(uintptr_t pc_ptr);
 
 extern int tb_invalidated_flag;
 
-
-int tlb_fill(CPUState *env1, target_ulong addr, int is_write, int mmu_idx, void *retaddr, int no_page_fault, int access_width);
 
 void mark_tbs_containing_pc_as_dirty(target_ulong addr, int broadcast);
 void flush_dirty_addresses_list(void);

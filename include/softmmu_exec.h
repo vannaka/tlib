@@ -119,9 +119,180 @@
 #undef MEMSUFFIX
 #endif /* (NB_MMU_MODES >= 6) */
 
-#if (NB_MMU_MODES > 6)
-#error "NB_MMU_MODES > 6 is not supported for now"
-#endif /* (NB_MMU_MODES > 6) */
+#if (NB_MMU_MODES >= 7)
+
+#define ACCESS_TYPE 6
+#define MEMSUFFIX   MMU_MODE6_SUFFIX
+#define DATA_SIZE   1
+#include "softmmu_header.h"
+
+#define DATA_SIZE   2
+#include "softmmu_header.h"
+
+#define DATA_SIZE   4
+#include "softmmu_header.h"
+
+#define DATA_SIZE   8
+#include "softmmu_header.h"
+#undef ACCESS_TYPE
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 7) */
+
+#if (NB_MMU_MODES >= 8)
+
+#define ACCESS_TYPE 7
+#define MEMSUFFIX   MMU_MODE7_SUFFIX
+#define DATA_SIZE   1
+#include "softmmu_header.h"
+
+#define DATA_SIZE   2
+#include "softmmu_header.h"
+
+#define DATA_SIZE   4
+#include "softmmu_header.h"
+
+#define DATA_SIZE   8
+#include "softmmu_header.h"
+#undef ACCESS_TYPE
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 8) */
+
+#if (NB_MMU_MODES >= 9)
+
+#define ACCESS_TYPE 8
+#define MEMSUFFIX   MMU_MODE8_SUFFIX
+#define DATA_SIZE   1
+#include "softmmu_header.h"
+
+#define DATA_SIZE   2
+#include "softmmu_header.h"
+
+#define DATA_SIZE   4
+#include "softmmu_header.h"
+
+#define DATA_SIZE   8
+#include "softmmu_header.h"
+#undef ACCESS_TYPE
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 9) */
+
+#if (NB_MMU_MODES >= 10)
+
+#define ACCESS_TYPE 9
+#define MEMSUFFIX   MMU_MODE9_SUFFIX
+#define DATA_SIZE   1
+#include "softmmu_header.h"
+
+#define DATA_SIZE   2
+#include "softmmu_header.h"
+
+#define DATA_SIZE   4
+#include "softmmu_header.h"
+
+#define DATA_SIZE   8
+#include "softmmu_header.h"
+#undef ACCESS_TYPE
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 10) */
+
+#if (NB_MMU_MODES >= 11)
+
+#define ACCESS_TYPE 10
+#define MEMSUFFIX   MMU_MODE10_SUFFIX
+#define DATA_SIZE   1
+#include "softmmu_header.h"
+
+#define DATA_SIZE   2
+#include "softmmu_header.h"
+
+#define DATA_SIZE   4
+#include "softmmu_header.h"
+
+#define DATA_SIZE   8
+#include "softmmu_header.h"
+#undef ACCESS_TYPE
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 11) */
+
+#if (NB_MMU_MODES >= 12)
+
+#define ACCESS_TYPE 11
+#define MEMSUFFIX   MMU_MODE11_SUFFIX
+#define DATA_SIZE   1
+#include "softmmu_header.h"
+
+#define DATA_SIZE   2
+#include "softmmu_header.h"
+
+#define DATA_SIZE   4
+#include "softmmu_header.h"
+
+#define DATA_SIZE   8
+#include "softmmu_header.h"
+#undef ACCESS_TYPE
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 12) */
+
+#if (NB_MMU_MODES >= 13)
+
+#define ACCESS_TYPE 12
+#define MEMSUFFIX   MMU_MODE12_SUFFIX
+#define DATA_SIZE   1
+#include "softmmu_header.h"
+
+#define DATA_SIZE   2
+#include "softmmu_header.h"
+
+#define DATA_SIZE   4
+#include "softmmu_header.h"
+
+#define DATA_SIZE   8
+#include "softmmu_header.h"
+#undef ACCESS_TYPE
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 13) */
+
+#if (NB_MMU_MODES >= 14)
+
+#define ACCESS_TYPE 13
+#define MEMSUFFIX   MMU_MODE13_SUFFIX
+#define DATA_SIZE   1
+#include "softmmu_header.h"
+
+#define DATA_SIZE   2
+#include "softmmu_header.h"
+
+#define DATA_SIZE   4
+#include "softmmu_header.h"
+
+#define DATA_SIZE   8
+#include "softmmu_header.h"
+#undef ACCESS_TYPE
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 14) */
+
+#if (NB_MMU_MODES >= 15)
+
+#define ACCESS_TYPE 14
+#define MEMSUFFIX   MMU_MODE14_SUFFIX
+#define DATA_SIZE   1
+#include "softmmu_header.h"
+
+#define DATA_SIZE   2
+#include "softmmu_header.h"
+
+#define DATA_SIZE   4
+#include "softmmu_header.h"
+
+#define DATA_SIZE   8
+#include "softmmu_header.h"
+#undef ACCESS_TYPE
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 15) */
+
+#if (NB_MMU_MODES > 15)
+#error "NB_MMU_MODES > 15 is not supported for now"
+#endif /* (NB_MMU_MODES > 15) */
 
 /* these access are slower, they must be as rare as possible */
 #define ACCESS_TYPE (NB_MMU_MODES)

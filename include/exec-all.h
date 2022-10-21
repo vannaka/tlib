@@ -62,7 +62,6 @@ int cpu_restore_state_from_tb(CPUState *env, struct TranslationBlock *tb, uintpt
 void cpu_restore_state(CPUState *env, void *retaddr);
 int cpu_restore_state_and_restore_instructions_count(CPUState *env, struct TranslationBlock *tb, uintptr_t searched_pc);
 TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_base, int flags, uint16_t cflags);
-TranslationBlock *try_find_tb_at_pc(CPUState *env, target_ulong pc);
 void cpu_exec_init(CPUState *env);
 void cpu_exec_init_all();
 void TLIB_NORETURN cpu_loop_exit(CPUState *env1);
@@ -295,7 +294,6 @@ void generate_opcode_count_increment(CPUState*, uint64_t);
 uint64_t get_register_value(int reg_number);
 void set_register_value(int reg_number, uint64_t val);
 void tlib_announce_stack_change(target_ulong pc, int state);
-void prepare_stack_change_announcement(target_ulong pc, int state);
 void tlib_announce_context_change(target_ulong context_id);
 
 #endif

@@ -402,6 +402,8 @@ struct TCGContext {
     int nb_helpers;
     int allocated_helpers;
     int helpers_sorted;
+    /* sets whether we should use the tlb in accesses */
+    uint8_t use_tlb;
 };
 
 extern uint16_t *gen_opc_ptr;
@@ -466,6 +468,7 @@ static inline void *tcg_malloc(int size)
 }
 
 void tcg_context_init();
+void tcg_context_use_tlb(int value);
 void tcg_dispose();
 void tcg_prologue_init();
 void tcg_func_start(TCGContext *s);

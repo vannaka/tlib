@@ -619,6 +619,8 @@ EXC_VOID_1(tlib_set_interrupt_end_hook_present, uint32_t, val)
 void tlib_on_memory_access_event_enabled(int32_t value)
 {
     cpu->tlib_is_on_memory_access_enabled = !!value;
+    // In order to get all of the memory accesses we need to prevent tcg from using the tlb
+    tcg_context_use_tlb(!value);
 }
 
 EXC_VOID_1(tlib_on_memory_access_event_enabled, int32_t, value)

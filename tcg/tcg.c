@@ -250,6 +250,7 @@ void tcg_context_init()
     memset(s, 0, sizeof(*s));
     s->temps = s->static_temps;
     s->nb_globals = 0;
+    tcg_context_use_tlb(1);
 
     /* Count total number of arguments and allocate the corresponding
        space */
@@ -272,6 +273,11 @@ void tcg_context_init()
         args_ct += n;
     }
     tcg_target_init(s);
+}
+
+void tcg_context_use_tlb(int value)
+{
+    tcg->ctx->use_tlb = !!value;
 }
 
 void tcg_dispose()

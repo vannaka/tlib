@@ -936,23 +936,9 @@ static void tcg_out_jmp(TCGContext *s, tcg_target_long dest)
    Second argument register is clobbered.  */
 
 static inline void tcg_out_tlb_load(TCGContext *s, int addrlo_idx, int mem_index, int s_bits, const TCGArg *args,
-                                    uint8_t **label_ptr, int which)
+                                    uint8_t **label_ptr, int which, int r0, int r1, TCGType type, int rexw)
 {
     const int addrlo = args[addrlo_idx];
-    const int r0 = tcg_target_call_iarg_regs[0];
-    const int r1 = tcg_target_call_iarg_regs[1];
-    TCGType type = TCG_TYPE_I32;
-    int rexw = 0;
-
-    if (TCG_TARGET_REG_BITS == 64 && TARGET_LONG_BITS == 64) {
-        type = TCG_TYPE_I64;
-        rexw = P_REXW;
-    }
-
-    tcg_out_mov(s, type, r1, addrlo);
-    tcg_out_mov(s, type, r0, addrlo);
-
-    tcg_out_shifti(s, SHIFT_SHR + rexw, r1, TARGET_PAGE_BITS - CPU_TLB_ENTRY_BITS);
 
     tgen_arithi(s, ARITH_AND + rexw, r0, TARGET_PAGE_MASK | ((1 << s_bits) - 1), 0);
     tgen_arithi(s, ARITH_AND + rexw, r1, (CPU_TLB_SIZE - 1) << CPU_TLB_ENTRY_BITS, 0);
@@ -1063,6 +1049,14 @@ static void tcg_out_qemu_ld_direct(TCGContext *s, int datalo, int datahi, int ba
     }
 }
 
+static void tcg_prepare_st_ld_args(TCGContext *s, TCGType type, int rexw, int r0, int r1, int addrlo)
+{
+    tcg_out_mov(s, type, r1, addrlo);
+    tcg_out_mov(s, type, r0, addrlo);
+
+    tcg_out_shifti(s, SHIFT_SHR + rexw, r1, TARGET_PAGE_BITS - CPU_TLB_ENTRY_BITS);
+}
+
 /* XXX: qemu_ld and qemu_st could be modified to clobber only EDX and
    EAX. It will be useful once fixed registers globals are less
    common. */
@@ -1082,23 +1076,36 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, int opc)
 
     mem_index = args[addrlo_idx + 1 + (TARGET_LONG_BITS > TCG_TARGET_REG_BITS)];
     s_bits = opc & 3;
+    
+    // Setup arguments
+    const int r0 = tcg_target_call_iarg_regs[0];
+    const int r1 = tcg_target_call_iarg_regs[1];
+    TCGType type = (TCG_TARGET_REG_BITS == 64 && TARGET_LONG_BITS == 64) ? TCG_TYPE_I64 : TCG_TYPE_I32;
+    int rexw = (TCG_TARGET_REG_BITS == 64 && TARGET_LONG_BITS == 64) ? P_REXW : 0;
 
-    tcg_out_tlb_load(s, addrlo_idx, mem_index, s_bits, args, label_ptr, /*offsetof(CPUTLBEntry, addr_read)*/ tlb_entry_addr_read);
+    tcg_prepare_st_ld_args(s, type, rexw, r0, r1, args[addrlo_idx]);
 
-    /* TLB Hit.  */
-    tcg_out_qemu_ld_direct(s, data_reg, data_reg2, tcg_target_call_iarg_regs[0], 0, opc);
+    if(likely(s->use_tlb))
+    {
+        tcg_out_tlb_load(s, addrlo_idx, mem_index, s_bits, args, label_ptr,
+            /*offsetof(CPUTLBEntry, addr_read)*/ tlb_entry_addr_read, r0, r1, type, rexw);
 
-    /* jmp label2 */
-    tcg_out8(s, OPC_JMP_short);
-    label_ptr[2] = s->code_ptr;
-    s->code_ptr++;
+        /* TLB Hit.  */
+        tcg_out_qemu_ld_direct(s, data_reg, data_reg2, tcg_target_call_iarg_regs[0], 0, opc);
 
-    /* TLB Miss.  */
+        /* jmp label2 */
+        tcg_out8(s, OPC_JMP_short);
+        label_ptr[2] = s->code_ptr;
+        s->code_ptr++;
 
-    /* label1: */
-    *label_ptr[0] = s->code_ptr - label_ptr[0] - 1;
-    if (TARGET_LONG_BITS > TCG_TARGET_REG_BITS) {
-        *label_ptr[1] = s->code_ptr - label_ptr[1] - 1;
+        /* TLB Miss.  */
+
+        /* label1: */
+        *label_ptr[0] = s->code_ptr - label_ptr[0] - 1;
+        if (TARGET_LONG_BITS > TCG_TARGET_REG_BITS) {
+            *label_ptr[1] = s->code_ptr - label_ptr[1] - 1;
+        }
+
     }
 
     /* XXX: move that code at the end of the TB */
@@ -1163,8 +1170,11 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, int opc)
         tcg_abort();
     }
 
-    /* label2: */
-    *label_ptr[2] = s->code_ptr - label_ptr[2] - 1;
+    if(likely(s->use_tlb))
+    {
+        /* label2: */
+        *label_ptr[2] = s->code_ptr - label_ptr[2] - 1;
+    }
 }
 
 static void tcg_out_qemu_st_direct(TCGContext *s, int datalo, int datahi, int base, tcg_target_long ofs, int sizeop)
@@ -1243,23 +1253,34 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, int opc)
     mem_index = args[addrlo_idx + 1 + (TARGET_LONG_BITS > TCG_TARGET_REG_BITS)];
     s_bits = opc;
 
-    tcg_out_tlb_load(s, addrlo_idx, mem_index, s_bits, args, label_ptr,
-                     /* offsetof(CPUTLBEntry, addr_write) */ tlb_entry_addr_write);
+    // Setup arguments
+    const int r0 = tcg_target_call_iarg_regs[0];
+    const int r1 = tcg_target_call_iarg_regs[1];
+    TCGType type = (TCG_TARGET_REG_BITS == 64 && TARGET_LONG_BITS == 64) ? TCG_TYPE_I64 : TCG_TYPE_I32;
+    int rexw = (TCG_TARGET_REG_BITS == 64 && TARGET_LONG_BITS == 64) ? P_REXW : 0;
 
-    /* TLB Hit.  */
-    tcg_out_qemu_st_direct(s, data_reg, data_reg2, tcg_target_call_iarg_regs[0], 0, opc);
+    tcg_prepare_st_ld_args(s, type, rexw, r0, r1, args[addrlo_idx]);
 
-    /* jmp label2 */
-    tcg_out8(s, OPC_JMP_short);
-    label_ptr[2] = s->code_ptr;
-    s->code_ptr++;
+    if(likely(s->use_tlb))
+    {
+        tcg_out_tlb_load(s, addrlo_idx, mem_index, s_bits, args, label_ptr,
+                         /* offsetof(CPUTLBEntry, addr_write) */ tlb_entry_addr_write, r0, r1, type, rexw);
 
-    /* TLB Miss.  */
+        /* TLB Hit.  */
+        tcg_out_qemu_st_direct(s, data_reg, data_reg2, tcg_target_call_iarg_regs[0], 0, opc);
 
-    /* label1: */
-    *label_ptr[0] = s->code_ptr - label_ptr[0] - 1;
-    if (TARGET_LONG_BITS > TCG_TARGET_REG_BITS) {
-        *label_ptr[1] = s->code_ptr - label_ptr[1] - 1;
+        /* jmp label2 */
+        tcg_out8(s, OPC_JMP_short);
+        label_ptr[2] = s->code_ptr;
+        s->code_ptr++;
+
+        /* TLB Miss.  */
+
+        /* label1: */
+        *label_ptr[0] = s->code_ptr - label_ptr[0] - 1;
+        if (TARGET_LONG_BITS > TCG_TARGET_REG_BITS) {
+            *label_ptr[1] = s->code_ptr - label_ptr[1] - 1;
+        }
     }
 
     /* XXX: move that code at the end of the TB */
@@ -1326,8 +1347,11 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, int opc)
         tcg_out_addi(s, TCG_REG_CALL_STACK, stack_adjust);
     }
 
-    /* label2: */
-    *label_ptr[2] = s->code_ptr - label_ptr[2] - 1;
+    if(likely(s->use_tlb))
+    {
+        /* label2: */
+        *label_ptr[2] = s->code_ptr - label_ptr[2] - 1;
+    }
 }
 
 /* *INDENT-OFF* */

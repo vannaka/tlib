@@ -421,6 +421,7 @@ static TranslationBlock *tb_alloc(target_ulong pc)
     tb = &tbs[nb_tbs++];
     tb->pc = pc;
     tb->cflags = 0;
+    tb->dirty_flag = false;
     return tb;
 }
 

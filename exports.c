@@ -934,3 +934,13 @@ void tlib_set_broadcast_dirty(int enable)
 }
 
 EXC_VOID_1(tlib_set_broadcast_dirty, int32_t, enable)
+
+char *tlib_get_commit()
+{
+#if defined(TLIB_COMMIT)
+    return stringify(TLIB_COMMIT);
+#else
+    return "undefined";
+#endif
+}
+EXC_POINTER_0(char *, tlib_get_commit)

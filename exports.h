@@ -12,6 +12,7 @@ uint32_t tlib_get_cycles_per_instruction(void);
 void gen_helpers(void);
 
 char *tlib_get_arch();
+char *tlib_get_commit();
 
 int32_t tlib_init(char *cpu_name);
 void tlib_atomic_memory_state_init(int id, uintptr_t atomic_memory_state_ptr);

@@ -69,6 +69,16 @@ if("${TARGET_ACTUAL_ARCH}" MATCHES "^(arm|i386|sparc)$")
     set(TARGET_INSN_START_EXTRA_WORDS 1)
 endif()
 
+set(TLIB_COMMIT_SHA "" CACHE STRING "Current tlib commit SHA")
+if(NOT TLIB_COMMIT_SHA)
+    execute_process(COMMAND git rev-parse --short HEAD RESULT_VARIABLE GIT_RESULT OUTPUT_VARIABLE GIT_OUTPUT OUTPUT_STRIP_TRAILING_WHITESPACE WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    if(NOT GIT_RESULT EQUAL 0)
+        set(GIT_OUTPUT "undefined")
+    endif()
+
+    set(TLIB_COMMIT_SHA "${GIT_OUTPUT}" CACHE STRING "Current tlib commit SHA" FORCE)
+endif()
+
 # this must be placed after setting default values for:
 # TARGET_BIG_ENDIAN, HOST_WORD_SIZE, TARGET_WORD_SIZE, TARGET_INSN_START_EXTRA_WORDS
 ExternalProject_Add (tcglib
@@ -105,6 +115,8 @@ add_definitions (
     -DTARGET_${TARGET_ACTUAL_ARCH_U}=1
     -DTARGET_LONG_BITS=${TARGET_WORD_SIZE}
     -DTARGET_INSN_START_EXTRA_WORDS=${TARGET_INSN_START_EXTRA_WORDS}
+
+    -DTLIB_COMMIT=${TLIB_COMMIT_SHA}
 
     ${ARM_M_DEF}
     ${BIG_ENDIAN_DEF}

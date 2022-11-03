@@ -18,7 +18,9 @@ if(HOST_LONG_BITS EQUAL 0)
     endif()
 endif()
 
-string (TOUPPER ${HOST_ARCHITECTURE} HOST_UPPER)
+# Make sure host architecture is lower case,
+# as later we are including folder with this name
+string (TOLOWER ${HOST_ARCHITECTURE} HOST_LOWER)
 
 if(BIG_ENDIAN)
     set (BIG_ENDIAN_DEF -DTARGET_WORDS_BIGENDIAN)
@@ -38,7 +40,7 @@ add_definitions (
     ${BIG_ENDIAN_DEF}
     )
 
-include_directories (${HOST_ARCHITECTURE})
+include_directories (${HOST_LOWER})
 
 add_library (tcg STATIC
     additional.c

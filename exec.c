@@ -1639,7 +1639,7 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf, int len, int 
 {
     int l;
     uint8_t *ptr;
-    uint32_t val;
+    uint64_t val;
     target_phys_addr_t page;
     ram_addr_t pd;
     PhysPageDesc *p;
@@ -1663,7 +1663,11 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf, int len, int 
                 if (p) {
                     addr1 = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
                 }
-                if (l >= 4 && ((addr1 & 3) == 0)) {
+                if (l >= 8 && ((addr1 & 7) == 0)) {
+                    /* 64 bit write access */
+                    val = ldq_p(buf);
+                    tlib_write_quad_word(addr1, val);
+                } else if (l >= 4 && ((addr1 & 3) == 0)) {
                     /* 32 bit write access */
                     val = ldl_p(buf);
                     tlib_write_double_word(addr1, val);
@@ -1700,7 +1704,12 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf, int len, int 
                 if (p) {
                     addr1 = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
                 }
-                if (l >= 4 && ((addr1 & 3) == 0)) {
+                if (l >= 8 && ((addr1 & 7) == 0)) {
+                    /* 64 bit read access */
+                    val = tlib_read_quad_word(addr1);
+                    stq_p(buf, val);
+                    l = 8;
+                } else if (l >= 4 && ((addr1 & 3) == 0)) {
                     /* 32 bit read access */
                     val = tlib_read_double_word(addr1);
                     stl_p(buf, val);

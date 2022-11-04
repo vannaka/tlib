@@ -32,17 +32,21 @@ void tlib_abort(char *message)
 
 DEFAULT_VOID_HANDLER2(void tlib_log, enum log_level level, char *message)
 
-DEFAULT_INT_HANDLER1(uint32_t tlib_read_byte, uint64_t address)
+DEFAULT_INT_HANDLER1(uint64_t tlib_read_byte, uint64_t address)
 
-DEFAULT_INT_HANDLER1(uint32_t tlib_read_word, uint64_t address)
+DEFAULT_INT_HANDLER1(uint64_t tlib_read_word, uint64_t address)
 
-DEFAULT_INT_HANDLER1(uint32_t tlib_read_double_word, uint64_t address)
+DEFAULT_INT_HANDLER1(uint64_t tlib_read_double_word, uint64_t address)
 
-DEFAULT_VOID_HANDLER2(void tlib_write_byte, uint64_t address, uint32_t value)
+DEFAULT_INT_HANDLER1(uint64_t tlib_read_quad_word, uint64_t address)
 
-DEFAULT_VOID_HANDLER2(void tlib_write_word, uint64_t address, uint32_t value)
+DEFAULT_VOID_HANDLER2(void tlib_write_byte, uint64_t address, uint64_t value)
 
-DEFAULT_VOID_HANDLER2(void tlib_write_double_word, uint64_t address, uint32_t value)
+DEFAULT_VOID_HANDLER2(void tlib_write_word, uint64_t address, uint64_t value)
+
+DEFAULT_VOID_HANDLER2(void tlib_write_double_word, uint64_t address, uint64_t value)
+
+DEFAULT_VOID_HANDLER2(void tlib_write_quad_word, uint64_t address, uint64_t value)
 
 DEFAULT_INT_HANDLER2(uint32_t tlib_on_block_begin, uint64_t address, uint32_t size)
 

@@ -159,9 +159,10 @@ static inline void gen_block_footer(TranslationBlock *tb)
     *gen_opc_ptr = INDEX_op_end;
 }
 
-static inline uint32_t get_max_instruction_count(CPUState *env, TranslationBlock *tb)
+static inline uint32_t get_max_tb_instruction_count(CPUState *env)
 {
-    return maximum_block_size > env->instructions_count_limit ? env->instructions_count_limit : maximum_block_size;
+    uint32_t current_instructions_count_limit = env->instructions_count_limit - env->instructions_count_value;
+    return maximum_block_size > current_instructions_count_limit ? current_instructions_count_limit : maximum_block_size;
 }
 
 static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb)
@@ -169,6 +170,8 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb)
     DisasContext dcc;
     CPUBreakpoint *bp;
     DisasContextBase *dc = (DisasContextBase *)&dcc;
+
+    uint32_t max_tb_icount = get_max_tb_instruction_count(env);
 
     tb->icount = 0;
     tb->was_cut = false;
@@ -209,7 +212,7 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb)
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
             break;
         }
-        if (tb->icount >= get_max_instruction_count(env, tb)) {
+        if (tb->icount >= max_tb_icount) {
             tb->was_cut = true;
             break;
         }

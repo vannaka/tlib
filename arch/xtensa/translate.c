@@ -1325,7 +1325,7 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     int insn_len = xtensa_tr_translate_insn((DisasContext *)base, env);
     base->tb->size += insn_len;
-    return insn_len == 0 ? 0 : 1;
+    return insn_len != 0;
 }
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)

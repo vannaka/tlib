@@ -1301,6 +1301,7 @@ static void xtensa_tr_tb_stop(DisasContext *dc, CPUState *cpu)
     switch (dc->base.is_jmp) {
     case DISAS_NORETURN:
         break;
+    case DISAS_NEXT:
     case DISAS_TOO_MANY:
         if (cpu->singlestep_enabled) {
             gen_exception(dc, EXCP_DEBUG);
@@ -1324,9 +1325,6 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     int insn_len = xtensa_tr_translate_insn((DisasContext *)base, env);
     base->tb->size += insn_len;
-
-    ((DisasContext *)base)->base.is_jmp = DISAS_TOO_MANY;
-
     return insn_len == 0 ? 0 : 1;
 }
 

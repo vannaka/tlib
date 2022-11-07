@@ -250,6 +250,7 @@ typedef struct DisasContext {
     int address_mask_32bit;
     uint32_t cc_op;          /* current CC operation */
     sparc_def_t *def;
+    target_ulong npc;
 } DisasContext;
 
 typedef struct SparcTLBEntry {

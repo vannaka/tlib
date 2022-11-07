@@ -59,6 +59,7 @@ typedef struct opcode_hook_mask_t
 typedef struct DisasContext {
     struct DisasContextBase base;
     uint64_t opcode;
+    target_ulong npc;
 } DisasContext;
 
 typedef struct CPUState CPUState;

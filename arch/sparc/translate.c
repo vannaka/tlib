@@ -966,19 +966,19 @@ static inline void gen_generic_branch(target_ulong npc1, target_ulong npc2, TCGv
    have been set for a jump */
 static inline void flush_cond(DisasContext *dc, TCGv cond)
 {
-    if (dc->base.npc == JUMP_PC) {
+    if (dc->npc == JUMP_PC) {
         gen_generic_branch(dc->jump_pc[0], dc->jump_pc[1], cond);
-        dc->base.npc = DYNAMIC_PC;
+        dc->npc = DYNAMIC_PC;
     }
 }
 
 static inline void save_npc(DisasContext *dc, TCGv cond)
 {
-    if (dc->base.npc == JUMP_PC) {
+    if (dc->npc == JUMP_PC) {
         gen_generic_branch(dc->jump_pc[0], dc->jump_pc[1], cond);
-        dc->base.npc = DYNAMIC_PC;
-    } else if (dc->base.npc != DYNAMIC_PC) {
-        tcg_gen_movi_tl(cpu_npc, dc->base.npc);
+        dc->npc = DYNAMIC_PC;
+    } else if (dc->npc != DYNAMIC_PC) {
+        tcg_gen_movi_tl(cpu_npc, dc->npc);
     }
 }
 
@@ -995,15 +995,15 @@ static inline void save_state(DisasContext *dc, TCGv cond)
 
 static inline void gen_mov_pc_npc(DisasContext *dc, TCGv cond)
 {
-    if (dc->base.npc == JUMP_PC) {
+    if (dc->npc == JUMP_PC) {
         gen_generic_branch(dc->jump_pc[0], dc->jump_pc[1], cond);
         tcg_gen_mov_tl(cpu_pc, cpu_npc);
         dc->base.pc = DYNAMIC_PC;
-    } else if (dc->base.npc == DYNAMIC_PC) {
+    } else if (dc->npc == DYNAMIC_PC) {
         tcg_gen_mov_tl(cpu_pc, cpu_npc);
         dc->base.pc = DYNAMIC_PC;
     } else {
-        dc->base.pc = dc->base.npc;
+        dc->base.pc = dc->npc;
     }
 }
 
@@ -1159,33 +1159,33 @@ static void do_branch(DisasContext *dc, int32_t offset, uint32_t insn, int cc, T
     if (cond == 0x0) {
         /* unconditional not taken */
         if (a) {
-            dc->base.pc = dc->base.npc + 4;
-            dc->base.npc = dc->base.pc + 4;
+            dc->base.pc = dc->npc + 4;
+            dc->npc = dc->base.pc + 4;
         } else {
-            dc->base.pc = dc->base.npc;
-            dc->base.npc = dc->base.pc + 4;
+            dc->base.pc = dc->npc;
+            dc->npc = dc->base.pc + 4;
         }
     } else if (cond == 0x8) {
         /* unconditional taken */
         if (a) {
             dc->base.pc = target;
-            dc->base.npc = dc->base.pc + 4;
+            dc->npc = dc->base.pc + 4;
         } else {
-            dc->base.pc = dc->base.npc;
-            dc->base.npc = target;
+            dc->base.pc = dc->npc;
+            dc->npc = target;
             tcg_gen_mov_tl(cpu_pc, cpu_npc);
         }
     } else {
         flush_cond(dc, r_cond);
         gen_cond(r_cond, cc, cond, dc);
         if (a) {
-            gen_branch_a(dc, target, dc->base.npc, r_cond);
+            gen_branch_a(dc, target, dc->npc, r_cond);
             dc->base.is_jmp = DISAS_JUMP;
         } else {
-            dc->base.pc = dc->base.npc;
+            dc->base.pc = dc->npc;
             dc->jump_pc[0] = target;
-            dc->jump_pc[1] = dc->base.npc + 4;
-            dc->base.npc = JUMP_PC;
+            dc->jump_pc[1] = dc->npc + 4;
+            dc->npc = JUMP_PC;
         }
     }
 }
@@ -1199,33 +1199,33 @@ static void do_fbranch(DisasContext *dc, int32_t offset, uint32_t insn, int cc, 
     if (cond == 0x0) {
         /* unconditional not taken */
         if (a) {
-            dc->base.pc = dc->base.npc + 4;
-            dc->base.npc = dc->base.pc + 4;
+            dc->base.pc = dc->npc + 4;
+            dc->npc = dc->base.pc + 4;
         } else {
-            dc->base.pc = dc->base.npc;
-            dc->base.npc = dc->base.pc + 4;
+            dc->base.pc = dc->npc;
+            dc->npc = dc->base.pc + 4;
         }
     } else if (cond == 0x8) {
         /* unconditional taken */
         if (a) {
             dc->base.pc = target;
-            dc->base.npc = dc->base.pc + 4;
+            dc->npc = dc->base.pc + 4;
         } else {
-            dc->base.pc = dc->base.npc;
-            dc->base.npc = target;
+            dc->base.pc = dc->npc;
+            dc->npc = target;
             tcg_gen_mov_tl(cpu_pc, cpu_npc);
         }
     } else {
         flush_cond(dc, r_cond);
         gen_fcond(r_cond, cc, cond);
         if (a) {
-            gen_branch_a(dc, target, dc->base.npc, r_cond);
+            gen_branch_a(dc, target, dc->npc, r_cond);
             dc->base.is_jmp = DISAS_JUMP;
         } else {
-            dc->base.pc = dc->base.npc;
+            dc->base.pc = dc->npc;
             dc->jump_pc[0] = target;
-            dc->jump_pc[1] = dc->base.npc + 4;
-            dc->base.npc = JUMP_PC;
+            dc->jump_pc[1] = dc->npc + 4;
+            dc->npc = JUMP_PC;
         }
     }
 }
@@ -1520,7 +1520,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         tcg_temp_free(r_const);
         target += dc->base.pc;
         gen_mov_pc_npc(dc, cpu_cond);
-        dc->base.npc = target;
+        dc->npc = target;
     }
         goto jmp_insn;
     case 2:                     /* FPU & Logical Operations */
@@ -2297,7 +2297,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                 gen_helper_check_align(cpu_dst, r_const);
                 tcg_temp_free_i32(r_const);
                 tcg_gen_mov_tl(cpu_npc, cpu_dst);
-                dc->base.npc = DYNAMIC_PC;
+                dc->npc = DYNAMIC_PC;
             }
                 goto jmp_insn;
             case 0x39:          /* rett */
@@ -2312,7 +2312,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
                 gen_helper_check_align(cpu_dst, r_const);
                 tcg_temp_free_i32(r_const);
                 tcg_gen_mov_tl(cpu_npc, cpu_dst);
-                dc->base.npc = DYNAMIC_PC;
+                dc->npc = DYNAMIC_PC;
                 gen_helper_rett();
             }
                 goto jmp_insn;
@@ -2602,7 +2602,7 @@ skip_move:  ;
                 }
                 save_state(dc, cpu_cond);
                 gen_st_asi(cpu_val, cpu_addr, insn, 4);
-                dc->base.npc = DYNAMIC_PC;
+                dc->npc = DYNAMIC_PC;
                 break;
             case 0x15:     /* stba, store byte alternate */
                 if (IS_IMM) {
@@ -2613,7 +2613,7 @@ skip_move:  ;
                 }
                 save_state(dc, cpu_cond);
                 gen_st_asi(cpu_val, cpu_addr, insn, 1);
-                dc->base.npc = DYNAMIC_PC;
+                dc->npc = DYNAMIC_PC;
                 break;
             case 0x16:     /* stha, store halfword alternate */
                 if (IS_IMM) {
@@ -2624,7 +2624,7 @@ skip_move:  ;
                 }
                 save_state(dc, cpu_cond);
                 gen_st_asi(cpu_val, cpu_addr, insn, 2);
-                dc->base.npc = DYNAMIC_PC;
+                dc->npc = DYNAMIC_PC;
                 break;
             case 0x17:     /* stda, store double word alternate */
                 if (IS_IMM) {
@@ -2710,16 +2710,16 @@ skip_move:  ;
     break;
     }
     /* default case for non jump instructions */
-    if (dc->base.npc == DYNAMIC_PC) {
+    if (dc->npc == DYNAMIC_PC) {
         dc->base.pc = DYNAMIC_PC;
         gen_op_next_insn();
-    } else if (dc->base.npc == JUMP_PC) {
+    } else if (dc->npc == JUMP_PC) {
         /* we can do a static jump */
         gen_branch2(dc, dc->jump_pc[0], dc->jump_pc[1], cpu_cond);
         dc->base.is_jmp = DISAS_JUMP;
     } else {
-        dc->base.pc = dc->base.npc;
-        dc->base.npc = dc->base.npc + 4;
+        dc->base.pc = dc->npc;
+        dc->npc = dc->npc + 4;
     }
 jmp_insn:
     goto egress;
@@ -2786,7 +2786,7 @@ egress:
 void setup_disas_context(DisasContextBase *base, CPUState *env)
 {
     DisasContext *dc = (DisasContext *)base;
-    dc->base.npc = (target_ulong)dc->base.tb->cs_base;
+    dc->npc = (target_ulong)dc->base.tb->cs_base;
     dc->cc_op = CC_OP_DYNAMIC;
     dc->base.mem_idx = cpu_mmu_index(env);
     dc->def = env->def;
@@ -2820,14 +2820,14 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext *)base;
 
-    if (base->npc & JUMP_PC) {
+    if (dc->npc & JUMP_PC) {
         /* Since jump_pc[1] is always npc + 4, we can infer after incrementing
          * that jump_pc[1] == pc + 4.  Because of that, we can encode the branch
          * destination into a single word, and store that in npc. */
         assert(dc->jump_pc[1] == base->pc + 4);
         tcg_gen_insn_start(base->pc, dc->jump_pc[0] | JUMP_PC);
     } else {
-        tcg_gen_insn_start(base->pc, base->npc);
+        tcg_gen_insn_start(base->pc, dc->npc);
     }
 
     base->tb->size += disas_insn(env, (DisasContext *)base);
@@ -2854,9 +2854,9 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)
     tcg_temp_free_i32(cpu_tmp32);
     tcg_temp_free(cpu_tmp0);
     if (!dc->base.is_jmp) {
-        if (dc->base.pc != DYNAMIC_PC && (dc->base.npc != DYNAMIC_PC && dc->base.npc != JUMP_PC)) {
+        if (dc->base.pc != DYNAMIC_PC && (dc->npc != DYNAMIC_PC && dc->npc != JUMP_PC)) {
             /* static PC and NPC: we can use direct chaining */
-            gen_goto_tb(dc, 0, dc->base.pc, dc->base.npc);
+            gen_goto_tb(dc, 0, dc->base.pc, dc->npc);
         } else {
             if (dc->base.pc != DYNAMIC_PC) {
                 tcg_gen_movi_tl(cpu_pc, dc->base.pc);

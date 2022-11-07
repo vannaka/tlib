@@ -73,7 +73,6 @@ typedef uint64_t target_ulong __attribute__((aligned(TARGET_LONG_ALIGNMENT)));
 typedef struct DisasContextBase {
     struct TranslationBlock *tb;
     target_ulong pc;
-    target_ulong npc;
     int mem_idx;
     int is_jmp;
     int guest_profile;

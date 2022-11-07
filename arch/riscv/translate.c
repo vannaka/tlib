@@ -497,7 +497,7 @@ static void gen_synch(DisasContext *dc, uint32_t opc)
         break;
     case OPC_RISC_FENCE_I:
         gen_helper_fence_i(cpu_env);
-        tcg_gen_movi_tl(cpu_pc, dc->base.npc);
+        tcg_gen_movi_tl(cpu_pc, dc->npc);
         gen_exit_tb_no_chaining(dc->base.tb);
         dc->base.is_jmp = BS_BRANCH;
         break;
@@ -636,7 +636,7 @@ static void gen_jal(CPUState *env, DisasContext *dc, int rd, target_ulong imm)
         }
     }
     if (rd != 0) {
-        tcg_gen_movi_tl(cpu_gpr[rd], dc->base.npc);
+        tcg_gen_movi_tl(cpu_gpr[rd], dc->npc);
     }
 
     if (unlikely(dc->base.guest_profile)) {
@@ -667,7 +667,7 @@ static void gen_jalr(CPUState *env, DisasContext *dc, uint32_t opc, int rd, int 
         }
 
         if (rd != 0) {
-            tcg_gen_movi_tl(cpu_gpr[rd], dc->base.npc);
+            tcg_gen_movi_tl(cpu_gpr[rd], dc->npc);
         }
 
         if (unlikely(dc->base.guest_profile)) {
@@ -721,7 +721,7 @@ static void gen_branch(CPUState *env, DisasContext *dc, uint32_t opc, int rs1, i
         break;
     }
 
-    gen_goto_tb(dc, 1, dc->base.npc);
+    gen_goto_tb(dc, 1, dc->npc);
     gen_set_label(l); /* branch taken */
     if (!riscv_has_ext(env, RISCV_FEATURE_RVC) && ((dc->base.pc + bimm) & 0x3)) {
         /* misaligned */
@@ -1833,7 +1833,7 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2,
                 gen_helper_tlb_flush(cpu_env);
                 break;
             case 0x5: /* WFI */
-                tcg_gen_movi_tl(cpu_pc, dc->base.npc);
+                tcg_gen_movi_tl(cpu_pc, dc->npc);
                 gen_helper_wfi(cpu_env);
                 gen_exit_tb_no_chaining(dc->base.tb);
                 dc->base.is_jmp = BS_BRANCH;
@@ -1902,7 +1902,7 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2,
 
         gen_set_gpr(rd, dest);
         /* end tb since we may be changing priv modes, to get mmu_index right */
-        tcg_gen_movi_tl(cpu_pc, dc->base.npc);
+        tcg_gen_movi_tl(cpu_pc, dc->npc);
         gen_exit_tb_no_chaining(dc->base.tb);
         dc->base.is_jmp = BS_BRANCH;
 
@@ -4660,7 +4660,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         custom_instruction_descriptor_t *ci = &env->custom_instructions[i];
 
         if ((dc->opcode & ci->mask) == ci->pattern) {
-            dc->base.npc = dc->base.pc + ci->length;
+            dc->npc = dc->base.pc + ci->length;
 
             if (env->count_opcodes) {
                 generate_opcode_count_increment(env, dc->opcode);
@@ -4678,7 +4678,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
 
             // this is executed conditionally - only if `handle_custom_instruction` returns 0
             // otherwise `cpu_pc` points to a proper value and should not be overwritten by `dc->base.pc`
-            dc->base.pc = dc->base.npc;
+            dc->base.pc = dc->npc;
             gen_sync_pc(dc);
 
             gen_set_label(exit_tb_label);
@@ -4700,7 +4700,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
 
     /* check for compressed insn */
     int instruction_length = (is_compressed ? 2 : 4);
-    dc->base.npc = dc->base.pc + instruction_length;
+    dc->npc = dc->base.pc + instruction_length;
 
     if (env->count_opcodes) {
         generate_opcode_count_increment(env, dc->opcode);
@@ -4728,7 +4728,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         }
     }
 
-    dc->base.pc = dc->base.npc;
+    dc->base.pc = dc->npc;
     return instruction_length;
 }
 

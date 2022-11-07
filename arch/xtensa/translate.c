@@ -34,10 +34,14 @@
 #include "tb-helper.h"
 #include "tcg-op.h"
 
-// TODO: Rename these instead of these defs?
-// We use different names for these in DisasContextBase.
-#define pc_first pc
-#define pc_next npc
+// Upstream Xtensa code expected DisasContextBase to contain:
+// * 'pc_first' -- it was replaced with 'base.tb->pc',
+// * 'pc_next' -- it's equivalent to our 'pc' in DisasContextBase but wasn't
+//     replaced to avoid confusing it with Xtensa-specific 'DisasContext.pc'
+//     and make comparisons with upstream code easier.
+// 
+// Therefore all 'dc->base.pc_next' really access 'dc->base.pc'.
+#define pc_next pc
 
 #define g_assert_not_reached()                                       \
 {                                                                    \
@@ -404,7 +408,7 @@ static void gen_jump(DisasContext *dc, TCGv dest)
 
 static int adjust_jump_slot(DisasContext *dc, uint32_t dest, int slot)
 {
-    if (((dc->base.pc_first ^ dest) & TARGET_PAGE_MASK) != 0) {
+    if (((dc->base.tb->pc ^ dest) & TARGET_PAGE_MASK) != 0) {
         return -1;
     } else {
         return slot;
@@ -1175,7 +1179,6 @@ static unsigned int disas_xtensa_insn(CPUState *env, DisasContext *dc)
         }
     }
     dc->pc = dc->base.pc_next;
-    dc->base.pc = dc->base.pc_next;
     return len;
 }
 
@@ -1204,13 +1207,13 @@ static void xtensa_tr_init_disas_context(DisasContext *dc,
     uint32_t tb_flags = dc->base.tb->flags;
 
     dc->config = env->config;
-    dc->pc = dc->base.pc_first;
+    dc->pc = dc->base.tb->pc;
     dc->ring = tb_flags & XTENSA_TBFLAG_RING_MASK;
     dc->cring = (tb_flags & XTENSA_TBFLAG_EXCM) ? 0 : dc->ring;
     dc->lbeg_off = (dc->base.tb->cs_base & XTENSA_CSBASE_LBEG_OFF_MASK) >>
         XTENSA_CSBASE_LBEG_OFF_SHIFT;
     dc->lend = (dc->base.tb->cs_base & XTENSA_CSBASE_LEND_MASK) +
-        (dc->base.pc_first & TARGET_PAGE_MASK);
+        (dc->base.tb->pc & TARGET_PAGE_MASK);
     dc->debug = tb_flags & XTENSA_TBFLAG_DEBUG;
     dc->icount = tb_flags & XTENSA_TBFLAG_ICOUNT;
     dc->cpenable = (tb_flags & XTENSA_TBFLAG_CPENABLE_MASK) >>
@@ -1276,7 +1279,7 @@ static unsigned int xtensa_tr_translate_insn(DisasContext *dc, CPUState *env)
     }
 
     /* End the TB if the next insn will cross into the next page.  */
-    page_start = dc->base.pc_first & TARGET_PAGE_MASK;
+    page_start = dc->base.tb->pc & TARGET_PAGE_MASK;
     if (dc->base.is_jmp == DISAS_NEXT &&
         (dc->pc - page_start >= TARGET_PAGE_SIZE ||
          dc->pc - page_start + xtensa_insn_len(dc) > TARGET_PAGE_SIZE)) {
@@ -1315,11 +1318,6 @@ void setup_disas_context(DisasContextBase *base, CPUState *env)
     DisasContext *dc = (DisasContext *)base;
     xtensa_tr_init_disas_context(dc, env);
     xtensa_tr_tb_start(dc, env);
-
-    // 'xtensa_tr_breakpoint_check' can use 'pc_next' before it's initialized
-    // which results in jumping to invalid PCs from a breakpoint. This might
-    // not be the only case where 'pc_next' needs this initialization.
-    base->pc_next = dc->pc_first;
 }
 
 int gen_intermediate_code(CPUState *env, DisasContextBase *base)

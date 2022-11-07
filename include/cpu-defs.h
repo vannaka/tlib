@@ -163,7 +163,7 @@ typedef struct ExtMmuRange
 #define MAX_IO_ACCESS_REGIONS_COUNT 1024
 
 #define CPU_TEMP_BUF_NLONGS 128
-#define cpu_common_first_field instructions_count_threshold
+#define cpu_common_first_field instructions_count_limit
 #define CPU_COMMON                                                            \
     /* --------------------------------------- */                             \
     /* warning: cleared by CPU reset           */                             \
@@ -172,7 +172,7 @@ typedef struct ExtMmuRange
        number of instructions */                                              \
     /* the types of instructions_count_* need to match the TCG-generated      \
        accesses in `gen_update_instructions_count` in translate-all.c */      \
-    uint32_t instructions_count_threshold;                                    \
+    uint32_t instructions_count_limit;                                        \
     uint32_t instructions_count_value;                                        \
     uint64_t instructions_count_total_value;                                  \
     /* soft mmu support */                                                    \

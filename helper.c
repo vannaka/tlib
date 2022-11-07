@@ -19,7 +19,7 @@ uint32_t HELPER(prepare_block_for_execution)(void *tb)
         return cpu->exit_request;
     }
 
-    uint32_t instructions_left = cpu->instructions_count_threshold - cpu->instructions_count_value;
+    uint32_t instructions_left = cpu->instructions_count_limit - cpu->instructions_count_value;
 
     if (instructions_left == 0) {
         // setting `tb_restart_request` to 1 will stop executing this block at the end of the header

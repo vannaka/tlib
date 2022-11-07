@@ -238,7 +238,7 @@ uint64_t tlib_get_executed_instructions()
 {
     uint64_t result = cpu->instructions_count_value;
     cpu->instructions_count_value = 0;
-    cpu->instructions_count_threshold -= result;
+    cpu->instructions_count_limit -= result;
     return result;
 }
 
@@ -251,7 +251,7 @@ EXC_INT_0(uint64_t, tlib_get_executed_instructions)
 void tlib_reset_executed_instructions(uint32_t val)
 {
     cpu->instructions_count_value = val;
-    cpu->instructions_count_threshold += val;
+    cpu->instructions_count_limit += val;
 }
 
 EXC_VOID_1(tlib_reset_executed_instructions, uint64_t, val)
@@ -282,15 +282,15 @@ int32_t tlib_execute(uint32_t max_insns)
     if (cpu->instructions_count_value != 0) {
         tlib_abortf("Tried to execute cpu without reading executed instructions count first.");
     }
-    cpu->instructions_count_threshold = max_insns;
+    cpu->instructions_count_limit = max_insns;
 
     uint32_t local_counter = 0;
     int32_t result = EXCP_INTERRUPT;
-    while ((result == EXCP_INTERRUPT) && (cpu->instructions_count_threshold > 0)) {
+    while ((result == EXCP_INTERRUPT) && (cpu->instructions_count_limit > 0)) {
         result = cpu_exec(cpu);
 
         local_counter += cpu->instructions_count_value;
-        cpu->instructions_count_threshold -= cpu->instructions_count_value;
+        cpu->instructions_count_limit -= cpu->instructions_count_value;
         cpu->instructions_count_value = 0;
 
         if(cpu->exit_request)

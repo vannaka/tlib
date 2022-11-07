@@ -212,7 +212,7 @@ static inline TranslationBlock *tb_find_fast(CPUState *env)
     target_ulong cs_base, pc;
     int flags;
 
-    uint32_t max_icount = (env->instructions_count_threshold - env->instructions_count_value);
+    uint32_t max_icount = (env->instructions_count_limit - env->instructions_count_value);
 
     /* we record a subset of the CPU state. It will
        always be the same before a given translated block
@@ -342,7 +342,7 @@ int cpu_exec(CPUState *env)
                 if (unlikely(env->exception_index != -1)) {
                     cpu_loop_exit_without_hook(env);
                 }
-                if (cpu->instructions_count_value == cpu->instructions_count_threshold) {
+                if (cpu->instructions_count_value == cpu->instructions_count_limit) {
                     env->exit_request = 1;
                 }
                 if (unlikely(env->exit_request)) {

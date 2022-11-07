@@ -161,7 +161,7 @@ static inline void gen_block_footer(TranslationBlock *tb)
 
 static inline uint32_t get_max_instruction_count(CPUState *env, TranslationBlock *tb)
 {
-    return maximum_block_size > env->instructions_count_threshold ? env->instructions_count_threshold : maximum_block_size;
+    return maximum_block_size > env->instructions_count_limit ? env->instructions_count_limit : maximum_block_size;
 }
 
 static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb)

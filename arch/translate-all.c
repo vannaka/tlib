@@ -174,7 +174,7 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb)
     tb->was_cut = false;
     tb->size = 0;
     dc->tb = tb;
-    dc->is_jmp = 0;
+    dc->is_jmp = DISAS_NEXT;
     dc->pc = tb->pc;
     dc->guest_profile = env->guest_profiler_enabled;
 
@@ -203,16 +203,14 @@ static void cpu_gen_code_inner(CPUState *env, TranslationBlock *tb)
         if (do_break) {
             break;
         }
-        if (dc->is_jmp) {
+        if (dc->is_jmp != DISAS_NEXT) {
             break;
         }
         if ((gen_opc_ptr - tcg->gen_opc_buf) >= OPC_MAX_SIZE) {
-            dc->is_jmp = DISAS_NEXT;
             break;
         }
         if (tb->icount >= get_max_instruction_count(env, tb)) {
             tb->was_cut = true;
-            dc->is_jmp = DISAS_NEXT;
             break;
         }
     }

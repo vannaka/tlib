@@ -3,7 +3,10 @@ include (ExternalProject)
 
 project (tlib)
 
-option (DEBUG "Debug mode" OFF)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(DEBUG_DEFS "-DDEBUG -DDEBUG_ON")
+endif()
+
 option (HOST_BIG_ENDIAN "Host big endian" OFF)
 
 if(NOT DEFINED HOST_ARCH)
@@ -116,6 +119,7 @@ add_definitions (
 
     ${ARM_M_DEF}
     ${BIG_ENDIAN_DEF}
+    ${DEBUG_DEFS}
     )
 
 include_directories (

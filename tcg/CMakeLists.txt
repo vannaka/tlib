@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 
 project (tcg)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(DEBUG_DEF "-DDEBUG")
+endif()
+
 option (BIG_ENDIAN "Big endian" OFF)
 set (HOST_LONG_BITS 0 CACHE INT "Host word size (0 - autodetection)")
 set (HOST_ARCHITECTURE "i386" CACHE STRING "Host architecture")
@@ -38,6 +42,7 @@ add_definitions (
     -DTARGET_INSN_START_EXTRA_WORDS=${TARGET_INSN_START_EXTRA_WORDS}
 
     ${BIG_ENDIAN_DEF}
+    ${DEBUG_DEF}
     )
 
 include_directories (

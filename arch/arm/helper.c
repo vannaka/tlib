@@ -1255,8 +1255,8 @@ int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, 
     ret = get_phys_addr(env, address, access_type, is_user, &phys_addr, &prot, &page_size, no_page_fault);
     if (ret == TRANSLATE_SUCCESS) {
         /* Map a single [sub]page.  */
-        phys_addr &= ~(uint32_t)0x3ff;
-        address &= ~(uint32_t)0x3ff;
+        phys_addr &= TARGET_PAGE_MASK;
+        address &= TARGET_PAGE_MASK;
         tlb_set_page(env, address, phys_addr, prot, mmu_idx, page_size);
         return TRANSLATE_SUCCESS;
     }

@@ -101,7 +101,10 @@ struct TranslationBlock {
     uint16_t size;        /* size of target code for this block (1 <=
                              size <= TARGET_PAGE_SIZE) */
     uint16_t cflags;      /* compile flags */
+
 #define CF_COUNT_MASK 0x7fff
+#define CF_USE_ICOUNT    0x00020000
+#define CF_PARALLEL      0x00080000 /* Generate code for a parallel context */
 
     uint8_t *tc_ptr;      /* pointer to the translated code */
     uint8_t *tc_search;   /* pointer to search data */

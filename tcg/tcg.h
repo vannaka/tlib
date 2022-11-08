@@ -171,6 +171,13 @@ typedef enum TCGOpcode {
 #define tcg_regset_andnot(d, a, b)      (d) = (a) & ~(b)
 #define tcg_regset_not(d, a)            (d) = ~(a)
 
+#ifdef DEBUG
+# define tcg_debug_assert(X) do { assert(X); } while (0)
+#else
+# define tcg_debug_assert(X) \
+    do { if (!(X)) { __builtin_unreachable(); } } while (0)
+#endif
+
 typedef struct TCGRelocation {
     struct TCGRelocation *next;
     int type;

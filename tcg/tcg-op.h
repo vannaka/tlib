@@ -2968,6 +2968,12 @@ static inline void tcg_gen_deposit_z_i64(TCGv_i64 ret, TCGv_i64 arg,
     }
 }
 
+static inline void tcg_gen_extr32_i64(TCGv_i64 lo, TCGv_i64 hi, TCGv_i64 arg)
+{
+    tcg_gen_ext32u_i64(lo, arg);
+    tcg_gen_shri_i64(hi, arg, 32);
+}
+
 #if TARGET_LONG_BITS == 64
 #define tcg_gen_movi_tl       tcg_gen_movi_i64
 #define tcg_gen_mov_tl        tcg_gen_mov_i64

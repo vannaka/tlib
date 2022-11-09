@@ -3061,6 +3061,125 @@ static inline void tcg_gen_extract_i64(TCGv_i64 ret, TCGv_i64 arg,
     }
 }
 
+static inline void tcg_gen_sextract_i64(TCGv_i64 ret, TCGv_i64 arg,
+                          unsigned int ofs, unsigned int len)
+{
+    tcg_debug_assert(ofs < 64);
+    tcg_debug_assert(len > 0);
+    tcg_debug_assert(len <= 64);
+    tcg_debug_assert(ofs + len <= 64);
+
+    /* Canonicalize certain special cases, even if sextract is supported.  */
+    if (ofs + len == 64) {
+        tcg_gen_sari_i64(ret, arg, 64 - len);
+        return;
+    }
+    if (ofs == 0) {
+        switch (len) {
+        case 32:
+            tcg_gen_ext32s_i64(ret, arg);
+            return;
+        case 16:
+            tcg_gen_ext16s_i64(ret, arg);
+            return;
+        case 8:
+            tcg_gen_ext8s_i64(ret, arg);
+            return;
+        }
+    }
+
+#if TCG_TARGET_REG_BITS == 32
+    /* Look for a 32-bit extract within one of the two words.  */
+    if (ofs >= 32) {
+        tcg_gen_sextract_i32(TCGV_LOW(ret), TCGV_HIGH(arg), ofs - 32, len);
+    } else if (ofs + len <= 32) {
+        tcg_gen_sextract_i32(TCGV_LOW(ret), TCGV_LOW(arg), ofs, len);
+    } else if (ofs == 0) {
+        tcg_gen_mov_i32(TCGV_LOW(ret), TCGV_LOW(arg));
+        tcg_gen_sextract_i32(TCGV_HIGH(ret), TCGV_HIGH(arg), 0, len - 32);
+        return;
+    } else if (len > 32) {
+        TCGv_i32 t = tcg_temp_new_i32();
+        /* Extract the bits for the high word normally.  */
+        tcg_gen_sextract_i32(t, TCGV_HIGH(arg), ofs + 32, len - 32);
+        /* Shift the field down for the low part.  */
+        tcg_gen_shri_i64(ret, arg, ofs);
+        /* Overwrite the shift into the high part.  */
+        tcg_gen_mov_i32(TCGV_HIGH(ret), t);
+        tcg_temp_free_i32(t);
+        return;
+    } else {
+        /* Shift the field down for the low part, such that the
+            field sits at the MSB.  */
+        tcg_gen_shri_i64(ret, arg, ofs + len - 32);
+        /* Shift the field down from the MSB, sign extending.  */
+        tcg_gen_sari_i32(TCGV_LOW(ret), TCGV_LOW(ret), 32 - len);
+    }
+    /* Sign-extend the field from 32 bits.  */
+    tcg_gen_sari_i32(TCGV_HIGH(ret), TCGV_LOW(ret), 31);
+    return;
+#endif
+
+// TODO: Implement sextract_i64 to increase simulation performance.
+#if defined(TCG_TARGET_HAS_sextract_i64)
+    if (TCG_TARGET_HAS_sextract_i64
+        && TCG_TARGET_extract_i64_valid(ofs, len)) {
+        tcg_gen_op4ii_i64(INDEX_op_sextract_i64, ret, arg, ofs, len);
+        return;
+    }
+#endif
+
+    /* Assume that sign-extension, if available, is cheaper than a shift.  */
+    switch (ofs + len) {
+    case 32:
+        if (TCG_TARGET_HAS_ext32s_i64) {
+            tcg_gen_ext32s_i64(ret, arg);
+            tcg_gen_sari_i64(ret, ret, ofs);
+            return;
+        }
+        break;
+    case 16:
+        if (TCG_TARGET_HAS_ext16s_i64) {
+            tcg_gen_ext16s_i64(ret, arg);
+            tcg_gen_sari_i64(ret, ret, ofs);
+            return;
+        }
+        break;
+    case 8:
+        if (TCG_TARGET_HAS_ext8s_i64) {
+            tcg_gen_ext8s_i64(ret, arg);
+            tcg_gen_sari_i64(ret, ret, ofs);
+            return;
+        }
+        break;
+    }
+    switch (len) {
+    case 32:
+        if (TCG_TARGET_HAS_ext32s_i64) {
+            tcg_gen_shri_i64(ret, arg, ofs);
+            tcg_gen_ext32s_i64(ret, ret);
+            return;
+        }
+        break;
+    case 16:
+        if (TCG_TARGET_HAS_ext16s_i64) {
+            tcg_gen_shri_i64(ret, arg, ofs);
+            tcg_gen_ext16s_i64(ret, ret);
+            return;
+        }
+        break;
+    case 8:
+        if (TCG_TARGET_HAS_ext8s_i64) {
+            tcg_gen_shri_i64(ret, arg, ofs);
+            tcg_gen_ext8s_i64(ret, ret);
+            return;
+        }
+        break;
+    }
+    tcg_gen_shli_i64(ret, arg, 64 - len - ofs);
+    tcg_gen_sari_i64(ret, ret, 64 - len);
+}
+
 #if TARGET_LONG_BITS == 64
 #define tcg_gen_movi_tl       tcg_gen_movi_i64
 #define tcg_gen_mov_tl        tcg_gen_mov_i64

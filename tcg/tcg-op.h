@@ -2974,6 +2974,93 @@ static inline void tcg_gen_extr32_i64(TCGv_i64 lo, TCGv_i64 hi, TCGv_i64 arg)
     tcg_gen_shri_i64(hi, arg, 32);
 }
 
+static inline void tcg_gen_extract_i64(TCGv_i64 ret, TCGv_i64 arg,
+                         unsigned int ofs, unsigned int len)
+{
+    tcg_debug_assert(ofs < 64);
+    tcg_debug_assert(len > 0);
+    tcg_debug_assert(len <= 64);
+    tcg_debug_assert(ofs + len <= 64);
+
+    /* Canonicalize certain special cases, even if extract is supported.  */
+    if (ofs + len == 64) {
+        tcg_gen_shri_i64(ret, arg, 64 - len);
+        return;
+    }
+    if (ofs == 0) {
+        tcg_gen_andi_i64(ret, arg, (1ull << len) - 1);
+        return;
+    }
+
+#if TCG_TARGET_REG_BITS == 32
+    /* Look for a 32-bit extract within one of the two words.  */
+    if (ofs >= 32) {
+        tcg_gen_extract_i32(TCGV_LOW(ret), TCGV_HIGH(arg), ofs - 32, len);
+        tcg_gen_movi_i32(TCGV_HIGH(ret), 0);
+        return;
+    }
+    if (ofs + len <= 32) {
+        tcg_gen_extract_i32(TCGV_LOW(ret), TCGV_LOW(arg), ofs, len);
+        tcg_gen_movi_i32(TCGV_HIGH(ret), 0);
+        return;
+    }
+    /* The field is split across two words.  One double-word
+        shift is better than two double-word shifts.  */
+    goto do_shift_and;
+#endif
+
+// TODO: Implement extract_i64 to increase simulation performance.
+#if defined(TCG_TARGET_HAS_extract_i64)
+    if (TCG_TARGET_HAS_extract_i64
+        && TCG_TARGET_extract_i64_valid(ofs, len)) {
+        tcg_gen_op4ii_i64(INDEX_op_extract_i64, ret, arg, ofs, len);
+        return;
+    }
+#endif
+
+    /* Assume that zero-extension, if available, is cheaper than a shift.  */
+    switch (ofs + len) {
+    case 32:
+        if (TCG_TARGET_HAS_ext32u_i64) {
+            tcg_gen_ext32u_i64(ret, arg);
+            tcg_gen_shri_i64(ret, ret, ofs);
+            return;
+        }
+        break;
+    case 16:
+        if (TCG_TARGET_HAS_ext16u_i64) {
+            tcg_gen_ext16u_i64(ret, arg);
+            tcg_gen_shri_i64(ret, ret, ofs);
+            return;
+        }
+        break;
+    case 8:
+        if (TCG_TARGET_HAS_ext8u_i64) {
+            tcg_gen_ext8u_i64(ret, arg);
+            tcg_gen_shri_i64(ret, ret, ofs);
+            return;
+        }
+        break;
+    }
+
+    /* ??? Ideally we'd know what values are available for immediate AND.
+       Assume that 8 bits are available, plus the special cases of 16 and 32,
+       so that we get ext8u, ext16u, and ext32u.  */
+    switch (len) {
+    case 1 ... 8: case 16: case 32:
+#if TCG_TARGET_REG_BITS == 32
+    do_shift_and:
+#endif
+        tcg_gen_shri_i64(ret, arg, ofs);
+        tcg_gen_andi_i64(ret, ret, (1ull << len) - 1);
+        break;
+    default:
+        tcg_gen_shli_i64(ret, arg, 64 - len - ofs);
+        tcg_gen_shri_i64(ret, ret, 64 - len);
+        break;
+    }
+}
+
 #if TARGET_LONG_BITS == 64
 #define tcg_gen_movi_tl       tcg_gen_movi_i64
 #define tcg_gen_mov_tl        tcg_gen_mov_i64

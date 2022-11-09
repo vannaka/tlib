@@ -127,8 +127,11 @@ typedef enum {
      ((ofs) == 0 && (len) == 16))
 #define TCG_TARGET_deposit_i64_valid TCG_TARGET_deposit_i32_valid
 
-/* Check for the possibility of high-byte extraction.  */
+/* Check for the possibility of high-byte extraction and, for 64-bit,
+   zero-extending 32-bit right-shift.  */
 #define TCG_TARGET_extract_i32_valid(ofs, len) ((ofs) == 8 && (len) == 8)
+#define TCG_TARGET_extract_i64_valid(ofs, len) \
+    (((ofs) == 8 && (len) == 8) || ((ofs) + (len)) == 32)
 
 #define TCG_TARGET_HAS_GUEST_BASE
 

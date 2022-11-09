@@ -124,8 +124,6 @@ typedef uint64_t TCGRegSet;
 #define TCG_TARGET_HAS_not_i64     0
 #define TCG_TARGET_HAS_orc_i64     0
 #define TCG_TARGET_HAS_rot_i64     0
-/* Turn some undef macros into true macros.  */
-#define TCG_TARGET_HAS_mulu2_i32   1
 #endif
 
 #ifndef TCG_TARGET_deposit_i32_valid

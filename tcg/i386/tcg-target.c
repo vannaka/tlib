@@ -252,6 +252,7 @@ static inline int tcg_target_const_match(tcg_target_long val, const TCGArgConstr
 #define OPC_ADD_GvEv    (OPC_ARITH_GvEv | (ARITH_ADD << 3))
 #define OPC_BSWAP       (0xc8 | P_EXT)
 #define OPC_CALL_Jz     (0xe8)
+#define OPC_CMOVCC      (0x40 | P_EXT)  /* ... plus condition code */
 #define OPC_CMP_GvEv    (OPC_ARITH_GvEv | (ARITH_CMP << 3))
 #define OPC_DEC_r32     (0x48)
 #define OPC_IMUL_GvEv   (0xaf | P_EXT)
@@ -831,6 +832,30 @@ static void tcg_out_brcond2(TCGContext *s, const TCGArg *args, const int *const_
         tcg_abort();
     }
     tcg_out_label(s, label_next, (tcg_target_long)s->code_ptr);
+}
+#endif
+
+static void tcg_out_cmov(TCGContext *s, TCGCond cond, int rexw,
+                         TCGReg dest, TCGReg v1)
+{
+    tcg_out_modrm(s, OPC_CMOVCC | tcg_cond_to_jcc[cond] | rexw, dest, v1);
+}
+
+static void tcg_out_movcond32(TCGContext *s, TCGCond cond, TCGReg dest,
+                              TCGReg c1, TCGArg c2, int const_c2,
+                              TCGReg v1)
+{
+    tcg_out_cmp(s, c1, c2, const_c2, 0);
+    tcg_out_cmov(s, cond, 0, dest, v1);
+}
+
+#if TCG_TARGET_REG_BITS == 64
+static void tcg_out_movcond64(TCGContext *s, TCGCond cond, TCGReg dest,
+                              TCGReg c1, TCGArg c2, int const_c2,
+                              TCGReg v1)
+{
+    tcg_out_cmp(s, c1, c2, const_c2, P_REXW);
+    tcg_out_cmov(s, cond, P_REXW, dest, v1);
 }
 #endif
 
@@ -1540,6 +1565,9 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
         tcg_out_setcond32(s, args[3], args[0], args[1],
                           args[2], const_args[2]);
         break;
+    case INDEX_op_movcond_i32:
+        tcg_out_movcond32(s, args[5], args[0], args[1], args[2], const_args[2], args[3]);
+        break;
 
     OP_32_64(bswap16):
         tcg_out_rolw_8(s, args[0]);
@@ -1664,6 +1692,9 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
         tcg_out_setcond64(s, args[3], args[0], args[1],
                           args[2], const_args[2]);
         break;
+    case INDEX_op_movcond_i64:
+        tcg_out_movcond64(s, args[5], args[0], args[1], args[2], const_args[2], args[3]);
+        break;
 
     case INDEX_op_bswap64_i64:
         tcg_out_bswap64(s, args[0]);
@@ -1712,6 +1743,7 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
 #undef OP_32_64
 }
 
+// TCG's equivalent can be found in 'tcg-target.c.inc : tcg_target_op_def'.
 static const TCGTargetOpDef x86_op_defs[] = {
     { INDEX_op_exit_tb, { } },
     { INDEX_op_goto_tb, { } },
@@ -1759,6 +1791,7 @@ static const TCGTargetOpDef x86_op_defs[] = {
     { INDEX_op_ext16u_i32, { "r", "r" } },
 
     { INDEX_op_setcond_i32, { "q", "r", "ri" } },
+    { INDEX_op_movcond_i32, { "r", "r", "ri", "r", "0" } },
 
     { INDEX_op_deposit_i32, { "Q", "0", "Q" } },
 
@@ -1804,6 +1837,7 @@ static const TCGTargetOpDef x86_op_defs[] = {
 
     { INDEX_op_brcond_i64, { "r", "re" } },
     { INDEX_op_setcond_i64, { "r", "r", "re" } },
+    { INDEX_op_movcond_i64, { "r", "r", "ri", "r", "0" } },
 
     { INDEX_op_bswap16_i64, { "r", "0" } },
     { INDEX_op_bswap32_i64, { "r", "0" } },

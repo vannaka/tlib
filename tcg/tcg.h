@@ -116,6 +116,7 @@ typedef uint64_t TCGRegSet;
 #define TCG_TARGET_HAS_ext32u_i64  0
 #define TCG_TARGET_HAS_ext8s_i64   0
 #define TCG_TARGET_HAS_ext8u_i64   0
+#define TCG_TARGET_HAS_movcond_i64 0
 #define TCG_TARGET_HAS_muls2_i64   0
 #define TCG_TARGET_HAS_mulu2_i64   0
 #define TCG_TARGET_HAS_nand_i64    0
@@ -552,6 +553,8 @@ typedef struct TCGOpDef {
     const char *name;
     uint8_t nb_oargs, nb_iargs, nb_cargs, nb_args;
     uint8_t flags;
+    // These constraints define which register can be used for each Opcode's argument.
+    // See 'TCGTargetOpDef' array in 'tcg-target.c'.
     TCGArgConstraint *args_ct;
     int *sorted_args;
 } TCGOpDef;

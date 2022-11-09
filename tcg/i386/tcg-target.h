@@ -87,6 +87,7 @@ typedef enum {
 #define TCG_TARGET_HAS_ext8s_i32     1
 #define TCG_TARGET_HAS_ext8u_i32     1
 #define TCG_TARGET_HAS_extract_i32   1
+#define TCG_TARGET_HAS_movcond_i32   1
 #define TCG_TARGET_HAS_muls2_i32     1
 #define TCG_TARGET_HAS_mulu2_i32     1
 #define TCG_TARGET_HAS_nand_i32      0
@@ -110,6 +111,7 @@ typedef enum {
 #define TCG_TARGET_HAS_ext32u_i64    1
 #define TCG_TARGET_HAS_ext8s_i64     1
 #define TCG_TARGET_HAS_ext8u_i64     1
+#define TCG_TARGET_HAS_movcond_i64   1
 #define TCG_TARGET_HAS_muls2_i64     1
 #define TCG_TARGET_HAS_mulu2_i64     1
 #define TCG_TARGET_HAS_nand_i64      0

@@ -71,6 +71,7 @@ typedef enum {
 #define TCG_TARGET_HAS_ext8s_i32     1
 #define TCG_TARGET_HAS_ext8u_i32     0    /* and r0, r1, #0xff */
 #define TCG_TARGET_HAS_extract_i32   0  // TODO: Implement opcode and put 'use_armv7_instructions' here.
+#define TCG_TARGET_HAS_movcond_i32   0  // TODO: ARMv7 supports 'movcond' but it isn't supported by our 'arm/tcg-target.c'.
 #define TCG_TARGET_HAS_muls2_i32     1
 #define TCG_TARGET_HAS_mulu2_i32     1
 #define TCG_TARGET_HAS_nand_i32      0

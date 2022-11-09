@@ -2138,10 +2138,8 @@ static inline void tcg_gen_movcond_i32(TCGCond cond, TCGv_i32 ret, TCGv_i32 c1, 
         tcg_gen_mov_i32(ret, v1);
     } else if (cond == TCG_COND_NEVER) {
         tcg_gen_mov_i32(ret, v2);
-#if defined(TCG_TARGET_HAS_movcond_i32)
     } else if (TCG_TARGET_HAS_movcond_i32) {
         tcg_gen_op6i_i32(INDEX_op_movcond_i32, ret, c1, c2, v1, v2, cond);
-#endif
     } else {
         TCGv_i32 t0 = tcg_temp_new_i32();
         TCGv_i32 t1 = tcg_temp_new_i32();

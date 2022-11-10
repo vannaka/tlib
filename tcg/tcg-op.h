@@ -3295,6 +3295,27 @@ static inline void tcg_gen_extract2_i64(TCGv_i64 ret, TCGv_i64 al, TCGv_i64 ah,
     }
 }
 
+static inline void tcg_gen_clrsb_i64(TCGv_i64 ret, TCGv_i64 arg)
+{
+// TODO: Implement clz_i64 and clz_i32 to increase simulation performance.
+#if defined(TCG_TARGET_HAS_clz_i64) && defined(TCG_TARGET_HAS_clz_i32)
+    if (TCG_TARGET_HAS_clz_i64 || TCG_TARGET_HAS_clz_i32) {
+        TCGv_i64 t = tcg_temp_new_i64();
+        tcg_gen_sari_i64(t, arg, 63);
+        tcg_gen_xor_i64(t, t, arg);
+        tcg_gen_clzi_i64(t, t, 64);
+        tcg_gen_subi_i64(ret, t, 1);
+        tcg_temp_free_i64(t);
+        return;
+    }
+#endif
+    int sizemask = 0;
+    /* Return value and argument are 64-bit and unsigned.  */
+    sizemask |= tcg_gen_sizemask(0, 1, 0);
+    sizemask |= tcg_gen_sizemask(1, 1, 0);
+    tcg_gen_helper64_1_arg(tcg_helper_clrsb_i64, sizemask, ret, arg);
+}
+
 #if TARGET_LONG_BITS == 64
 #define tcg_gen_movi_tl       tcg_gen_movi_i64
 #define tcg_gen_mov_tl        tcg_gen_mov_i64

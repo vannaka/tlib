@@ -2401,6 +2401,27 @@ static inline void tcg_gen_abs_i64(TCGv_i64 ret, TCGv_i64 a)
     tcg_temp_free_i64(t);
 }
 
+static inline void tcg_gen_add2_i64(TCGv_i64 rl, TCGv_i64 rh, TCGv_i64 al,
+                      TCGv_i64 ah, TCGv_i64 bl, TCGv_i64 bh)
+{
+// TODO: Implement add2_i64 to increase simulation performance.
+#if defined(TCG_TARGET_HAS_add2_i64)
+    if (TCG_TARGET_HAS_add2_i64) {
+        tcg_gen_op6_i64(INDEX_op_add2_i64, rl, rh, al, ah, bl, bh);
+        return;
+    }
+#endif
+    TCGv_i64 t0 = tcg_temp_new_i64();
+    TCGv_i64 t1 = tcg_temp_new_i64();
+    tcg_gen_add_i64(t0, al, bl);
+    tcg_gen_setcond_i64(TCG_COND_LTU, t1, t0, al);
+    tcg_gen_add_i64(rh, ah, bh);
+    tcg_gen_add_i64(rh, rh, t1);
+    tcg_gen_mov_i64(rl, t0);
+    tcg_temp_free_i64(t0);
+    tcg_temp_free_i64(t1);
+}
+
 static inline void tcg_gen_smin_i64(TCGv_i64 ret, TCGv_i64 a, TCGv_i64 b)
 {
     tcg_gen_movcond_i64(TCG_COND_LT, ret, a, b, a, b);

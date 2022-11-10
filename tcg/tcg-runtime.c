@@ -107,3 +107,8 @@ uint64_t tcg_helper_muluh_i64(uint64_t arg1, uint64_t arg2)
     mulu64(&l, &h, arg1, arg2);
     return h;
 }
+
+uint64_t tcg_helper_clrsb_i64(uint64_t arg)
+{
+    return clrsb64(arg);
+}

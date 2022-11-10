@@ -20,4 +20,6 @@ uint64_t tcg_helper_divu_i64(uint64_t arg1, uint64_t arg2);
 uint64_t tcg_helper_remu_i64(uint64_t arg1, uint64_t arg2);
 uint64_t tcg_helper_muluh_i64(uint64_t arg1, uint64_t arg2);
 
+uint64_t tcg_helper_clrsb_i64(uint64_t arg);
+
 #endif

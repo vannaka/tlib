@@ -441,6 +441,16 @@ static inline void tcg_gen_helper32_1_arg(void *func, int sizemask, TCGv_i32 ret
     tcg_temp_free_ptr(fn);
 }
 
+static inline void tcg_gen_helper64_1_arg(void *func, int sizemask, TCGv_i64 ret, TCGv_i64 a)
+{
+    TCGv_ptr fn;
+    TCGArg args[1];
+    fn = tcg_const_ptr((tcg_target_long)func);
+    args[0] = GET_TCGV_I64(a);
+    tcg_gen_callN(tcg->ctx, fn, TCG_CALL_CONST | TCG_CALL_PURE, sizemask, GET_TCGV_I64(ret), 1, args);
+    tcg_temp_free_ptr(fn);
+}
+
 /* 32 bit ops */
 
 static inline void tcg_gen_ld8u_i32(TCGv_i32 ret, TCGv_ptr arg2, tcg_target_long offset)

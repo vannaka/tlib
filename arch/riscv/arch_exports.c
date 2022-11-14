@@ -50,6 +50,14 @@ EXC_VOID_2(tlib_set_mip_bit, uint32_t, position, uint32_t, value)
 
 void tlib_allow_feature(uint32_t feature_bit)
 {
+#if HOST_LONG_BITS == 32
+    if(feature_bit == 'V' - 'A')
+    {
+        tlib_printf(LOG_LEVEL_ERROR, "Vector extension can't be enabled on 32-bit hosts.");
+        return;
+    }
+#endif
+
     cpu->misa_mask |= (1L << feature_bit);
     cpu->misa |= (1L << feature_bit);
 

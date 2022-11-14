@@ -852,6 +852,10 @@ static void gen_fp_load(DisasContext *dc, uint32_t opc, int rd, int rs1, target_
 
 static void gen_v_load(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t vd, uint32_t rs1, uint32_t rs2, uint32_t width)
 {
+// Vector helpers require 128-bit ints which aren't supported on 32-bit hosts.
+#if HOST_LONG_BITS == 32
+    tlib_abort("Vector extension isn't available on 32-bit hosts.");
+#else
     uint32_t vm = extract32(rest, 0, 1);
     uint32_t mew = extract32(rest, 3, 1);
     uint32_t nf = extract32(rest, 4, 3);
@@ -1029,6 +1033,7 @@ static void gen_v_load(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t v
     tcg_temp_free_i32(t_rs1);
     tcg_temp_free_i32(t_rs2);
     tcg_temp_free_i32(t_nf);
+#endif  // HOST_LONG_BITS != 32
 }
 
 static void gen_fp_store(DisasContext *dc, uint32_t opc, int rs1, int rs2, target_long imm)
@@ -1074,6 +1079,10 @@ static void gen_fp_store(DisasContext *dc, uint32_t opc, int rs1, int rs2, targe
 
 static void gen_v_store(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t vd, uint32_t rs1, uint32_t rs2, uint32_t width)
 {
+// Vector helpers require 128-bit ints which aren't supported on 32-bit hosts.
+#if HOST_LONG_BITS == 32
+    tlib_abort("Vector extension isn't available on 32-bit hosts.");
+#else
     uint32_t vm = extract32(rest, 0, 1);
     uint32_t mew = extract32(rest, 3, 1);
     uint32_t nf = extract32(rest, 4, 3);
@@ -1223,6 +1232,7 @@ static void gen_v_store(DisasContext *dc, uint32_t opc, uint32_t rest, uint32_t 
     tcg_temp_free_i32(t_rs1);
     tcg_temp_free_i32(t_rs2);
     tcg_temp_free_i32(t_nf);
+#endif  // HOST_LONG_BITS != 32
 }
 
 static void gen_atomic(CPUState *env, DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
@@ -1904,6 +1914,8 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2,
     }
 }
 
+// Vector helpers require 128-bit ints which aren't supported on 32-bit hosts.
+#if HOST_LONG_BITS != 32
 static void gen_v_cfg(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, int imm)
 {
     TCGv source1, source2, csr_store, dest, rd_pass, rs1_pass, rs2_pass, imm_rs1, vec_imm;
@@ -4220,9 +4232,14 @@ static void gen_v_opfvf(DisasContext *dc, uint8_t funct6, int vd, int rs1, int v
     tcg_temp_free_i32(t_vd);
     tcg_temp_free_i32(t_vs2);
 }
+#endif  // HOST_LONG_BITS != 32
 
 static void gen_v(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, int imm)
 {
+// Vector helpers require 128-bit ints which aren't supported on 32-bit hosts.
+#if HOST_LONG_BITS == 32
+    tlib_abort("Vector extension isn't available on 32-bit hosts.");
+#else
     if (!ensure_extension(dc, RISCV_FEATURE_RVV)) {
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         return;
@@ -4260,6 +4277,7 @@ static void gen_v(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, int 
         break;
     }
     tcg_gen_movi_tl(cpu_vstart, 0);
+#endif  // HOST_LONG_BITS != 32
 }
 
 static void decode_RV32_64C0(DisasContext *dc)

@@ -20,6 +20,9 @@
 #define ALIGNED_ONLY
 #include "softmmu_exec.h"
 
+// Vector helpers require 128-bit ints which aren't supported on 32-bit hosts.
+#if HOST_LONG_BITS != 32
+
 // Note that MASKED is not defined for the 2nd include
 #define MASKED
 #define SHIFT     0
@@ -44,6 +47,8 @@
 #include "vector_helper_template.h"
 #define SHIFT     3
 #include "vector_helper_template.h"
+
+#endif  // HOST_LONG_BITS != 32
 
 #include "arch_callbacks.h"
 

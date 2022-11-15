@@ -47,6 +47,16 @@
 #define REGPARM
 #endif
 
+// Define the '__has_builtin' macro if the compiler doesn't support it.
+// GCCs older than v10 don't have the macro but support all the builtins used.
+#ifndef __has_builtin
+  #ifdef __GNUC__
+    #define __has_builtin(x) 1
+  #else
+    #define __has_builtin(x) 0
+  #endif
+#endif
+
 #if defined(TCG_TARGET_I386) && HOST_LONG_BITS == 64
 #define __HAVE_FAST_MULU64__
 static inline void mulu64(uint64_t *plow, uint64_t *phigh, uint64_t a, uint64_t b)
@@ -67,32 +77,17 @@ void muls64(uint64_t *plow, uint64_t *phigh, int64_t a, int64_t b);
 void mulu64(uint64_t *plow, uint64_t *phigh, uint64_t a, uint64_t b);
 #endif
 
-/**
- * clrsb32 - count leading redundant sign bits in a 32-bit value.
- * @val: The value to search
- *
- * Returns the number of bits following the sign bit that are equal to it.
- * No special cases; output range is [0-31].
- */
-static inline int clrsb32(uint32_t val)
-{
-#if 1 /* __has_builtin(__builtin_clrsb) || !defined(__clang__) */
-    return __builtin_clrsb(val);
-#else
-    return clz32(val ^ ((int32_t)val >> 1)) - 1;
-#endif
-}
-
 /* Binary search for leading zeros.  */
 
 static inline int clz32(uint32_t val)
 {
-#if defined(__GNUC__)
-    if (val) {
-        return __builtin_clz(val);
-    } else {
+    if(!val)
+    {
         return 32;
     }
+
+#if __has_builtin(__builtin_clz)
+    return __builtin_clz(val);
 #else
     int cnt = 0;
 
@@ -125,12 +120,13 @@ static inline int clz32(uint32_t val)
 
 static inline int clz64(uint64_t val)
 {
-#if defined(__GNUC__)
-    if (val) {
-        return __builtin_clzll(val);
-    } else {
+    if(!val)
+    {
         return 64;
     }
+
+#if __has_builtin(__builtin_clzll)
+    return __builtin_clzll(val);
 #else
     int cnt = 0;
 
@@ -146,12 +142,13 @@ static inline int clz64(uint64_t val)
 
 static inline int ctz32(uint32_t val)
 {
-#if defined(__GNUC__)
-    if (val) {
-        return __builtin_ctz(val);
-    } else {
+    if(!val)
+    {
         return 32;
     }
+
+#if __has_builtin(__builtin_ctz)
+    return __builtin_ctz(val);
 #else
     int cnt;
 
@@ -186,12 +183,13 @@ static inline int ctz32(uint32_t val)
 
 static inline int ctz64(uint64_t val)
 {
-#if defined(__GNUC__)
-    if (val) {
-        return __builtin_ctzll(val);
-    } else {
+    if(!val)
+    {
         return 64;
     }
+
+#if __has_builtin(__builtin_ctzll)
+    return __builtin_ctzll(val);
 #else
     int cnt;
 
@@ -207,7 +205,7 @@ static inline int ctz64(uint64_t val)
 
 static inline int ctpop64(uint64_t val)
 {
-#if defined(__GNUC__)
+#if __has_builtin(__builtin_popcountll)
     return __builtin_popcountll(val);
 #else
     val = (val & 0x5555555555555555ULL) + ((val >>  1) & 0x5555555555555555ULL);
@@ -218,6 +216,22 @@ static inline int ctpop64(uint64_t val)
     val = (val & 0x00000000ffffffffULL) + ((val >> 32) & 0x00000000ffffffffULL);
 
     return val;
+#endif
+}
+
+/**
+ * clrsb32 - count leading redundant sign bits in a 32-bit value.
+ * @val: The value to search
+ *
+ * Returns the number of bits following the sign bit that are equal to it.
+ * No special cases; output range is [0-31].
+ */
+static inline int clrsb32(uint32_t val)
+{
+#if __has_builtin(__builtin_clrsb)
+    return __builtin_clrsb(val);
+#else
+    return clz32(val ^ ((int32_t)val >> 1)) - 1;
 #endif
 }
 

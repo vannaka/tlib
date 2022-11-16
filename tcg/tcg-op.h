@@ -2802,6 +2802,7 @@ static inline void tcg_gen_umax_i32(TCGv_i32 ret, TCGv_i32 a, TCGv_i32 b)
 
 static inline void tcg_gen_clrsb_i32(TCGv_i32 ret, TCGv_i32 arg)
 {
+// TODO: Implement clz_i32 to increase simulation performance.
 #ifdef TCG_TARGET_HAS_clz_i32
     if (TCG_TARGET_HAS_clz_i32) {
         TCGv_i32 t = tcg_temp_new_i32();
@@ -2822,6 +2823,7 @@ static inline void tcg_gen_clrsb_i32(TCGv_i32 ret, TCGv_i32 arg)
 
 static inline void tcg_gen_clz_i32(TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2)
 {
+// TODO: Implement clz_i32 to increase simulation performance.
 #ifdef TCG_TARGET_HAS_clz_i32
     if (TCG_TARGET_HAS_clz_i32)
     {
@@ -3314,6 +3316,43 @@ static inline void tcg_gen_clrsb_i64(TCGv_i64 ret, TCGv_i64 arg)
     sizemask |= tcg_gen_sizemask(0, 1, 0);
     sizemask |= tcg_gen_sizemask(1, 1, 0);
     tcg_gen_helper64_1_arg(tcg_helper_clrsb_i64, sizemask, ret, arg);
+}
+
+static inline void tcg_gen_clz_i64(TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64 arg2)
+{
+// TODO: Implement clz_i64 to increase simulation performance.
+#ifdef TCG_TARGET_HAS_clz_i64
+    if (TCG_TARGET_HAS_clz_i64) {
+        tcg_gen_op3_i64(INDEX_op_clz_i64, ret, arg1, arg2);
+        return;
+    }
+#endif
+    int sizemask = 0;
+    /* Return value and argument are 64-bit and unsigned.  */
+    sizemask |= tcg_gen_sizemask(0, 1, 0);
+    sizemask |= tcg_gen_sizemask(1, 1, 0);
+    sizemask |= tcg_gen_sizemask(2, 1, 0);
+    tcg_gen_helper64(tcg_helper_clz_i64, sizemask, ret, arg1, arg2);
+}
+
+static inline void tcg_gen_clzi_i64(TCGv_i64 ret, TCGv_i64 arg1, uint64_t arg2)
+{
+// TODO: Implement clz_i32 to increase simulation performance.
+#if TCG_TARGET_REG_BITS == 32 && defined(TCG_TARGET_HAS_clz_i32)
+    if (TCG_TARGET_HAS_clz_i32
+        && arg2 <= 0xffffffffu) {
+        TCGv_i32 t = tcg_temp_new_i32();
+        tcg_gen_clzi_i32(t, TCGV_LOW(arg1), arg2 - 32);
+        tcg_gen_addi_i32(t, t, 32);
+        tcg_gen_clz_i32(TCGV_LOW(ret), TCGV_HIGH(arg1), t);
+        tcg_gen_movi_i32(TCGV_HIGH(ret), 0);
+        tcg_temp_free_i32(t);
+        return;
+    }
+#endif
+    TCGv_i64 t0 = tcg_const_i64(arg2);
+    tcg_gen_clz_i64(ret, arg1, t0);
+    tcg_temp_free_i64(t0);
 }
 
 #if TARGET_LONG_BITS == 64

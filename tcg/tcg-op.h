@@ -2341,6 +2341,76 @@ static inline void tcg_gen_muls2_i32(TCGv_i32 rl, TCGv_i32 rh, TCGv_i32 arg1, TC
     }
 }
 
+static inline void tcg_gen_sextract_i32(TCGv_i32 ret, TCGv_i32 arg,
+                                        unsigned int ofs, unsigned int len)
+{
+    tcg_debug_assert(ofs < 32);
+    tcg_debug_assert(len > 0);
+    tcg_debug_assert(len <= 32);
+    tcg_debug_assert(ofs + len <= 32);
+
+    /* Canonicalize certain special cases, even if extract is supported.  */
+    if (ofs + len == 32) {
+        tcg_gen_sari_i32(ret, arg, 32 - len);
+        return;
+    }
+    if (ofs == 0) {
+        switch (len) {
+        case 16:
+            tcg_gen_ext16s_i32(ret, arg);
+            return;
+        case 8:
+            tcg_gen_ext8s_i32(ret, arg);
+            return;
+        }
+    }
+// TODO: Implement sextract_i32 to increase simulation performance.
+#ifdef TCG_TARGET_HAS_sextract_i32
+    if (TCG_TARGET_HAS_sextract_i32
+        && TCG_TARGET_extract_i32_valid(ofs, len)) {
+        tcg_gen_op4ii_i32(INDEX_op_sextract_i32, ret, arg, ofs, len);
+        return;
+    }
+#endif
+
+    /* Assume that sign-extension, if available, is cheaper than a shift.  */
+    switch (ofs + len) {
+    case 16:
+        if (TCG_TARGET_HAS_ext16s_i32) {
+            tcg_gen_ext16s_i32(ret, arg);
+            tcg_gen_sari_i32(ret, ret, ofs);
+            return;
+        }
+        break;
+    case 8:
+        if (TCG_TARGET_HAS_ext8s_i32) {
+            tcg_gen_ext8s_i32(ret, arg);
+            tcg_gen_sari_i32(ret, ret, ofs);
+            return;
+        }
+        break;
+    }
+    switch (len) {
+    case 16:
+        if (TCG_TARGET_HAS_ext16s_i32) {
+            tcg_gen_shri_i32(ret, arg, ofs);
+            tcg_gen_ext16s_i32(ret, ret);
+            return;
+        }
+        break;
+    case 8:
+        if (TCG_TARGET_HAS_ext8s_i32) {
+            tcg_gen_shri_i32(ret, arg, ofs);
+            tcg_gen_ext8s_i32(ret, ret);
+            return;
+        }
+        break;
+    }
+
+    tcg_gen_shli_i32(ret, arg, 32 - len - ofs);
+    tcg_gen_sari_i32(ret, ret, 32 - len);
+}
+
 static inline void tcg_gen_mulu2_i64(TCGv_i64 rl, TCGv_i64 rh, TCGv_i64 arg1, TCGv_i64 arg2)
 {
     if (TCG_TARGET_HAS_mulu2_i64) {

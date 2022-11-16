@@ -112,3 +112,8 @@ uint64_t tcg_helper_clrsb_i64(uint64_t arg)
 {
     return clrsb64(arg);
 }
+
+uint64_t tcg_helper_clz_i64(uint64_t arg, uint64_t zero_val)
+{
+    return arg ? clz64(arg) : zero_val;
+}

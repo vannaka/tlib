@@ -63,13 +63,14 @@ typedef enum {
 #define TCG_TARGET_HAS_andc_i32      1
 #define TCG_TARGET_HAS_bswap16_i32   1
 #define TCG_TARGET_HAS_bswap32_i32   1
-#define TCG_TARGET_HAS_deposit_i32   0
+#define TCG_TARGET_HAS_deposit_i32   0  // TODO: Implement opcode and put 'use_armv7_instructions' here.
 #define TCG_TARGET_HAS_div_i32       0
 #define TCG_TARGET_HAS_eqv_i32       0
 #define TCG_TARGET_HAS_ext16s_i32    1
 #define TCG_TARGET_HAS_ext16u_i32    1
 #define TCG_TARGET_HAS_ext8s_i32     1
 #define TCG_TARGET_HAS_ext8u_i32     0    /* and r0, r1, #0xff */
+#define TCG_TARGET_HAS_extract_i32   0  // TODO: Implement opcode and put 'use_armv7_instructions' here.
 #define TCG_TARGET_HAS_muls2_i32     1
 #define TCG_TARGET_HAS_nand_i32      0
 #define TCG_TARGET_HAS_neg_i32       1

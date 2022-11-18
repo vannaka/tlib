@@ -284,7 +284,7 @@ enum arm_cond_code_e {
 
 /* *INDENT-OFF* */
 
-static const uint8_t tcg_cond_to_arm_cond[10] = {
+static const uint8_t tcg_cond_to_arm_cond[] = {
     [TCG_COND_EQ] = COND_EQ,
     [TCG_COND_NE] = COND_NE,
     [TCG_COND_LT] = COND_LT,

@@ -3914,7 +3914,7 @@ static void gen_nop_hint(DisasContext *s, int val)
         if (tlib_is_wfe_and_sev_as_nop()){
             break;
         }
-        tlib_set_system_event(1);
+        gen_helper_set_system_event();
         break;
     default: /* nop */
         break;

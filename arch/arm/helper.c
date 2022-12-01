@@ -2977,3 +2977,8 @@ void HELPER(set_teecr)(CPUState * env, uint32_t val)
 void tlib_arch_dispose()
 {
 }
+
+void HELPER(set_system_event)(void)
+{
+    tlib_set_system_event(1);
+}

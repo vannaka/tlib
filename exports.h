@@ -17,10 +17,10 @@ char *tlib_get_commit();
 int32_t tlib_init(char *cpu_name);
 void tlib_atomic_memory_state_init(int id, uintptr_t atomic_memory_state_ptr);
 void tlib_dispose(void);
-int32_t tlib_get_executed_instructions(void);
+uint64_t tlib_get_executed_instructions(void);
 void tlib_reset_executed_instrucions(uint64_t val);
 void tlib_reset(void);
-int32_t tlib_execute(int32_t max_insns);
+int32_t tlib_execute(uint32_t max_insns);
 void tlib_restart_translation_block(void);
 void  tlib_set_return_request(void);
 void tlib_set_paused(void);
@@ -86,12 +86,12 @@ void tlib_set_window_privileges(uint32_t index, int32_t privileges);
 
 void tlib_set_mmu_window_addend(uint32_t index, uint64_t addend);
 
-void tlib_get_mmu_window_start(uint32_t index);
+uint64_t tlib_get_mmu_window_start(uint32_t index);
 
-void tlib_get_mmu_window_end(uint32_t index);
+uint64_t tlib_get_mmu_window_end(uint32_t index);
 
-void tlib_get_window_privileges(uint32_t index);
+int tlib_get_window_privileges(uint32_t index);
 
-void tlib_get_mmu_window_addend(uint32_t index);
+uint64_t tlib_get_mmu_window_addend(uint32_t index);
 
 #endif

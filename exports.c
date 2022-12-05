@@ -26,6 +26,8 @@
 #include "tb-helper.h"
 #include "unwind.h"
 
+#include "exports.h"
+
 __thread struct unwind_state unwind_state;
 
 static tcg_t stcg;
@@ -579,26 +581,25 @@ void tlib_flush_page(uint64_t address)
 
 EXC_VOID_1(tlib_flush_page, uint64_t, address)
 
+#define DEFINE_DEFAULT_REGISTER_ACCESSORS(WIDTH)                 \
+    uint64_t tlib_get_register_value(int reg_number)             \
+    {                                                            \
+        return tlib_get_register_value_ ## WIDTH(reg_number);    \
+    }                                                            \
+    void tlib_set_register_value(int reg_number, uint64_t value) \
+    {                                                            \
+        tlib_set_register_value_ ## WIDTH(reg_number, value);    \
+    }
+
 #if TARGET_LONG_BITS == 32
-uint32_t *get_reg_pointer_32(int reg_number);
+DEFINE_DEFAULT_REGISTER_ACCESSORS(32)
 #elif TARGET_LONG_BITS == 64
-uint64_t *get_reg_pointer_64(int reg_number);
+DEFINE_DEFAULT_REGISTER_ACCESSORS(64)
 #else
 #error "Unknown number of bits"
 #endif
 
-uint64_t tlib_get_register_value(int reg_number)
-{
-    return get_register_value(reg_number);
-}
-
 EXC_INT_1(uint64_t, tlib_get_register_value, int, reg_number)
-
-void tlib_set_register_value(int reg_number, uint64_t val)
-{
-    set_register_value(reg_number, val);
-}
-
 EXC_VOID_2(tlib_set_register_value, int, reg_number, uint64_t, val)
 
 void tlib_set_interrupt_begin_hook_present(uint32_t val)

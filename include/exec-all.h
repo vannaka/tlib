@@ -296,8 +296,6 @@ void free_all_page_descriptors(void);
 void code_gen_free(void);
 
 void generate_opcode_count_increment(CPUState*, uint64_t);
-uint64_t get_register_value(int reg_number);
-void set_register_value(int reg_number, uint64_t val);
 void tlib_announce_stack_change(target_ulong pc, int state);
 void tlib_announce_context_change(target_ulong context_id);
 

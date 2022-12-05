@@ -25,6 +25,7 @@
 #include "cpu.h"
 #include "tcg-op.h"
 #include "debug.h"
+#include "exports.h"
 
 #include <global_helper.h>
 #define GEN_HELPER 1
@@ -409,52 +410,10 @@ void generate_opcode_count_increment(CPUState *env, uint64_t opcode)
     }
 }
 
-inline uint64_t get_register_value(int reg_number)
-{
-#if TARGET_LONG_BITS == 32
-    uint32_t *ptr = get_reg_pointer_32(reg_number);
-    if (ptr == NULL) {
-        tlib_abortf("Read from undefined CPU register number %d detected", reg_number);
-        return 0;
-    }
-    return (uint64_t)*ptr;
-#elif TARGET_LONG_BITS == 64
-    uint64_t *ptr = get_reg_pointer_64(reg_number);
-    if (ptr == NULL) {
-        tlib_abortf("Read from undefined CPU register number %d detected", reg_number);
-        return 0;
-    }
-    return *ptr;
-#else
-#error "Unknown number of bits"
-#endif
-}
-
-inline void set_register_value(int reg_number, uint64_t val)
-{
-    #if TARGET_LONG_BITS == 32
-        uint32_t *ptr = get_reg_pointer_32(reg_number);
-        if (ptr == NULL) {
-            tlib_abortf("Write to undefined CPU register number %d detected", reg_number);
-            return;
-        }
-        *ptr = val & 0xFFFFFFFF;
-    #elif TARGET_LONG_BITS == 64
-        uint64_t *ptr = get_reg_pointer_64(reg_number);
-        if (ptr == NULL) {
-            tlib_abortf("Write to undefined CPU register number %d detected", reg_number);
-            return;
-        }
-        *ptr = val;
-    #else
-    #error "Unknown number of bits"
-    #endif
-}
-
 void tlib_announce_stack_change(target_ulong address, int change_type)
 {
     #ifdef SUPPORTS_GUEST_PROFILING
-    tlib_profiler_announce_stack_change(address, get_register_value(RA), cpu->instructions_count_total_value, change_type);
+    tlib_profiler_announce_stack_change(address, tlib_get_register_value(RA), cpu->instructions_count_total_value, change_type);
     #else
     tlib_abortf("This architecture does not support the profiler");
     #endif

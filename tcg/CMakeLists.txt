@@ -7,11 +7,16 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 option (BIG_ENDIAN "Big endian" OFF)
-set (HOST_LONG_BITS 0 CACHE INT "Host word size (0 - autodetection)")
 set (HOST_ARCHITECTURE "i386" CACHE STRING "Host architecture")
 set_property (CACHE HOST_ARCHITECTURE PROPERTY STRINGS i386 arm)
-set (TARGET_LONG_BITS 32 CACHE INT "Target word size")
-set (TARGET_INSN_START_EXTRA_WORDS 0 CACHE INT "Number of extra words in insn_start needed by the target")
+
+# These are 'STRING' instead of 'INT' to prevent printing three such warnings:
+# > CMake Warning (dev) at CMakeLists.txt:11 (set):
+# >   implicitly converting 'INT' to 'STRING' type.
+# > This warning is for project developers.  Use -Wno-dev to suppress it.
+set (HOST_LONG_BITS 0 CACHE STRING "Host word size (0 - autodetection)")
+set (TARGET_LONG_BITS 32 CACHE STRING "Target word size")
+set (TARGET_INSN_START_EXTRA_WORDS 0 CACHE STRING "Number of extra words in insn_start needed by the target")
 
 if(HOST_LONG_BITS EQUAL 0)
     # Determine bitness

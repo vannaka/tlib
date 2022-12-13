@@ -50,6 +50,9 @@ void tlib_invalidate_translation_cache(void);
 
 void tlib_enable_guest_profiler(int value);
 
+void tlib_set_page_io_accessed(uint64_t address);
+void tlib_clear_page_io_accessed(uint64_t address);
+
 int tlib_restore_context(void);
 void *tlib_export_state(void);
 int32_t tlib_get_state_size(void);

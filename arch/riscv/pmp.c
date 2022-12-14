@@ -131,10 +131,12 @@ static void pmp_decode_napot(target_ulong addr, int napot_grain, target_ulong *s
         return;
     } else {
         // NAPOT range equals 2^(NAPOT_GRAIN + 2)
-        target_ulong range = ((target_ulong)2 << (napot_grain + 2)) - 1;
-        target_ulong base = (addr & ((target_ulong) - 1 << (napot_grain + 1))) << 2;
-        *start_addr = base;
-        *end_addr = base + range;
+        // Calculating base and range using 64 bit wide variables, as using
+        // `target_ulong` caused overflows on RV32 when `napot_grain = 32`
+        uint64_t range = ((uint64_t)2 << (napot_grain + 2)) - 1;
+        uint64_t base = (addr & ((uint64_t) - 1 << (napot_grain + 1))) << 2;
+        *start_addr = (target_ulong)base;
+        *end_addr = (target_ulong)(base + range);
     }
 }
 

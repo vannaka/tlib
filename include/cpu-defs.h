@@ -83,7 +83,6 @@ typedef struct DisasContextBase {
 #define EXCP_INTERRUPT      0x10000 /* async interruption */
 #define EXCP_WFI            0x10001 /* hlt instruction reached */
 #define EXCP_DEBUG          0x10002 /* cpu stopped after a breakpoint or singlestep */
-#define EXCP_HALTED         0x10003 /* cpu is halted (waiting for external event) */
 #define EXCP_WATCHPOINT     0x10004
 #define EXCP_RETURN_REQUEST 0x10005
 #define MMU_EXTERNAL_FAULT  0x10006 /* cpu should exit to process the external mmu handler */

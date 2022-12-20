@@ -7844,7 +7844,7 @@ int process_interrupt(int interrupt_request, CPUState *env)
     if (interrupt_request & CPU_INTERRUPT_INIT) {
         svm_check_intercept(env, SVM_EXIT_INIT);
         do_cpu_init(env);
-        env->exception_index = EXCP_HALTED;
+        env->exception_index = EXCP_WFI;
         cpu_loop_exit(env);
     } else if (interrupt_request & CPU_INTERRUPT_SIPI) {
         do_cpu_sipi(env);

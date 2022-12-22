@@ -48,7 +48,7 @@ static void init_tcg()
     tcg_attach(&stcg);
     set_temp_buf_offset(offsetof(CPUState, temp_buf));
     int i;
-    for (i = 0; i < 7; i++) {
+    for (i = 0; i < NB_MMU_MODES + 1; i++) {
         set_tlb_table_n_0_rwa(i, offsetof(CPUState, tlb_table[i][0].addr_read), offsetof(CPUState,
                                                                                          tlb_table[i][0].addr_write),
                               offsetof(CPUState, tlb_table[i][0].addend));

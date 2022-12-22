@@ -43,6 +43,8 @@
 #undef ACCESS_TYPE
 #undef MEMSUFFIX
 
+// All architectures also have the '_data'-suffixed MMU mode (with NB_MMU_MODES index)
+// so ACCESS_TYPE ranges from 0 to NB_MMU_MODES which gives NB_MMU_MODES+1 TLB tables.
 #if (NB_MMU_MODES >= 3)
 
 #define ACCESS_TYPE 2
@@ -290,6 +292,8 @@
 #undef MEMSUFFIX
 #endif /* (NB_MMU_MODES >= 15) */
 
+// Adjust sizes of 'tlb_table_n_0' arrays in tcg/additional.{c,h} to
+// NB_MMU_MODES+1 after expanding the number of supported NB_MMU_MODES.
 #if (NB_MMU_MODES > 15)
 #error "NB_MMU_MODES > 15 is not supported for now"
 #endif /* (NB_MMU_MODES > 15) */

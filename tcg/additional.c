@@ -93,10 +93,10 @@ char *TCG_pstrcat(char *buf, int buf_size, const char *s)
 }
 
 unsigned int temp_buf_offset;
-unsigned int tlb_table_n_0[7];
-unsigned int tlb_table_n_0_addr_read[7];
-unsigned int tlb_table_n_0_addr_write[7];
-unsigned int tlb_table_n_0_addend[7];
+unsigned int tlb_table_n_0[MMU_MODES_MAX];
+unsigned int tlb_table_n_0_addr_read[MMU_MODES_MAX];
+unsigned int tlb_table_n_0_addr_write[MMU_MODES_MAX];
+unsigned int tlb_table_n_0_addend[MMU_MODES_MAX];
 unsigned int tlb_entry_addr_read;
 unsigned int tlb_entry_addr_write;
 unsigned int tlb_entry_addend;

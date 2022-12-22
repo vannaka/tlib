@@ -9,11 +9,14 @@ void TCG_free(void *ptr);
 void TCG_pstrcpy(char *buf, int buf_size, const char *str);
 char *TCG_pstrcat(char *buf, int buf_size, const char *s);
 
+// The highest value of NB_MMU_MODES used incremented by one.
+#define MMU_MODES_MAX 16
+
 extern unsigned int temp_buf_offset;
-extern unsigned int tlb_table_n_0_addr_read[7];
-extern unsigned int tlb_table_n_0_addr_write[7];
-extern unsigned int tlb_table_n_0_addend[7];
-extern unsigned int tlb_table_n_0[7];
+extern unsigned int tlb_table_n_0_addr_read[MMU_MODES_MAX];
+extern unsigned int tlb_table_n_0_addr_write[MMU_MODES_MAX];
+extern unsigned int tlb_table_n_0_addend[MMU_MODES_MAX];
+extern unsigned int tlb_table_n_0[MMU_MODES_MAX];
 extern unsigned int tlb_entry_addr_read;
 extern unsigned int tlb_entry_addr_write;
 extern unsigned int tlb_entry_addend;

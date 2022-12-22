@@ -348,8 +348,11 @@ static inline TCGCond tcg_unsigned_cond(TCGCond c)
 
 /* XXX: optimize memory layout */
 typedef struct TCGTemp {
+    // Requested TCG_TYPE_I32/64.
     TCGType base_type;
+    // The actual type. 64-bit registers on 32-bit hosts use two 32-bit registers.
     TCGType type;
+    // TEMP_VAL_*
     int val_type;
     int reg;
     tcg_target_long val;

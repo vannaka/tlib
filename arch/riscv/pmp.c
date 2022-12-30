@@ -315,17 +315,26 @@ void pmpcfg_csr_write(CPUState *env, uint32_t reg_index, target_ulong val)
 {
     int i;
     uint8_t cfg_val;
+    uint32_t base_offset = reg_index * sizeof(target_ulong);
 
     PMP_DEBUG("hart " TARGET_FMT_ld ": reg%d, val: 0x" TARGET_FMT_lx, env->mhartid, reg_index, val);
 
-    if ((reg_index & 1) && (sizeof(target_ulong) == 8)) {
+#if defined(TARGET_RISCV64)
+    // for RV64 only even pmpcfg registers are used:
+    // pmpcfg0 = [pmp0cfg, pmp1cfg, ..., pmp7cfg]
+    // there is NO pmpcfg1
+    // pmpcfg2 = [pmp8cfg, pmp9cfg, ..., pmp15cfg]
+    // so we obtain the effective index by dividing by 2
+    if (reg_index % 2 != 0) {
         PMP_DEBUG("ignoring write - incorrect address");
         return;
     }
+    base_offset /= 2;
+#endif
 
     for (i = 0; i < sizeof(target_ulong); i++) {
-        cfg_val = (val >> 8 * i)  & 0xff;
-        pmp_write_cfg(env, (reg_index * sizeof(target_ulong)) + i, cfg_val);
+        cfg_val = (val >> 8 * i) & 0xff;
+        pmp_write_cfg(env, base_offset + i, cfg_val);
     }
 }
 
@@ -337,10 +346,17 @@ target_ulong pmpcfg_csr_read(CPUState *env, uint32_t reg_index)
     int i;
     target_ulong cfg_val = 0;
     uint8_t val = 0;
+    uint32_t base_offset = reg_index * sizeof(target_ulong);
+
+#if defined(TARGET_RISCV64)
+    // for RV64 only even pmpcfg registers are used
+    // see a comment in pmpcfg_csr_write for details
+    base_offset /= 2;
+#endif
 
     for (i = 0; i < sizeof(target_ulong); i++) {
-        val = pmp_read_cfg(env, (reg_index * sizeof(target_ulong)) + i);
-        cfg_val |= (val << (i * 8));
+        val = pmp_read_cfg(env, base_offset + i);
+        cfg_val |= (target_ulong)val << (i * 8);
     }
 
     PMP_DEBUG("hart " TARGET_FMT_ld ": reg%d, val: 0x" TARGET_FMT_lx, env->mhartid, reg_index, cfg_val);

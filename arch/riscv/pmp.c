@@ -317,7 +317,7 @@ void pmpcfg_csr_write(CPUState *env, uint32_t reg_index, target_ulong val)
     uint8_t cfg_val;
     uint32_t base_offset = reg_index * sizeof(target_ulong);
 
-    PMP_DEBUG("hart " TARGET_FMT_ld ": reg%d, val: 0x" TARGET_FMT_lx, env->mhartid, reg_index, val);
+    PMP_DEBUG("hart " TARGET_FMT_ld " writes: reg%d, val: 0x" TARGET_FMT_lx, env->mhartid, reg_index, val);
 
 #if defined(TARGET_RISCV64)
     // for RV64 only even pmpcfg registers are used:
@@ -359,7 +359,7 @@ target_ulong pmpcfg_csr_read(CPUState *env, uint32_t reg_index)
         cfg_val |= (target_ulong)val << (i * 8);
     }
 
-    PMP_DEBUG("hart " TARGET_FMT_ld ": reg%d, val: 0x" TARGET_FMT_lx, env->mhartid, reg_index, cfg_val);
+    PMP_DEBUG("hart " TARGET_FMT_ld "  reads: reg%d, val: 0x" TARGET_FMT_lx, env->mhartid, reg_index, cfg_val);
 
     return cfg_val;
 }
@@ -369,7 +369,7 @@ target_ulong pmpcfg_csr_read(CPUState *env, uint32_t reg_index)
  */
 void pmpaddr_csr_write(CPUState *env, uint32_t addr_index, target_ulong val)
 {
-    PMP_DEBUG("hart " TARGET_FMT_ld ": addr%d, val: 0x" TARGET_FMT_lx, env->mhartid, addr_index, val);
+    PMP_DEBUG("hart " TARGET_FMT_ld " writes: addr%d, val: 0x" TARGET_FMT_lx, env->mhartid, addr_index, val);
 
     if (addr_index < MAX_RISCV_PMPS) {
         if (!pmp_is_locked(env, addr_index)) {
@@ -388,7 +388,7 @@ void pmpaddr_csr_write(CPUState *env, uint32_t addr_index, target_ulong val)
  */
 target_ulong pmpaddr_csr_read(CPUState *env, uint32_t addr_index)
 {
-    PMP_DEBUG("hart " TARGET_FMT_ld ": addr%d, val: 0x" TARGET_FMT_lx, env->mhartid, addr_index,
+    PMP_DEBUG("hart " TARGET_FMT_ld "  reads: addr%d, val: 0x" TARGET_FMT_lx, env->mhartid, addr_index,
               env->pmp_state.pmp[addr_index].addr_reg);
     if (addr_index < MAX_RISCV_PMPS) {
         return env->pmp_state.pmp[addr_index].addr_reg;

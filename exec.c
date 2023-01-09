@@ -1819,7 +1819,11 @@ uint32_t ldl_phys(target_phys_addr_t addr)
 /* warning: addr must be aligned */
 static uint64_t ldq_phys_aligned(target_phys_addr_t addr)
 {
-    int io_index;
+    /* Warning! This function was rewritten to have a similar body as 
+       ldl_phys_aligned. During testing we haven't found any example
+       that would use this function, but there were also no observed
+       changes in behavior of any binary. This function may be a good
+       place to start debugging in case of bus access problems */
     uint8_t *ptr;
     uint64_t val;
     ram_addr_t pd;
@@ -1834,18 +1838,10 @@ static uint64_t ldq_phys_aligned(target_phys_addr_t addr)
 
     if ((pd & ~TARGET_PAGE_MASK) > IO_MEM_ROM && !(pd & IO_MEM_ROMD)) {
         /* I/O case */
-        io_index = (pd >> IO_MEM_SHIFT) & (IO_MEM_NB_ENTRIES - 1);
         if (p) {
             addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
         }
-
-#ifdef TARGET_WORDS_BIGENDIAN
-        val = (uint64_t)io_mem_read[io_index][2](io_mem_opaque[io_index], addr) << 32;
-        val |= io_mem_read[io_index][2](io_mem_opaque[io_index], addr + 4);
-#else
-        val = io_mem_read[io_index][2](io_mem_opaque[io_index], addr);
-        val |= (uint64_t)io_mem_read[io_index][2](io_mem_opaque[io_index], addr + 4) << 32;
-#endif
+        val = tswap64(tlib_read_quad_word(addr));
     } else {
         /* RAM case */
         ptr = get_ram_ptr(pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
@@ -1945,7 +1941,11 @@ void stl_phys_notdirty(target_phys_addr_t addr, uint32_t val)
 
 void stq_phys_notdirty(target_phys_addr_t addr, uint64_t val)
 {
-    int io_index;
+    /* Warning! This function was rewritten to have a similar body as
+       stl_phys_notdirty. During testing we haven't found any example
+       that would use this function, but there were also no observed
+       changes in behavior of any binary. This function may be a good
+       place to start debugging in case of bus access problems */
     uint8_t *ptr;
     ram_addr_t pd;
     PhysPageDesc *p;
@@ -1963,17 +1963,10 @@ void stq_phys_notdirty(target_phys_addr_t addr, uint64_t val)
     }
 
     if ((pd & ~TARGET_PAGE_MASK) != IO_MEM_RAM) {
-        io_index = (pd >> IO_MEM_SHIFT) & (IO_MEM_NB_ENTRIES - 1);
         if (p) {
             addr = (addr & ~TARGET_PAGE_MASK) + p->region_offset;
         }
-#ifdef TARGET_WORDS_BIGENDIAN
-        io_mem_write[io_index][2](io_mem_opaque[io_index], addr, val >> 32);
-        io_mem_write[io_index][2](io_mem_opaque[io_index], addr + 4, val);
-#else
-        io_mem_write[io_index][2](io_mem_opaque[io_index], addr, val);
-        io_mem_write[io_index][2](io_mem_opaque[io_index], addr + 4, val >> 32);
-#endif
+        tlib_write_quad_word(addr, tswap64(val));
     } else {
         ptr = get_ram_ptr(pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
         stq_p(ptr, val);

@@ -109,10 +109,6 @@ static void *l1_map[V_L1_SIZE];
    The bottom level has pointers to PhysPageDesc.  */
 static void *l1_phys_map[P_L1_SIZE];
 
-/* io memory support */
-CPUWriteMemoryFunc *io_mem_write[IO_MEM_NB_ENTRIES][4];
-CPUReadMemoryFunc *io_mem_read[IO_MEM_NB_ENTRIES][4];
-void *io_mem_opaque[IO_MEM_NB_ENTRIES];
 
 /* statistics */
 static int tlb_flush_count;

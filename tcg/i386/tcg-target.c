@@ -1569,13 +1569,30 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
         tcg_out_movcond32(s, args[5], args[0], args[1], args[2], const_args[2], args[3]);
         break;
 
-    OP_32_64(bswap16):
-        tcg_out_rolw_8(s, args[0]);
-        break;
-    OP_32_64(bswap32):
-        tcg_out_bswap32(s, args[0]);
-        break;
-
+   OP_32_64(bswap16):
+       if (args[2] & TCG_BSWAP_OS) {
+           /* Output must be sign-extended. */
+           if (rexw) {
+               tcg_out_bswap64(s, args[0]);
+               tcg_out_shifti(s, SHIFT_SAR + rexw, args[0], 48);
+           } else {
+               tcg_out_bswap32(s, args[0]);
+               tcg_out_shifti(s, SHIFT_SAR, args[0], 16);
+           }
+       } else if ((args[2] & (TCG_BSWAP_IZ | TCG_BSWAP_OZ)) == TCG_BSWAP_OZ) {
+           /* Output must be zero-extended, but input isn't. */
+           tcg_out_bswap32(s, args[0]);
+           tcg_out_shifti(s, SHIFT_SHR, args[0], 16);
+       } else {
+           tcg_out_rolw_8(s, args[0]);
+       }
+       break;
+   OP_32_64(bswap32):
+       tcg_out_bswap32(s, args[0]);
+       if (rexw && (args[2] & TCG_BSWAP_OS)) {
+           tcg_out_ext32s(s, args[0], args[0]);
+       }
+       break;
     OP_32_64(neg):
         tcg_out_modrm(s, OPC_GRP3_Ev + rexw, EXT3_NEG, args[0]);
         break;

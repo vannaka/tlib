@@ -3527,8 +3527,9 @@ static inline void tcg_gen_clzi_i64(TCGv_i64 ret, TCGv_i64 arg1, uint64_t arg2)
 #define tcg_gen_ext16s_tl     tcg_gen_ext16s_i64
 #define tcg_gen_ext32u_tl     tcg_gen_ext32u_i64
 #define tcg_gen_ext32s_tl     tcg_gen_ext32s_i64
-#define tcg_gen_bswap16_tl    tcg_gen_bswap16_i64
-#define tcg_gen_bswap32_tl    tcg_gen_bswap32_i64
+// Now these support passing flags so let's adjust calls used in i386 and ppc.
+#define tcg_gen_bswap16_tl(ret, arg)    tcg_gen_bswap16_i64(ret, arg, 0)
+#define tcg_gen_bswap32_tl(ret, arg)    tcg_gen_bswap32_i64(ret, arg, 0)
 #define tcg_gen_bswap64_tl    tcg_gen_bswap64_i64
 #define tcg_gen_concat_tl_i64 tcg_gen_concat32_i64
 #define tcg_gen_andc_tl       tcg_gen_andc_i64
@@ -3602,7 +3603,8 @@ static inline void tcg_gen_clzi_i64(TCGv_i64 ret, TCGv_i64 arg1, uint64_t arg2)
 #define tcg_gen_ext16s_tl     tcg_gen_ext16s_i32
 #define tcg_gen_ext32u_tl     tcg_gen_mov_i32
 #define tcg_gen_ext32s_tl     tcg_gen_mov_i32
-#define tcg_gen_bswap16_tl    tcg_gen_bswap16_i32
+// Now it supports passing flags so let's adjust calls used in i386 and ppc.
+#define tcg_gen_bswap16_tl(ret, arg)    tcg_gen_bswap16_i32(ret, arg, 0)
 #define tcg_gen_bswap32_tl    tcg_gen_bswap32_i32
 #define tcg_gen_concat_tl_i64 tcg_gen_concat_i32_i64
 #define tcg_gen_andc_tl       tcg_gen_andc_i32

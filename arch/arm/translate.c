@@ -218,7 +218,7 @@ static void gen_rev16(TCGv var)
 static void gen_revsh(TCGv var)
 {
     tcg_gen_ext16u_i32(var, var);
-    tcg_gen_bswap16_i32(var, var);
+    tcg_gen_bswap16_i32(var, var, 0);
     tcg_gen_ext16s_i32(var, var);
 }
 

@@ -119,8 +119,15 @@ typedef enum {
 #define TCG_TARGET_HAS_nor_i64       0
 #define TCG_TARGET_HAS_not_i64       1
 #define TCG_TARGET_HAS_orc_i64       0
+#define TCG_TARGET_HAS_qemu_st8_i32  0
 #define TCG_TARGET_HAS_rot_i64       1
+
+#else
+#define TCG_TARGET_HAS_qemu_st8_i32  1
 #endif
+
+// MOVBE isn't very common in non-Atom CPUs and it isn't currently supported by TCG.
+#define TCG_TARGET_HAS_MEMORY_BSWAP  0
 
 #define TCG_TARGET_deposit_i32_valid(ofs, len) \
     (((ofs) == 0 && (len) == 8) || ((ofs) == 8 && (len) == 8) || \

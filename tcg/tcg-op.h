@@ -2837,14 +2837,209 @@ static const TCGOpcode old_st_opc[4] = {
     [MO_Q]  = INDEX_op_qemu_st64,
 };
 
-static inline void tcg_gen_qemu_ld_i32(TCGv_i32 val, TCGv_i32 addr, TCGArg idx, TCGMemOp memop)
+static inline unsigned get_alignment_bits(TCGMemOp memop)
 {
-    tcg_gen_qemu_ldst_op(old_ld_opc[memop], val, addr, idx);
+    unsigned a = memop & MO_AMASK;
+
+    if (a == MO_UNALN) {
+        /* No alignment required.  */
+        a = 0;
+    } else if (a == MO_ALIGN) {
+        /* A natural alignment requirement.  */
+        a = memop & MO_SIZE;
+    } else {
+        /* A specific alignment requirement.  */
+        a = a >> MO_ASHIFT;
+    }
+#if defined(CONFIG_SOFTMMU)
+    /* The requested alignment cannot overlap the TLB flags.  */
+    tcg_debug_assert((TLB_FLAGS_MASK & ((1 << a) - 1)) == 0);
+#endif
+    return a;
+}
+
+static inline TCGMemOp tcg_canonicalize_memop(TCGMemOp op, bool is64, bool st)
+{
+    unsigned a_bits = get_alignment_bits(op);
+
+    if (a_bits == (op & MO_SIZE)) {
+        op = (op & ~MO_AMASK) | MO_ALIGN;
+    }
+    switch (op & MO_SIZE) {
+    case MO_8:
+        op &= ~MO_BSWAP;
+        break;
+    case MO_16:
+        break;
+    case MO_32:
+        if (!is64) {
+            op &= ~MO_SIGN;
+        }
+        break;
+    case MO_64:
+        if (!is64) {
+            tcg_abort();
+        }
+        break;
+    }
+    if (st) {
+        op &= ~MO_SIGN;
+    }
+    return op;
+}
+
+static inline void tcg_gen_qemu_ld_i32(TCGv_i32 val, TCGv addr, TCGArg idx, TCGMemOp memop)
+{
+    TCGMemOp orig_memop;
+    // TODO: Port memory barrier for the parallel load/store safety.
+    // tcg_gen_req_mo(TCG_MO_LD_LD | TCG_MO_ST_LD);
+    memop = tcg_canonicalize_memop(memop, 0, 0);
+    orig_memop = memop;
+    if (!TCG_TARGET_HAS_MEMORY_BSWAP && (memop & MO_BSWAP)) {
+        memop &= ~MO_BSWAP;
+        /* The bswap primitive benefits from zero-extended input.  */
+        if ((memop & MO_SSIZE) == MO_SW) {
+            memop &= ~MO_SIGN;
+        }
+    }
+
+    tcg_gen_qemu_ldst_op(old_ld_opc[memop & MO_SIZE], val, addr, idx);
+
+    if ((orig_memop ^ memop) & MO_BSWAP) {
+        switch (orig_memop & MO_SIZE) {
+        case MO_16:
+            tcg_gen_bswap16_i32(val, val, (orig_memop & MO_SIGN
+                                           ? TCG_BSWAP_IZ | TCG_BSWAP_OS
+                                           : TCG_BSWAP_IZ | TCG_BSWAP_OZ));
+            break;
+        case MO_32:
+            tcg_gen_bswap32_i32(val, val);
+            break;
+        default:
+            tcg_abort();
+            __builtin_unreachable();
+        }
+    }
 }
 
 static inline void tcg_gen_qemu_st_i32(TCGv_i32 val, TCGv_i32 addr, TCGArg idx, TCGMemOp memop)
 {
-    tcg_gen_qemu_ldst_op(old_st_opc[memop], val, addr, idx);
+    TCGv_i32 swap = -1;
+    // TODO: Port memory barrier for the parallel load/store safety.
+    //tcg_gen_req_mo(TCG_MO_LD_ST | TCG_MO_ST_ST);
+    memop = tcg_canonicalize_memop(memop, 0, 1);
+    if (!TCG_TARGET_HAS_MEMORY_BSWAP && (memop & MO_BSWAP)) {
+        swap = tcg_temp_new_i32();
+        switch (memop & MO_SIZE) {
+        case MO_16:
+            tcg_gen_bswap16_i32(swap, val, 0);
+            break;
+        case MO_32:
+            tcg_gen_bswap32_i32(swap, val);
+            break;
+        default:
+            tcg_abort();
+            __builtin_unreachable();
+        }
+        val = swap;
+        memop &= ~MO_BSWAP;
+    }
+    tcg_gen_qemu_ldst_op(old_st_opc[memop & MO_SIZE], val, addr, idx);
+
+    if (swap != -1) {
+        tcg_temp_free_i32(swap);
+    }
+}
+
+static inline void tcg_gen_qemu_ld_i64(TCGv_i64 val, TCGv addr, TCGArg idx, TCGMemOp memop)
+{
+    TCGMemOp orig_memop;
+#if TCG_TARGET_REG_BITS == 32
+    if ((memop & MO_SIZE) < MO_64) {
+        tcg_gen_qemu_ld_i32(TCGV_LOW(val), addr, idx, memop);
+        if (memop & MO_SIGN) {
+            tcg_gen_sari_i32(TCGV_HIGH(val), TCGV_LOW(val), 31);
+        } else {
+            tcg_gen_movi_i32(TCGV_HIGH(val), 0);
+        }
+        return;
+    }
+#endif
+    // TODO: Port memory barrier for the parallel load/store safety.
+    //tcg_gen_req_mo(TCG_MO_LD_LD | TCG_MO_ST_LD);
+    memop = tcg_canonicalize_memop(memop, 1, 0);
+    orig_memop = memop;
+    if (!TCG_TARGET_HAS_MEMORY_BSWAP && (memop & MO_BSWAP)) {
+        memop &= ~MO_BSWAP;
+        /* The bswap primitive benefits from zero-extended input.  */
+        if ((memop & MO_SIGN) && (memop & MO_SIZE) < MO_64) {
+            memop &= ~MO_SIGN;
+        }
+    }
+
+    tcg_gen_qemu_ldst_op_i64(old_ld_opc[memop & MO_SSIZE], val, addr, idx);
+
+    if ((orig_memop ^ memop) & MO_BSWAP) {
+        int flags = (orig_memop & MO_SIGN
+                     ? TCG_BSWAP_IZ | TCG_BSWAP_OS
+                     : TCG_BSWAP_IZ | TCG_BSWAP_OZ);
+        switch (orig_memop & MO_SIZE) {
+        case MO_16:
+            tcg_gen_bswap16_i64(val, val, flags);
+            break;
+        case MO_32:
+            tcg_gen_bswap32_i64(val, val, flags);
+            break;
+        case MO_64:
+            tcg_gen_bswap64_i64(val, val);
+            break;
+        default:
+            tcg_abort();
+            __builtin_unreachable();
+        }
+    }
+}
+
+static inline void tcg_gen_qemu_st_i64(TCGv_i64 val, TCGv addr, TCGArg idx, TCGMemOp memop)
+{
+    TCGv_i64 swap = -1;
+
+#if TCG_TARGET_REG_BITS == 32
+    if ((memop & MO_SIZE) < MO_64) {
+        tcg_gen_qemu_st_i32(TCGV_LOW(val), addr, idx, memop);
+        return;
+    }
+#endif
+
+    // TODO: Port memory barrier for the parallel load/store safety.
+    //tcg_gen_req_mo(TCG_MO_LD_ST | TCG_MO_ST_ST);
+    memop = tcg_canonicalize_memop(memop, 1, 1);
+
+    if (!TCG_TARGET_HAS_MEMORY_BSWAP && (memop & MO_BSWAP)) {
+        swap = tcg_temp_new_i64();
+        switch (memop & MO_SIZE) {
+        case MO_16:
+            tcg_gen_bswap16_i64(swap, val, 0);
+            break;
+        case MO_32:
+            tcg_gen_bswap32_i64(swap, val, 0);
+            break;
+        case MO_64:
+            tcg_gen_bswap64_i64(swap, val);
+            break;
+        default:
+            tcg_abort();
+            __builtin_unreachable();
+        }
+        val = swap;
+        memop &= ~MO_BSWAP;
+    }
+
+    tcg_gen_qemu_ldst_op(old_st_opc[memop & MO_SIZE], val, addr, idx);
+
+    if (swap != -1) {
+        tcg_temp_free_i64(swap);
+    }
 }
 
 static inline void tcg_gen_abs_i32(TCGv_i32 ret, TCGv_i32 a)
@@ -2942,31 +3137,6 @@ static inline void tcg_gen_clzi_i32(TCGv_i32 ret, TCGv_i32 arg1, uint32_t arg2)
     TCGv_i32 t = tcg_const_i32(arg2);
     tcg_gen_clz_i32(ret, arg1, t);
     tcg_temp_free_i32(t);
-}
-
-static inline TCGMemOp tcg_canonicalize_memop(TCGMemOp op, bool is64, bool st)
-{
-    switch (op & MO_SIZE) {
-    case MO_8:
-        op &= ~MO_BSWAP;
-        break;
-    case MO_16:
-        break;
-    case MO_32:
-        if (!is64) {
-            op &= ~MO_SIGN;
-        }
-        break;
-    case MO_64:
-        if (!is64) {
-            tcg_abort();
-        }
-        break;
-    }
-    if (st) {
-        op &= ~MO_SIGN;
-    }
-    return op;
 }
 
 static inline void tcg_gen_ext_i32(TCGv_i32 ret, TCGv_i32 val, TCGMemOp opc)

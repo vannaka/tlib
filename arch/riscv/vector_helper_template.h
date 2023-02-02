@@ -1984,7 +1984,7 @@ void glue(helper_vslideup_ivi, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2,
         helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
-    const int start = rs1 > env->vstart ? rs1 : env->vstart;
+    const int start = rs1 > env->vlmax ? env->vlmax : (rs1 > env->vstart ? rs1 : env->vstart);
     for (int ei = start; ei < env->vl; ++ei) {
         TEST_MASK(ei)
         switch (eew) {

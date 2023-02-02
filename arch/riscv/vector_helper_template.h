@@ -289,7 +289,7 @@ void glue(glue(helper_vlxei, BITS), POSTFIX)(CPUState *env, uint32_t vd, uint32_
             case 32:
                 ((uint32_t *)V(vd + fi_offset))[ei] = ldl(addr);
                 break;
-            case 64: 
+            case 64:
                 ((uint64_t *)V(vd + fi_offset))[ei] = ldq(addr);
                 break;
             default:
@@ -2066,7 +2066,7 @@ void glue(helper_vslide1up, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, ta
     if(env->vl == 0) {
         return;
     }
-    
+
     if (env->vstart == 0
 #ifdef MASKED
         && (V(0)[0] & 0x1)
@@ -2242,7 +2242,7 @@ void glue(helper_vzext_vf2, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)
         case 32:
             ((uint32_t *)V(vd))[ei] = ((uint16_t *)V(vs2))[ei];
             break;
-        case 64: 
+        case 64:
             ((uint64_t *)V(vd))[ei] = ((uint32_t *)V(vs2))[ei];
             break;
         default:
@@ -2268,7 +2268,7 @@ void glue(helper_vsext_vf2, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)
         case 32:
             ((int32_t *)V(vd))[ei] = ((int16_t *)V(vs2))[ei];
             break;
-        case 64: 
+        case 64:
             ((int64_t *)V(vd))[ei] = ((int32_t *)V(vs2))[ei];
             break;
         default:
@@ -2291,7 +2291,7 @@ void glue(helper_vzext_vf4, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)
         case 32:
             ((uint32_t *)V(vd))[ei] = ((uint8_t *)V(vs2))[ei];
             break;
-        case 64: 
+        case 64:
             ((uint64_t *)V(vd))[ei] = ((uint16_t *)V(vs2))[ei];
             break;
         default:
@@ -2314,7 +2314,7 @@ void glue(helper_vsext_vf4, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)
         case 32:
             ((int32_t *)V(vd))[ei] = ((int8_t *)V(vs2))[ei];
             break;
-        case 64: 
+        case 64:
             ((int64_t *)V(vd))[ei] = ((int16_t *)V(vs2))[ei];
             break;
         default:
@@ -2334,7 +2334,7 @@ void glue(helper_vzext_vf8, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)
     for (int ei = env->vstart; ei < env->vl; ++ei) {
         TEST_MASK(ei)
         switch (eew) {
-        case 64: 
+        case 64:
             ((uint64_t *)V(vd))[ei] = ((uint8_t *)V(vs2))[ei];
             break;
         default:
@@ -2354,7 +2354,7 @@ void glue(helper_vsext_vf8, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2)
     for (int ei = env->vstart; ei < env->vl; ++ei) {
         TEST_MASK(ei)
         switch (eew) {
-        case 64: 
+        case 64:
             ((int64_t *)V(vd))[ei] = ((int8_t *)V(vs2))[ei];
             break;
         default:

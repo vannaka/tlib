@@ -635,22 +635,22 @@ void helper_vmsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
         switch (eew) {
         case 8: {
                 V(vd)[i >> 3] &= mask;
-                V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < (int8_t)rs1) << (i & 0x7);
+                V(vd)[i >> 3] |= (((uint8_t *)V(vs2))[i] < (uint8_t)((int8_t)rs1)) << (i & 0x7);
                 break;
             }
         case 16: {
                 V(vd)[i >> 3] &= mask;
-                V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < (int16_t)rs1) << (i & 0x7);
+                V(vd)[i >> 3] |= (((uint16_t *)V(vs2))[i] < (uint16_t)((int16_t)rs1)) << (i & 0x7);
                 break;
             }
         case 32: {
                 V(vd)[i >> 3] &= mask;
-                V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < (int32_t)rs1) << (i & 0x7);
+                V(vd)[i >> 3] |= (((uint32_t *)V(vs2))[i] < (uint32_t)((int32_t)rs1)) << (i & 0x7);
                 break;
             }
         case 64: {
                 V(vd)[i >> 3] &= mask;
-                V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < (int64_t)rs1) << (i & 0x7);
+                V(vd)[i >> 3] |= (((uint64_t *)V(vs2))[i] < (uint64_t)((int64_t)rs1)) << (i & 0x7);
                 break;
             }
         default:

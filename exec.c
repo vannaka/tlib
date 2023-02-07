@@ -611,7 +611,6 @@ void tb_phys_invalidate(TranslationBlock *tb, tb_page_addr_t page_addr)
         tb1 = tb2;
     }
     tb->jmp_first = (TranslationBlock *)((uintptr_t)tb | EXIT_TB_FORCE); /* fail safe */
-    tb->dirty_flag = false;
     tb_phys_invalidate_count++;
 }
 

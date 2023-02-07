@@ -904,7 +904,9 @@ void helper_fence_i(CPUState *env)
         uint64_t *addresses = tlib_get_dirty_addresses_list(&size);
 
         for (uint64_t i = 0; i < size; ++i) {
-            mark_tbs_containing_pc_as_dirty(addresses[i], 0);
+            uint64_t start = addresses[i] & TARGET_PAGE_MASK;
+            uint64_t end = start | ~TARGET_PAGE_MASK;
+            tb_invalidate_phys_page_range_inner(start, end, false, false);
         }
     }
 }

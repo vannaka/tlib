@@ -44,6 +44,14 @@
 #define ENABLE_ARCH_7   arm_feature(env, ARM_FEATURE_V7)
 #define ENABLE_ARCH_8   arm_feature(env, ARM_FEATURE_V8)
 
+// Masks for coprocessor instruction
+#define COPROCESSOR_INSTR_OP_OFFSET (4)
+#define COPROCESSOR_INSTR_OP_MASK (1 << COPROCESSOR_INSTR_OP_OFFSET)
+#define COPROCESSOR_INSTR_OP1_OFFSET (20)
+#define COPROCESSOR_INSTR_OP1_MASK (0x3f << COPROCESSOR_INSTR_OP1_OFFSET)
+#define COPROCESSOR_INSTR_OP1_PARTIAL_MASK(mask) \
+    (COPROCESSOR_INSTR_OP1_MASK & ((mask) << COPROCESSOR_INSTR_OP1_OFFSET))
+
 #define ARCH(x) do { if (!ENABLE_ARCH_##x) goto illegal_op; } while(0)
 
 /* We reuse the same 64-bit temporaries for efficiency.  */
@@ -2653,8 +2661,7 @@ static int disas_cp15_insn(CPUState *env, DisasContext *s, uint32_t insn)
 #ifdef TARGET_PROTO_ARM_M
     return 1;
 #endif
-
-    if ((insn & (1 << 4)) == 0) {
+    if ((insn & (COPROCESSOR_INSTR_OP1_PARTIAL_MASK(0x30) | COPROCESSOR_INSTR_OP_MASK)) == (0x20 << COPROCESSOR_INSTR_OP1_OFFSET)) {
         /* cdp */
         return 1;
     }

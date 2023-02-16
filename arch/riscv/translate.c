@@ -109,15 +109,6 @@ static inline void gen_sync_pc(DisasContext *dc)
     tcg_gen_movi_tl(cpu_opcode, dc->opcode);
 }
 
-static inline uint64_t sextract64(uint64_t value, uint8_t start, uint8_t length)
-{
-    uint64_t result = (value >> start) & ((1 << length) - 1);
-    if (result >> (length - 1)) {
-        result |= ~((((uint64_t)1) << length) - 1);
-    }
-    return result;
-}
-
 static inline void generate_exception(DisasContext *dc, int excp)
 {
     gen_sync_pc(dc);

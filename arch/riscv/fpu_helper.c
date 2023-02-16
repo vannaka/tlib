@@ -903,12 +903,6 @@ target_ulong helper_fclass_d(CPUState *env, uint64_t frs1)
     return frs1;
 }
 
-static inline uint64_t extract64(uint64_t val, int pos, int len)
-{
-  assert(pos >= 0 && len > 0 && len <= 64 - pos);
-  return (val >> pos) & (~UINT64_C(0) >> (64 - len));
-}
-
 static inline uint64_t make_mask64(int pos, int len)
 {
     assert(pos >= 0 && len > 0 && pos < 64 && len <= 64);

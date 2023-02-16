@@ -1,6 +1,7 @@
 #if !defined (__RISCV_CPU_H__)
 #define __RISCV_CPU_H__
 
+#include "bit_helper.h"
 #include "cpu-defs.h"
 #include "softfloat.h"
 #include "host-utils.h"
@@ -311,11 +312,6 @@ static inline void set_default_mstatus()
     } else {
         env->mstatus = 0;
     }
-}
-
-static inline uint32_t extract32(uint32_t value, uint8_t start, uint8_t length)
-{
-    return (value >> start) & ((((uint32_t)1) << length) - 1);
 }
 
 #define GET_VTYPE_VLMUL(inst)    extract32(inst, 0, 3)

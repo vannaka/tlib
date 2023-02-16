@@ -29,6 +29,7 @@
 #define XTENSA_CPU_H
 
 #include "arch_callbacks.h"
+#include "bit_helper.h"
 #include "cpu-defs.h"
 #include "host-utils.h"
 #include "softfloat.h"
@@ -41,30 +42,6 @@
 #define NB_MMU_MODES 4
 
 #define assert(x) {if (unlikely(!(x))) tlib_abortf("Assert not met in %s:%d: %s", __FILE__, __LINE__, #x);}while(0)
-
-/* Deposits 'length' bits from 'val' into 'dst_val' at 'start' bit. */
-static inline uint32_t deposit32(uint32_t dst_val, uint8_t start, uint8_t length, uint32_t val)
-{
-    assert(start + length <= 32);
-    // Number with only relevant bits ('start' to 'start+length-1') set.
-    // 64-bit literals are used since '1 << 32' is a 33-bit value.
-    uint32_t relevant_bits = ((1ull << length) - 1ull) << start;
-
-    // Shift value into the start bit and reset the irrelevant bits.
-    val = (val << start) & relevant_bits;
-
-    // Reset the relevant bits in the destination value.
-    dst_val &= ~relevant_bits;
-
-    // Return the above values merged.
-    return dst_val | val;
-}
-
-/* Extracts 'length' bits of 'value' at 'start' bit. */
-static inline uint32_t extract32(uint32_t value, uint8_t start, uint8_t length)
-{
-    return (value >> start) & ((((uint32_t)1) << length) - 1);
-}
 
 /* Xtensa processors have a weak memory model */
 #define TCG_GUEST_DEFAULT_MO      (0)

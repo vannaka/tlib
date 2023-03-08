@@ -326,11 +326,15 @@ static inline uint32_t extract32(uint32_t value, uint8_t start, uint8_t length)
 // Vector registers are defined as contiguous segments of vlenb bytes.
 #define V(x) (env->vr + (x) * env->vlenb)
 #define SEW() GET_VTYPE_VSEW(env->vtype)
+/* This returns the emul for the destination endcoded just as the vlmul field, the eew (for the destination) must be encoded just like the SEW field.
+// Effectively this just adjusts the emul to the resulting element width change in case of narrowing/widening instructions
+// and should not be used in other cases */
 #define EMUL(eew) (((int8_t)(env->vlmul & 0x4 ? env->vlmul | 0xf8 : env->vlmul) + (eew) - SEW()) & 0x7)
 
 #define RESERVED_EMUL 0x4
 
-// if LMUL >= 1 then n has to be divisible by LMUL
+// if EMUL >= 1 then n has to be divisible by EMUL 
+// The emul value here is encoded the same way the vlmul field is
 #define V_IDX_INVALID_EMUL(n, emul) ((emul) < 0x4 && ((n) & ((1 << (emul)) - 1)) != 0)
 #define V_IDX_INVALID_EEW(n, eew) V_IDX_INVALID_EMUL(n, EMUL(eew))
 #define V_IDX_INVALID(n) V_IDX_INVALID_EMUL(n, env->vlmul)

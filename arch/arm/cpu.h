@@ -84,6 +84,7 @@
 #define MPU_SIZE_AND_ENABLE_FIELD_MASK  (MPU_SIZE_FIELD_MASK | MPU_REGION_ENABLED_BIT)
 #define MPU_NEVER_EXECUTE_BIT           0x1000
 #define MPU_PERMISSION_FIELD_MASK       0x700
+#define MPU_SUBREGION_DISABLE_FIELD_MASK 0xFF00
 
 typedef struct DisasContext {
     DisasContextBase base;
@@ -197,6 +198,7 @@ typedef struct CPUState {
         uint32_t c6_base_address[MAX_MPU_REGIONS]; /* MPU base register.  */
         uint32_t c6_size_and_enable[MAX_MPU_REGIONS]; /* MPU size/enable register.  */
         uint32_t c6_access_control[MAX_MPU_REGIONS]; /* MPU access control register. */
+        uint32_t c6_subregion_disable[MAX_MPU_REGIONS]; /* MPU subregion disable mask. This is not a hardware register */
         uint32_t c6_region_number;
         uint32_t c7_par;         /* Translation result. */
         uint32_t c9_insn;        /* Cache lockdown registers.  */

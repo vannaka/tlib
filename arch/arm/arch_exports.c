@@ -199,7 +199,7 @@ void tlib_set_mpu_region_size_and_enable(uint32_t value)
 {
     uint32_t index = cpu->cp15.c6_region_number;
     cpu->cp15.c6_size_and_enable[index] = value & MPU_SIZE_AND_ENABLE_FIELD_MASK;
-    /* SRD not supported */
+    cpu->cp15.c6_subregion_disable[index] = (value & MPU_SUBREGION_DISABLE_FIELD_MASK) >> 8;
     cpu->cp15.c6_access_control[index] = value >> 16;
     tlib_printf(LOG_LEVEL_DEBUG, "MPU: Set access control 0x%x, permissions 0x%x, size 0x%x, enable 0x%x, for region %lld", value >> 16, ((value >> 16) & MPU_PERMISSION_FIELD_MASK) >> 8 , (value & MPU_SIZE_FIELD_MASK) >> 1, value & MPU_REGION_ENABLED_BIT, index);
     tlb_flush(cpu, 1);
@@ -231,8 +231,7 @@ EXC_INT_0(uint32_t, tlib_get_mpu_region_base_address)
 uint32_t tlib_get_mpu_region_size_and_enable()
 {
     uint32_t index = cpu->cp15.c6_region_number;
-    /* SRD not supported */
-    return (cpu->cp15.c6_access_control[index] << 16) | cpu->cp15.c6_size_and_enable[index];
+    return (cpu->cp15.c6_access_control[index] << 16) | (cpu->cp15.c6_subregion_disable[index] << 8) | cpu->cp15.c6_size_and_enable[index];
 }
 
 EXC_INT_0(uint32_t, tlib_get_mpu_region_size_and_enable)

@@ -1227,6 +1227,13 @@ static int cortexm_check_default_mapping(uint32_t address, int *prot, int access
     return !(*prot & (1 << access_type));
 }
 
+static int get_mpu_subregion_number(uint32_t region_base_address, uint32_t region_size, uint32_t address)
+{
+    /* Subregion size is 2^(region_size - 3) */
+    uint32_t subregion_size = 1 << (region_size - 3);
+    return (address - region_base_address) / subregion_size;
+}
+
 static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot)
 {
     int n;
@@ -1262,7 +1269,13 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, i
         }
         /* Check if the region is enabled */
         if (address >= base && address <= base + mask) {
-            break;
+            /* Check subregions, only if region size is equal to or bigger than 256 bytes (region size = 2^size) */
+            if (size >= 8 && (env->cp15.c6_subregion_disable[n] & (1 << get_mpu_subregion_number(base, size, address)))) {
+                /* Subregion containing this address is disabled, try to match this address to a different region */
+                continue;
+            } else {
+                break;
+            }
         }
     }
 

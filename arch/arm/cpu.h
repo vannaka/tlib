@@ -275,6 +275,9 @@ typedef struct CPUState {
          */
         float_status fp_status;
         float_status standard_fp_status;
+        #ifdef TARGET_PROTO_ARM_M
+        int32_t fpu_interrupt_irq_number;
+        #endif
     } vfp;
     uint32_t exclusive_addr;
     uint32_t exclusive_val;
@@ -374,6 +377,8 @@ static inline void xpsr_write(CPUState *env, uint32_t val, uint32_t mask)
         env->v7m.exception = val & 0x1ff;
     }
 }
+
+void vfp_trigger_exception();
 #endif
 
 /* Return the current FPSCR value.  */

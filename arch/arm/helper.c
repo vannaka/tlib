@@ -2579,6 +2579,23 @@ uint32_t vfp_get_fpscr(CPUState *env)
     return HELPER(vfp_get_fpscr)(env);
 }
 
+#ifdef TARGET_PROTO_ARM_M
+void vfp_trigger_exception()
+{
+    /* Number of an NVIC interrupt that should be triggered when an fpu exception occures
+     * On some platforms this line is not physically connected (eg. STM32H7 - errata ES0392 Rev 8,
+     * 2.1.2 Cortex-M7 FPU interrupt not present on NVIC line 81), so a negative value means
+     * don't trigger the interrupt
+     */
+    if (unlikely(cpu->vfp.fpu_interrupt_irq_number >= 0)) {
+        /* This interrupt is an external interrupt. We add 16 to offset this number
+         * and allow the user to pass IRQ numbers from the board's documentation
+         */
+        tlib_nvic_set_pending_irq(16 + cpu->vfp.fpu_interrupt_irq_number);
+    }
+}
+#endif
+
 /* Convert vfp exception flags to target form.  */
 static inline int vfp_exceptbits_to_host(int target_bits)
 {

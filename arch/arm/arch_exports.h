@@ -15,6 +15,8 @@ void tlib_set_event_flag(int value);
 #ifdef TARGET_PROTO_ARM_M
 void tlib_set_interrupt_vector_base(uint32_t address);
 uint32_t tlib_get_interrupt_vector_base(void);
+void tlib_set_fpu_interrupt_number(int32_t enabled);
+
 uint32_t tlib_get_xpsr(void);
 uint32_t tlib_get_fault_status(void);
 void tlib_set_fault_status(uint32_t value);

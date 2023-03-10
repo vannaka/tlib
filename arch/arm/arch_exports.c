@@ -242,5 +242,12 @@ uint32_t tlib_get_mpu_region_number()
 }
 
 EXC_INT_0(uint32_t, tlib_get_mpu_region_number)
+/* See vfp_trigger_exception for irq_number value interpretation */
+void tlib_set_fpu_interrupt_number(int32_t irq_number)
+{
+    cpu->vfp.fpu_interrupt_irq_number = irq_number;
+}
+
+EXC_VOID_1(tlib_set_fpu_interrupt_number, int32_t, irq_number)
 
 #endif

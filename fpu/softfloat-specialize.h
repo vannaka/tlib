@@ -145,9 +145,16 @@ const float128 float128_default_nan = make_float128(float128_default_nan_high, f
  | should be simply `float_exception_flags |= flags;'.
  *----------------------------------------------------------------------------*/
 
+#ifdef TARGET_PROTO_ARM_M
+#include "../arch/arm/cpu.h"
+#endif
+
 void float_raise(int8 flags STATUS_PARAM)
 {
     STATUS(float_exception_flags) |= flags;
+    #ifdef TARGET_PROTO_ARM_M
+    vfp_trigger_exception();
+    #endif
 }
 
 /*----------------------------------------------------------------------------

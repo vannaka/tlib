@@ -766,10 +766,11 @@ void tlib_clear_page_io_accessed(uint64_t address)
         return;
     }
 
-    for(j = env->io_access_regions_count - 1; j > i; j--)
+    for(j = i; j < env->io_access_regions_count - 1; j++)
     {
-        env->io_access_regions[j - 1] = env->io_access_regions[j];
+        env->io_access_regions[j] = env->io_access_regions[j + 1];
     }
+    env->io_access_regions[j] = 0;
 
     env->io_access_regions_count--;
     tlb_flush_page(env, address, false);

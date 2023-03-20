@@ -713,20 +713,15 @@ TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_ba
 
 void helper_mark_tbs_as_dirty(CPUState *env, target_ulong pc, int broadcast)
 {
-    if (cpu->tb_cache_disabled) {
-        return;
-    }
-
-    if (broadcast && cpu->tb_broadcast_dirty) {
-        target_ulong masked_address = pc & TARGET_PAGE_MASK;
-        append_dirty_address(masked_address);
-    }
-
     int n;
     PageDesc *p;
     tb_page_addr_t phys_pc;
     TranslationBlock *tb, *tb_next;
     tb_page_addr_t tb_start, tb_end;
+
+    if (cpu->tb_cache_disabled) {
+        return;
+    }
 
     // Try to find the page using the tlb contents
     phys_pc = get_page_addr_code(cpu, pc, false);
@@ -743,6 +738,11 @@ void helper_mark_tbs_as_dirty(CPUState *env, target_ulong pc, int broadcast)
         }
     }
 
+    if (broadcast && cpu->tb_broadcast_dirty) {
+        target_ulong masked_address = phys_pc & TARGET_PAGE_MASK;
+        append_dirty_address(masked_address);
+    }
+
     // Below code is a simplified version of the `tb_invalidate_phys_page_range_inner` search
     tb = p->first_tb;
     while (tb != NULL) {
@@ -751,7 +751,7 @@ void helper_mark_tbs_as_dirty(CPUState *env, target_ulong pc, int broadcast)
         tb_next = tb->page_next[n];
         tb_start = tb->page_addr[0] + (tb->pc & ~TARGET_PAGE_MASK);
         tb_end = tb_start + tb->size;
-        if (tb_start <= pc && tb_end > pc) {
+        if (tb_start <= phys_pc && tb_end > phys_pc) {
             tb->dirty_flag = true;
         }
         tb = tb_next;

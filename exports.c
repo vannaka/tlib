@@ -71,7 +71,7 @@ static void init_tcg()
 char *tlib_get_arch_string()
 {
     return "tlib,arch="
-    #if defined(TARGET_ARM)
+    #if defined(TARGET_ARM) || defined(TARGET_ARM64)
     "arm"
     #elif defined(TARGET_RISCV)
     "riscv"
@@ -125,6 +125,8 @@ char *tlib_get_arch()
    return "rv64";
    #elif defined(TARGET_ARM)
    return "arm";
+   #elif defined(TARGET_ARM64)
+   return "arm64";
    #elif defined(TARGET_I386)
    return "i386";
    #elif defined(TARGET_PPC32)

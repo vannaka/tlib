@@ -32,9 +32,9 @@ void append_dirty_address(uint64_t address)
 }
 
 // broadcast argument allows us to mark elements that we got from other cores without repeating the broadcast
-void mark_tbs_containing_pc_as_dirty(target_ulong addr, int broadcast)
+void mark_tbs_containing_pc_as_dirty(target_ulong addr, int access_width, int broadcast)
 {
-    helper_mark_tbs_as_dirty(cpu, addr, broadcast);
+    helper_mark_tbs_as_dirty(cpu, addr, access_width, broadcast);
 }
 
 // verify if there are instructions left to execute, update instructions count

@@ -711,7 +711,7 @@ TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_ba
     return tb;
 }
 
-void helper_mark_tbs_as_dirty(CPUState *env, target_ulong pc, int broadcast)
+void helper_mark_tbs_as_dirty(CPUState *env, target_ulong pc, int access_width, int broadcast)
 {
     int n;
     PageDesc *p;
@@ -751,7 +751,7 @@ void helper_mark_tbs_as_dirty(CPUState *env, target_ulong pc, int broadcast)
         tb_next = tb->page_next[n];
         tb_start = tb->page_addr[0] + (tb->pc & ~TARGET_PAGE_MASK);
         tb_end = tb_start + tb->size;
-        if (tb_start <= phys_pc && tb_end > phys_pc) {
+        if ((tb_start <= phys_pc && phys_pc < tb_end) || (phys_pc <= tb_start && tb_start < phys_pc + access_width)) {
             tb->dirty_flag = true;
         }
         tb = tb_next;

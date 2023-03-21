@@ -227,7 +227,7 @@ TranslationBlock *tb_find_pc(uintptr_t pc_ptr);
 extern int tb_invalidated_flag;
 
 
-void mark_tbs_containing_pc_as_dirty(target_ulong addr, int broadcast);
+void mark_tbs_containing_pc_as_dirty(target_ulong addr, int access_width, int broadcast);
 void flush_dirty_addresses_list(void);
 void append_dirty_address(uint64_t address);
 

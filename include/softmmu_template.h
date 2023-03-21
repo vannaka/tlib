@@ -384,7 +384,7 @@ do_unaligned_access:
         goto redo;
     }
 
-    mark_tbs_containing_pc_as_dirty(addr, 1);
+    mark_tbs_containing_pc_as_dirty(addr, DATA_SIZE, 1);
     release_global_memory_lock(cpu);
 }
 

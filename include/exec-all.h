@@ -71,8 +71,10 @@ void cpu_exec_init_all();
 void TLIB_NORETURN cpu_loop_exit(CPUState *env1);
 void TLIB_NORETURN cpu_loop_exit_restore(CPUState *env1, uintptr_t pc, uint32_t call_hook);
 void tb_invalidate_phys_page_range(tb_page_addr_t start, tb_page_addr_t end, int is_cpu_write_access);
-void tlb_flush_page(CPUState *env, target_ulong addr);
 void tlb_flush(CPUState *env, int flush_global);
+void tlb_flush_masked(CPUState *env, uint32_t mmu_indexes_mask);
+void tlb_flush_page(CPUState *env, target_ulong addr);
+void tlb_flush_page_masked(CPUState *env, target_ulong addr, uint32_t mmu_indexes_mask);
 void tlb_set_page(CPUState *env, target_ulong vaddr, target_phys_addr_t paddr, int prot, int mmu_idx, target_ulong size);
 void interrupt_current_translation_block(CPUState *env, int exception_type);
 int get_external_mmu_phys_addr(CPUState *env, uint32_t address, int access_type,

@@ -25,6 +25,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
+#include "bit_helper.h"
 #include "cpu.h"
 #include "tcg.h"
 #include "osdep.h"
@@ -1264,7 +1265,23 @@ static inline void tlb_flush_entry(CPUTLBEntry *tlb_entry, target_ulong addr)
     }
 }
 
-void tlb_flush_page(CPUState *env, target_ulong addr)
+void tlb_flush_masked(CPUState *env, uint32_t mmu_indexes_mask)
+{
+    /* must reset current TB so that interrupts cannot modify the
+       links while we are modifying them */
+    env->current_tb = NULL;
+
+    for (int mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx += 1) {
+        if (extract32(mmu_indexes_mask, mmu_idx, 1)) {
+            memset(&env->tlb_table[mmu_idx], 0xFF, CPU_TLB_SIZE * sizeof(CPUTLBEntry));
+        }
+    }
+
+    // Flush whole jump cache
+    memset(env->tb_jmp_cache, 0, TB_JMP_CACHE_SIZE * sizeof (void *));
+}
+
+void tlb_flush_page_masked(CPUState *env, target_ulong addr, uint32_t mmu_indexes_mask)
 {
     int i;
     int mmu_idx;
@@ -1280,11 +1297,18 @@ void tlb_flush_page(CPUState *env, target_ulong addr)
 
     addr &= TARGET_PAGE_MASK;
     i = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-    for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
-        tlb_flush_entry(&env->tlb_table[mmu_idx][i], addr);
+    for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx += 1) {
+        if (extract32(mmu_indexes_mask, mmu_idx, 1)) {
+            tlb_flush_entry(&env->tlb_table[mmu_idx][i], addr);
+        }
     }
 
     tlb_flush_jmp_cache(env, addr);
+}
+
+void tlb_flush_page(CPUState *env, target_ulong addr)
+{
+    tlb_flush_page_masked(env, addr, UINT32_MAX);
 }
 
 /* update the TLBs so that writes to code in the virtual page 'addr'

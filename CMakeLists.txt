@@ -43,7 +43,7 @@ set (TARGET_WORD_SIZE "32" CACHE STRING "Target word size")
 message(STATUS "Target is: ${TARGET_WORD_SIZE}-bit ${TARGET_ARCH}")
 
 set_property (CACHE HOST_ARCH PROPERTY STRINGS i386 arm)
-set_property (CACHE TARGET_ARCH PROPERTY STRINGS i386 arm arm-m sparc ppc riscv xtensa)
+set_property (CACHE TARGET_ARCH PROPERTY STRINGS i386 arm arm-m arm64 sparc ppc riscv xtensa)
 
 if(NOT HOST_ARCH)
     message (FATAL_ERROR "Host architecture not set")
@@ -68,6 +68,8 @@ endif()
 set(TARGET_INSN_START_EXTRA_WORDS 0)
 if("${TARGET_ACTUAL_ARCH}" MATCHES "^(arm|i386|sparc)$")
     set(TARGET_INSN_START_EXTRA_WORDS 1)
+elseif("${TARGET_ACTUAL_ARCH}" STREQUAL "arm64")
+    set(TARGET_INSN_START_EXTRA_WORDS 2)
 endif()
 
 set(TLIB_COMMIT_SHA "" CACHE STRING "Current tlib commit SHA")
@@ -78,6 +80,10 @@ if(NOT TLIB_COMMIT_SHA)
     endif()
 
     set(TLIB_COMMIT_SHA "${GIT_OUTPUT}" CACHE STRING "Current tlib commit SHA" FORCE)
+endif()
+
+if("${TARGET_ACTUAL_ARCH}" STREQUAL "arm64" AND NOT "${TARGET_WORD_SIZE}" STREQUAL "64")
+    message (FATAL_ERROR "ERROR: arm64 target has to be built with TARGET_WORD_SIZE=64")
 endif()
 
 # this must be placed after setting default values for:

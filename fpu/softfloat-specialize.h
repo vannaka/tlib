@@ -93,7 +93,7 @@ static inline uint8_t no_signaling_nans(float_status *status)
 /*----------------------------------------------------------------------------
  | The pattern for a default generated half-precision NaN.
  *----------------------------------------------------------------------------*/
-#if defined(TARGET_ARM)
+#if defined(TARGET_ARM) || defined(TARGET_ARM64)
 const float16 float16_default_nan = const_float16(0x7E00);
 #else
 const float16 float16_default_nan = const_float16(0xFE00);
@@ -104,7 +104,7 @@ const float16 float16_default_nan = const_float16(0xFE00);
  *----------------------------------------------------------------------------*/
 #if defined(TARGET_SPARC)
 const float32 float32_default_nan = const_float32(0x7FFFFFFF);
-#elif defined(TARGET_PPC) || defined(TARGET_ARM) || defined(TARGET_RISCV)
+#elif defined(TARGET_PPC) || defined(TARGET_ARM) || defined(TARGET_RISCV) || defined(TARGET_ARM64)
 const float32 float32_default_nan = const_float32(0x7FC00000);
 #else
 const float32 float32_default_nan = const_float32(0xFFC00000);
@@ -115,7 +115,7 @@ const float32 float32_default_nan = const_float32(0xFFC00000);
  *----------------------------------------------------------------------------*/
 #if defined(TARGET_SPARC)
 const float64 float64_default_nan = const_float64(LIT64(0x7FFFFFFFFFFFFFFF));
-#elif defined(TARGET_PPC) || defined(TARGET_ARM) || defined(TARGET_RISCV)
+#elif defined(TARGET_PPC) || defined(TARGET_ARM) || defined(TARGET_RISCV) || defined(TARGET_ARM64)
 const float64 float64_default_nan = const_float64(LIT64(0x7FF8000000000000));
 #else
 const float64 float64_default_nan = const_float64(LIT64(0xFFF8000000000000));
@@ -334,7 +334,7 @@ static float32 commonNaNToFloat32(commonNaNT a STATUS_PARAM)
 
 static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN, flag aIsLargerSignificand STATUS_PARAM)
 {
-#if defined(TARGET_ARM)
+#if defined(TARGET_ARM) || defined(TARGET_ARM64)
     /* ARM mandated NaN propagation rules: take the first of:
      *  1. A if it is signaling
      *  2. B if it is signaling
@@ -414,7 +414,7 @@ static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN, flag 
  | information.
  | Return values : 0 : a; 1 : b; 2 : c; 3 : default-NaN
  *----------------------------------------------------------------------------*/
-#if defined(TARGET_ARM)
+#if defined(TARGET_ARM) || defined(TARGET_ARM64)
 static int pickNaNMulAdd(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN, flag cIsQNaN, flag cIsSNaN,
                          flag infzero STATUS_PARAM)
 {

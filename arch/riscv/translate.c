@@ -4504,7 +4504,7 @@ static void decode_RV32_64C2(CPUState *env, DisasContext *dc)
         } else {
             if (rd == 0) {
                 /* C.EBREAK -> ebreak*/
-                gen_system(dc, OPC_RISC_ECALL, 0, 0, 0, 0x1);
+                gen_system(dc, OPC_RISC_ECALL, 0, 0, 0x1, 0);
             } else {
                 if (rs2 == 0) {
                     /* C.JALR -> jalr x1, rs1, 0*/

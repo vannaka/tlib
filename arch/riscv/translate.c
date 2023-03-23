@@ -64,12 +64,10 @@ void translate_init(void)
 
 static inline void kill_unknown(DisasContext *dc, int excp);
 
-enum {
-    BS_STOP   = 0,   /* Need to exit tb for syscall, sret, etc. */
-    BS_NONE   = 1,   /* When seen outside of translation while loop, indicates
-                        need to exit tb due to end of page. */
-    BS_BRANCH = 2,   /* Need to exit tb for branch, jal, etc. */
-};
+// Other values are defined in `exec-all.h`
+#define DISAS_STOP 4    /* Need to exit tb for syscall, sret, etc. */
+#define DISAS_NONE 5    /* When seen outside of translation while loop, indicates need to exit tb due to end of page. */
+#define DISAS_BRANCH 6  /* Need to exit tb for branch, jal, etc. */
 
 #ifdef TARGET_RISCV64
 #define CASE_OP_32_64(X) case X: case glue(X, W)
@@ -139,7 +137,7 @@ static inline void kill_unknown(DisasContext *dc, int excp)
     tcg_temp_free_i32(helper_tmp);
     tcg_temp_free_i32(helper_bdinstr);
 
-    dc->base.is_jmp = BS_STOP;
+    dc->base.is_jmp = DISAS_STOP;
 }
 
 static inline bool use_goto_tb(DisasContext *dc, target_ulong dest)
@@ -518,7 +516,7 @@ static void gen_synch(DisasContext *dc, uint32_t opc)
         gen_helper_fence_i(cpu_env);
         tcg_gen_movi_tl(cpu_pc, dc->npc);
         gen_exit_tb_no_chaining(dc->base.tb);
-        dc->base.is_jmp = BS_BRANCH;
+        dc->base.is_jmp = DISAS_BRANCH;
         break;
     default:
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
@@ -662,7 +660,7 @@ static void gen_jal(CPUState *env, DisasContext *dc, int rd, target_ulong imm)
     }
 
     gen_goto_tb(dc, 0, dc->base.pc + imm); /* must use this for safety */
-    dc->base.is_jmp = BS_BRANCH;
+    dc->base.is_jmp = DISAS_BRANCH;
 
 }
 
@@ -694,7 +692,7 @@ static void gen_jalr(CPUState *env, DisasContext *dc, uint32_t opc, int rd, int 
         gen_set_label(misaligned);
         generate_exception_mbadaddr(dc, RISCV_EXCP_INST_ADDR_MIS);
         gen_exit_tb_no_chaining(dc->base.tb);
-        dc->base.is_jmp = BS_BRANCH;
+        dc->base.is_jmp = DISAS_BRANCH;
         break;
     default:
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
@@ -747,7 +745,7 @@ static void gen_branch(CPUState *env, DisasContext *dc, uint32_t opc, int rs1, i
     }
     tcg_temp_free(source1);
     tcg_temp_free(source2);
-    dc->base.is_jmp = BS_BRANCH;
+    dc->base.is_jmp = DISAS_BRANCH;
 }
 
 static void gen_load(DisasContext *dc, uint32_t opc, int rd, int rs1, target_long imm)
@@ -1822,12 +1820,12 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2,
                 /* always generates U-level ECALL, fixed in do_interrupt handler */
                 generate_exception(dc, RISCV_EXCP_U_ECALL);
                 gen_exit_tb_no_chaining(dc->base.tb);
-                dc->base.is_jmp = BS_BRANCH;
+                dc->base.is_jmp = DISAS_BRANCH;
                 break;
             case 0x1: /* EBREAK */
                 generate_exception(dc, RISCV_EXCP_BREAKPOINT);
                 gen_exit_tb_no_chaining(dc->base.tb);
-                dc->base.is_jmp = BS_BRANCH;
+                dc->base.is_jmp = DISAS_BRANCH;
                 break;
             case 0x2: /* URET */
                 kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
@@ -1842,7 +1840,7 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2,
             case 0x2: /* SRET */
                 gen_helper_sret(cpu_pc, cpu_env, cpu_pc);
                 gen_exit_tb_no_chaining(dc->base.tb);
-                dc->base.is_jmp = BS_BRANCH;
+                dc->base.is_jmp = DISAS_BRANCH;
                 break;
             case 0x4: /* SFENCE.VM */
                 gen_helper_tlb_flush(cpu_env);
@@ -1851,7 +1849,7 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2,
                 tcg_gen_movi_tl(cpu_pc, dc->npc);
                 gen_helper_wfi(cpu_env);
                 gen_exit_tb_no_chaining(dc->base.tb);
-                dc->base.is_jmp = BS_BRANCH;
+                dc->base.is_jmp = DISAS_BRANCH;
                 break;
             default:
                 kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
@@ -1868,7 +1866,7 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2,
         case 0x18: /* MRET */
             gen_helper_mret(cpu_pc, cpu_env, cpu_pc);
             gen_exit_tb_no_chaining(dc->base.tb);
-            dc->base.is_jmp = BS_BRANCH;
+            dc->base.is_jmp = DISAS_BRANCH;
             break;
         case 0x3d: /* DRET */
             kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
@@ -1919,7 +1917,7 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2,
         /* end tb since we may be changing priv modes, to get mmu_index right */
         tcg_gen_movi_tl(cpu_pc, dc->npc);
         gen_exit_tb_no_chaining(dc->base.tb);
-        dc->base.is_jmp = BS_BRANCH;
+        dc->base.is_jmp = DISAS_BRANCH;
 
         tcg_temp_free(source1);
         tcg_temp_free(csr_store);
@@ -4702,7 +4700,7 @@ static int disas_insn(CPUState *env, DisasContext *dc)
 
             gen_set_label(exit_tb_label);
             gen_exit_tb_no_chaining(dc->base.tb);
-            dc->base.is_jmp = BS_BRANCH;
+            dc->base.is_jmp = DISAS_BRANCH;
 
             tcg_temp_free_i64(id);
             tcg_temp_free_i64(opcode);
@@ -4783,14 +4781,15 @@ uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)
 {
     DisasContext *dc = (DisasContext *)base;
     switch (dc->base.is_jmp) {
-    case BS_NONE:     /* handle end of page - DO NOT CHAIN. See gen_goto_tb. */
+    case DISAS_NONE:     /* handle end of page - DO NOT CHAIN. See gen_goto_tb. */
         gen_sync_pc(dc);
         gen_exit_tb_no_chaining(dc->base.tb);
         break;
-    case BS_STOP:
+    case DISAS_NEXT:
+    case DISAS_STOP:
         gen_goto_tb(dc, 0, dc->base.pc);
         break;
-    case BS_BRANCH:     /* ops using BS_BRANCH generate own exit seq */
+    case DISAS_BRANCH:     /* ops using DISAS_BRANCH generate own exit seq */
         break;
     }
     return 0;

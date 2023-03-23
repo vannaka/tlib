@@ -33,7 +33,7 @@ static inline void require_vec(CPUState *env)
  * Adapted from Spike's processor_t::vectorUnit_t::set_vl
  */
 target_ulong helper_vsetvl(CPUState *env, target_ulong rd, target_ulong rs1,
-                           target_ulong rs1_pass, target_ulong rs2_pass,
+                           target_ulong rs1_value, target_ulong new_vtype_value,
                            uint32_t is_rs1_imm)
 {
     require_vec(env);
@@ -41,26 +41,26 @@ target_ulong helper_vsetvl(CPUState *env, target_ulong rd, target_ulong rs1,
     target_ulong prev_csr_vl = env->vl;
     target_ulong vlen = env->vlenb * 8;
 
-    env->vtype = rs2_pass;
-    env->vsew = 1 << (GET_VTYPE_VSEW(rs2_pass) + 3);
-    env->vlmul = GET_VTYPE_VLMUL(rs2_pass);
+    env->vtype = new_vtype_value;
+    env->vsew = 1 << (GET_VTYPE_VSEW(new_vtype_value) + 3);
+    env->vlmul = GET_VTYPE_VLMUL(new_vtype_value);
     int8_t vlmul = (int8_t)(env->vlmul << 5) >> 5;
     env->vflmul = vlmul >= 0 ? 1 << vlmul : 1.0 / (1 << -vlmul);
     env->vlmax = (target_ulong)(vlen / env->vsew * env->vflmul);
-    env->vta = GET_VTYPE_VTA(rs2_pass);
-    env->vma = GET_VTYPE_VMA(rs2_pass);
+    env->vta = GET_VTYPE_VTA(new_vtype_value);
+    env->vma = GET_VTYPE_VMA(new_vtype_value);
 
     float ceil_vfmul = MIN(env->vflmul, 1.0f);
     env->vill = !(env->vflmul >= 0.125 && env->vflmul <= 8)
            || env->vsew > (ceil_vfmul * env->elen)
-           || (rs2_pass >> 8) != 0;
+           || (new_vtype_value >> 8) != 0;
 
     if (env->vill) {
         env->vtype |= ((target_ulong)1) << (TARGET_LONG_BITS - 1);
         env->vlmax = 0;
     }
     if (is_rs1_imm == 1) {  // vsetivli
-        env->vl = MIN(rs1_pass, env->vlmax);
+        env->vl = MIN(rs1_value, env->vlmax);
     } else if (env->vlmax == 0) {  // AVL encoding for vsetvl and vsetvli
         env->vl = 0;
     } else if (rd == 0 && rs1 == 0) {
@@ -69,7 +69,7 @@ target_ulong helper_vsetvl(CPUState *env, target_ulong rd, target_ulong rs1,
     } else if (rs1 == 0 && rd != 0) {
         env->vl = env->vlmax;
     } else {  // Normal stripmining (rs1 != 0)
-        env->vl = MIN(rs1_pass, env->vlmax);
+        env->vl = MIN(rs1_value, env->vlmax);
     }
     env->vstart = 0;
     return env->vl;

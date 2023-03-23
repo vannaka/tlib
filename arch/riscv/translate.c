@@ -1933,61 +1933,65 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2,
 #if HOST_LONG_BITS != 32
 static void gen_v_cfg(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2, int imm)
 {
-    TCGv source1, source2, csr_store, dest, rd_pass, rs1_pass, rs2_pass, imm_rs1, vec_imm;
-    source1 = tcg_temp_new();
-    source2 = tcg_temp_new();
-    csr_store = tcg_temp_new();
-    dest = tcg_temp_new();
-    rs1_pass = tcg_temp_new();
-    rs2_pass = tcg_temp_new();
-    rd_pass = tcg_temp_new();
-    imm_rs1 = tcg_temp_new();
-    vec_imm = tcg_temp_new();
-    gen_get_gpr(source1, rs1);
-    gen_get_gpr(source2, rs2);
-    gen_sync_pc(dc);
-    tcg_gen_movi_tl(rs1_pass, rs1);
-    tcg_gen_movi_tl(rs2_pass, rs2);
-    tcg_gen_movi_tl(rd_pass, rd);
-    tcg_gen_movi_tl(imm_rs1, rs1);
-    tcg_gen_movi_tl(csr_store, CSR_VL);
+    TCGv rs1_value, rs2_value, zimm, returned_vl, rd_index, rs1_index, rs1_is_uimm;
 
-    if (opc == OPC_RISC_VSETIVLI) {
-        tcg_gen_movi_i32(vec_imm, 1);
-    } else {
-        tcg_gen_movi_i32(vec_imm, 0);
+    zimm = tcg_temp_new();
+    rd_index = tcg_temp_new();
+    rs1_index = tcg_temp_new();
+    rs1_value = tcg_temp_new();
+    rs2_value = tcg_temp_new();
+
+    if(opc == OPC_RISC_VSETIVLI) {
+        // in vsetivli the imm field is [9:0] rather than [11:0]
+        imm = imm & ((1 << 10) - 1);
     }
+    else if(opc == OPC_RISC_VSETVLI_0 || opc == OPC_RISC_VSETVLI_1) {
+        // in vsetvli the imm field is [10:0] rather than [11:0]
+        imm = imm & ((1 << 11) - 1);
+    }
+
+
+    tcg_gen_movi_tl(rd_index, rd);
+    tcg_gen_movi_tl(rs1_index, rs1);
+    tcg_gen_movi_tl(zimm, imm);
+    gen_get_gpr(rs1_value, rs1);
+    gen_get_gpr(rs2_value, rs2);
+
+    rs1_is_uimm = tcg_temp_new();
+    if (opc == OPC_RISC_VSETIVLI) {
+        tcg_gen_movi_i32(rs1_is_uimm, 1);
+    } else {
+        tcg_gen_movi_i32(rs1_is_uimm, 0);
+    }
+
+    gen_sync_pc(dc);
+    returned_vl = tcg_temp_new();
 
     switch (opc) {
         case OPC_RISC_VSETVL:
-            gen_helper_vsetvl(dest, cpu_env, rd_pass, imm_rs1, source1, source2,
-                              vec_imm);
+            gen_helper_vsetvl(returned_vl, cpu_env, rd_index, rs1_index, rs1_value, rs2_value,
+                              rs1_is_uimm);
             break;
         case OPC_RISC_VSETVLI_0:
-            gen_helper_vsetvl(dest, cpu_env, rd_pass, imm_rs1, source1, rs2_pass,
-                              vec_imm);
-            break;
         case OPC_RISC_VSETVLI_1:
-            gen_helper_vsetvl(dest, cpu_env, rd_pass, imm_rs1, source1, rs2_pass,
-                              vec_imm);
+            gen_helper_vsetvl(returned_vl, cpu_env, rd_index, rs1_index, rs1_value, zimm,
+                              rs1_is_uimm);
             break;
         case OPC_RISC_VSETIVLI:
-            gen_helper_vsetvl(dest, cpu_env, rd_pass, imm_rs1, rs1_pass, rs2_pass,
-                              vec_imm);
+            gen_helper_vsetvl(returned_vl, cpu_env, rd_index, rs1_index, rs1_index, zimm,
+                              rs1_is_uimm);
             break;
         default:
             kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
             break;
     }
-    gen_set_gpr(rd, dest);
-    tcg_temp_free(source1);
-    tcg_temp_free(source2);
-    tcg_temp_free(csr_store);
-    tcg_temp_free(dest);
-    tcg_temp_free(rs1_pass);
-    tcg_temp_free(rs2_pass);
-    tcg_temp_free(imm_rs1);
-    tcg_temp_free(vec_imm);
+    gen_set_gpr(rd, returned_vl);
+
+    tcg_temp_free(rs1_value);
+    tcg_temp_free(rs2_value);
+    tcg_temp_free(returned_vl);
+    tcg_temp_free(rs1_index);
+    tcg_temp_free(rs1_is_uimm);
 }
 
 static void gen_v_opivv(DisasContext *dc, uint8_t funct6, int vd, int vs1, int vs2, uint8_t vm)

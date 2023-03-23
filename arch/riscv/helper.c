@@ -387,11 +387,6 @@ void do_interrupt(CPUState *env)
         return;
     }
 
-    if (env->exception_index == RISCV_EXCP_BREAKPOINT) {
-        set_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
-        return;
-    }
-
     if(env->interrupt_begin_callback_enabled) {
         tlib_on_interrupt_begin(env->exception_index);
     }

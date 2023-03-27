@@ -544,17 +544,9 @@ bool fiq_masked(CPUState *env, uint32_t target_el, bool superpriority, bool igno
     return interrupt_masked(pstate_f, sctlr_nmi, allintmask, superpriority);
 }
 
-int process_interrupt_v8a(int interrupt_request, CPUState *env)
+#define IRQ_IGNORED UINT32_MAX
+uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, uint64_t hcr_el2)
 {
-    // TODO: Should 'process_interrupt' even be called with EXITTB?
-    if (interrupt_request & CPU_INTERRUPT_EXITTB) {
-        // This is a special case that'll be handled later.
-        return 0;
-    }
-
-    uint32_t current_el = arm_current_el(env);
-    uint32_t target_el = 0;
-
     tlib_assert(current_el <= 3);
 
     // Establishing the target Exception level of an asynchronous exception (ARMv8-A manual's rule NMMXK).
@@ -568,28 +560,27 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
             // TODO: Implement AArch32 exception handling or at least implement AArch32 exception masking and abort if unmasked.
             tlib_printf(LOG_LEVEL_DEBUG,
                         "Ignoring IRQ request that should be handled at the FIQ/IRQ/Abort mode (unless masked). AArch32 exceptions aren't currently supported.");
-            return 0;
+            return IRQ_IGNORED;
         case 2:
             // Not applicable
-            tlib_abortf("Invalid SCR_EL3 (0x%x) state for an EL2 interrupt", env->cp15.scr_el3);
+            tlib_abortf("Invalid SCR_EL3 (0x%" PRIx64 ") state for an EL2 interrupt", scr_el3);
             break;
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(0, 0, 0, 0, 0, 1)) {
         switch (current_el) {
         case 0:
         case 1:
-            target_el = 1;
-            break;
+            return 1;
         case 2:
             // Not applicable
-            tlib_abortf("Invalid SCR_EL3 (0x%x) for an EL2 interrupt", env->cp15.scr_el3);
+            tlib_abortf("Invalid SCR_EL3 (0x%" PRIx64 ") for an EL2 interrupt", scr_el3);
             break;
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
         // TODO: does all EA, IRQ, FIQ needs to be set at single time
         // or only one of them, depending on irq type needs to be set?
@@ -598,11 +589,10 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
         case 0:
         case 1:
         case 3:
-            target_el = 3;
-            break;
+            return 3;
         case 2:
             // Not applicable
-            tlib_abortf("Invalid SCR_EL3 (0x%x) for an EL2 interrupt", env->cp15.scr_el3);
+            tlib_abortf("Invalid SCR_EL3 (0x%" PRIx64 ") for an EL2 interrupt", scr_el3);
             break;
         }
     } else if (check_scr_el3(0, 1, 0, 0, 0, -1) && check_hcr_el2(0, 0, 0, 0, 0, 0)) {
@@ -612,33 +602,31 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
             // TODO: Implement AArch32 exception handling or at least implement AArch32 exception masking and abort if unmasked.
             tlib_printf(LOG_LEVEL_DEBUG,
                         "Ignoring IRQ request that should be handled at the FIQ/IRQ/Abort mode (unless masked). AArch32 exceptions aren't currently supported.");
-            return 0;
+            return IRQ_IGNORED;
         case 2:
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(0, 1, 0, 0, 0, -1) && check_hcr_el2(0, 0, 0, 0, 0, 1)) {
         switch (current_el) {
         case 0:
         case 1:
-            target_el = 1;
-            break;
+            return 1;
         case 2:
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(0, 1, 0, 0, 0, -1) && check_hcr_el2(0, 0, 0, 0, 1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
-            target_el = 1;
-            break;
+            return 1;
         case 2:
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     // TODO: does all AMO, IMO, FMO needs to be set at single time
     // or only one of them?
@@ -647,26 +635,23 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
         case 0:
         case 1:
         case 2:
-            target_el = 2;
-            break;
+            return 2;
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(0, 1, 0, 0, 0, -1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 2:
-            target_el = 2;
-            break;
+            return 2;
         case 1:
             // Not applicable
-            tlib_abortf("Invalid SCR_EL3 (0x%x) and HCR_EL2 (0x%x) for an EL1 interrupt", env->cp15.scr_el3,
-                        arm_hcr_el2_eff(env));
+            tlib_abortf("Invalid SCR_EL3 (0x%" PRIx64 ") and HCR_EL2 (0x%" PRIx64 ") for an EL1 interrupt", scr_el3, hcr_el2);
             break;
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     // TODO: does all EA, IRQ, FIQ needs to be set at single time
     // or only one of them, depending on irq type needs to be set?
@@ -676,20 +661,17 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
         case 1:
         case 2:
         case 3:
-            target_el = 3;
-            break;
+            return 3;
         }
     } else if (check_scr_el3(0, 1, 1, 1, 1, -1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 2:
         case 3:
-            target_el = 3;
-            break;
+            return 3;
         case 1:
             // Not applicable
-            tlib_abortf("Invalid SCR_EL3 (0x%x) and HCR_EL2 (0x%x) for an EL1 interrupt", env->cp15.scr_el3,
-                        arm_hcr_el2_eff(env));
+            tlib_abortf("Invalid SCR_EL3 (0x%" PRIx64 ") and HCR_EL2 (0x%" PRIx64 ") for an EL1 interrupt", scr_el3, hcr_el2);
             break;
         }
     } else if (check_scr_el3(1, -1, 0, 0, 0, 0) && check_hcr_el2(0, 0, 0, 0, -1, -1)) {
@@ -699,15 +681,15 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
             // TODO: Implement AArch32 exception handling or at least implement AArch32 exception masking and abort if unmasked.
             tlib_printf(LOG_LEVEL_DEBUG,
                         "Ignoring IRQ request that should be handled at the FIQ/IRQ/Abort mode (unless masked). AArch32 exceptions aren't currently supported.");
-            return 0;
+            return IRQ_IGNORED;
         case 2:
             // TODO: Implement AArch32 exception handling or at least implement AArch32 exception masking and abort if unmasked.
             tlib_printf(LOG_LEVEL_DEBUG,
                         "Ignoring IRQ request that should be handled at the HYP mode (unless masked). AArch32 exceptions aren't currently supported.");
-            return 0;
+            return IRQ_IGNORED;
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(1, -1, 0, 0, 0, 0) && check_hcr_el2(0, 1, 1, 1, -1, -1)) {
         switch (current_el) {
@@ -717,10 +699,10 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
             // TODO: Implement AArch32 exception handling or at least implement AArch32 exception masking and abort if unmasked.
             tlib_printf(LOG_LEVEL_DEBUG,
                         "Ignoring IRQ request that should be handled at the HYP mode (unless masked). AArch32 exceptions aren't currently supported.");
-            return 0;
+            return IRQ_IGNORED;
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(1, -1, 0, 0, 0, 0) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
@@ -729,15 +711,14 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
             // TODO: Implement AArch32 exception handling or at least implement AArch32 exception masking and abort if unmasked.
             tlib_printf(LOG_LEVEL_DEBUG,
                         "Ignoring IRQ request that should be handled at the HYP mode (unless masked). AArch32 exceptions aren't currently supported.");
-            return 0;
+            return IRQ_IGNORED;
         case 1:
             // Not applicable
-            tlib_abortf("Invalid SCR_EL3 (0x%x) and HCR_EL2 (0x%x) for an EL1 interrupt", env->cp15.scr_el3,
-                        arm_hcr_el2_eff(env));
+            tlib_abortf("Invalid SCR_EL3 (0x%" PRIx64 ") and HCR_EL2 (0x%" PRIx64 ") for an EL1 interrupt", scr_el3, hcr_el2);
             break;
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(1, -1, 0, 0, 0, 1) && check_hcr_el2(0, 0, 0, 0, 0, 0)) {
         switch (current_el) {
@@ -746,59 +727,54 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
             // TODO: Implement AArch32 exception handling or at least implement AArch32 exception masking and abort if unmasked.
             tlib_printf(LOG_LEVEL_DEBUG,
                         "Ignoring IRQ request that should be handled at the FIQ mode (unless masked). AArch32 exceptions aren't currently supported.");
-            return 0;
+            return IRQ_IGNORED;
         case 2:
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(1, -1, 0, 0, 0, 1) && check_hcr_el2(0, 0, 0, 0, 0, 1)) {
         switch (current_el) {
         case 0:
         case 1:
-            target_el = 1;
-            break;
+            return 1;
         case 2:
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(1, -1, 0, 0, 0, 1) && check_hcr_el2(0, 0, 0, 0, 1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
-            target_el = 1;
-            break;
+            return 1;
         case 2:
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(1, -1, 0, 0, 0, 1) && check_hcr_el2(0, 1, 1, 1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
         case 2:
-            target_el = 2;
-            break;
+            return 2;
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(1, -1, 0, 0, 0, 1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 2:
-            target_el = 2;
-            break;
+            return 2;
         case 1:
             // Not applicable
-            tlib_abortf("Invalid SCR_EL3 (0x%x) and HCR_EL2 (0x%x) for an EL1 interrupt", env->cp15.scr_el3,
-                        arm_hcr_el2_eff(env));
+            tlib_abortf("Invalid SCR_EL3 (0x%" PRIx64 ") and HCR_EL2 (0x%" PRIx64 ") for an EL1 interrupt", scr_el3, hcr_el2);
             break;
         case 3:
             // interrupt not taken and ignored, just return
-            return 0;
+            return IRQ_IGNORED;
         }
     } else if (check_scr_el3(1, -1, 1, 1, 1, -1) && check_hcr_el2(0, -1, -1, -1, -1, -1)) {
         switch (current_el) {
@@ -806,29 +782,50 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
         case 1:
         case 2:
         case 3:
-            target_el = 3;
-            break;
+            return 3;
         }
     } else if (check_scr_el3(1, -1, 1, 1, 1, -1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 2:
         case 3:
-            target_el = 3;
-            break;
+            return 3;
         case 1:
             // Not applicable
-            tlib_abortf("Invalid SCR_EL3 (0x%x) and HCR_EL2 (0x%x) for an EL1 interrupt", env->cp15.scr_el3,
-                        arm_hcr_el2_eff(env));
+            tlib_abortf("Invalid SCR_EL3 (0x%" PRIx64 ") and HCR_EL2 (0x%" PRIx64 ") for an EL1 interrupt", scr_el3, hcr_el2);
             break;
         }
     } else {
         tlib_abortf("Unexpected register state in process_interrupt!");
     }
+    tlib_assert_not_reached();
+}
 
-    if (target_el == 0) {
-        tlib_abortf("process_interrupt: invalid target_el!");
+int process_interrupt_v8a(int interrupt_request, CPUState *env)
+{
+    // CPU_INTERRUPT_EXITTB is handled in arch-independent code.
+    if (interrupt_request & CPU_INTERRUPT_EXITTB) {
+        return 0;
     }
+
+    uint32_t current_el = arm_current_el(env);
+    uint32_t target_el = 1;
+
+    bool el2_enabled = arm_feature(env, ARM_FEATURE_EL2);
+    bool el3_enabled = arm_feature(env, ARM_FEATURE_EL3);
+    if (el2_enabled || el3_enabled) {
+        // TODO: Fix 'establish_interrupts_target_el' so that such a case is handled properly.
+        if (!el2_enabled || !el3_enabled) {
+            tlib_printf(LOG_LEVEL_WARNING, "IRQ processing might not work properly with only one of EL2/EL3 enabled.");
+        }
+
+        target_el = establish_interrupts_target_el(current_el, env->cp15.scr_el3, arm_hcr_el2_eff(env));
+
+        if (target_el == IRQ_IGNORED) {
+            return 0;
+        }
+    }
+
     // ARMv8-A manual's rule LMWZH
     if (is_a64(env) && target_el < current_el) {
         // mask interrupt

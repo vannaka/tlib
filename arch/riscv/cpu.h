@@ -314,6 +314,11 @@ static inline void set_default_mstatus()
     }
 }
 
+static inline int supported_fpu_extensions_count(CPUState *env)
+{
+    return !!riscv_has_ext(env, RISCV_FEATURE_RVF) + !!riscv_has_ext(env, RISCV_FEATURE_RVD);
+}
+
 #define GET_VTYPE_VLMUL(inst)    extract32(inst, 0, 3)
 #define GET_VTYPE_VSEW(inst)     extract32(inst, 3, 3)
 #define GET_VTYPE_VTA(inst)      extract32(inst, 6, 1)

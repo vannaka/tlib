@@ -830,7 +830,7 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
         tlib_abortf("process_interrupt: invalid target_el!");
     }
     // ARMv8-A manual's rule LMWZH
-    if (arm_el_is_aa64(env, current_el) && target_el < current_el) {
+    if (is_a64(env) && target_el < current_el) {
         // mask interrupt
         return 0;
     }

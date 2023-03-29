@@ -9,6 +9,33 @@
 #include "system_registers.h"
 #include "../../unwind.h"
 
+uint32_t tlib_check_system_register_access(const char *name, bool is_write)
+{
+    enum {
+        REGISTER_NOT_FOUND = 1,
+        ACCESSOR_NOT_FOUND = 2,
+        ACCESS_VALID       = 3,
+    };
+
+    const ARMCPRegInfo *ri = sysreg_find_by_name(env, name);
+    if (ri == NULL) {
+        return REGISTER_NOT_FOUND;
+    }
+
+    if (ri->fieldoffset) {
+        return ACCESS_VALID;
+    }
+
+    if (is_write) {
+        bool write_possible = ri->writefn != NULL;
+        return write_possible ? ACCESS_VALID : ACCESSOR_NOT_FOUND;
+    } else {
+        bool read_possible = (ri->readfn != NULL) || (ri->type & ARM_CP_CONST);
+        return read_possible ? ACCESS_VALID : ACCESSOR_NOT_FOUND;
+    }
+}
+EXC_INT_2(uint32_t, tlib_check_system_register_access, const char *, name, bool, is_write)
+
 uint32_t tlib_get_current_el()
 {
     return arm_current_el(cpu);

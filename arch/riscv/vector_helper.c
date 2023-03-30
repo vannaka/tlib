@@ -21,7 +21,7 @@
 static inline void require_vec(CPUState *env)
 {
     if (!(env->mstatus & MSTATUS_VS)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
 }
 
@@ -79,7 +79,7 @@ void helper_vmv_ivi(CPUState *env, uint32_t vd, target_long imm)
 {
     const target_ulong eew = env->vsew;
     if (V_IDX_INVALID(vd)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     for (int ei = env->vstart; ei < env->vl; ++ei) {
         switch (eew) {
@@ -96,7 +96,7 @@ void helper_vmv_ivi(CPUState *env, uint32_t vd, target_long imm)
             ((int64_t *)V(vd))[ei] = imm;
             break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -106,7 +106,7 @@ void helper_vmv_ivv(CPUState *env, uint32_t vd, int32_t vs1)
 {
     const target_ulong eew = env->vsew;
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs1)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     for (int i = env->vstart; i < env->vl; ++i) {
         switch (eew) {
@@ -123,7 +123,7 @@ void helper_vmv_ivv(CPUState *env, uint32_t vd, int32_t vs1)
             ((uint64_t *)V(vd))[i] = ((uint64_t *)V(vs1))[i];
             break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -132,7 +132,7 @@ void helper_vmv_ivv(CPUState *env, uint32_t vd, int32_t vs1)
 void helper_vmerge_ivv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int ei = env->vstart; ei < env->vl; ++ei) {
@@ -151,7 +151,7 @@ void helper_vmerge_ivv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
             ((int64_t *)V(vd))[ei] = mask ? ((int64_t *)V(vs2))[ei] : ((int64_t *)V(vs1))[ei];
             break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -160,7 +160,7 @@ void helper_vmerge_ivv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 void helper_vmerge_ivi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int ei = env->vstart; ei < env->vl; ++ei) {
@@ -179,7 +179,7 @@ void helper_vmerge_ivi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
             ((int64_t *)V(vd))[ei] = mask ? ((int64_t *)V(vs2))[ei] : rs1;
             break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -188,24 +188,24 @@ void helper_vmerge_ivi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 void helper_vfmerge_vfm(CPUState *env, uint32_t vd, uint32_t vs2, uint64_t f1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     switch (eew) {
     case 32:
         if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             return;
         }
         break;
     case 64:
         if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             return;
         }
         break;
     default:
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
         return;
     }
     for (int ei = 0; ei < env->vl; ++ei) {
@@ -224,7 +224,7 @@ void helper_vfmerge_vfm(CPUState *env, uint32_t vd, uint32_t vs2, uint64_t f1)
 void helper_vcompress_mvv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 {
     if (env->vstart != 0 || V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     int di = 0;
@@ -246,7 +246,7 @@ void helper_vcompress_mvv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
             ((uint64_t *)V(vd))[di] = ((uint64_t *)V(vs2))[i];
             break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
         di += 1;
@@ -256,7 +256,7 @@ void helper_vcompress_mvv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 void helper_vadc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -275,7 +275,7 @@ void helper_vadc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
             ((uint64_t *)V(vd))[i] = ((uint64_t *)V(vs2))[i] + ((uint64_t *)V(vs1))[i] + carry;
             break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -284,7 +284,7 @@ void helper_vadc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 void helper_vmadc_vv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 {
     if (V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -319,7 +319,7 @@ void helper_vmadc_vv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
                 break;
             }
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -328,7 +328,7 @@ void helper_vmadc_vv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 void helper_vmadc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 {
     if (V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -364,7 +364,7 @@ void helper_vmadc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
                 break;
             }
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -373,7 +373,7 @@ void helper_vmadc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 void helper_vsbc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -392,7 +392,7 @@ void helper_vsbc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
             ((uint64_t *)V(vd))[i] = ((uint64_t *)V(vs2))[i] - ((uint64_t *)V(vs1))[i] - borrow;
             break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -401,7 +401,7 @@ void helper_vsbc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 void helper_vmsbc_vv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 {
     if (V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -428,7 +428,7 @@ void helper_vmsbc_vv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
                 break;
             }
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -437,7 +437,7 @@ void helper_vmsbc_vv(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 void helper_vmsbc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 {
     if (V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -473,7 +473,7 @@ void helper_vmsbc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
                 break;
             }
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -482,7 +482,7 @@ void helper_vmsbc_vvm(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 void helper_vadc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -501,7 +501,7 @@ void helper_vadc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
             ((uint64_t *)V(vd))[i] = ((uint64_t *)V(vs2))[i] + (int64_t)rs1 + carry;
             break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -510,7 +510,7 @@ void helper_vadc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 void helper_vmadc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 {
     if (V_IDX_INVALID(vs2)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -545,7 +545,7 @@ void helper_vmadc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
                 break;
             }
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -554,7 +554,7 @@ void helper_vmadc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 void helper_vmadc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 {
     if (V_IDX_INVALID(vs2)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -590,7 +590,7 @@ void helper_vmadc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
                 break;
             }
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -599,7 +599,7 @@ void helper_vmadc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 void helper_vsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 {
     if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -618,7 +618,7 @@ void helper_vsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
             ((uint64_t *)V(vd))[i] = ((uint64_t *)V(vs2))[i] - (int64_t)rs1 - borrow;
             break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -627,7 +627,7 @@ void helper_vsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 void helper_vmsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 {
     if (V_IDX_INVALID(vs2)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -654,7 +654,7 @@ void helper_vmsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
                 break;
             }
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -663,7 +663,7 @@ void helper_vmsbc_vi(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 void helper_vmsbc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
 {
     if (V_IDX_INVALID(vs2)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     for (int i = 0; i < env->vl; ++i) {
@@ -695,7 +695,7 @@ void helper_vmsbc_vim(CPUState *env, uint32_t vd, int32_t vs2, target_long rs1)
                 break;
             }
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -714,7 +714,7 @@ target_long helper_vmv_xs(CPUState *env, int32_t vs2)
     case 64:
         return ((int64_t *)V(vs2))[0];
     default:
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
         return 0;
     }
 }
@@ -737,7 +737,7 @@ void helper_vmv_sx(CPUState *env, uint32_t vd, target_long rs1)
             ((int64_t *)V(vd))[0] = rs1;
             break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
         }
     }
@@ -747,7 +747,7 @@ void helper_vmv1r_v(CPUState *env, uint32_t vd, uint32_t vs2)
 {
     const uint8_t emul = 0;
     if (V_IDX_INVALID_EMUL(vd, emul) || V_IDX_INVALID_EMUL(vs2, emul)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     memcpy(V(vd), V(vs2), env->vlenb << emul);
 }
@@ -756,7 +756,7 @@ void helper_vmv2r_v(CPUState *env, uint32_t vd, uint32_t vs2)
 {
     const uint8_t emul = 1;
     if (V_IDX_INVALID_EMUL(vd, emul) || V_IDX_INVALID_EMUL(vs2, emul)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     memcpy(V(vd), V(vs2), env->vlenb << emul);
 }
@@ -765,7 +765,7 @@ void helper_vmv4r_v(CPUState *env, uint32_t vd, uint32_t vs2)
 {
     const uint8_t emul = 2;
     if (V_IDX_INVALID_EMUL(vd, emul) || V_IDX_INVALID_EMUL(vs2, emul)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     memcpy(V(vd), V(vs2), env->vlenb << emul);
 }
@@ -774,7 +774,7 @@ void helper_vmv8r_v(CPUState *env, uint32_t vd, uint32_t vs2)
 {
     const uint8_t emul = 3;
     if (V_IDX_INVALID_EMUL(vd, emul) || V_IDX_INVALID_EMUL(vs2, emul)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     memcpy(V(vd), V(vs2), env->vlenb << emul);
 }
@@ -824,7 +824,7 @@ static uint8_t bitcnt(uint8_t a)
 target_ulong helper_vpopc(CPUState *env, uint32_t vs2)
 {
     if (env->vstart) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     target_ulong cnt = 0;
     int i = 0;
@@ -840,7 +840,7 @@ target_ulong helper_vpopc(CPUState *env, uint32_t vs2)
 target_ulong helper_vpopc_m(CPUState *env, uint32_t vs2)
 {
     if (env->vstart) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     target_ulong cnt = 0;
     int i = 0;
@@ -867,7 +867,7 @@ static target_long first_bit(uint8_t a)
 target_long helper_vfirst(CPUState *env, uint32_t vs2)
 {
     if (env->vstart) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     target_long tmp = -1;
     int i = 0;
@@ -886,7 +886,7 @@ target_long helper_vfirst(CPUState *env, uint32_t vs2)
 target_long helper_vfirst_m(CPUState *env, uint32_t vs2)
 {
     if (env->vstart) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     target_long tmp = -1;
     int i = 0;
@@ -911,7 +911,7 @@ static uint8_t set_before_first_bit(uint8_t a) {
 void helper_vmsbf(CPUState *env, uint32_t vd, uint32_t vs2)
 {
     if (env->vstart) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     target_long tmp = 0xff;
     int i = 0;
@@ -949,7 +949,7 @@ void helper_vmsbf(CPUState *env, uint32_t vd, uint32_t vs2)
 void helper_vmsbf_m(CPUState *env, uint32_t vd, uint32_t vs2)
 {
     if (env->vstart) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     target_long tmp = 0xff;
     int i = 0;
@@ -988,7 +988,7 @@ void helper_vmsbf_m(CPUState *env, uint32_t vd, uint32_t vs2)
 void helper_vmsif(CPUState *env, uint32_t vd, uint32_t vs2)
 {
     if (env->vstart) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     target_long tmp = 0xff;
     int i = 0;
@@ -1028,7 +1028,7 @@ void helper_vmsif(CPUState *env, uint32_t vd, uint32_t vs2)
 void helper_vmsif_m(CPUState *env, uint32_t vd, uint32_t vs2)
 {
     if (env->vstart) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     target_long tmp = 0xff;
     int i = 0;
@@ -1069,7 +1069,7 @@ void helper_vmsif_m(CPUState *env, uint32_t vd, uint32_t vs2)
 void helper_vmsof(CPUState *env, uint32_t vd, uint32_t vs2)
 {
     if (env->vstart) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     target_long tmp = 0xff;
     int i = 0;
@@ -1109,7 +1109,7 @@ void helper_vmsof(CPUState *env, uint32_t vd, uint32_t vs2)
 void helper_vmsof_m(CPUState *env, uint32_t vd, uint32_t vs2)
 {
     if (env->vstart) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     target_long tmp = 0xff;
     int i = 0;

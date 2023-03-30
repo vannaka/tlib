@@ -246,6 +246,14 @@ static inline int riscv_mstatus_fs(CPUState *env)
     return env->mstatus & MSTATUS_FS;
 }
 
+// It must be always inlined, because GETPC() macro must be called in the context of function that is directly invoked by generated code.
+static inline void __attribute__ ((always_inline,__noreturn__)) raise_exception_and_sync_pc(CPUState *env, uint32_t exception)
+{
+    uintptr_t pc = (uintptr_t)GETPC();
+    env->exception_index = exception;
+    cpu_loop_exit_restore(env, pc, 1);
+}
+
 void cpu_set_nmi(CPUState *env, int number);
 
 void cpu_reset_nmi(CPUState *env, int number);

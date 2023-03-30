@@ -86,12 +86,12 @@ if (rm == 7) {                                            \
     rm = env->frm;                                        \
 }                                                         \
 if (rm > 4) {                                             \
-    helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST); \
+    raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST); \
 }                                                         \
 ieee_rm[rm]; })
 
 #define require_fp if (!(env->mstatus & MSTATUS_FS)) { \
-    helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST); \
+    raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST); \
 }
 
 static inline float64 unbox_float32(CPUState *env, float64 value)
@@ -764,25 +764,25 @@ void helper_vfmv_vf(CPUState *env, uint32_t vd, uint64_t f1)
 {
     require_fp;
     if (V_IDX_INVALID(vd)) {
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;
     switch (eew) {
     case 32:
         if (!riscv_has_ext(env, RISCV_FEATURE_RVF)) {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             return;
         }
         f1 = unbox_float32(env, f1);
         break;
     case 64:
         if (!riscv_has_ext(env, RISCV_FEATURE_RVD)) {
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             return;
         }
         break;
     default:
-        helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+        raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
         return;
     }
     for (int ei = 0; ei < env->vl; ++ei) {
@@ -806,7 +806,7 @@ void helper_vfmv_fs(CPUState *env, int32_t vd, int32_t vs2)
         case 32:
            if (!riscv_has_ext(env, RISCV_FEATURE_RVF))
            {
-               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
                break;
            }
            uint64_t nanbox_mask =  ((uint64_t) -1) << 32;
@@ -815,13 +815,13 @@ void helper_vfmv_fs(CPUState *env, int32_t vd, int32_t vs2)
         case 64:
            if (!riscv_has_ext(env, RISCV_FEATURE_RVD))
            {
-               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
                break;
            }
            env->fpr[vd] = ((uint64_t *)V(vs2))[0];
            break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
     }
 }
@@ -838,7 +838,7 @@ void helper_vfmv_sf(CPUState *env, uint32_t vd, float64 rs1)
         case 32:
            if (!riscv_has_ext(env, RISCV_FEATURE_RVF))
            {
-               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
                break;
            }
            ((int32_t *)V(vd))[0] = unbox_float32(env, rs1);
@@ -846,13 +846,13 @@ void helper_vfmv_sf(CPUState *env, uint32_t vd, float64 rs1)
         case 64:
            if (!riscv_has_ext(env, RISCV_FEATURE_RVD))
            {
-               helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+               raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
                break;
            }
            ((int64_t *)V(vd))[0] = rs1;
            break;
         default:
-            helper_raise_exception(env, RISCV_EXCP_ILLEGAL_INST);
+            raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
             break;
     }
 }

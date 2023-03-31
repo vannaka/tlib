@@ -82,7 +82,7 @@ void handle_mmu_fault_v8(CPUState *env, target_ulong address, int access_type, b
     bool same_el = target_el == arm_current_el(env);
 
     uint32_t exception_type;
-    uint64_t syndrome;
+    uint64_t syndrome = 0;
     if (access_type == ACCESS_INST_FETCH) {
         exception_type = EXCP_PREFETCH_ABORT;
 

@@ -399,6 +399,12 @@ static inline bool regime_has_2_ranges(ARMMMUIdx idx)
     }
 }
 
+static inline void set_el_features(CPUState *env, bool el2_enabled, bool el3_enabled)
+{
+    env->features = deposit64(env->features, ARM_FEATURE_EL2, 1, el2_enabled);
+    env->features = deposit64(env->features, ARM_FEATURE_EL3, 1, el3_enabled);
+}
+
 static inline uint32_t tb_cflags(TranslationBlock *tb)
 {
     return tb->cflags;

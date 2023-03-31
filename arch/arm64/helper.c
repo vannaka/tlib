@@ -84,9 +84,10 @@ void cpu_init_a75_a76(CPUState *env, uint32_t id)
     set_feature(env, ARM_FEATURE_NEON);
     set_feature(env, ARM_FEATURE_GENERIC_TIMER);
     set_feature(env, ARM_FEATURE_CBAR_RO);
-    set_feature(env, ARM_FEATURE_EL2);
-    set_feature(env, ARM_FEATURE_EL3);
     set_feature(env, ARM_FEATURE_PMU);
+
+    env->arm_core_config->has_el2 = true;
+    env->arm_core_config->has_el3 = true;
 
     // From B2.4 AArch64 registers
     env->arm_core_config->clidr = 0x82000023;
@@ -163,9 +164,10 @@ void cpu_init_a53(CPUState *env, uint32_t id)
     set_feature(env, ARM_FEATURE_NEON);
     set_feature(env, ARM_FEATURE_GENERIC_TIMER);
     set_feature(env, ARM_FEATURE_CBAR_RO);
-    set_feature(env, ARM_FEATURE_EL2);
-    set_feature(env, ARM_FEATURE_EL3);
     set_feature(env, ARM_FEATURE_PMU);
+
+    env->arm_core_config->has_el2 = true;
+    env->arm_core_config->has_el3 = true;
 
     env->arm_core_config->clidr = 0x0A200023;
     env->arm_core_config->ctr = 0x84448004;
@@ -240,6 +242,8 @@ static void cpu_init_core_config(CPUState *env, uint32_t id)
         cpu_abort(env, "Bad CPU ID: %x\n", id);
         break;
     }
+
+    set_el_features(env, env->arm_core_config->has_el2, env->arm_core_config->has_el3);
 }
 
 void cpu_init_v8(CPUState *env, uint32_t id)

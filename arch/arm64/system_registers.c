@@ -46,11 +46,11 @@ static inline uint64_t get_id_aa64pfr0_value(CPUState *env)
 {
     uint64_t return_value = env->arm_core_config->isar.id_aa64pfr0;
 
-    if (!env->arm_core_config->has_el3) {
+    if (!arm_feature(env, ARM_FEATURE_EL3)) {
         return_value = FIELD_DP64(return_value, ID_AA64PFR0, EL3, 0);
     }
 
-    if (!env->arm_core_config->has_el2) {
+    if (!arm_feature(env, ARM_FEATURE_EL2)) {
         return_value = FIELD_DP64(return_value, ID_AA64PFR0, EL2, 0);
     }
 

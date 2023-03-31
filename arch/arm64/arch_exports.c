@@ -61,22 +61,12 @@ void tlib_set_available_els(bool el2_enabled, bool el3_enabled)
         return;
     }
 
-    if (el2_enabled) {
-        set_feature(cpu, ARM_FEATURE_EL2);
-    } else {
-        unset_feature(cpu, ARM_FEATURE_EL2);
-    }
+    set_el_features(cpu, el2_enabled, el3_enabled);
 
-    if (el3_enabled) {
-        set_feature(cpu, ARM_FEATURE_EL3);
-    } else {
-        unset_feature(cpu, ARM_FEATURE_EL3);
-    }
-
-    env->arm_core_config->has_el2 = el2_enabled;
-    env->arm_core_config->has_el3 = el3_enabled;
-
-    cpu_reset(cpu);
+    // Reset the Exception Level a CPU starts in.
+    uint32_t reset_el = arm_highest_el(cpu);
+    cpu->pstate = deposit32(cpu->pstate, 2, 2, reset_el);
+    arm_rebuild_hflags(cpu);
 }
 EXC_VOID_2(tlib_set_available_els, bool, el2_enabled, bool, el3_enabled)
 

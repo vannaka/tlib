@@ -212,17 +212,17 @@ static inline uint32_t syn_wfx(int cv, int cond, int ti, bool is_16bit)
 
 static inline uint32_t syn_aa64_hvc(uint32_t imm16)
 {
-    return syndrome32_create(SYN_EC_AA64_HVC, 0, imm16);
+    return syndrome32_create(SYN_EC_AA64_HVC, 1, imm16);
 }
 
 static inline uint32_t syn_aa64_smc(uint32_t imm16)
 {
-    return syndrome32_create(SYN_EC_AA64_SMC, 0, imm16);
+    return syndrome32_create(SYN_EC_AA64_SMC, 1, imm16);
 }
 
 static inline uint32_t syn_aa64_svc(uint32_t imm16)
 {
-    return syndrome32_create(SYN_EC_AA64_SVC, 0, imm16);
+    return syndrome32_create(SYN_EC_AA64_SVC, 1, imm16);
 }
 
 static inline uint32_t syn_aa64_bkpt(uint32_t comment)
@@ -247,7 +247,7 @@ static inline uint32_t syn_smetrap(uint32_t smtc, bool is_16bit)
 
 static inline uint32_t syn_sve_access_trap()
 {
-    return syndrome32_create(SYN_EC_TRAPPED_SVE, 0, 0);
+    return syndrome32_create(SYN_EC_TRAPPED_SVE, 1, 0);
 }
 
 static inline uint32_t syn_swstep(uint32_t param0, uint32_t isv, uint32_t ex)

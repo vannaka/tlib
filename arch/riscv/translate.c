@@ -75,6 +75,31 @@ static inline void kill_unknown(DisasContext *dc, int excp);
 #define CASE_OP_32_64(X) case X
 #endif
 
+// RISC-V User ISA, Release 2.2, section 1.2 Instruction Length Encoding
+static int decode_instruction_length(uint64_t opcode)
+{
+    int instruction_length = 0;
+    if ((opcode & 0b11) != 0b11) {
+        instruction_length = 2;
+    } else if ((opcode & 0b11100) != 0b11100) {
+        instruction_length = 4;
+    } else if ((opcode & 0b111111) == 0b011111) {
+        instruction_length = 6;
+    } else if ((opcode & 0b1111111) == 0b0111111) {
+        instruction_length = 8;
+    } else if (extract32(opcode, 12, 3) != 0b111) {
+        instruction_length = 10 + 2 * extract32(opcode, 12, 3);
+    } else {
+        // Reserved for >=192 bits, this function returns 0 in that case.
+    }
+    return instruction_length;
+}
+
+static inline uint64_t format_opcode(uint64_t opcode, int instruction_length)
+{
+    return opcode & (((typeof(opcode))1 << (8 * instruction_length)) - 1);
+}
+
 static int ensure_extension(DisasContext *dc, target_ulong ext)
 {
     if (riscv_has_ext(cpu, ext)) {
@@ -85,8 +110,9 @@ static int ensure_extension(DisasContext *dc, target_ulong ext)
         char letter = 0;
         riscv_features_to_string(ext, &letter, 1);
 
-        tlib_printf(LOG_LEVEL_ERROR, "RISC-V '%c' instruction set is not enabled for this CPU! PC: 0x%llx, opcode: 0x%llx",
-                    letter, dc->base.pc, dc->opcode);
+        int instruction_length = decode_instruction_length(dc->opcode);
+        tlib_printf(LOG_LEVEL_ERROR, "RISC-V '%c' instruction set is not enabled for this CPU! PC: 0x%llx, opcode: 0x%0*llx",
+                    letter, dc->base.pc, /* padding */ 2 * instruction_length, format_opcode(dc->opcode, instruction_length));
     }
 
     kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
@@ -4710,13 +4736,21 @@ static int disas_insn(CPUState *env, DisasContext *dc)
         }
     }
 
-    int is_compressed = (extract32(dc->opcode, 0, 2) != 3);
+    int instruction_length = decode_instruction_length(dc->opcode);
+    // Custom instructions with length up to 64 bits are handled above,
+    // but standard RISC-V instructions currently are no longer than 32 bits.
+    if (instruction_length == 0 || instruction_length > 4) {
+        tlib_printf(LOG_LEVEL_ERROR, "Unsupported instruction length: %d bits. PC: 0x%llx, opcode: 0x%0*llx", 
+                    8 * instruction_length , dc->base.pc,  /* padding */ 2 * instruction_length, format_opcode(dc->opcode, instruction_length));
+        return 0;
+    }
+
+    int is_compressed = instruction_length == 2;
     if (is_compressed && !ensure_extension(dc, RISCV_FEATURE_RVC)) {
         return 0;
     }
 
     /* check for compressed insn */
-    int instruction_length = (is_compressed ? 2 : 4);
     dc->npc = dc->base.pc + instruction_length;
 
     if (env->count_opcodes) {

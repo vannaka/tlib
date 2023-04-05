@@ -1375,6 +1375,9 @@ static void disas_uncond_b_imm(DisasContext *s, uint32_t insn)
     if (insn & (1U << 31)) {
         /* BL Branch with link */
         tcg_gen_movi_i64(cpu_reg(s, 30), s->base.pc_next);
+        if (unlikely(s->base.guest_profile)) {
+            generate_stack_announcement_imm_i64(addr, STACK_FRAME_ADD, false);
+        }
     }
 
     /* B Branch / BL Branch with link */
@@ -2327,6 +2330,14 @@ static void disas_uncond_b_reg(DisasContext *s, uint32_t insn)
         /* BLR also needs to load return address */
         if (opc == 1) {
             tcg_gen_movi_i64(cpu_reg(s, 30), s->base.pc_next);
+            if (unlikely(s->base.guest_profile)) {
+                generate_stack_announcement(dst, STACK_FRAME_ADD, false);
+            }
+        }
+        if (opc == 2) {
+            if (unlikely(s->base.guest_profile)) {
+                generate_stack_announcement(cpu_pc, STACK_FRAME_POP, false);
+            }
         }
         break;
 

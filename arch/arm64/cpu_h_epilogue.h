@@ -8,6 +8,9 @@
 
 // These headers require CPUState, cpu_mmu_index etc.
 #include "exec-all.h"
+#include "cpu_registers.h"
+
+#define SUPPORTS_GUEST_PROFILING
 
 // Math helpers.
 #define ALIGN_DOWN(a, b)         ((a) - ((a) % (b)))

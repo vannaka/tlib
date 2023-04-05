@@ -450,6 +450,9 @@ void do_interrupt_v8a(CPUState *env)
     memset(&env->exception, 0, sizeof(env->exception));
 
     set_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
+    if (unlikely(env->guest_profiler_enabled)) {
+        tlib_announce_stack_change(CPU_PC(env), STACK_FRAME_ADD);
+    }
 }
 
 // Pass '-1' if the given field should have no influence on the result.

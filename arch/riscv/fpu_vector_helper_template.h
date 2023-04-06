@@ -691,7 +691,7 @@ void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
 void glue(glue(helper_, NAME), POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2, uint32_t vs1) \
 {                                                                                               \
     const target_ulong eew = env->vsew;                                                         \
-    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1) || env->vstart != 0) {    \
+    if (V_IDX_INVALID(vs2) || env->vstart != 0) {                                               \
         raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);                                   \
     }                                                                                           \
     float64 acc;                                                                                \

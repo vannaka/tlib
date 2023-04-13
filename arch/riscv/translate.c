@@ -632,19 +632,6 @@ static void gen_arith_imm(DisasContext *dc, uint32_t opc, int rd, int rs1, targe
     tcg_temp_free(source1);
 }
 
-static inline void generate_stack_announcement(target_ulong pc, int type)
-{
-    TCGv_i32 helper_type = tcg_const_i32(type);
-    if (pc == PROFILER_TCG_PC) {
-        gen_helper_announce_stack_change(cpu_pc, helper_type);
-    } else {
-        TCGv_i64 helper_pc = tcg_const_i64(pc);
-        gen_helper_announce_stack_change(helper_pc, helper_type);
-        tcg_temp_free_i32(helper_pc);
-    }
-    tcg_temp_free_i64(helper_type);
-}
-
 static inline int is_jal_an_ret_pseudoinsn(int rd, int rs1, int imm)
 {
     // ret => jalr x0, 0(x1)
@@ -659,10 +646,18 @@ static inline int is_jal_RA_based(int rd)
 
 static inline void announce_if_jump_or_ret(int rd, int rs1, target_long imm, target_ulong next_pc)
 {
+    int type = STACK_FRAME_NO_CHANGE;
+
     if (is_jal_an_ret_pseudoinsn(rd, rs1, imm)) {
-        generate_stack_announcement(next_pc, STACK_FRAME_POP);
+        type = STACK_FRAME_POP;
     } else if (is_jal_RA_based(rd)) {
-        generate_stack_announcement(next_pc, STACK_FRAME_ADD);
+        type = STACK_FRAME_ADD;
+    }
+ 
+    if (next_pc == PROFILER_TCG_PC) {
+        generate_stack_announcement(cpu_pc, type, false);
+    } else {
+        generate_stack_announcement_imm_i64(next_pc, type, false);
     }
 }
 

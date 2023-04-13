@@ -703,45 +703,13 @@ static const uint8_t table_logic_cc[16] = {
     1, /* mvn */
 };
 
-/* Generates a stack announcement on the address stored in var. var is NOT marked as dead. */
-static inline void gen_stack_announcement(DisasContext *s, TCGv var, int type)
-{
-    if (unlikely(s->base.guest_profile)) {
-        /* Check if the announcement should be generated */
-        if (type == STACK_FRAME_NO_CHANGE) {
-            return;
-        }
-
-        TCGv jump_target = tcg_temp_new_i32();
-        TCGv ann_type = tcg_const_i32(type);
-        /* bx and blx use the last bit to change instruction mode.
-        last bit = 0 - change to Arm mode
-        last bit = 1 - change to Thumb mode
-        This bit has to be cleared if it is set to 1 since it will produce an invalid address
-        (PC has to be alligned to 4 bytes in Arm mode and to 2 bytes in Thumb mode, in both cases
-        the last bit should be set to 0) */
-        tcg_gen_andi_i32(jump_target, var, ~1);
-        gen_helper_announce_stack_change(jump_target, ann_type);
-        tcg_temp_free(jump_target);
-        tcg_temp_free(ann_type);
-    }
-}
-
-/* Generates a stack announcement to an immediate address. */
-static inline void gen_stack_announcement_im(DisasContext *s, uint32_t addr, int type)
-{
-    if (unlikely(s->base.guest_profile)) {
-        TCGv jump_target = tcg_const_i32(addr);
-        gen_stack_announcement(s, jump_target, type);
-        tcg_temp_free(jump_target);
-    }
-}
-
 /* Set PC and Thumb state from an immediate address.  */
 static inline void gen_bx_im(DisasContext *s, uint32_t addr, int stack_announcement_type)
 {
     TCGv tmp;
-    gen_stack_announcement_im(s, addr, stack_announcement_type);
+    if (unlikely(s->base.guest_profile)) {
+        generate_stack_announcement_imm_i32(addr, stack_announcement_type, true);
+    }
     s->base.is_jmp = DISAS_UPDATE;
     if (s->thumb != (addr & 1)) {
         tmp = tcg_temp_new_i32();
@@ -755,7 +723,9 @@ static inline void gen_bx_im(DisasContext *s, uint32_t addr, int stack_announcem
 /* Set PC and Thumb state from var.  var is marked as dead.  */
 static inline void gen_bx(DisasContext *s, TCGv var, int stack_announcement_type)
 {
-    gen_stack_announcement(s, var, stack_announcement_type);
+    if (unlikely(s->base.guest_profile)) {
+        generate_stack_announcement(var, stack_announcement_type, true);
+    }
     s->base.is_jmp = DISAS_UPDATE;
     tcg_gen_andi_i32(cpu_R[15], var, ~1);
     tcg_gen_andi_i32(var, var, 1);
@@ -3753,7 +3723,9 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint32_t dest)
 
 static inline void gen_jmp(DisasContext *s, uint32_t dest, int stack_announcement_type)
 {
-    gen_stack_announcement_im(s, dest, stack_announcement_type);
+    if (unlikely(s->base.guest_profile)) {
+        generate_stack_announcement_imm_i32(dest, stack_announcement_type, true);
+    }
     gen_goto_tb(s, 0, dest);
     s->base.is_jmp = DISAS_TB_JUMP;
 }

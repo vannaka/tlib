@@ -26,6 +26,7 @@
 #include <limits.h>
 #include "compiler.h"
 #include "cpu.h"
+#include "tcg-op.h"
 
 extern CPUState *env;
 
@@ -298,6 +299,9 @@ void free_all_page_descriptors(void);
 void code_gen_free(void);
 
 void generate_opcode_count_increment(CPUState*, uint64_t);
+void generate_stack_announcement_imm_i32(uint32_t addr, int type, bool clear_lsb);
+void generate_stack_announcement_imm_i64(uint64_t addr, int type, bool clear_lsb);
+void generate_stack_announcement(TCGv pc, int type, bool clear_lsb);
 void tlib_announce_stack_change(target_ulong pc, int state);
 void tlib_announce_context_change(target_ulong context_id);
 

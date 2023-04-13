@@ -410,6 +410,45 @@ void generate_opcode_count_increment(CPUState *env, uint64_t opcode)
     }
 }
 
+void generate_stack_announcement_imm_i32(uint32_t addr, int type, bool clear_lsb)
+{
+    TCGv jump_target = tcg_const_i32(addr);
+    generate_stack_announcement(jump_target, type, clear_lsb);
+    tcg_temp_free_i32(jump_target);
+}
+
+void generate_stack_announcement_imm_i64(uint64_t addr, int type, bool clear_lsb)
+{
+    TCGv jump_target = tcg_const_i64(addr);
+    generate_stack_announcement(jump_target, type, clear_lsb);
+    tcg_temp_free_i64(jump_target);
+}
+
+/*
+ * clear_lsb - clears least significant bit in PC address.
+ * In AArch32 bx and blx use the last bit to change instruction mode.
+ * last bit = 0 - change to Arm mode
+ * last bit = 1 - change to Thumb mode
+ * This bit has to be cleared if it is set to 1 since it will produce an invalid address
+ * (PC has to be alligned to 4 or 2 bytes, in both cases the last bit should be set to 0)
+*/
+void generate_stack_announcement(TCGv pc, int type, bool clear_lsb)
+{
+    if (type == STACK_FRAME_NO_CHANGE) {
+        return;
+    }
+    TCGv helper_type = tcg_const_i32(type);
+    TCGv jump_target = tcg_temp_new();
+    if (clear_lsb) {
+        tcg_gen_andi_tl(jump_target, pc, ~1);
+    } else {
+        tcg_gen_mov_tl(jump_target, pc);
+    }
+    gen_helper_announce_stack_change(jump_target, helper_type);
+    tcg_temp_free_i32(helper_type);
+    tcg_temp_free(jump_target);
+}
+
 void tlib_announce_stack_change(target_ulong address, int change_type)
 {
     #ifdef SUPPORTS_GUEST_PROFILING

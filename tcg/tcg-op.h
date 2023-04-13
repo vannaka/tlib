@@ -2903,7 +2903,7 @@ static inline void tcg_gen_qemu_ld_i32(TCGv_i32 val, TCGv addr, TCGArg idx, TCGM
         }
     }
 
-    tcg_gen_qemu_ldst_op(old_ld_opc[memop & MO_SIZE], val, addr, idx);
+    tcg_gen_qemu_ldst_op(old_ld_opc[memop & MO_SSIZE], val, addr, idx);
 
     if ((orig_memop ^ memop) & MO_BSWAP) {
         switch (orig_memop & MO_SIZE) {

@@ -36,23 +36,11 @@ uint32_t tlib_check_system_register_access(const char *name, bool is_write)
 }
 EXC_INT_2(uint32_t, tlib_check_system_register_access, const char *, name, bool, is_write)
 
-uint32_t tlib_get_current_el()
-{
-    return arm_current_el(cpu);
-}
-EXC_INT_0(uint32_t, tlib_get_current_el)
-
 uint64_t tlib_get_system_register(const char *name)
 {
     return sysreg_get_by_name(cpu, name);
 }
 EXC_INT_1(uint64_t, tlib_get_system_register, const char *, name)
-
-uint32_t tlib_is_secure_below_el3()
-{
-    return arm_is_secure_below_el3(cpu);
-}
-EXC_INT_0(uint32_t, tlib_is_secure_below_el3)
 
 uint32_t tlib_set_available_els(bool el2_enabled, bool el3_enabled)
 {
@@ -78,6 +66,7 @@ uint32_t tlib_set_available_els(bool el2_enabled, bool el3_enabled)
     // Reset the Exception Level a CPU starts in.
     uint32_t reset_el = arm_highest_el(cpu);
     cpu->pstate = deposit32(cpu->pstate, 2, 2, reset_el);
+    tlib_on_execution_mode_changed(reset_el, arm_is_secure(env));
     arm_rebuild_hflags(cpu);
 
     return SUCCESS;

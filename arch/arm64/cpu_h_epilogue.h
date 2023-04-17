@@ -355,6 +355,8 @@ static inline void pstate_set_el(CPUARMState *env, uint32_t el)
 
     // Update cached MMUIdx.
     arm_rebuild_hflags(env);
+
+    tlib_on_execution_mode_changed(arm_current_el(env), arm_is_secure(env));
 }
 
 static inline void pstate_write_with_sp_change(CPUARMState *env, uint32_t val)

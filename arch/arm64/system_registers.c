@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "arch_callbacks.h"
 #include "cpu.h"
 #include "cpu_names.h"
 #include "system_registers.h"

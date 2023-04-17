@@ -27,6 +27,7 @@
 #  error "Sources from 'arch/arm64' used but 'TARGET_ARM64' undefined!"
 #endif
 
+#include "arch_callbacks.h"
 #include "bit_helper.h"
 #include "cpu-defs.h"
 #include "cpu-param.h"
@@ -2240,6 +2241,12 @@ static inline void pstate_write(CPUARMState *env, uint32_t val)
     env->VF = (val << 3) & 0x80000000;
     env->daif = val & PSTATE_DAIF;
     env->btype = (val >> 10) & 3;
+
+    uint32_t new_el = extract32(val, 2, 2);
+    uint32_t current_el = extract32(env->pstate, 2, 2); 
+    if (new_el != current_el) {
+        tlib_on_execution_mode_changed(new_el, new_el == 3 || arm_is_secure_below_el3(env));
+    }
     env->pstate = val & ~CACHED_PSTATE_BITS;
 }
 

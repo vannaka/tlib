@@ -237,7 +237,9 @@ static inline uint64_t sysreg_get_by_name(CPUState *env, const char *name)
         return 0x0;
     }
 
-    if (ri->readfn) {
+    if (ri->type & ARM_CP_CONST) {
+        return ri->resetvalue;
+    } else if (ri->readfn) {
         return ri->readfn(env, ri);
     } else if (ri->fieldoffset != 0) {
         if (ri->type & ARM_CP_64BIT) {

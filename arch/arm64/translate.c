@@ -4740,8 +4740,8 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
 {
     const ARMCPRegInfo *ri;
 
-    ri = get_arm_cp_reginfo(s->cp_regs,
-            ENCODE_CP_REG(cpnum, is64, s->ns, crn, crm, opc1, opc2));
+    uint32_t key = ENCODE_CP_REG(cpnum, is64, s->ns, crn, crm, opc1, opc2);
+    ri = ttable_lookup_value_eq(s->cp_regs, &key);
     if (ri) {
         bool need_exit_tb;
 

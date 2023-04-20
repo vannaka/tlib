@@ -73,4 +73,45 @@ static inline int64_t sextract64(uint64_t value, uint8_t start, uint8_t length)
     return result;
 }
 
+static inline uint32_t rol32(uint32_t word, unsigned int shift)
+{
+    return (word << shift) | (word >> (32 - shift));
+}
+
+static inline uint64_t rol64(uint64_t word, unsigned int shift)
+{
+    return (word << shift) | (word >> (64 - shift));
+}
+
+static inline uint32_t ror32(uint32_t word, unsigned int shift)
+{
+    return (word >> shift) | (word << (32 - shift));
+}
+
+static inline uint64_t ror64(uint64_t word, unsigned int shift)
+{
+    return (word >> shift) | (word << (64 - shift));
+}
+
+static inline uint32_t ctpop(uint32_t val) {
+    int cnt = 0;
+    while (val > 0) {
+        cnt += val & 1;
+        val >>= 1;
+    }
+    return cnt;
+}
+
+static inline uint8_t ctpop8(uint8_t val) {
+    return (uint8_t)ctpop(val);
+}
+
+static inline uint16_t ctpop16(uint16_t val) {
+    return (uint16_t)ctpop(val);
+}
+
+static inline uint32_t ctpop32(uint32_t val) {
+    return (uint32_t)ctpop(val);
+}
+
 #endif  // BIT_HELPER_H_

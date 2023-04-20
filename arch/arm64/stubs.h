@@ -100,11 +100,6 @@ FUNC_STUB(helper_rebuild_hflags_a32)
 
 FUNC_STUB(cpu_stb_mmuidx_ra)
 
-FUNC_STUB(rol32)
-FUNC_STUB(rol64)
-FUNC_STUB(ror32)
-FUNC_STUB(ror64)
-
 /* mte_helper.c */
 
 typedef int AddressSpace;
@@ -290,9 +285,6 @@ FUNC_STUB(cpu_stq_le_data_ra)
 FUNC_STUB(cpu_stw_be_data_ra)
 FUNC_STUB(cpu_stw_le_data_ra)
 FUNC_STUB(cpu_watchpoint_address_matches)
-FUNC_STUB(ctpop16)
-FUNC_STUB(ctpop32)
-FUNC_STUB(ctpop8)
 FUNC_STUB(dup_const)
 FUNC_STUB(float16_is_neg)
 FUNC_STUB(float16_scalbn)

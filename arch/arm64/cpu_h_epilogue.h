@@ -283,14 +283,16 @@ static inline ARMMMUIdx core_to_aa64_mmu_idx(int core_mmu_idx)
 
 static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc, target_ulong *cs_base, int *flags)
 {
-    if (unlikely(!env->aarch64)) {
-        tlib_abort("CPU not in AArch64 state; AArch32 unimplemented.");
+    CPUARMTBFlags hflags = env->hflags;
+    if (!env->aarch64) {
+        DP_TBFLAG_AM32(hflags, THUMB, env->thumb);
+        DP_TBFLAG_AM32(hflags, CONDEXEC, env->condexec_bits);
     }
-    *pc = CPU_PC(env);
 
+    *pc = CPU_PC(env);
     // See 'arm_tbflags_from_tb' in 'translate.h'.
-    *flags = (int)env->hflags.flags;
-    *cs_base = env->hflags.flags2;
+    *flags = (int)hflags.flags;
+    *cs_base = hflags.flags2;
 }
 
 static inline bool cpu_has_work(CPUState *env)
@@ -302,6 +304,7 @@ static inline bool cpu_has_work(CPUState *env)
 
 static inline void cpu_pc_from_tb(CPUState *env, TranslationBlock *tb)
 {
+    env->regs[15] = tb->pc;
     env->pc = tb->pc;
 }
 

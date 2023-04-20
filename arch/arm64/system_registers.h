@@ -32,8 +32,10 @@
 #define ARM_CP_SME             (1 << 14)
 #define ARM_CP_SUPPRESS_TB_END (1 << 15)
 #define ARM_CP_SVE             (1 << 16)
-#define ARM_CP_TLB_FLUSH       (1 << 18)  // TLB will be flushed after writing such a register
 #define ARM_CP_WO              (1 << 17)  // Write-Only
+#define ARM_CP_TLB_FLUSH       (1 << 18)  // TLB will be flushed after writing such a register
+// TODO: Implement gen_helper_rebuild_hflags_a32_newel() for handling ARM_CP_NEWEL
+#define ARM_CP_NEWEL           (1 << 19)  // Write can change EL
 
 // Minimum EL access
 #define ARM_CP_EL_SHIFT        20

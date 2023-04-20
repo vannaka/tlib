@@ -466,7 +466,6 @@ typedef struct
     bool write_aofs;
 } GVecGen4;
 
-#define  ARM_CP_NEWEL                 stub_abort("ARM_CP_NEWEL")
 #define  EXC_RETURN_MIN_MAGIC         stub_abort("EXC_RETURN_MIN_MAGIC")
 #define  FNC_RETURN_MIN_MAGIC         stub_abort("FNC_RETURN_MIN_MAGIC")
 #define  INDEX_op_add_vec             0

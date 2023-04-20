@@ -265,4 +265,20 @@ static inline uint32_t syn_swstep(bool same_el, uint32_t isv, uint32_t ex)
     return syndrome32_create(ec, 1, iss);
 }
 
+static inline uint32_t syn_aa32_svc(uint32_t imm16, bool is_16bit) {
+    return syndrome32_create(SYN_EC_AA32_SVC, !is_16bit, imm16);
+}
+
+static inline uint32_t syn_aa32_hvc(uint32_t imm16) {
+    return syndrome32_create(SYN_EC_AA32_HVC, 1, imm16);
+}
+
+static inline uint32_t syn_aa32_smc(void) {
+    return syndrome32_create(SYN_EC_AA32_SMC, 1, 0);
+}
+
+static inline uint32_t syn_aa32_bkpt(uint32_t imm16, bool is_16bit) {
+    return syndrome32_create(SYN_EC_AA32_BKPT, !is_16bit, imm16);
+}
+
 #endif  // SYNDROME_H_

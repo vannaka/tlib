@@ -492,10 +492,6 @@ typedef struct
 #define  TCG_TARGET_HAS_add2_i32      0  // TODO: Port add2_i32 from TCG
 
 FUNC_STUB(regime_is_secure)
-FUNC_STUB(syn_aa32_bkpt) // aarch32
-FUNC_STUB(syn_aa32_hvc) // aarch32
-FUNC_STUB(syn_aa32_smc) // aarch32
-FUNC_STUB(syn_aa32_svc) // aarch32
 FUNC_STUB(syn_cp14_rrt_trap) // aarch32
 FUNC_STUB(syn_cp14_rt_trap) // aarch32
 FUNC_STUB(syn_cp15_rrt_trap) // aarch32

@@ -1295,15 +1295,13 @@ typedef enum CPSRWriteType {
     CPSRWriteByGDBStub = 3,       /* from the GDB stub */
 } CPSRWriteType;
 
-// TODO: Restore after implementing.
-// /*
-//  * Set the CPSR.  Note that some bits of mask must be all-set or all-clear.
-//  * This will do an arm_rebuild_hflags() if any of the bits in @mask
-//  * correspond to TB flags bits cached in the hflags, unless @write_type
-//  * is CPSRWriteRaw.
-//  */
-// void cpsr_write(CPUARMState *env, uint32_t val, uint32_t mask,
-//                 CPSRWriteType write_type);
+/*
+ * Set the CPSR.  Note that some bits of mask must be all-set or all-clear.
+ * This will do an arm_rebuild_hflags() if any of the bits in @mask
+ * correspond to TB flags bits cached in the hflags, unless @write_type
+ * is CPSRWriteRaw.
+ */
+void cpsr_write(CPUState *env, uint32_t val, uint32_t mask, CPSRWriteType write_type);
 
 /* Return the current xPSR value.  */
 static inline uint32_t xpsr_read(CPUARMState *env)

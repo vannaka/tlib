@@ -5,6 +5,149 @@
 
 /* All these helpers have been based on tlib's 'arm/helper.c'. */
 
+int bank_number(int mode)
+{
+    switch (mode) {
+    case ARM_CPU_MODE_USR:
+    case ARM_CPU_MODE_SYS:
+        return 0;
+    case ARM_CPU_MODE_SVC:
+        return 1;
+    case ARM_CPU_MODE_ABT:
+        return 2;
+    case ARM_CPU_MODE_UND:
+        return 3;
+    case ARM_CPU_MODE_IRQ:
+        return 4;
+    case ARM_CPU_MODE_FIQ:
+        return 5;
+    case ARM_CPU_MODE_HYP:
+        return 6;
+    case ARM_CPU_MODE_MON:
+        return 7;
+    }
+    cpu_abort(cpu, "Bad mode %x\n", mode);
+    return -1;
+}
+
+void switch_mode(CPUState *env, int mode)
+{
+    int old_mode;
+    int i;
+
+    old_mode = env->uncached_cpsr & CPSR_M;
+    if (mode == old_mode) {
+        return;
+    }
+
+    if (old_mode == ARM_CPU_MODE_FIQ) {
+        memcpy(env->fiq_regs, env->regs + 8, 5 * sizeof(uint32_t));
+        memcpy(env->regs + 8, env->usr_regs, 5 * sizeof(uint32_t));
+    } else if (mode == ARM_CPU_MODE_FIQ) {
+        memcpy(env->usr_regs, env->regs + 8, 5 * sizeof(uint32_t));
+        memcpy(env->regs + 8, env->fiq_regs, 5 * sizeof(uint32_t));
+    }
+
+    i = bank_number(old_mode);
+    env->banked_r13[i] = env->regs[13];
+    env->banked_r14[i] = env->regs[14];
+    env->banked_spsr[i] = env->spsr;
+
+    i = bank_number(mode);
+    env->regs[13] = env->banked_r13[i];
+    env->regs[14] = env->banked_r14[i];
+    env->spsr = env->banked_spsr[i];
+}
+
+static bool is_target_mode_valid(CPUState *env, uint32_t current_mode, uint32_t target_mode, CPSRWriteType write_type)
+{
+    // trivial case which is always true
+    if (target_mode == current_mode)
+        return true;
+
+    uint32_t target_el = arm_cpu_mode_to_el(env, target_mode);
+    if (target_el == -1) {
+        return false;
+    }
+
+    if (write_type == CPSRWriteByInstr) {
+
+        // change to/from a hyp mode is not allowed by instruction
+        if (current_mode == ARM_CPU_MODE_HYP || target_mode == ARM_CPU_MODE_HYP) {
+            return false;
+        }
+
+        // change to a higher exception level is not allowed by instruction
+        uint32_t current_el = arm_current_el(env);
+        if (target_el > current_el) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void cpsr_write(CPUState *env, uint32_t val, uint32_t mask, CPSRWriteType write_type)
+{
+    if (mask & CPSR_NZCV) {
+        env->ZF = (~val) & CPSR_Z;
+        env->NF = val;
+        env->CF = (val >> 29) & 1;
+        env->VF = (val << 3) & 0x80000000;
+    }
+    if (mask & CPSR_Q) {
+        env->QF = ((val & CPSR_Q) != 0);
+    }
+    if (mask & CPSR_T) {
+        env->thumb = ((val & CPSR_T) != 0);
+    }
+    if (mask & CPSR_IT_0_1) {
+        env->condexec_bits &= ~3;
+        env->condexec_bits |= (val >> 25) & 3;
+    }
+    if (mask & CPSR_IT_2_7) {
+        env->condexec_bits &= 3;
+        env->condexec_bits |= (val >> 8) & 0xfc;
+    }
+    if (mask & CPSR_GE) {
+        env->GE = (val >> 16) & 0xf;
+    }
+
+    // always update AIF flags
+    uint64_t daif_mask = CPSR_AIF & mask;
+    env->daif = (env->daif & ~daif_mask) | (val & daif_mask);
+
+    // Write to CPSR during normal execution may change the mode
+    // and bank the appropriate registers. The CPSRWriteRaw write type
+    // is used to prevent these additional effects.
+
+    uint64_t mode_mask = CPSR_M & mask;
+    bool change_mode = (env->uncached_cpsr ^ val) & mode_mask;
+    bool normal_exec = write_type != CPSRWriteRaw;
+
+    if (normal_exec && change_mode) {
+        uint32_t current_mode = env->uncached_cpsr & mode_mask;
+        uint32_t target_mode = val & mode_mask;
+
+        // if target mode is invalid do not change the mode and set CPSR_IL
+        if (!is_target_mode_valid(env, current_mode, target_mode, write_type)) {
+            mask = (mask & ~CPSR_M) | CPSR_IL;
+            val |= CPSR_IL;
+        }
+
+        switch_mode(env, target_mode);
+    }
+
+    mask &= ~CACHED_CPSR_BITS;
+    env->uncached_cpsr = (env->uncached_cpsr & ~mask) | (val & mask);
+
+    if (normal_exec) {
+        arm_rebuild_hflags(env);
+    }
+
+    find_pending_irq_if_primask_unset(env);
+}
+
 uint32_t cpsr_read(CPUARMState *env)
 {
     int ZF;

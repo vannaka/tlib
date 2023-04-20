@@ -123,6 +123,7 @@ enum {
 
 // Provide missing prototypes.
 int arm_rmode_to_sf(int rmode);
+int bank_number(int mode);
 uint64_t crc32(uint64_t crc, const uint8_t *data, uint32_t n_bytes);
 int exception_target_el(CPUARMState *env);
 uint64_t mte_check(CPUARMState *env, uint32_t desc, uint64_t ptr, uintptr_t ra);
@@ -467,6 +468,27 @@ static inline ARMMMUIdx el_to_arm_mmu_idx(CPUState *env, int el)
         idx |= ARM_MMU_IDX_A_NS;
     }
     return idx;
+}
+
+static inline int arm_cpu_mode_to_el(CPUState *env, enum arm_cpu_mode mode)
+{
+    switch (mode) {
+        case ARM_CPU_MODE_USR:
+            return 0;
+        case ARM_CPU_MODE_FIQ:
+        case ARM_CPU_MODE_IRQ:
+        case ARM_CPU_MODE_SVC:
+        case ARM_CPU_MODE_ABT:
+        case ARM_CPU_MODE_UND:
+        case ARM_CPU_MODE_SYS:
+            return 1;
+        case ARM_CPU_MODE_HYP:
+            return (arm_feature(env, ARM_FEATURE_EL2)) ? 2 : -1;
+        case ARM_CPU_MODE_MON:
+            return (arm_feature(env, ARM_FEATURE_EL3)) ? 3 : -1;
+        default:
+            return -1;
+    }
 }
 
 static inline uint32_t aarch32_cpsr_valid_mask(uint64_t features, const ARMISARegisters *id)

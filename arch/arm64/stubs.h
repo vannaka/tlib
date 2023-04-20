@@ -44,7 +44,6 @@ static inline bool disas_mve(DisasContext *dc, uint32_t insn) {
 
 // These were declared in 'cpu.h' and used by non-skipped sources but we have no
 // implementations. Remember to reenable their declarations after implementing.
-FUNC_STUB(cpsr_write)
 FUNC_STUB(write_v7m_exception)
 
 typedef struct MemTxAttrs
@@ -182,7 +181,6 @@ FUNC_STUB(arm_call_pre_el_change_hook)
 FUNC_STUB(arm_cpreg_in_idspace)
 FUNC_STUB(arm_fi_to_lfsc)
 FUNC_STUB(arm_fi_to_sfsc)
-FUNC_STUB(bank_number)
 FUNC_STUB(extended_addresses_enabled)
 FUNC_STUB(r14_bank_number)
 FUNC_STUB(syn_bxjtrap)

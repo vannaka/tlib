@@ -163,8 +163,52 @@ static bool ttable_compare_sysreg_name(TTable_entry entry, const void *sysreg_na
 static const ARMCPRegInfo *sysreg_find_by_name(CPUState *env, const char *name)
 {
     const char *lookup_name = name;
-    if (strcasecmp(lookup_name, "DBGDTRRX_EL0") == 0 || strcasecmp(lookup_name, "DBGDTRTX_EL0") == 0) {
+    if (strcasecmp(name, "DBGDTRRX_EL0") == 0 || strcasecmp(name, "DBGDTRTX_EL0") == 0) {
         lookup_name = "DBGDTR_RX_TX_EL0";
+    } else if (strcasecmp(lookup_name, "ICV_AP0R_0") == 0) {
+        lookup_name = "ICC_AP0R_0";
+    } else if (strcasecmp(lookup_name, "ICV_AP0R_1") == 0) {
+        lookup_name = "ICC_AP0R_1";
+    } else if (strcasecmp(lookup_name, "ICV_AP0R_2") == 0) {
+        lookup_name = "ICC_AP0R_2";
+    } else if (strcasecmp(lookup_name, "ICV_AP0R_3") == 0) {
+        lookup_name = "ICC_AP0R_3";
+    } else if (strcasecmp(lookup_name, "ICV_AP1R_0") == 0) {
+        lookup_name = "ICC_AP1R_0";
+    } else if (strcasecmp(lookup_name, "ICV_AP1R_1") == 0) {
+        lookup_name = "ICC_AP1R_1";
+    } else if (strcasecmp(lookup_name, "ICV_AP1R_2") == 0) {
+        lookup_name = "ICC_AP1R_2";
+    } else if (strcasecmp(lookup_name, "ICV_AP1R_3") == 0) {
+        lookup_name = "ICC_AP1R_3";
+    } else if (strcasecmp(lookup_name, "ICV_BPR0") == 0) {
+        lookup_name = "ICC_BPR0";
+    } else if (strcasecmp(lookup_name, "ICV_BPR1") == 0) {
+        lookup_name = "ICC_BPR1";
+    } else if (strcasecmp(lookup_name, "ICV_CTLR") == 0) {
+        lookup_name = "ICC_CTLR";
+    } else if (strcasecmp(lookup_name, "ICV_DIR") == 0) {
+        lookup_name = "ICC_DIR";
+    } else if (strcasecmp(lookup_name, "ICV_EOIR0") == 0) {
+        lookup_name = "ICC_EOIR0";
+    } else if (strcasecmp(lookup_name, "ICV_EOIR1") == 0) {
+        lookup_name = "ICC_EOIR1";
+    } else if (strcasecmp(lookup_name, "ICV_HPPIR0") == 0) {
+        lookup_name = "ICC_HPPIR0";
+    } else if (strcasecmp(lookup_name, "ICV_HPPIR1") == 0) {
+        lookup_name = "ICC_HPPIR1";
+    } else if (strcasecmp(lookup_name, "ICV_IAR0") == 0) {
+        lookup_name = "ICC_IAR0";
+    } else if (strcasecmp(lookup_name, "ICV_IAR1") == 0) {
+        lookup_name = "ICC_IAR1";
+    } else if (strcasecmp(lookup_name, "ICV_IGRPEN0") == 0) {
+        lookup_name = "ICC_IGRPEN0";
+    } else if (strcasecmp(lookup_name, "ICV_IGRPEN1") == 0) {
+        lookup_name = "ICC_IGRPEN1";
+    } else if (strcasecmp(lookup_name, "ICV_PMR") == 0) {
+        lookup_name = "ICC_PMR";
+    } else if (strcasecmp(lookup_name, "ICV_RPR") == 0) {
+        lookup_name = "ICC_RPR";
     }
 
     TTable_entry *entry = ttable_lookup_custom(env->arm_core_config->cp_regs, ttable_compare_sysreg_name, lookup_name);

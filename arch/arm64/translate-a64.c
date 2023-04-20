@@ -27,6 +27,13 @@
 #include "translate.h"
 #include "ttable.h"
 
+void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *env);
+void arm_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu);
+void arm_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu);
+void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *env);
+void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu);
+void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *env);
+
 static TCGv_i64 cpu_X[32];
 static TCGv_i64 cpu_pc;
 
@@ -15058,14 +15065,27 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
 
 void setup_disas_context(DisasContextBase *base, CPUState *env)
 {
-    aarch64_tr_init_disas_context(base, env);
-    aarch64_tr_tb_start(base, env);
+    if (env->aarch64) {
+        aarch64_tr_init_disas_context(base, env);
+        aarch64_tr_tb_start(base, env);
+    } else {
+        arm_tr_init_disas_context(base, env);
+        arm_tr_tb_start(base, env);
+    }
 }
 
 int disas_insn(CPUState *env, DisasContextBase *base)
 {
-    aarch64_tr_insn_start(base, env);
-    aarch64_tr_translate_insn(base, env);
+    if (env->aarch64) {
+        aarch64_tr_insn_start(base, env);
+        aarch64_tr_translate_insn(base, env);
+    } else {
+        if (env->thumb) {
+            thumb_tr_translate_insn(base, env);
+        } else {
+            arm_tr_translate_insn(base, env);
+        };
+    }
     return 4;
 }
 
@@ -15087,7 +15107,11 @@ int gen_intermediate_code(CPUState *env, DisasContextBase *base)
 
 uint32_t gen_intermediate_code_epilogue(CPUState *env, DisasContextBase *base)
 {
-    aarch64_tr_tb_stop(base, env);
+    if (env->aarch64) {
+        aarch64_tr_tb_stop(base, env);
+    } else {
+        arm_tr_tb_stop(base, env);
+    }
     return 0;
 }
 

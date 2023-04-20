@@ -9230,11 +9230,8 @@ static bool thumb_insn_is_16bit(DisasContext *s, uint32_t pc, uint32_t insn)
 }
 
 /* Translate a 32-bit thumb instruction. */
-static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
+void disas_thumb2_insn(DisasContext *s, uint32_t insn)
 {
-    unimplemented();
-
-    // TODO: Restore after the optional porting of 'translate-mve.c' and 'translate-m-nocp.c'.
     /*
      * ARMv6-M supports a limited subset of Thumb2 instructions.
      * Other Thumb1 architectures allow only 32-bit
@@ -9351,9 +9348,7 @@ static bool insn_crosses_page(CPUARMState *env, DisasContext *s)
     return !thumb_insn_is_16bit(s, s->base.pc_next, insn);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
-static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *env)
+void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *env)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     ARMCPU *cpu = env_archcpu(env);
@@ -9466,9 +9461,7 @@ static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *env)
     cpu_M0 = tcg_temp_new_i64();
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
-static void arm_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)
+void arm_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
 
@@ -9509,9 +9502,7 @@ static void arm_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
-static void arm_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
+void arm_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     /*
@@ -9566,9 +9557,7 @@ static void arm_post_translate_insn(DisasContext *dc)
     translator_loop_temp_check(&dc->base);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
-static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *env)
+void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *env)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     uint32_t pc = dc->base.pc_next;
@@ -9657,9 +9646,7 @@ static bool thumb_insn_is_unconditional(DisasContext *s, uint32_t insn)
     return false;
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
-static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *env)
+void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *env)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     uint32_t pc = dc->base.pc_next;
@@ -9791,9 +9778,7 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *env)
     }
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
-static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
+void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
 

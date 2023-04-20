@@ -33,6 +33,13 @@ static inline bool arm_is_psci_call(ARMCoreConfig *cpu, uint32_t excp)
 }
 #undef ARMCoreConfig
 
+#define DisasContext void
+static inline bool disas_mve(DisasContext *dc, uint32_t insn) {
+    tlib_printf(LOG_LEVEL_DEBUG, "Stub encountered: disas_mve(); returning false");
+    return false;
+}
+#undef DisasContext
+
 // STUBS
 
 // These were declared in 'cpu.h' and used by non-skipped sources but we have no
@@ -429,6 +436,7 @@ FUNC_STUB(gen_helper_set_pstate_sm)
 FUNC_STUB(gen_helper_set_pstate_za)
 FUNC_STUB(gen_helper_xpacd)
 FUNC_STUB(gen_helper_xpaci)
+FUNC_STUB(disas_m_nocp)
 
 /* translate.c */
 

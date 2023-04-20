@@ -165,6 +165,162 @@ uint32_t cpsr_read(CPUARMState *env)
         | (env->daif & CPSR_AIF);
 }
 
+// Copied from arch/arm/helper.c:do_interrupt()
+void do_interrupt_a32(CPUState *env)
+{
+    uint32_t addr;
+    uint32_t mask;
+    int new_mode;
+    uint32_t offset;
+    uint32_t dbgdscr_moe;
+
+    uint32_t target_el = env->exception.target_el;
+    addr = env->cp15.vbar_el[target_el];
+
+#ifdef TARGET_PROTO_ARM_M
+    do_interrupt_v7m(env);
+    return;
+#endif
+    switch (syn_get_ec(env->exception.syndrome)) {
+    case SYN_EC_BREAKPOINT_LOWER_EL:
+    case SYN_EC_BREAKPOINT_SAME_EL:
+        dbgdscr_moe = 0b0001;
+        break;
+    case SYN_EC_WATCHPOINT_LOWER_EL:
+    case SYN_EC_WATCHPOINT_SAME_EL:
+        dbgdscr_moe = 0b0010;
+        break;
+    case SYN_EC_AA32_BKPT:
+        dbgdscr_moe = 0b0011;
+        break;
+    case SYN_EC_AA32_VECTOR_CATCH:
+        dbgdscr_moe = 0b0101;
+        break;
+    default:
+        dbgdscr_moe = 0;
+        break;
+    }
+    if (dbgdscr_moe) {
+        env->cp15.mdscr_el1 = deposit64(env->cp15.mdscr_el1, 2, 4, dbgdscr_moe);
+    }
+    /* TODO: Vectored interrupt controller.  */
+    switch (env->exception_index) {
+    case EXCP_UDEF:
+        new_mode = ARM_CPU_MODE_UND;
+        addr += 0x04;
+        mask = CPSR_I;
+        if (env->thumb) {
+            offset = 2;
+        } else {
+            offset = 4;
+        }
+        if (target_el == 3) {
+            cpu_abort(env, "EXCP_UDEF not available in Monitor mode");
+        }
+        break;
+    case EXCP_SMC:
+        if (target_el != 2) {
+            cpu_abort(env, "EXCP_SMC available only in Monitor mode");
+        }
+        goto case_EXCP_SWI_SVC;
+    case EXCP_HVC:
+        if (target_el != 2) {
+            cpu_abort(env, "EXCP_HVC available only in Hypervisor mode");
+        }
+        goto case_EXCP_SWI_SVC;
+    case EXCP_SWI_SVC:
+case_EXCP_SWI_SVC:
+        new_mode = ARM_CPU_MODE_SVC;
+        addr += 0x08;
+        mask = CPSR_I;
+        /* The PC already points to the next instruction.  */
+        offset = 0;
+        break;
+    case EXCP_BKPT:
+        env->cp15.ifsr_ns = 2;
+        goto case_EXCP_PREFETCH_ABORT;
+    case EXCP_PREFETCH_ABORT:
+case_EXCP_PREFETCH_ABORT:
+        new_mode = ARM_CPU_MODE_ABT;
+        addr += 0x0c;
+        mask = CPSR_A | CPSR_I;
+        offset = 4;
+        break;
+    case EXCP_DATA_ABORT:
+        new_mode = ARM_CPU_MODE_ABT;
+        addr += 0x10;
+        mask = CPSR_A | CPSR_I;
+        offset = 8;
+        break;
+    case EXCP_IRQ:
+        new_mode = ARM_CPU_MODE_IRQ;
+        addr += 0x18;
+        /* Disable IRQ and imprecise data aborts.  */
+        mask = CPSR_A | CPSR_I;
+        offset = 4;
+        break;
+    case EXCP_FIQ:
+        new_mode = ARM_CPU_MODE_FIQ;
+        addr += 0x1c;
+        /* Disable FIQ, IRQ and imprecise data aborts.  */
+        mask = CPSR_A | CPSR_I | CPSR_F;
+        offset = 4;
+        break;
+    default:
+        cpu_abort(env, "Unhandled exception 0x%x\n", env->exception_index);
+        return; /* Never happens.  Keep compiler happy.  */
+    }
+    if (target_el == 2) {
+        new_mode = ARM_CPU_MODE_HYP;
+        offset = 0;
+        if (arm_feature(env, ARM_FEATURE_EL3)) {
+            mask = 0;
+            if (!(env->cp15.scr_el3 & SCR_EA)) {
+                mask |= CPSR_A;
+            }
+            if (!(env->cp15.scr_el3 & SCR_IRQ)) {
+                mask |= CPSR_I;
+            }
+            if (!(env->cp15.scr_el3 & SCR_FIQ)) {
+                mask |= CPSR_F;
+            }
+        }
+    }
+    if (env->exception_index != EXCP_IRQ && env->exception_index != EXCP_FIQ) {
+        env->cp15.esr_el[target_el] = env->exception.syndrome;
+    }
+    /* High vectors.  */
+    if (env->cp15.sctlr_ns & (1 << 13)) {
+        addr += 0xffff0000;
+    }
+    switch_mode(env, new_mode);
+    env->spsr = cpsr_read(env);
+    /* Clear IT bits.  */
+    env->condexec_bits = 0;
+    /* Switch to the new mode, and to the correct instruction set.  */
+    env->uncached_cpsr = (env->uncached_cpsr & ~CPSR_M) | new_mode;
+    env->daif |= (mask & CPSR_AIF);
+
+    find_pending_irq_if_primask_unset(env);
+
+    /* this is a lie, as the was no c1_sys on V4T/V5, but who cares
+     * and we should just guard the thumb mode on V4 */
+    if (arm_feature(env, ARM_FEATURE_V4T)) {
+        env->thumb = (env->cp15.sctlr_ns & (1 << 30)) != 0;
+    }
+    if (target_el == 2) {
+        env->elr_el[2] = env->regs[15];
+    } else {
+        env->regs[14] = env->regs[15] + offset;
+    }
+    env->regs[15] = addr;
+    set_interrupt_pending(env, CPU_INTERRUPT_EXITTB);
+
+    arm_rebuild_hflags(env);
+
+    //arm_announce_stack_change();
+}
+
 // Exracted from cpu_reset.
 void cpu_reset_vfp(CPUState *env)
 {

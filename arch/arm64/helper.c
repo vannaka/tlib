@@ -70,7 +70,15 @@ void cpu_reset(CPUState *env)
 
 void do_interrupt(CPUState *env)
 {
-    do_interrupt_v8a(env);
+    if (env->interrupt_begin_callback_enabled) {
+        tlib_on_interrupt_begin(env->exception_index);
+    }
+
+    if (arm_el_is_aa64(env, env->exception.target_el)) {
+        do_interrupt_a64(env);
+    } else {
+        do_interrupt_a32(env);
+    }
 }
 
 int process_interrupt(int interrupt_request, CPUState *env)
@@ -508,14 +516,14 @@ void cpu_reset_v8_a32(CPUState *env)
     env->cp15.c9_pmcr = (env->cp15.c0_cpuid & 0xff000000);
 }
 
-void do_interrupt_v8a(CPUState *env)
+void do_interrupt_a64(CPUState *env)
 {
     uint32_t current_el = arm_current_el(env);
     uint32_t target_el = env->exception.target_el;
-    // TODO: for now we only handle aarch64 exceptions
-    if (!arm_el_is_aa64(env, target_el)) {
-        tlib_abortf("do_interrupt: unimplemented aarch32 exception");
-    }
+
+    // The function is only valid if target EL uses AArch64.
+    tlib_assert(arm_el_is_aa64(env, target_el));
+
     if (current_el > target_el) {
         tlib_abortf("do_interrupt: exception level can never go down by taking an exception");
     }
@@ -1122,7 +1130,7 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
         return 0;
     }
     env->exception.target_el = target_el;
-    do_interrupt_v8a(env);
+    do_interrupt(env);
     return 1;
 }
 

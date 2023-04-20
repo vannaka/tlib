@@ -136,7 +136,8 @@ void cpu_reset_state(CPUState *env);
 void cpu_reset_v8_a32(CPUState *env);
 void cpu_reset_v8_a64(CPUState *env);
 void cpu_reset_vfp(CPUState *env);
-void do_interrupt_v8a(CPUState *env);
+void do_interrupt_a32(CPUState *env);
+void do_interrupt_a64(CPUState *env);
 int get_phys_addr(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,
                   bool suppress_faults, target_ulong *phys_ptr, int *prot, target_ulong *page_size);
 int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,

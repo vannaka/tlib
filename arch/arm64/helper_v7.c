@@ -5,6 +5,23 @@
 
 /* All these helpers have been based on tlib's 'arm/helper.c'. */
 
+uint32_t cpsr_read(CPUARMState *env)
+{
+    int ZF;
+    ZF = (env->ZF == 0);
+    return env->uncached_cpsr
+        | (env->NF & 0x80000000)
+        | (ZF << 30)
+        | (env->CF << 29)
+        | ((env->VF & 0x80000000) >> 3)
+        | (env->QF << 27)
+        | (env->thumb << 5)
+        | ((env->condexec_bits & 3) << 25)
+        | ((env->condexec_bits & 0xfc) << 8)
+        | (env->GE << 16)
+        | (env->daif & CPSR_AIF);
+}
+
 // Exracted from cpu_reset.
 void cpu_reset_vfp(CPUState *env)
 {

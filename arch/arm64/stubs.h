@@ -44,7 +44,6 @@ static inline bool disas_mve(DisasContext *dc, uint32_t insn) {
 
 // These were declared in 'cpu.h' and used by non-skipped sources but we have no
 // implementations. Remember to reenable their declarations after implementing.
-FUNC_STUB(cpsr_read)
 FUNC_STUB(cpsr_write)
 FUNC_STUB(write_v7m_exception)
 

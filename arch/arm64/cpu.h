@@ -1282,9 +1282,8 @@ static inline unsigned int aarch64_pstate_mode(unsigned int el, bool handler)
     return (el << 2) | handler;
 }
 
-// TODO: Restore after implementing.
-// /* Return the current CPSR value.  */
-// uint32_t cpsr_read(CPUARMState *env);
+/* Return the current CPSR value.  */
+uint32_t cpsr_read(CPUARMState *env);
 
 typedef enum CPSRWriteType {
     CPSRWriteByInstr = 0,         /* from guest MSR or CPS */

@@ -133,6 +133,7 @@ void raise_exception_ra(CPUARMState *env, uint32_t excp, uint32_t syndrome, uint
 
 void cpu_init_v8(CPUState *env, uint32_t id);
 void cpu_reset_state(CPUState *env);
+void cpu_reset_v8_a32(CPUState *env);
 void cpu_reset_v8_a64(CPUState *env);
 void cpu_reset_vfp(CPUState *env);
 void do_interrupt_v8a(CPUState *env);
@@ -561,6 +562,17 @@ static inline uint32_t aarch32_cpsr_valid_mask(uint64_t features, const ARMISARe
     }
 
     return valid;
+}
+
+static inline enum arm_cpu_mode arm_get_highest_cpu_mode(CPUState *env)
+{
+    if (arm_feature(env, ARM_FEATURE_EL3)) {
+        return ARM_CPU_MODE_MON;
+    } else if (arm_feature(env, ARM_FEATURE_EL2)) {
+        return ARM_CPU_MODE_HYP;
+    } else {
+        return ARM_CPU_MODE_SVC;
+    }
 }
 
 static inline void find_pending_irq_if_primask_unset(CPUState *env)

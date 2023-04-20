@@ -62,6 +62,8 @@ void cpu_reset(CPUState *env)
     // TODO? 64-bit ARMv8 can start with AArch32 based on the AA64nAA32 configuration signal.
     if (arm_feature(env, ARM_FEATURE_AARCH64)) {
         cpu_reset_v8_a64(env);
+    } else {
+        cpu_reset_v8_a32(env);
     }
     arm_rebuild_hflags(env);
 }
@@ -479,6 +481,31 @@ void cpu_reset_v8_a64(CPUState *env)
     pstate |= PSTATE_Z;
 
     pstate_write(env, pstate);
+}
+
+void cpu_reset_v8_a32(CPUState *env)
+{
+    env->aarch64 = false;
+
+    env->cp15.sctlr_ns = env->arm_core_config->reset_sctlr;
+    env->cp15.hsctlr = env->arm_core_config->reset_sctlr;
+    env->cp15.sctlr_s = env->arm_core_config->reset_sctlr;
+
+    env->cp15.vmpidr_el2 = env->arm_core_config->mpidr;
+    env->cp15.vpidr_el2 = env->arm_core_config->midr;
+
+    env->cp15.rvbar = env->arm_core_config->rvbar_prop;
+
+    uint32_t cpsr = arm_get_highest_cpu_mode(env);
+    cpsr |= CPSR_AIF | CPSR_Z;
+    cpsr_write(env, cpsr, 0xFFFFFFFF, CPSRWriteRaw);
+
+    env->regs[15] = env->cp15.rvbar;
+
+    /* v7 performance monitor control register: same implementor
+     * field as main ID register, and we implement no event counters.
+     */
+    env->cp15.c9_pmcr = (env->cp15.c0_cpuid & 0xff000000);
 }
 
 void do_interrupt_v8a(CPUState *env)

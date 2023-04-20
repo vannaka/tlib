@@ -267,6 +267,15 @@ static inline uint32_t arm_to_core_mmu_idx(ARMMMUIdx arm_mmu_idx)
     return arm_mmu_idx & ARM_MMU_IDX_COREIDX_MASK;
 }
 
+static inline ARMMMUIdx core_to_arm_mmu_idx(CPUARMState *env, int mmu_idx)
+{
+    if (arm_feature(env, ARM_FEATURE_M)) {
+        return mmu_idx | ARM_MMU_IDX_M;
+    }
+
+    return mmu_idx | ARM_MMU_IDX_A;
+}
+
 static inline ARMMMUIdx core_to_aa64_mmu_idx(int core_mmu_idx)
 {
     return core_mmu_idx | ARM_MMU_IDX_A;

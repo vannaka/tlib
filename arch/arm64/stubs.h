@@ -498,7 +498,6 @@ typedef struct
 #define  INDEX_op_ussub_vec           0
 #define  TCG_TARGET_HAS_add2_i32      0  // TODO: Port add2_i32 from TCG
 
-FUNC_STUB(core_to_arm_mmu_idx)
 FUNC_STUB(regime_is_secure)
 FUNC_STUB(syn_aa32_bkpt) // aarch32
 FUNC_STUB(syn_aa32_hvc) // aarch32

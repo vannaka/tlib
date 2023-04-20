@@ -562,3 +562,12 @@ static inline uint32_t aarch32_cpsr_valid_mask(uint64_t features, const ARMISARe
 
     return valid;
 }
+
+static inline void find_pending_irq_if_primask_unset(CPUState *env)
+{
+#ifdef TARGET_PROTO_ARM_M
+    if (!(env->uncached_cpsr & CPSR_PRIMASK)) {
+        tlib_nvic_find_pending_irq();
+    }
+#endif
+}

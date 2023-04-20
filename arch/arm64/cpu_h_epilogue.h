@@ -468,3 +468,75 @@ static inline ARMMMUIdx el_to_arm_mmu_idx(CPUState *env, int el)
     }
     return idx;
 }
+
+static inline uint32_t aarch32_cpsr_valid_mask(uint64_t features, const ARMISARegisters *id)
+{
+/* The mask is created taking into account many Arm profiles.
+ * Check out the following documents.
+ *
+ * 1. ARM Architecture Reference Manual (ARMv7-A and ARMv7-R edition), B 1.3.1
+ *
+ *   30  28  26  24  22  20  18  16  14  12  10   8   6   4   2   0
+ * ┌─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+ * │N│Z│C│V│Q│IT │J│ RAZ*  │  GE   │    IT     │E│A│I│F│T│    M    │
+ * └─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘
+ *
+ * 2. Arm Architecture Registers (for A-profile Architecture), p. 3577/6056
+ *
+ *   30  28  26  24  22  20  18  16  14  12  10   8   6   4   2   0
+ * ┌─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+ * │N│Z│C│V│Q│0 0 0│s│p│d│0│  GE   │0 0 0 0 0 0│E│A│I│F│0│1│   M   │
+ * └─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘
+ * Abbreviation:
+ *  - s -> SSBS
+ *  - p -> PAN
+ *  - d -> DIT
+ *
+ * 3. ARM Cortex-A Series (Programmer’s Guide for ARMv8-A), from 4.5.2
+ *
+ *   30  28  26  24  22  20  18  16  14  12  10   8   6   4   2   0
+ * ┌─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+ * │N│Z│C│V│Q│IT │J│     │i│  GE   │    IT     │E│A│I│F│T│M│   M   │
+ * └─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘
+ * Abbreviation:
+ *  - i -> IL
+ */
+
+    uint32_t valid =
+        CPSR_N  |         // Negative result
+        CPSR_Z  |         // Zero result
+        CPSR_C  |         // Carry out
+        CPSR_V  |         // Overflow
+        CPSR_Q  |         // Cumulative saturation
+        CPSR_IL |         // Illegal Execution State
+        CPSR_GE |         // Greater than or Equal flags, for the parallel
+                          // addition and subtraction (SIMD) instructions
+        CPSR_E  |         // Endianness execution state (big / little)
+        CPSR_A  |         // Asynchronous abort mask
+        CPSR_I  |         // IRQ mask
+        CPSR_F  |         // FIQ mask
+        CPSR_T  |         // Thumb execution state
+        CPSR_M;           // Mode
+
+    if (features & (UINT64_C(1) << ARM_FEATURE_THUMB2)) {
+        valid |= CPSR_IT; // If-Then execution state bits for the Thumb IT (If-Then) instruction
+    }
+
+    if (isar_feature_aa32_jazelle(id)) {
+        valid |= CPSR_J; // Jazelle
+    }
+
+    if (isar_feature_aa32_ssbs(id)) {
+        valid |= CPSR_SSBS; // Speculative Store Bypass Safe
+    }
+
+    if (isar_feature_aa32_pan(id)) {
+        valid |= CPSR_PAN; // Privileged Access Never
+    }
+
+    if (isar_feature_aa32_dit(id)) {
+        valid |= CPSR_DIT; // Data Independent Timing
+    }
+
+    return valid;
+}

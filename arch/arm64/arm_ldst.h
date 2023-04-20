@@ -26,19 +26,28 @@
 static inline uint32_t arm_ldl_code(CPUARMState *env, DisasContextBase *s,
                                     target_ulong addr, bool sctlr_b)
 {
-    return translator_ldl_swap(env, s, addr, bswap_code(sctlr_b));
+    // TODO: Uncomment after implementing properly translator_ldl_swap()
+    //       Until that use a direct call to ldl_code()
+    // return translator_ldl_swap(env, s, addr, bswap_code(sctlr_b));
+
+    return ldl_code(addr);
 }
 
 /* Ditto, for a halfword (Thumb) instruction */
 static inline uint16_t arm_lduw_code(CPUARMState *env, DisasContextBase* s,
                                      target_ulong addr, bool sctlr_b)
 {
-    /* In big-endian (BE32) mode, adjacent Thumb instructions have been swapped
-       within each word.  Undo that now.  */
-    if (sctlr_b) {
-        addr ^= 2;
-    }
-    return translator_lduw_swap(env, s, addr, bswap_code(sctlr_b));
+
+    // TODO: Uncomment after implementing properly translator_lduw_swap()
+    //       Until that use direct call to lduw_code()
+    // /* In big-endian (BE32) mode, adjacent Thumb instructions have been swapped
+    //    within each word.  Undo that now.  */
+    // if (sctlr_b) {
+    //     addr ^= 2;
+    // }
+    // return translator_lduw_swap(env, s, addr, bswap_code(sctlr_b));
+
+    return lduw_code(addr);
 }
 
 #endif

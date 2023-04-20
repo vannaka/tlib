@@ -9521,7 +9521,7 @@ void arm_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
         condexec_bits = (dc->condexec_cond << 4) | (dc->condexec_mask >> 1);
     }
     tcg_gen_insn_start(dc->base.pc_next, condexec_bits, 0);
-    dc->insn_start = tcg_last_op();
+    //dc->insn_start = tcg_last_op();
 }
 
 static bool arm_check_kernelpage(DisasContext *dc)
@@ -9557,7 +9557,9 @@ static void arm_post_translate_insn(DisasContext *dc)
         gen_set_label(dc->condlabel);
         dc->condjmp = 0;
     }
-    translator_loop_temp_check(&dc->base);
+
+    // TODO: Implement and restore?
+    //translator_loop_temp_check(&dc->base);
 }
 
 void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *env)

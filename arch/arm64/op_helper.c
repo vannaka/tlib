@@ -421,9 +421,6 @@ void HELPER(cpsr_write_eret)(CPUARMState *env, uint32_t val)
 {
     uint32_t mask;
 
-    // Use mutex if executed in parallel.
-    arm_call_pre_el_change_hook(env_archcpu(env));
-
     mask = aarch32_cpsr_valid_mask(env->features, &env_archcpu(env)->isar);
     cpsr_write(env, val, mask, CPSRWriteExceptionReturn);
 
@@ -434,9 +431,6 @@ void HELPER(cpsr_write_eret)(CPUARMState *env, uint32_t val)
      */
     env->regs[15] &= (env->thumb ? ~1 : ~3);
     arm_rebuild_hflags(env);
-
-    // Use mutex if executed in parallel.
-    arm_call_el_change_hook(env_archcpu(env));
 }
 
 /* Access to user mode registers from privileged modes.  */

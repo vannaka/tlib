@@ -2577,9 +2577,12 @@ static void gen_goto_ptr(DisasContext *dc)
  * cpu_loop_exec. Any live exit_requests will be processed as we
  * enter the next TB.
  */
-static void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
+static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
 {
-    if (translator_use_goto_tb(&s->base, dest)) {
+    TranslationBlock *tb;
+
+    tb = s->base.tb;
+    if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)) {
         tcg_gen_goto_tb(n);
         gen_set_pc_im(s, dest);
         // TODO: Was passing TB to 'tcg_gen_exit_tb' meaningful?

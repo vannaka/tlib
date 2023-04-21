@@ -42,6 +42,7 @@ typedef enum {
     FPDSCR_32    = 26,
     CPACR_32     = 27,
     PRIMASK_32   = 28,
+    FAULTMASK_32 = 30,
 #endif
 #ifdef TARGET_ARM64
     R_0_32       = 0,

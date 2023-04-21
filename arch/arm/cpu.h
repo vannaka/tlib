@@ -230,6 +230,7 @@ typedef struct CPUState {
         uint32_t fault_status;
         uint32_t current_sp;
         uint32_t exception;
+        uint32_t faultmask;
         uint32_t pending_exception;
         uint32_t cpacr;
         uint32_t fpccr;

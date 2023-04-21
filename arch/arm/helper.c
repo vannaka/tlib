@@ -2317,7 +2317,7 @@ uint32_t HELPER(v7m_mrs)(CPUState * env, uint32_t reg)
     case 18: /* BASEPRI_MAX */
         return env->v7m.basepri;
     case 19: /* FAULTMASK */
-        return (env->uncached_cpsr & CPSR_F) != 0;
+        return env->v7m.faultmask; 
     case 20: /* CONTROL */
         return env->v7m.control;
     default:
@@ -2415,11 +2415,8 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
     case 19: /* FAULTMASK */
         if (!in_privileged_mode(env)) {
             return;
-        } else if (val & 1) {
-            env->uncached_cpsr |= CPSR_F;
-        } else {
-            env->uncached_cpsr &= ~CPSR_F;
         }
+        env->v7m.faultmask = val & 1;
         break;
     case 20: /* CONTROL */
         if(!in_privileged_mode(env))

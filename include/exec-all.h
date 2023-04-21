@@ -214,6 +214,8 @@ static inline void tb_set_jmp_target(TranslationBlock *tb, int n, uintptr_t addr
 
 static inline void tb_add_jump(TranslationBlock *tb, int n, TranslationBlock *tb_next)
 {
+    tlib_assert(tb != NULL);
+
     /* NOTE: this test is only needed for thread safety */
     if (!tb->jmp_next[n]) {
         /* patch the native jump address */

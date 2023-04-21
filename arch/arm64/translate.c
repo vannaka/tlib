@@ -2585,8 +2585,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
     if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)) {
         tcg_gen_goto_tb(n);
         gen_set_pc_im(s, dest);
-        // TODO: Was passing TB to 'tcg_gen_exit_tb' meaningful?
-        tcg_gen_exit_tb(n); //(s->base.tb, n);
+        gen_exit_tb(s->base.tb, n);
     } else {
         gen_set_pc_im(s, dest);
         gen_goto_ptr(s);

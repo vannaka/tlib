@@ -252,12 +252,11 @@ static inline uint32_t syn_sve_access_trap()
     return syndrome32_create(SYN_EC_TRAPPED_SVE, 1, 0);
 }
 
-static inline uint32_t syn_swstep(uint32_t param0, uint32_t isv, uint32_t ex)
+static inline uint32_t syn_swstep(bool same_el, uint32_t isv, uint32_t ex)
 {
+    SyndromeExceptionClass ec = same_el ? SYN_EC_SOFTWARESTEP_SAME_EL : SYN_EC_SOFTWARESTEP_LOWER_EL;
     uint32_t iss = isv << 24 | ex << 6 | 0x22 /*Debug exception from data sheet*/;
-
-    // TODO: Choose between LOWER_EL and SAME_EL.
-    return syndrome32_create(SYN_EC_SOFTWARESTEP_LOWER_EL, 1, iss);
+    return syndrome32_create(ec, 1, iss);
 }
 
 #endif  // SYNDROME_H_

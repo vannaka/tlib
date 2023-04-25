@@ -24,6 +24,12 @@ static inline int64_t stub_abort(char *name)
 // STUBS emitting warnings instead of aborting simulation (e.g. used by Linux).
 // TODO: Implement properly.
 
+static inline bool semihosting_enabled(bool arg)
+{
+    tlib_printf(LOG_LEVEL_DEBUG, "Stub encountered: semihosting_enabled(); returning false");
+    return false;
+}
+
 #define ARMCoreConfig void
 static inline bool arm_is_psci_call(ARMCoreConfig *cpu, uint32_t excp)
 {
@@ -373,7 +379,6 @@ FUNC_STUB_GENERIC(tcg_gen_gvec_mov, void)
 FUNC_STUB(arm_cpreg_encoding_in_idspace)
 FUNC_STUB(gen_io_start)
 FUNC_STUB_GENERIC(get_arm_cp_reginfo, void*)
-FUNC_STUB(semihosting_enabled)
 FUNC_STUB(syn_fp_access_trap)
 FUNC_STUB(target_disas)
 FUNC_STUB(tcg_gen_gvec_2_ool)

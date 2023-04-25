@@ -72,30 +72,27 @@ typedef enum {
     SYN_EC_AA64_BKPT                   = 0x3C,
 } SyndromeExceptionClass;
 
-// Based on DFSC description in "ISS encoding for an exception from a Data Abort" (D17.2.37-39).
+// Based on descriptions of the DFSC and IFSC fields in "ISS encoding for an exception from a Data Abort"
+// and "ISS encoding for an exception from an Instruction Abort" (D17.2.37-39).
+//
+// Codes for level=1..3 aren't listed since those are always 'SYN_*_LEVEL_0 + level'.
 typedef enum {
-    // Lacks external abort, FEAT_LPA2, FEAT_RAS, FEAT_RME and FEAT_HAFDBS fault codes.
-    SYN_DFSC_ADDRESS_SIZE_FAULT_LEVEL0,
-    SYN_DFSC_ADDRESS_SIZE_FAULT_LEVEL1,
-    SYN_DFSC_ADDRESS_SIZE_FAULT_LEVEL2,
-    SYN_DFSC_ADDRESS_SIZE_FAULT_LEVEL3,
-    SYN_DFSC_TRANSLATION_FAULT_LEVEL0,
-    SYN_DFSC_TRANSLATION_FAULT_LEVEL1,
-    SYN_DFSC_TRANSLATION_FAULT_LEVEL2,
-    SYN_DFSC_TRANSLATION_FAULT_LEVEL3,
-    SYN_DFSC_ACCESS_FLAG_FAULT_LEVEL0,  // When FEAT_LPA2 is implemented
-    SYN_DFSC_ACCESS_FLAG_FAULT_LEVEL1,
-    SYN_DFSC_ACCESS_FLAG_FAULT_LEVEL2,
-    SYN_DFSC_ACCESS_FLAG_FAULT_LEVEL3,
-    SYN_DFSC_PERMISSION_FAULT_LEVEL1     = 0x0D,
-    SYN_DFSC_PERMISSION_FAULT_LEVEL2,
-    SYN_DFSC_PERMISSION_FAULT_LEVEL3,
-    SYN_DFSC_SYNCHRONOUS_TAG_CHECK_FAULT = 0x11,  // When FEAT_MTE2 is implemented
-    SYN_DFSC_ALIGNMENT_FAULT             = 0x21,
-    SYN_DFSC_TLB_CONFLICT_ABORT          = 0x30,
-    SYN_DFSC_IMPLEMENTATION_DEFINED_0x34 = 0x34,
-    SYN_DFSC_IMPLEMENTATION_DEFINED_0x35 = 0x35,
-} SyndromeDataFaultStatusCode;
+    SYN_FAULT_ADDRESS_SIZE_LEVEL_0         = 0x00,
+    SYN_FAULT_TRANSLATION_LEVEL_0          = 0x04,
+    SYN_FAULT_ACCESS_FLAG_LEVEL_0          = 0x08,
+    SYN_FAULT_PERMISSION_LEVEL_0           = 0x0C,
+    SYN_FAULT_EXTERNAL_NO_LEVEL            = 0x10, // "not on translation table walk or hardware update of translation table"
+    SYN_FAULT_SYNC_TAG_CHECK               = 0x11,
+    SYN_FAULT_EXTERNAL_LEVEL_0             = 0x14,
+    SYN_FAULT_ECC_PARITY_NO_LEVEL          = 0x18, // "not on translation table walk or hardware update of translation table"
+    SYN_FAULT_ECC_PARITY_LEVEL_0           = 0x1C,
+    SYN_FAULT_ALIGNMENT                    = 0x21,
+    SYN_FAULT_DEBUG_EXCEPTION              = 0x22,
+    SYN_FAULT_TLB_CONFLICT                 = 0x30,
+    SYN_FAULT_UNSUPPORTED_ATOMIC_HW_UPDATE = 0x31,
+    SYN_FAULT_IMPLEMENTATION_DEFINED_0x34  = 0x34, // "(Lockdown)"
+    SYN_FAULT_IMPLEMENTATION_DEFINED_0x35  = 0x35, // "(Unsupported Exclusive or Atomic access)"
+} ISSFaultStatusCode;
 
 static inline uint64_t syndrome64_create(uint64_t instruction_specific_syndrome2, SyndromeExceptionClass exception_class,
                                          uint32_t instruction_length, uint32_t instruction_specific_syndrome)
@@ -155,57 +152,63 @@ static inline uint32_t syn_uncategorized()
     return syndrome32_create(SYN_EC_UNKNOWN_REASON, 1, 0);
 }
 
-// param0 is always 0 so it doesn't change anything.
-static inline uint32_t syn_data_abort_with_iss(unsigned int param0, unsigned int sas, unsigned int sse, unsigned int srt,
-                                               unsigned int sf, unsigned int ar, unsigned int ea, unsigned int cm,
-                                               unsigned int s1ptw, unsigned int wnr, unsigned int dfsc, bool is_16bit)
+static inline uint32_t syn_data_abort_with_iss(bool same_el, uint32_t access_size, bool sign_extend, uint32_t insn_rt,
+                                               bool is_64bit_gpr_ldst, bool acquire_or_release, uint32_t set, bool cm,
+                                               bool s1ptw, bool wnr, ISSFaultStatusCode dfsc, bool is_16bit)
 {
+    SyndromeExceptionClass ec = same_el ? SYN_EC_DATA_ABORT_SAME_EL : SYN_EC_DATA_ABORT_LOWER_EL;
+
     // IL bit is 0 for 16-bit and 1 for 32-bit instruction trapped.
     bool il = !is_16bit;
 
-    // FAR not valid for "External abort other..." (DFSC=0x10).
+    // When adding support for external aborts, make sure Synchronous Error Type is provided through the 'set' argument.
+    // The field is used as LST for FEAT_LS64, a currently unsupported ARMv8.7 extension.
+    //
+    // Also check if 'fnv' and 'ea_type' fields are set correctly.
+    tlib_assert(dfsc != SYN_FAULT_EXTERNAL_NO_LEVEL);
+
+    // "FAR not valid" which can only be set for 'SYN_FAULT_EXTERNAL_NO_LEVEL' fault.
     // Let's assume FAR is always valid for such an abort so FnV will always be 0.
-    unsigned int fnv = 0;
+    bool fnv = 0;
 
-    // TODO: implement this properly
-    // only applicable:
-    // When (DFSC == 0b00xxxx || DFSC == 0b101011) && DFSC != 0b0000xx
-    // When FEAT_RAS is implemented and DFSC == 0b010000
-    unsigned int lst = 0;
-    // TODO: implement this properly
-    // only when FEAT_NV2 implemented
-    unsigned int vncr = 0;
-    unsigned int iss = SYN_DATA_ABORT_ISV | sas << 22 | sse << 21 | srt << 16 | sf << 15 | ar << 14 | vncr << 13 | lst << 11
-                                          | fnv << 10 | ea << 9 | cm << 8 | s1ptw << 7 | wnr << 6 | dfsc;
+    // An implementation-defined classification of External aborts.
+    bool ea_type = 0;
 
-    // A proper EC will be set when raising the exception.
-    // It can't be established during translation whether it should be SYN_EC_DATA_ABORT_LOWER_EL or _SAME_EL.
-    return syndrome32_create(0x0, il, iss);
+    // It's RES0 if FEAT_NV2, a currently unsupported ARMv8.4 extension, is unimplemented.
+    bool vncr = 0;
+
+    uint32_t iss = SYN_DATA_ABORT_ISV | access_size << 22 | sign_extend << 21 | insn_rt << 16 | is_64bit_gpr_ldst << 15
+                                      | acquire_or_release << 14 | vncr << 13 | set << 11 | fnv << 10 | ea_type << 9
+                                      | cm << 8 | s1ptw << 7 | wnr << 6 | dfsc;
+
+    return syndrome32_create(ec, il, iss);
 }
 
 // "No ISS" in the name only applies to ISS[23:14] bits (ISV=0 case).
-static inline uint32_t syn_data_abort_no_iss(bool same_el, unsigned int fnv, unsigned int ea, unsigned int cm, unsigned int s1ptw,
-                                             unsigned int wnr, unsigned int dfsc)
+static inline uint32_t syn_data_abort_no_iss(bool same_el, bool fnv, bool ea, bool cm, bool s1ptw,
+                                             bool wnr, ISSFaultStatusCode dfsc)
 {
+    SyndromeExceptionClass ec = same_el ? SYN_EC_DATA_ABORT_SAME_EL : SYN_EC_DATA_ABORT_LOWER_EL;
+
     // D17-5658: IL bit is 1 for "A Data Abort exception for which the value of the ISV bit is 0".
     bool il = 1;
+
     // Notice no ISV and instruction-specific bits (11:23).
     uint32_t iss = fnv << 10 | ea << 9 | cm << 8 | s1ptw << 7 | wnr << 6 | dfsc;
 
-    // It seems we can set a proper EC straight away in such a case.
-    return syndrome32_create(same_el ? SYN_EC_DATA_ABORT_SAME_EL : SYN_EC_DATA_ABORT_LOWER_EL, il, iss);
+    return syndrome32_create(ec, il, iss);
+}
+
+static inline uint32_t syn_instruction_abort(bool same_el, bool s1ptw, ISSFaultStatusCode ifsc)
+{
+    SyndromeExceptionClass ec = same_el ? SYN_EC_INSTRUCTION_ABORT_SAME_EL : SYN_EC_INSTRUCTION_ABORT_LOWER_EL;
+    uint32_t iss = s1ptw << 7 | ifsc;
+    return syndrome32_create(ec, 1, iss);
 }
 
 static inline SyndromeExceptionClass syn_get_ec(uint64_t syndrome)
 {
     return extract64(syndrome, SYN_EC_SHIFT, SYN_EC_WIDTH);
-}
-
-static inline void syn_set_ec(uint64_t *syndrome, SyndromeExceptionClass new_ec)
-{
-    uint64_t ec_mask = 0x3F << SYN_EC_SHIFT;
-    *syndrome &= ~ec_mask;
-    *syndrome |= new_ec << SYN_EC_SHIFT;
 }
 
 static inline uint32_t syn_wfx(int cv, int cond, int ti, bool is_16bit)
@@ -258,7 +261,7 @@ static inline uint32_t syn_sve_access_trap()
 static inline uint32_t syn_swstep(bool same_el, uint32_t isv, uint32_t ex)
 {
     SyndromeExceptionClass ec = same_el ? SYN_EC_SOFTWARESTEP_SAME_EL : SYN_EC_SOFTWARESTEP_LOWER_EL;
-    uint32_t iss = isv << 24 | ex << 6 | 0x22 /*Debug exception from data sheet*/;
+    uint32_t iss = isv << 24 | ex << 6 | SYN_FAULT_DEBUG_EXCEPTION;
     return syndrome32_create(ec, 1, iss);
 }
 

@@ -69,11 +69,10 @@ static inline void parse_desc(uint32_t va_size_shift, uint64_t desc, uint32_t ip
 }
 
 void handle_mmu_fault_v8(CPUState *env, target_ulong address, int access_type, bool suppress_faults,
-                         SyndromeDataFaultStatusCode syn_dfsc, bool at_instruction_or_cache_maintenance,
+                         ISSFaultStatusCode fault_code, bool at_instruction_or_cache_maintenance,
                          bool s1ptw /* "stage 2 fault on an access made for a stage 1 translation table walk" */)
 {
-    // The 'suppress_faults' (AKA 'no_page_fault') argument can be used to skip translation failure
-    // handling like it's done, e.g., in case of accessing UART's physical address directly from EL0.
+    // The 'suppress_faults' (AKA 'no_page_fault') argument can be used to skip translation failure handling.
     if (unlikely(suppress_faults)) {
         return;
     }
@@ -86,32 +85,15 @@ void handle_mmu_fault_v8(CPUState *env, target_ulong address, int access_type, b
     if (access_type == ACCESS_INST_FETCH) {
         exception_type = EXCP_PREFETCH_ABORT;
 
-        // TODO: Set the remaining syndrome fields.
-        SyndromeExceptionClass fetch_abort_ec = same_el ? SYN_EC_INSTRUCTION_ABORT_SAME_EL : SYN_EC_INSTRUCTION_ABORT_LOWER_EL;
-        syn_set_ec(&syndrome, fetch_abort_ec);
+        syndrome = syn_instruction_abort(same_el, s1ptw, fault_code);
     } else {
         exception_type = EXCP_DATA_ABORT;
 
         bool is_write = access_type == ACCESS_DATA_STORE;
-        uint32_t wnr = is_write || at_instruction_or_cache_maintenance;
+        bool wnr = is_write || at_instruction_or_cache_maintenance;
 
         // TODO: Get partial syndrome from insn_start params instead.
-        syndrome = syn_data_abort_no_iss(same_el, 0, 0, at_instruction_or_cache_maintenance, s1ptw, wnr, syn_dfsc);
-
-        if (!syndrome) {
-            // TODO: Make sure an empty syndrome without 'suppress_faults' doesn't make sense here.
-            tlib_assert_not_reached();
-        }
-        // Let's set the remaining fields if it's only a partial syndrome created during translation with 'syn_data_abort_with_iss'.
-        else if (syn_get_ec(syndrome) == 0x0) {
-            // TODO: SAME_EL should also be used for "Data Abort exceptions taken to EL2 as a result of accesses
-            //       generated associated with VNCR_EL2 as part of nested virtualization support.".
-            SyndromeExceptionClass data_abort_ec = same_el ? SYN_EC_DATA_ABORT_SAME_EL : SYN_EC_DATA_ABORT_LOWER_EL;
-            syn_set_ec(&syndrome, data_abort_ec);
-
-            syndrome = deposit32(syndrome, 6, 1, wnr);
-            syndrome = deposit32(syndrome, 0, 6, syn_dfsc);
-        }
+        syndrome = syn_data_abort_no_iss(same_el, 0, 0, at_instruction_or_cache_maintenance, s1ptw, wnr, fault_code);
     }
 
     env->exception.vaddress = address;
@@ -181,7 +163,7 @@ int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int m
     uint64_t table_addr = extract64(ttbr, 0, 48);
 
     int level;
-    SyndromeDataFaultStatusCode syn_dfsc;
+    ISSFaultStatusCode fault_code = -1;
     uint64_t desc_addr;
     uint64_t desc;
     for (level = MMU_GET_BASE_XLAT_LEVEL(64 - tsz, page_size_shift); level <= MMU_XLAT_LAST_LEVEL; level++) {
@@ -195,13 +177,11 @@ int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int m
         case DESCRIPTOR_TYPE_BLOCK_ENTRY:
             if (level == 1 && page_size_shift != 12) {
                 tlib_printf(LOG_LEVEL_ERROR, "%s: block entry allowed on level 1 only with 4K pages!", __func__);
-                syn_dfsc = SYN_DFSC_TRANSLATION_FAULT_LEVEL1;
                 goto do_fault;
             }
 
             if (level > 2) {
                 tlib_printf(LOG_LEVEL_ERROR, "%s: block descriptor not allowed on level %d!", __func__, level);
-                syn_dfsc = SYN_DFSC_TRANSLATION_FAULT_LEVEL0 + level;
                 goto do_fault;
             }
 
@@ -217,7 +197,6 @@ int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int m
             // It's debug because translation failures can be caused by a valid software behaviour.
             // For example Coreboot uses them to find out the memory size.
             tlib_printf(LOG_LEVEL_DEBUG, "%s: Invalid descriptor type %d!", __func__, desc_type);
-            syn_dfsc = SYN_DFSC_TRANSLATION_FAULT_LEVEL0 + level;
             goto do_fault;
         }
     }
@@ -227,10 +206,14 @@ success:
     if (is_page_access_valid(*prot, access_type)) {
         return TRANSLATE_SUCCESS;
     } else {
-        syn_dfsc = SYN_DFSC_PERMISSION_FAULT_LEVEL1 + level - 1;
+        fault_code = SYN_FAULT_PERMISSION_LEVEL_0 + level;
     }
 
 do_fault:
-    handle_mmu_fault_v8(env, address, access_type, suppress_faults, syn_dfsc, at_instruction_or_cache_maintenance, false);
+    // By default, use a Translation Fault status code.
+    if (fault_code == -1) {
+        fault_code = SYN_FAULT_TRANSLATION_LEVEL_0 + level;
+    }
+    handle_mmu_fault_v8(env, address, access_type, suppress_faults, fault_code, at_instruction_or_cache_maintenance, false);
     return TRANSLATE_FAIL;
 }

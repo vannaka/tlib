@@ -9,11 +9,14 @@
 
 #include <stdint.h>
 
+#include "bit_helper.h"
+
 // D17.2.37
 #define SYN_A64_COND         14 // b1110
 #define SYN_A64_CV           1
 
 #define SYN_EC_SHIFT         26
+#define SYN_EC_WIDTH         6
 #define SYN_IL               1 << 25
 
 #define SYN_DATA_ABORT_ISV   1 << 24
@@ -193,9 +196,9 @@ static inline uint32_t syn_data_abort_no_iss(bool same_el, unsigned int fnv, uns
     return syndrome32_create(same_el ? SYN_EC_DATA_ABORT_SAME_EL : SYN_EC_DATA_ABORT_LOWER_EL, il, iss);
 }
 
-static inline SyndromeExceptionClass syn_get_ec(uint32_t syndrome)
+static inline SyndromeExceptionClass syn_get_ec(uint64_t syndrome)
 {
-    return syndrome >> SYN_EC_SHIFT;
+    return extract64(syndrome, SYN_EC_SHIFT, SYN_EC_WIDTH);
 }
 
 static inline void syn_set_ec(uint64_t *syndrome, SyndromeExceptionClass new_ec)

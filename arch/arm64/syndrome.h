@@ -7,6 +7,8 @@
 #ifndef SYNDROME_H_
 #define SYNDROME_H_
 
+#include <stdint.h>
+
 // D17.2.37
 #define SYN_A64_COND         14 // b1110
 #define SYN_A64_CV           1
@@ -134,11 +136,11 @@ static inline uint32_t syndrome32_create(SyndromeExceptionClass exception_class,
     return (uint32_t)syndrome64_create(0, exception_class, instruction_length, instruction_specific_syndrome);
 }
 
-static inline uint32_t syn_aa64_sysregtrap(unsigned int op0, unsigned int op1, unsigned int op2, unsigned int crn,
-                                           unsigned int crm, unsigned int rt, bool isread)
+static inline uint32_t syn_aa64_sysregtrap(uint32_t op0, uint32_t op1, uint32_t op2, uint32_t crn,
+                                           uint32_t crm, uint32_t rt, bool isread)
 {
     // D17.2.37
-    unsigned int iss = SYN_A64_CV << 24 | SYN_A64_COND << 20 | op2 << 17 | op1 << 14 | crn << 10 | rt << 5 | crm << 1 | isread;
+    uint32_t iss = SYN_A64_CV << 24 | SYN_A64_COND << 20 | op2 << 17 | op1 << 14 | crn << 10 | rt << 5 | crm << 1 | isread;
 
     // TODO: iss2 if FEAT_LS64 is implemented
     return syndrome32_create(SYN_EC_TRAPPED_MSR_MRS_SYSTEM_INST, 0, iss);
@@ -185,7 +187,7 @@ static inline uint32_t syn_data_abort_no_iss(bool same_el, unsigned int fnv, uns
     // D17-5658: IL bit is 1 for "A Data Abort exception for which the value of the ISV bit is 0".
     bool il = 1;
     // Notice no ISV and instruction-specific bits (11:23).
-    unsigned int iss = fnv << 10 | ea << 9 | cm << 8 | s1ptw << 7 | wnr << 6 | dfsc;
+    uint32_t iss = fnv << 10 | ea << 9 | cm << 8 | s1ptw << 7 | wnr << 6 | dfsc;
 
     // It seems we can set a proper EC straight away in such a case.
     return syndrome32_create(same_el ? SYN_EC_DATA_ABORT_SAME_EL : SYN_EC_DATA_ABORT_LOWER_EL, il, iss);
@@ -205,7 +207,7 @@ static inline void syn_set_ec(uint64_t *syndrome, SyndromeExceptionClass new_ec)
 
 static inline uint32_t syn_wfx(int cv, int cond, int ti, bool is_16bit)
 {
-    unsigned int iss = cv << 24 | cond << 20 | ti;
+    uint32_t iss = cv << 24 | cond << 20 | ti;
 
     return syndrome32_create(SYN_EC_TRAPPED_WF, is_16bit, iss);
 }
@@ -252,7 +254,7 @@ static inline uint32_t syn_sve_access_trap()
 
 static inline uint32_t syn_swstep(uint32_t param0, uint32_t isv, uint32_t ex)
 {
-    unsigned int iss = isv << 24 | ex << 6 | 0x22 /*Debug exception from data sheet*/;
+    uint32_t iss = isv << 24 | ex << 6 | 0x22 /*Debug exception from data sheet*/;
 
     // TODO: Choose between LOWER_EL and SAME_EL.
     return syndrome32_create(SYN_EC_SOFTWARESTEP_LOWER_EL, 1, iss);

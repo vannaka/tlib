@@ -618,7 +618,7 @@ static bool trans_VLD_all_lanes(DisasContext *s, arg_VLD_all_lanes *a)
             tcg_gen_gvec_dup_i32(size, neon_full_reg_offset(vd),
                                  8, 8, tmp);
             tcg_gen_gvec_mov(0, neon_full_reg_offset(vd + 1),
-                             neon_full_reg_offset(vd), 8, 8);
+                             neon_full_reg_offset(vd), 8, 8, cpu_env);
         } else {
             tcg_gen_gvec_dup_i32(size, neon_full_reg_offset(vd),
                                  vec_size, vec_size, tmp);

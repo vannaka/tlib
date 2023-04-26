@@ -24,6 +24,8 @@
 #ifndef __TCG_OP_H__
 #define __TCG_OP_H__
 
+#include <inttypes.h>
+
 #include "tcg.h"
 #include "additional.h"
 
@@ -3675,6 +3677,52 @@ static inline void tcg_gen_clzi_i64(TCGv_i64 ret, TCGv_i64 arg1, uint64_t arg2)
     TCGv_i64 t0 = tcg_const_i64(arg2);
     tcg_gen_clz_i64(ret, arg1, t0);
     tcg_temp_free_i64(t0);
+}
+
+static inline void tcg_gen_gvec_mov(unsigned vece, uint32_t dofs, uint32_t aofs,
+                      uint32_t oprsz, uint32_t maxsz, TCGv_ptr cpu_env)
+{
+    tcg_debug_assert(oprsz <= maxsz);
+
+    if (dofs != aofs) {
+        TCGv value_tmp;
+
+        switch (oprsz) {
+        case 4:
+            value_tmp = tcg_temp_new_i32();
+            tcg_gen_ld_i32(value_tmp, cpu_env, aofs);
+            tcg_gen_st_i32(value_tmp, cpu_env, dofs);
+            tcg_temp_free_i32(value_tmp);
+            break;
+        case 8:
+            value_tmp = tcg_temp_new_i64();
+            tcg_gen_ld_i64(value_tmp, cpu_env, aofs);
+            tcg_gen_st_i64(value_tmp, cpu_env, dofs);
+            tcg_temp_free_i64(value_tmp);
+            break;
+        default:
+            tcg_abortf("%s with size %" PRIu32 " isn't currently supported.", __func__, oprsz);
+        }
+    }
+
+    // Clear remaining memory.
+    uint32_t size_diff = maxsz - oprsz;
+    if (size_diff) {
+        uint32_t clear_offset = dofs + oprsz;
+        if (size_diff == 4) {
+            TCGv_i32 zero_tmp = tcg_const_i32(0);
+            tcg_gen_st_i32(zero_tmp, cpu_env, clear_offset);
+            tcg_temp_free_i32(zero_tmp);
+        } else if (size_diff % 8 == 0) {
+            TCGv_i64 zero_tmp = tcg_const_i64(0);
+            for (; size_diff > 0; size_diff -= 8, clear_offset += 8) {
+                tcg_gen_st_i64(zero_tmp, cpu_env, clear_offset);
+            }
+            tcg_temp_free_i64(zero_tmp);
+        } else {
+            tcg_abortf("%s with unsupported sizes: oprsz=%" PRIu32 ", maxsz=%" PRIu32, __func__, oprsz, maxsz);
+        }
+    }
 }
 
 #if TARGET_LONG_BITS == 64

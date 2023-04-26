@@ -3199,7 +3199,7 @@ void gen_gvec_usra(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
         tcg_gen_gvec_2i(rd_ofs, rm_ofs, opr_sz, max_sz, shift, &ops[vece]);
     } else {
         /* Nop, but we do need to clear the tail. */
-        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz);
+        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz, cpu_env);
     }
 }
 
@@ -3416,7 +3416,7 @@ void gen_gvec_srsra(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
      */
     if (shift == (8 << vece)) {
         /* Nop, but we do need to clear the tail. */
-        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz);
+        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz, cpu_env);
     } else {
         tcg_gen_gvec_2i(rd_ofs, rm_ofs, opr_sz, max_sz, shift, &ops[vece]);
     }
@@ -3737,7 +3737,7 @@ void gen_gvec_sri(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
         tcg_gen_gvec_2i(rd_ofs, rm_ofs, opr_sz, max_sz, shift, &ops[vece]);
     } else {
         /* Nop, but we do need to clear the tail. */
-        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz);
+        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz, cpu_env);
     }
 }
 
@@ -3829,7 +3829,7 @@ void gen_gvec_sli(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
     tcg_debug_assert(shift < (8 << vece));
 
     if (shift == 0) {
-        tcg_gen_gvec_mov(vece, rd_ofs, rm_ofs, opr_sz, max_sz);
+        tcg_gen_gvec_mov(vece, rd_ofs, rm_ofs, opr_sz, max_sz, cpu_env);
     } else {
         tcg_gen_gvec_2i(rd_ofs, rm_ofs, opr_sz, max_sz, shift, &ops[vece]);
     }

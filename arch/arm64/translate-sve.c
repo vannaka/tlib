@@ -447,7 +447,7 @@ static bool do_mov_z(DisasContext *s, int rd, int rn)
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         tcg_gen_gvec_mov(MO_8, vec_full_reg_offset(s, rd),
-                         vec_full_reg_offset(s, rn), vsz, vsz);
+                         vec_full_reg_offset(s, rn), vsz, vsz, cpu_env);
     }
     return true;
 }
@@ -478,7 +478,7 @@ static bool do_mov_p(DisasContext *s, int rd, int rn)
     if (sve_access_check(s)) {
         unsigned psz = pred_gvec_reg_size(s);
         tcg_gen_gvec_mov(MO_8, pred_full_reg_offset(s, rd),
-                         pred_full_reg_offset(s, rn), psz, psz);
+                         pred_full_reg_offset(s, rn), psz, psz, cpu_env);
     }
     return true;
 }
@@ -1437,7 +1437,7 @@ static bool do_pppp_flags(DisasContext *s, arg_rprr_s *a,
         int tofs = gofs;
         if (a->rd == a->pg) {
             tofs = offsetof(CPUARMState, vfp.preg_tmp);
-            tcg_gen_gvec_mov(0, tofs, gofs, psz, psz);
+            tcg_gen_gvec_mov(0, tofs, gofs, psz, psz, cpu_env);
         }
 
         tcg_gen_gvec_4(dofs, nofs, mofs, gofs, psz, psz, gvec_op);
@@ -2300,9 +2300,9 @@ static bool do_EXT(DisasContext *s, int rd, int rn, int rm, int imm)
         && n_ofs == size_for_gvec(n_ofs)
         && n_siz == size_for_gvec(n_siz)
         && (d != n || n_siz <= n_ofs)) {
-        tcg_gen_gvec_mov(0, d, n + n_ofs, n_siz, n_siz);
+        tcg_gen_gvec_mov(0, d, n + n_ofs, n_siz, n_siz, cpu_env);
         if (n_ofs != 0) {
-            tcg_gen_gvec_mov(0, d + n_siz, m, n_ofs, n_ofs);
+            tcg_gen_gvec_mov(0, d + n_siz, m, n_ofs, n_ofs, cpu_env);
         }
     } else {
         tcg_gen_gvec_3_ool(d, n, m, vsz, vsz, n_ofs, gen_helper_sve_ext);

@@ -225,7 +225,7 @@ static inline uint64_t arm_hcr_el2_eff(CPUARMState *env)
         effective_hcr &= ~HCR_TID0;
         effective_hcr |= HCR_RW;
     } else {
-        if (el2_enabled) {
+        if (el2_enabled && tge) {
             effective_hcr |= (HCR_AMO | HCR_FMO | HCR_IMO);
         }
     }

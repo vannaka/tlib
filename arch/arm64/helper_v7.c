@@ -370,6 +370,14 @@ inline int get_phys_addr(CPUState *env, target_ulong address, int access_type, i
         return get_external_mmu_phys_addr(env, address, access_type, phys_ptr, prot, suppress_faults);
     }
 
+    // TODO: Implement PMSA and use it if SCTLR_M set.
+    if (arm_feature(env, ARM_FEATURE_PMSA)) {
+        *phys_ptr = address;
+        *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+        *page_size = TARGET_PAGE_SIZE;
+        return TRANSLATE_SUCCESS;
+    }
+
     ARMMMUIdx arm_mmu_idx = core_to_aa64_mmu_idx(mmu_idx);
     uint32_t el = arm_mmu_idx_to_el(arm_mmu_idx);
     if ((arm_sctlr(env, el) & SCTLR_M) == 0) {

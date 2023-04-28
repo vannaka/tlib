@@ -7,6 +7,8 @@
 #ifndef BIT_HELPER_H_
 #define BIT_HELPER_H_
 
+#include <stdint.h>
+
 #include "infrastructure.h"
 
 // Used by deposit32.

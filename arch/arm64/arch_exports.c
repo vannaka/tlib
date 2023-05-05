@@ -42,6 +42,12 @@ uint64_t tlib_get_system_register(const char *name)
 }
 EXC_INT_1(uint64_t, tlib_get_system_register, const char *, name)
 
+uint32_t tlib_has_el3()
+{
+    return cpu->arm_core_config->has_el3;
+}
+EXC_INT_0(uint32_t, tlib_has_el3)
+
 uint32_t tlib_set_available_els(bool el2_enabled, bool el3_enabled)
 {
     enum {

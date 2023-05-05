@@ -559,6 +559,28 @@ enum GUEST_PROFILER_ANNOUNCEMENT
 void cpu_abort(CPUState *env, const char *fmt, ...);
 extern CPUState *cpu;
 
+static inline uint32_t is_page_access_valid(uint32_t page_protection_bits, uint32_t access_type)
+{
+    uint32_t access_type_mask;
+
+    switch (access_type) {
+    case ACCESS_DATA_LOAD:
+        access_type_mask = PAGE_READ;
+        break;
+    case ACCESS_DATA_STORE:
+        access_type_mask = PAGE_WRITE;
+        break;
+    case ACCESS_INST_FETCH:
+        access_type_mask = PAGE_EXEC;
+        break;
+    default:
+        tlib_abortf("Incorrect access type %d", access_type);
+        __builtin_unreachable();
+    }
+
+    return page_protection_bits & access_type_mask;
+}
+
 /* Flags for use in ENV->INTERRUPT_PENDING.
 
    The numbers assigned here are non-sequential in order to preserve

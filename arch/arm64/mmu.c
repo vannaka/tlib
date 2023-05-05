@@ -180,48 +180,57 @@ int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int m
     // Table address is low 48 bits of TTBR
     uint64_t table_addr = extract64(ttbr, 0, 48);
 
-    for (int level = MMU_GET_BASE_XLAT_LEVEL(64 - tsz, page_size_shift); level <= MMU_XLAT_LAST_LEVEL; level++) {
-        uint64_t desc_addr = get_table_address(env, address, table_addr, page_size_shift, level);
-        uint64_t desc = ldq_phys(desc_addr);
+    int level;
+    SyndromeDataFaultStatusCode syn_dfsc;
+    uint64_t desc_addr;
+    uint64_t desc;
+    for (level = MMU_GET_BASE_XLAT_LEVEL(64 - tsz, page_size_shift); level <= MMU_XLAT_LAST_LEVEL; level++) {
+        desc_addr = get_table_address(env, address, table_addr, page_size_shift, level);
+        desc = ldq_phys(desc_addr);
 
         tlib_printf(LOG_LEVEL_NOISY, "%s: level=%d, desc=0x%" PRIx64 " (addr: 0x%" PRIx64 ")", __func__, level, desc, desc_addr);
 
         uint32_t desc_type = extract64(desc, 0, 2);
         switch (desc_type) {
         case DESCRIPTOR_TYPE_BLOCK_ENTRY:
-
             if (level == 1 && page_size_shift != 12) {
                 tlib_printf(LOG_LEVEL_ERROR, "%s: block entry allowed on level 1 only with 4K pages!", __func__);
-                return TRANSLATE_FAIL;
+                syn_dfsc = SYN_DFSC_PERMISSION_FAULT_LEVEL1;
+                goto do_fault;
             }
 
             if (level > 2) {
                 tlib_printf(LOG_LEVEL_ERROR, "%s: block descriptor not allowed on level %d!", __func__, level);
-                return TRANSLATE_FAIL;
+                syn_dfsc = SYN_DFSC_PERMISSION_FAULT_LEVEL1 + level - 1;
+                goto do_fault;
             }
 
-            parse_desc(MMU_GET_XLAT_VA_SIZE_SHIFT(level, page_size_shift), desc, ips, address, current_el == 0, phys_ptr, prot,
-                       page_size);
-            return TRANSLATE_SUCCESS;
-
+            goto success;
         case DESCRIPTOR_TYPE_TABLE_DESCRIPTOR_OR_ENTRY:
             if (level == 3) {
-                parse_desc(MMU_GET_XLAT_VA_SIZE_SHIFT(level, page_size_shift), desc, ips, address, current_el == 0, phys_ptr,
-                           prot, page_size);
-                return TRANSLATE_SUCCESS;
-            } else {
-                table_addr = extract64(desc, page_size_shift, ips_bits[ips] - page_size_shift) << page_size_shift;
+                goto success;
             }
+
+            table_addr = extract64(desc, page_size_shift, ips_bits[ips] - page_size_shift) << page_size_shift;
             break;
         default:
             // It's debug because translation failures can be caused by a valid software behaviour.
             // For example Coreboot uses them to find out the memory size.
             tlib_printf(LOG_LEVEL_DEBUG, "%s: Invalid descriptor type %d!", __func__, desc_type);
-
-            SyndromeDataFaultStatusCode syn_dfsc = SYN_DFSC_TRANSLATION_FAULT_LEVEL0 + level;
-            handle_mmu_fault_v8(env, address, access_type, suppress_faults, syn_dfsc, at_instruction_or_cache_maintenance, false);
-            return TRANSLATE_FAIL;
+            syn_dfsc = SYN_DFSC_TRANSLATION_FAULT_LEVEL0 + level;
+            goto do_fault;
         }
     }
-    return TRANSLATE_SUCCESS;
+
+success:
+    parse_desc(MMU_GET_XLAT_VA_SIZE_SHIFT(level, page_size_shift), desc, ips, address, current_el == 0, phys_ptr, prot, page_size);
+    if (is_page_access_valid(*prot, access_type)) {
+        return TRANSLATE_SUCCESS;
+    } else {
+        syn_dfsc = SYN_DFSC_PERMISSION_FAULT_LEVEL1 + level - 1;
+    }
+
+do_fault:
+    handle_mmu_fault_v8(env, address, access_type, suppress_faults, syn_dfsc, at_instruction_or_cache_maintenance, false);
+    return TRANSLATE_FAIL;
 }

@@ -1098,3 +1098,67 @@ int process_interrupt_v8a(int interrupt_request, CPUState *env)
     do_interrupt_v8a(env);
     return 1;
 }
+
+void HELPER(rebuild_hflags_a32)(CPUState * env, int el)
+{
+    // AARCH64_STATE - whether we execute on arm64
+    DP_TBFLAG_ANY(env->hflags, AARCH64_STATE, 0);
+
+    // SS_ACTIVE - software step active
+    DP_TBFLAG_ANY(env->hflags, SS_ACTIVE, 0);
+
+    // BE - big endian data
+    DP_TBFLAG_ANY(env->hflags, BE_DATA, arm_cpu_data_is_big_endian(env));
+
+    ARMMMUIdx mmuidx;
+    switch (el) {
+    case 3:
+        mmuidx = ARMMMUIdx_SE3;
+        break;
+    case 2:
+        mmuidx = ARMMMUIdx_SE2;
+        break;
+    case 1:
+        mmuidx = ARMMMUIdx_SE10_1;
+        break;
+    case 0:
+        mmuidx = ARMMMUIdx_SE10_0;
+        break;
+    default:
+        tlib_abortf("Invalid el: %d", el);
+        __builtin_unreachable();
+    };
+    DP_TBFLAG_ANY(env->hflags, MMUIDX, arm_to_core_mmu_idx(mmuidx));
+
+    // FPEXC_EL - Target Exception Level for handling Floating-Point-Disabled Exception
+    // TODO: For now use 0 (which means that FPU is enabled). Add proper handling later
+    DP_TBFLAG_ANY(env->hflags, FPEXC_EL, 0);
+
+    // ALIGN_MEM - Aligment check enable, SCTLR_ELx.A
+    DP_TBFLAG_ANY(env->hflags, ALIGN_MEM, env->cp15.sctlr_el[el] & SCTLR_A);
+
+    // PSTATE__IL - Illegal execution state SPSR.IL
+    DP_TBFLAG_ANY(env->hflags, PSTATE__IL, env->pstate & PSTATE_IL);
+
+    /* A-Profile flags */
+
+    // VFP enable (ARM floating-point extension enabled)
+    // TODO: Disable for now. Enable when adding floating-point extension
+    DP_TBFLAG_A32(env->hflags, VFPEN, 0);
+
+    // Legacy support for alternative big-endian memory model (BE-32)
+    DP_TBFLAG_A32(env->hflags, SCTLR__B, arm_sctlr_b(env));
+
+    // HSTR_ACTIVE - Hyp System Trap register
+    // TODO: Disable for now. Enable when adding virtualization extension
+    DP_TBFLAG_A32(env->hflags, HSTR_ACTIVE, 0);
+
+    // Indicates whether cp register reads and writes by guest code should access
+    // the secure or nonsecure bank of banked registers
+    DP_TBFLAG_A32(env->hflags, NS, !access_secure_reg(env));
+
+    // Indicates that SME Streaming mode is active, and SMCR_ELx.FA64 is not.
+    // This requires an SME trap from AArch32 mode when using NEON.
+    // TODO: Disable for now. Enable when adding scalable matrix extension
+    DP_TBFLAG_A32(env->hflags, SME_TRAP_NONSTREAMING, 0);
+}

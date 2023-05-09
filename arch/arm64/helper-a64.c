@@ -1242,14 +1242,9 @@ void HELPER(rebuild_hflags_a64)(CPUARMState *env, int el)
 void arm_rebuild_hflags(CPUARMState *env)
 {
     // TODO: Why is this function called by msr_i_daifset/daifclear after setting env->daif?
-    if(is_a64(env))
-    {
+    if(is_a64(env)) {
         helper_rebuild_hflags_a64(env, arm_current_el(env));
-    }
-    else
-    {
-        // The function is called after modifying CPSR so it should definitely be handled here.
-        tlib_abortf("arm_rebuild_hflags unimplemented for ARM32");
+    } else {
+        helper_rebuild_hflags_a32(env, arm_current_el(env));
     }
 }
-

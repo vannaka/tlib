@@ -99,8 +99,6 @@ FUNC_STUB(float64_squash_input_denormal)
 
 FUNC_STUB(crc32c)
 
-FUNC_STUB(helper_rebuild_hflags_a32)
-
 FUNC_STUB(cpu_stb_mmuidx_ra)
 
 /* mte_helper.c */
@@ -598,7 +596,6 @@ FUNC_STUB(gen_helper_mve_sqshll)
 FUNC_STUB(gen_helper_mve_uqshl)
 FUNC_STUB(gen_helper_mve_uqshll)
 FUNC_STUB(gen_helper_mve_vctp)
-FUNC_STUB(gen_helper_rebuild_hflags_a32)
 FUNC_STUB(gen_helper_rebuild_hflags_a32_newel)
 FUNC_STUB(gen_helper_rebuild_hflags_m32)
 FUNC_STUB(gen_helper_rebuild_hflags_m32_newel)

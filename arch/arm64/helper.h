@@ -276,6 +276,8 @@ DEF_HELPER_3(set_r13_banked, void, env, i32, i32)
 DEF_HELPER_2(get_user_reg, i32, env, i32)
 DEF_HELPER_3(set_user_reg, void, env, i32, i32)
 
+DEF_HELPER_FLAGS_2(rebuild_hflags_a32, 0, void, env, int)
+
 DEF_HELPER_4(neon_tbl, i64, env, i32, i64, i64)
 
 DEF_HELPER_3(shl_cc, i32, env, i32, i32)

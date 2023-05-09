@@ -907,6 +907,20 @@ typedef struct CPUState {
         uint32_t *rlar[M_REG_NUM_BANKS];
         uint32_t mair0[M_REG_NUM_BANKS];
         uint32_t mair1[M_REG_NUM_BANKS];
+
+#define MAX_MPU_REGIONS 24
+        uint32_t prselr;
+        uint32_t prbar;
+        uint32_t prlar;
+        uint32_t prbarn[MAX_MPU_REGIONS];
+        uint32_t prlarn[MAX_MPU_REGIONS];
+
+        uint32_t hprselr;
+        uint32_t hprbar;
+        uint32_t hprlar;
+        uint32_t hprenr;
+        uint32_t hprbarn[MAX_MPU_REGIONS];
+        uint32_t hprlarn[MAX_MPU_REGIONS];
     } pmsav8;
 
     /* v8M SAU */

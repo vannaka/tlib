@@ -121,6 +121,19 @@ RW_FUNCTIONS_EL1_ACCESSING_EL2_IF_E2H_SET(64, ttbr1_el1,        env->cp15.ttbr1_
 RW_FUNCTIONS_EL1_ACCESSING_EL2_IF_E2H_SET(64, vbar_el1,         env->cp15.vbar_el)
 RW_FUNCTIONS_EL1_ACCESSING_EL2_IF_E2H_SET(64, zcr_el1,          env->vfp.zcr_el)
 
+/* PMSAv8 accessors */
+
+#define RW_FUNCTIONS_PMSAv8(width, reg_name, sel_name) \
+    READ_FUNCTION(width, reg_name, env->pmsav8. reg_name ## n [env->pmsav8. sel_name & 0xF]) \
+    WRITE_FUNCTION(width, reg_name, { \
+        env->pmsav8. reg_name ## n [env->pmsav8. sel_name & 0xF] = env->pmsav8. reg_name = value; \
+    })
+
+RW_FUNCTIONS_PMSAv8(64, prbar, prselr)
+RW_FUNCTIONS_PMSAv8(64, prlar, prselr)
+RW_FUNCTIONS_PMSAv8(64, hprbar, hprselr)
+RW_FUNCTIONS_PMSAv8(64, hprlar, hprselr)
+
 /* PSTATE accessors */
 
 #define RW_PSTATE_FUNCTIONS(mnemonic, pstate_field)         \
@@ -1740,6 +1753,127 @@ ARMCPRegInfo cortex_a76_regs[] = {
     ARM64_CP_REG_DEFINE(AVTCR_EL2,               3,   4,  15,   7,   1,  2, RW)
     ARM64_CP_REG_DEFINE(CLUSTERTHREADSIDOVR_EL1, 3,   0,  15,   4,   7,  1, RW)
     ARM64_CP_REG_DEFINE(CPUACTLR3_EL1,           3,   0,  15,   1,   2,  1, RW)
+};
+
+ARMCPRegInfo mpu_registers[] = {
+    // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(PRSELR,              15,   0,   6,   2,   1,  1, RW, FIELD(pmsav8.prselr)) // Protection Region Selection Register
+    ARM32_CP_REG_DEFINE(PRBAR,               15,   0,   6,   3,   0,  1, RW, RW_FNS(prbar)) // Protection Region Base Address Register
+    ARM32_CP_REG_DEFINE(PRLAR,               15,   0,   6,   3,   1,  1, RW, RW_FNS(prlar)) // Protection Region Limit Address Register
+    ARM32_CP_REG_DEFINE(HPRBAR,              15,   4,   6,   3,   0,  2, RW, RW_FNS(hprbar)) // Hyp Protection Region Base Address Register
+    ARM32_CP_REG_DEFINE(HPRLAR,              15,   4,   6,   3,   1,  2, RW, RW_FNS(hprlar)) // Hyp Protection Region Limit Address Register
+    ARM32_CP_REG_DEFINE(HPRSELR,             15,   4,   6,   2,   1,  2, RW, FIELD(pmsav8.hprselr)) // Hyp Protection Region Selection Register
+    ARM32_CP_REG_DEFINE(HPRENR,              15,   4,   6,   1,   1,  2, RW, FIELD(pmsav8.hprenr), RESETVALUE(0)) // Hyp MPU Region Enable Register
+    ARM32_CP_REG_DEFINE(HMPUIR,              15,   4,   0,   0,   4,  2, RO, READFN(hmpuir)) // Hyp MPU Type Register
+    ARM32_CP_REG_DEFINE(MPUIR,               15,   0,   0,   0,   4,  1, RO, READFN(mpuir)) // MPU Type Register
+
+    // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(PRBAR0,              15,   0,   6,   8,   0,  1, RW, FIELD(pmsav8.prbarn[0])) // Protection Region Base Address Register 0
+    ARM32_CP_REG_DEFINE(PRBAR1,              15,   0,   6,   8,   4,  1, RW, FIELD(pmsav8.prbarn[1])) // Protection Region Base Address Register 1
+    ARM32_CP_REG_DEFINE(PRBAR2,              15,   0,   6,   9,   0,  1, RW, FIELD(pmsav8.prbarn[2])) // Protection Region Base Address Register 2
+    ARM32_CP_REG_DEFINE(PRBAR3,              15,   0,   6,   9,   4,  1, RW, FIELD(pmsav8.prbarn[3])) // Protection Region Base Address Register 3
+    ARM32_CP_REG_DEFINE(PRBAR4,              15,   0,   6,  10,   0,  1, RW, FIELD(pmsav8.prbarn[4])) // Protection Region Base Address Register 4
+    ARM32_CP_REG_DEFINE(PRBAR5,              15,   0,   6,  10,   4,  1, RW, FIELD(pmsav8.prbarn[5])) // Protection Region Base Address Register 5
+    ARM32_CP_REG_DEFINE(PRBAR6,              15,   0,   6,  11,   0,  1, RW, FIELD(pmsav8.prbarn[6])) // Protection Region Base Address Register 6
+    ARM32_CP_REG_DEFINE(PRBAR7,              15,   0,   6,  11,   4,  1, RW, FIELD(pmsav8.prbarn[7])) // Protection Region Base Address Register 7
+    ARM32_CP_REG_DEFINE(PRBAR8,              15,   0,   6,  12,   0,  1, RW, FIELD(pmsav8.prbarn[8])) // Protection Region Base Address Register 8
+    ARM32_CP_REG_DEFINE(PRBAR9,              15,   0,   6,  12,   4,  1, RW, FIELD(pmsav8.prbarn[9])) // Protection Region Base Address Register 9
+    ARM32_CP_REG_DEFINE(PRBAR10,             15,   0,   6,  13,   0,  1, RW, FIELD(pmsav8.prbarn[10])) // Protection Region Base Address Register 10
+    ARM32_CP_REG_DEFINE(PRBAR11,             15,   0,   6,  13,   4,  1, RW, FIELD(pmsav8.prbarn[11])) // Protection Region Base Address Register 11
+    ARM32_CP_REG_DEFINE(PRBAR12,             15,   0,   6,  14,   0,  1, RW, FIELD(pmsav8.prbarn[12])) // Protection Region Base Address Register 12
+    ARM32_CP_REG_DEFINE(PRBAR13,             15,   0,   6,  14,   4,  1, RW, FIELD(pmsav8.prbarn[13])) // Protection Region Base Address Register 13
+    ARM32_CP_REG_DEFINE(PRBAR14,             15,   0,   6,  15,   0,  1, RW, FIELD(pmsav8.prbarn[14])) // Protection Region Base Address Register 14
+    ARM32_CP_REG_DEFINE(PRBAR15,             15,   0,   6,  15,   4,  1, RW, FIELD(pmsav8.prbarn[15])) // Protection Region Base Address Register 15
+    ARM32_CP_REG_DEFINE(PRBAR16,             15,   1,   6,   8,   0,  1, RW, FIELD(pmsav8.prbarn[16])) // Protection Region Base Address Register 16
+    ARM32_CP_REG_DEFINE(PRBAR17,             15,   1,   6,   8,   4,  1, RW, FIELD(pmsav8.prbarn[17])) // Protection Region Base Address Register 17
+    ARM32_CP_REG_DEFINE(PRBAR18,             15,   1,   6,   9,   0,  1, RW, FIELD(pmsav8.prbarn[18])) // Protection Region Base Address Register 18
+    ARM32_CP_REG_DEFINE(PRBAR19,             15,   1,   6,   9,   4,  1, RW, FIELD(pmsav8.prbarn[19])) // Protection Region Base Address Register 19
+    ARM32_CP_REG_DEFINE(PRBAR20,             15,   1,   6,  10,   0,  1, RW, FIELD(pmsav8.prbarn[20])) // Protection Region Base Address Register 20
+    ARM32_CP_REG_DEFINE(PRBAR21,             15,   1,   6,  10,   4,  1, RW, FIELD(pmsav8.prbarn[21])) // Protection Region Base Address Register 21
+    ARM32_CP_REG_DEFINE(PRBAR22,             15,   1,   6,  11,   0,  1, RW, FIELD(pmsav8.prbarn[22])) // Protection Region Base Address Register 22
+    ARM32_CP_REG_DEFINE(PRBAR23,             15,   1,   6,  11,   4,  1, RW, FIELD(pmsav8.prbarn[23])) // Protection Region Base Address Register 23
+    ARM32_CP_REG_DEFINE(PRBAR24,             15,   1,   6,  12,   0,  1, RW, FIELD(pmsav8.prbarn[24])) // Protection Region Base Address Register 24
+
+    // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(PRLAR0,              15,   0,   6,   8,   1,  1, RW, FIELD(pmsav8.prlarn[0])) // Protection Region Limit Address Register 0
+    ARM32_CP_REG_DEFINE(PRLAR1,              15,   0,   6,   8,   5,  1, RW, FIELD(pmsav8.prlarn[1])) // Protection Region Limit Address Register 1
+    ARM32_CP_REG_DEFINE(PRLAR2,              15,   0,   6,   9,   1,  1, RW, FIELD(pmsav8.prlarn[2])) // Protection Region Limit Address Register 2
+    ARM32_CP_REG_DEFINE(PRLAR3,              15,   0,   6,   9,   5,  1, RW, FIELD(pmsav8.prlarn[3])) // Protection Region Limit Address Register 3
+    ARM32_CP_REG_DEFINE(PRLAR4,              15,   0,   6,  10,   1,  1, RW, FIELD(pmsav8.prlarn[4])) // Protection Region Limit Address Register 4
+    ARM32_CP_REG_DEFINE(PRLAR5,              15,   0,   6,  10,   5,  1, RW, FIELD(pmsav8.prlarn[5])) // Protection Region Limit Address Register 5
+    ARM32_CP_REG_DEFINE(PRLAR6,              15,   0,   6,  11,   1,  1, RW, FIELD(pmsav8.prlarn[6])) // Protection Region Limit Address Register 6
+    ARM32_CP_REG_DEFINE(PRLAR7,              15,   0,   6,  11,   5,  1, RW, FIELD(pmsav8.prlarn[7])) // Protection Region Limit Address Register 7
+    ARM32_CP_REG_DEFINE(PRLAR8,              15,   0,   6,  12,   1,  1, RW, FIELD(pmsav8.prlarn[8])) // Protection Region Limit Address Register 8
+    ARM32_CP_REG_DEFINE(PRLAR9,              15,   0,   6,  12,   5,  1, RW, FIELD(pmsav8.prlarn[9])) // Protection Region Limit Address Register 9
+    ARM32_CP_REG_DEFINE(PRLAR10,             15,   0,   6,  13,   1,  1, RW, FIELD(pmsav8.prlarn[10])) // Protection Region Limit Address Register 10
+    ARM32_CP_REG_DEFINE(PRLAR11,             15,   0,   6,  13,   5,  1, RW, FIELD(pmsav8.prlarn[11])) // Protection Region Limit Address Register 11
+    ARM32_CP_REG_DEFINE(PRLAR12,             15,   0,   6,  14,   1,  1, RW, FIELD(pmsav8.prlarn[12])) // Protection Region Limit Address Register 12
+    ARM32_CP_REG_DEFINE(PRLAR13,             15,   0,   6,  14,   5,  1, RW, FIELD(pmsav8.prlarn[13])) // Protection Region Limit Address Register 13
+    ARM32_CP_REG_DEFINE(PRLAR14,             15,   0,   6,  15,   1,  1, RW, FIELD(pmsav8.prlarn[14])) // Protection Region Limit Address Register 14
+    ARM32_CP_REG_DEFINE(PRLAR15,             15,   0,   6,  15,   5,  1, RW, FIELD(pmsav8.prlarn[15])) // Protection Region Limit Address Register 15
+    ARM32_CP_REG_DEFINE(PRLAR16,             15,   1,   6,   8,   1,  1, RW, FIELD(pmsav8.prlarn[16])) // Protection Region Limit Address Register 16
+    ARM32_CP_REG_DEFINE(PRLAR17,             15,   1,   6,   8,   5,  1, RW, FIELD(pmsav8.prlarn[17])) // Protection Region Limit Address Register 17
+    ARM32_CP_REG_DEFINE(PRLAR18,             15,   1,   6,   9,   1,  1, RW, FIELD(pmsav8.prlarn[18])) // Protection Region Limit Address Register 18
+    ARM32_CP_REG_DEFINE(PRLAR19,             15,   1,   6,   9,   5,  1, RW, FIELD(pmsav8.prlarn[19])) // Protection Region Limit Address Register 19
+    ARM32_CP_REG_DEFINE(PRLAR20,             15,   1,   6,  10,   1,  1, RW, FIELD(pmsav8.prlarn[20])) // Protection Region Limit Address Register 20
+    ARM32_CP_REG_DEFINE(PRLAR21,             15,   1,   6,  10,   5,  1, RW, FIELD(pmsav8.prlarn[21])) // Protection Region Limit Address Register 21
+    ARM32_CP_REG_DEFINE(PRLAR22,             15,   1,   6,  11,   1,  1, RW, FIELD(pmsav8.prlarn[22])) // Protection Region Limit Address Register 22
+    ARM32_CP_REG_DEFINE(PRLAR23,             15,   1,   6,  11,   5,  1, RW, FIELD(pmsav8.prlarn[23])) // Protection Region Limit Address Register 23
+    ARM32_CP_REG_DEFINE(PRLAR24,             15,   1,   6,  12,   1,  1, RW, FIELD(pmsav8.prlarn[24])) // Protection Region Limit Address Register 24
+
+    // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(HPRBAR0,             15,   4,   6,   8,   0,  2, RW, FIELD(pmsav8.hprbarn[0])) // Hyp Protection Region Base Address Register 0
+    ARM32_CP_REG_DEFINE(HPRBAR1,             15,   4,   6,   8,   4,  2, RW, FIELD(pmsav8.hprbarn[1])) // Hyp Protection Region Base Address Register 1
+    ARM32_CP_REG_DEFINE(HPRBAR2,             15,   4,   6,   9,   0,  2, RW, FIELD(pmsav8.hprbarn[2])) // Hyp Protection Region Base Address Register 2
+    ARM32_CP_REG_DEFINE(HPRBAR3,             15,   4,   6,   9,   4,  2, RW, FIELD(pmsav8.hprbarn[3])) // Hyp Protection Region Base Address Register 3
+    ARM32_CP_REG_DEFINE(HPRBAR4,             15,   4,   6,  10,   0,  2, RW, FIELD(pmsav8.hprbarn[4])) // Hyp Protection Region Base Address Register 4
+    ARM32_CP_REG_DEFINE(HPRBAR5,             15,   4,   6,  10,   4,  2, RW, FIELD(pmsav8.hprbarn[5])) // Hyp Protection Region Base Address Register 5
+    ARM32_CP_REG_DEFINE(HPRBAR6,             15,   4,   6,  11,   0,  2, RW, FIELD(pmsav8.hprbarn[6])) // Hyp Protection Region Base Address Register 6
+    ARM32_CP_REG_DEFINE(HPRBAR7,             15,   4,   6,  11,   4,  2, RW, FIELD(pmsav8.hprbarn[7])) // Hyp Protection Region Base Address Register 7
+    ARM32_CP_REG_DEFINE(HPRBAR8,             15,   4,   6,  12,   0,  2, RW, FIELD(pmsav8.hprbarn[8])) // Hyp Protection Region Base Address Register 8
+    ARM32_CP_REG_DEFINE(HPRBAR9,             15,   4,   6,  12,   4,  2, RW, FIELD(pmsav8.hprbarn[9])) // Hyp Protection Region Base Address Register 9
+    ARM32_CP_REG_DEFINE(HPRBAR10,            15,   4,   6,  13,   0,  2, RW, FIELD(pmsav8.hprbarn[10])) // Hyp Protection Region Base Address Register 10
+    ARM32_CP_REG_DEFINE(HPRBAR11,            15,   4,   6,  13,   4,  2, RW, FIELD(pmsav8.hprbarn[11])) // Hyp Protection Region Base Address Register 11
+    ARM32_CP_REG_DEFINE(HPRBAR12,            15,   4,   6,  14,   0,  2, RW, FIELD(pmsav8.hprbarn[12])) // Hyp Protection Region Base Address Register 12
+    ARM32_CP_REG_DEFINE(HPRBAR13,            15,   4,   6,  14,   4,  2, RW, FIELD(pmsav8.hprbarn[13])) // Hyp Protection Region Base Address Register 13
+    ARM32_CP_REG_DEFINE(HPRBAR14,            15,   4,   6,  15,   0,  2, RW, FIELD(pmsav8.hprbarn[14])) // Hyp Protection Region Base Address Register 14
+    ARM32_CP_REG_DEFINE(HPRBAR15,            15,   4,   6,  15,   4,  2, RW, FIELD(pmsav8.hprbarn[15])) // Hyp Protection Region Base Address Register 15
+    ARM32_CP_REG_DEFINE(HPRBAR16,            15,   5,   6,   8,   0,  2, RW, FIELD(pmsav8.hprbarn[16])) // Hyp Protection Region Base Address Register 16
+    ARM32_CP_REG_DEFINE(HPRBAR17,            15,   5,   6,   8,   4,  2, RW, FIELD(pmsav8.hprbarn[17])) // Hyp Protection Region Base Address Register 17
+    ARM32_CP_REG_DEFINE(HPRBAR18,            15,   5,   6,   9,   0,  2, RW, FIELD(pmsav8.hprbarn[18])) // Hyp Protection Region Base Address Register 18
+    ARM32_CP_REG_DEFINE(HPRBAR19,            15,   5,   6,   9,   4,  2, RW, FIELD(pmsav8.hprbarn[19])) // Hyp Protection Region Base Address Register 19
+    ARM32_CP_REG_DEFINE(HPRBAR20,            15,   5,   6,  10,   0,  2, RW, FIELD(pmsav8.hprbarn[20])) // Hyp Protection Region Base Address Register 20
+    ARM32_CP_REG_DEFINE(HPRBAR21,            15,   5,   6,  10,   4,  2, RW, FIELD(pmsav8.hprbarn[21])) // Hyp Protection Region Base Address Register 21
+    ARM32_CP_REG_DEFINE(HPRBAR22,            15,   5,   6,  11,   0,  2, RW, FIELD(pmsav8.hprbarn[22])) // Hyp Protection Region Base Address Register 22
+    ARM32_CP_REG_DEFINE(HPRBAR23,            15,   5,   6,  11,   4,  2, RW, FIELD(pmsav8.hprbarn[23])) // Hyp Protection Region Base Address Register 23
+    ARM32_CP_REG_DEFINE(HPRBAR24,            15,   5,   6,  12,   0,  2, RW, FIELD(pmsav8.hprbarn[24])) // Hyp Protection Region Base Address Register 24
+
+    // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(HPRLAR0,             15,   4,   6,   8,   1,  2, RW, FIELD(pmsav8.hprlarn[0])) // Hyp Protection Region Limit Address Register 0
+    ARM32_CP_REG_DEFINE(HPRLAR1,             15,   4,   6,   8,   5,  2, RW, FIELD(pmsav8.hprlarn[1])) // Hyp Protection Region Limit Address Register 1
+    ARM32_CP_REG_DEFINE(HPRLAR2,             15,   4,   6,   9,   1,  2, RW, FIELD(pmsav8.hprlarn[2])) // Hyp Protection Region Limit Address Register 2
+    ARM32_CP_REG_DEFINE(HPRLAR3,             15,   4,   6,   9,   5,  2, RW, FIELD(pmsav8.hprlarn[3])) // Hyp Protection Region Limit Address Register 3
+    ARM32_CP_REG_DEFINE(HPRLAR4,             15,   4,   6,  10,   1,  2, RW, FIELD(pmsav8.hprlarn[4])) // Hyp Protection Region Limit Address Register 4
+    ARM32_CP_REG_DEFINE(HPRLAR5,             15,   4,   6,  10,   5,  2, RW, FIELD(pmsav8.hprlarn[5])) // Hyp Protection Region Limit Address Register 5
+    ARM32_CP_REG_DEFINE(HPRLAR6,             15,   4,   6,  11,   1,  2, RW, FIELD(pmsav8.hprlarn[6])) // Hyp Protection Region Limit Address Register 6
+    ARM32_CP_REG_DEFINE(HPRLAR7,             15,   4,   6,  11,   5,  2, RW, FIELD(pmsav8.hprlarn[7])) // Hyp Protection Region Limit Address Register 7
+    ARM32_CP_REG_DEFINE(HPRLAR8,             15,   4,   6,  12,   1,  2, RW, FIELD(pmsav8.hprlarn[8])) // Hyp Protection Region Limit Address Register 8
+    ARM32_CP_REG_DEFINE(HPRLAR9,             15,   4,   6,  12,   5,  2, RW, FIELD(pmsav8.hprlarn[9])) // Hyp Protection Region Limit Address Register 9
+    ARM32_CP_REG_DEFINE(HPRLAR10,            15,   4,   6,  13,   1,  2, RW, FIELD(pmsav8.hprlarn[10])) // Hyp Protection Region Limit Address Register 10
+    ARM32_CP_REG_DEFINE(HPRLAR11,            15,   4,   6,  13,   5,  2, RW, FIELD(pmsav8.hprlarn[11])) // Hyp Protection Region Limit Address Register 11
+    ARM32_CP_REG_DEFINE(HPRLAR12,            15,   4,   6,  14,   1,  2, RW, FIELD(pmsav8.hprlarn[12])) // Hyp Protection Region Limit Address Register 12
+    ARM32_CP_REG_DEFINE(HPRLAR13,            15,   4,   6,  14,   5,  2, RW, FIELD(pmsav8.hprlarn[13])) // Hyp Protection Region Limit Address Register 13
+    ARM32_CP_REG_DEFINE(HPRLAR14,            15,   4,   6,  15,   1,  2, RW, FIELD(pmsav8.hprlarn[14])) // Hyp Protection Region Limit Address Register 14
+    ARM32_CP_REG_DEFINE(HPRLAR15,            15,   4,   6,  15,   5,  2, RW, FIELD(pmsav8.hprlarn[15])) // Hyp Protection Region Limit Address Register 15
+    ARM32_CP_REG_DEFINE(HPRLAR16,            15,   5,   6,   8,   1,  2, RW, FIELD(pmsav8.hprlarn[16])) // Hyp Protection Region Limit Address Register 16
+    ARM32_CP_REG_DEFINE(HPRLAR17,            15,   5,   6,   8,   5,  2, RW, FIELD(pmsav8.hprlarn[17])) // Hyp Protection Region Limit Address Register 17
+    ARM32_CP_REG_DEFINE(HPRLAR18,            15,   5,   6,   9,   1,  2, RW, FIELD(pmsav8.hprlarn[18])) // Hyp Protection Region Limit Address Register 18
+    ARM32_CP_REG_DEFINE(HPRLAR19,            15,   5,   6,   9,   5,  2, RW, FIELD(pmsav8.hprlarn[19])) // Hyp Protection Region Limit Address Register 19
+    ARM32_CP_REG_DEFINE(HPRLAR20,            15,   5,   6,  10,   1,  2, RW, FIELD(pmsav8.hprlarn[20])) // Hyp Protection Region Limit Address Register 20
+    ARM32_CP_REG_DEFINE(HPRLAR21,            15,   5,   6,  10,   5,  2, RW, FIELD(pmsav8.hprlarn[21])) // Hyp Protection Region Limit Address Register 21
+    ARM32_CP_REG_DEFINE(HPRLAR22,            15,   5,   6,  11,   1,  2, RW, FIELD(pmsav8.hprlarn[22])) // Hyp Protection Region Limit Address Register 22
+    ARM32_CP_REG_DEFINE(HPRLAR23,            15,   5,   6,  11,   5,  2, RW, FIELD(pmsav8.hprlarn[23])) // Hyp Protection Region Limit Address Register 23
+    ARM32_CP_REG_DEFINE(HPRLAR24,            15,   5,   6,  12,   1,  2, RW, FIELD(pmsav8.hprlarn[24])) // Hyp Protection Region Limit Address Register 24
 };
 
 void add_implementation_defined_registers(CPUState *env, uint32_t cpu_model_id)

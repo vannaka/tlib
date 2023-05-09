@@ -1658,7 +1658,14 @@ void cp_regs_add(CPUState *env, ARMCPRegInfo *reg_info_array, uint32_t array_cou
     for (int i = 0; i < array_count; i++) {
         ARMCPRegInfo *reg_info = &reg_info_array[i];
         uint32_t *key = tlib_malloc(sizeof(uint32_t));
-        *key = ENCODE_AA64_CP_REG(reg_info->cp, reg_info->crn, reg_info->crm, reg_info->op0, reg_info->op1, reg_info->op2);
+
+        if (arm_feature(env, ARM_FEATURE_AARCH64)) {
+            *key = ENCODE_AA64_CP_REG(reg_info->cp, reg_info->crn, reg_info->crm, reg_info->op0, reg_info->op1, reg_info->op2);
+        } else {
+            bool ns = true; // TODO: Handle secure state banking in a correct way
+            bool is64 = reg_info->type & ARM_CP_64BIT;
+            *key = ENCODE_CP_REG(reg_info->cp, is64, ns, reg_info->crn, reg_info->crm, reg_info->op1, reg_info->op2);
+        }
 
         if (!ttable_insert_check(env->arm_core_config->cp_regs, key, reg_info)) {
             tlib_abortf("Duplicated system_register definition!: name: %s, cp: %d, crn: %d, op1: %d, crm: %d, op2: %d, op0: %d",
@@ -1925,6 +1932,9 @@ void add_implementation_defined_registers(CPUState *env, uint32_t cpu_model_id)
         cp_regs_add(env, cortex_a75_a76_common_regs, ARM_CP_ARRAY_COUNT(cortex_a75_a76_common_regs));
         cp_regs_add(env, cortex_a76_regs, ARM_CP_ARRAY_COUNT(cortex_a76_regs));
         break;
+    case ARM_CPUID_CORTEXR52:
+        cp_regs_add(env, cortex_r52_regs, ARM_CP_ARRAY_COUNT(cortex_r52_regs));
+        break;
     default:
         tlib_assert_not_reached();
     }
@@ -1939,6 +1949,8 @@ uint32_t get_implementation_defined_registers_count(uint32_t cpu_model_id)
         return ARM_CP_ARRAY_COUNT(cortex_a75_a76_common_regs);
     case ARM_CPUID_CORTEXA76:
         return ARM_CP_ARRAY_COUNT(cortex_a75_a76_common_regs) + ARM_CP_ARRAY_COUNT(cortex_a76_regs);
+    case ARM_CPUID_CORTEXR52:
+        return ARM_CP_ARRAY_COUNT(cortex_r52_regs);
     default:
         tlib_assert_not_reached();
     }
@@ -1952,16 +1964,34 @@ void entry_remove_callback(TTable_entry *entry)
 
 void system_instructions_and_registers_init(CPUState *env, uint32_t cpu_model_id)
 {
-    uint32_t aarch64_instructions_count = ARM_CP_ARRAY_COUNT(aarch64_instructions);
-    uint32_t aarch64_registers_count = ARM_CP_ARRAY_COUNT(aarch64_registers);
-    uint32_t implementation_defined_registers_count = get_implementation_defined_registers_count(cpu_model_id);
+    uint32_t instructions_count, registers_count;
+    ARMCPRegInfo *instructions, *registers;
+    if (arm_feature(env, ARM_FEATURE_AARCH64)) {
+        instructions = aarch64_instructions;
+        instructions_count = ARM_CP_ARRAY_COUNT(aarch64_instructions);
+        registers = aarch64_registers;
+        registers_count = ARM_CP_ARRAY_COUNT(aarch64_registers);
+    } else {
+        instructions = aarch32_instructions;
+        instructions_count = ARM_CP_ARRAY_COUNT(aarch32_instructions);
+        registers = aarch32_registers;
+        registers_count = ARM_CP_ARRAY_COUNT(aarch32_registers);
+    }
 
-    uint32_t ttable_size = aarch64_instructions_count + aarch64_registers_count + implementation_defined_registers_count;
+    uint32_t implementation_defined_registers_count = get_implementation_defined_registers_count(cpu_model_id);
+    uint32_t ttable_size = instructions_count + registers_count + implementation_defined_registers_count;
+    if (arm_feature(env, ARM_FEATURE_PMSA)) {
+        ttable_size += ARM_CP_ARRAY_COUNT(mpu_registers);
+    }
     env->arm_core_config->cp_regs = ttable_create(ttable_size, entry_remove_callback, ttable_compare_key_uint32);
 
-    cp_regs_add(env, aarch64_instructions, aarch64_instructions_count);
-    cp_regs_add(env, aarch64_registers, aarch64_registers_count);
+    cp_regs_add(env, instructions, instructions_count);
+    cp_regs_add(env, registers, registers_count);
     add_implementation_defined_registers(env, cpu_model_id);
+
+    if (arm_feature(env, ARM_FEATURE_PMSA)) {
+        cp_regs_add(env, mpu_registers, ARM_CP_ARRAY_COUNT(mpu_registers));
+    }
 }
 
 void system_instructions_and_registers_reset(CPUState *env)

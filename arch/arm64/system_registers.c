@@ -181,6 +181,8 @@ READ_CONFIG(mvfr0_el1,         isar.mvfr0)
 READ_CONFIG(mvfr1_el1,         isar.mvfr1)
 READ_CONFIG(mvfr2_el1,         isar.mvfr2)
 READ_CONFIG(revidr_el1,        revidr)
+READ_CONFIG(mpuir,             mpuir)
+READ_CONFIG(hmpuir,            hmpuir)
 
 /* Macros creating ARMCPRegInfo entries. */
 
@@ -206,12 +208,18 @@ READ_CONFIG(revidr_el1,        revidr)
 #define ARM64_CP_REG_DEFINE(name, op0, op1, crn, crm, op2, el, extra_type, ...) \
     ARM_CP_REG_DEFINE(name, CP_REG_ARM64_SYSREG_CP, op0, op1, crn, crm, op2, 64, el, extra_type, __VA_ARGS__)
 
+#define ARM32_CP_REG_DEFINE(name, cp, op1, crn, crm, op2, el, extra_type, ...) \
+    ARM_CP_REG_DEFINE(name, cp, 0, op1, crn, crm, op2, 32, el, extra_type, __VA_ARGS__)
+
+#define ARM32_CP_64BIT_REG_DEFINE(name, cp, op1, crm, el, extra_type, ...) \
+    ARM_CP_REG_DEFINE(name, cp, 0, op1, 0, crm, 0, 32, el, extra_type | ARM_CP_64BIT, __VA_ARGS__)
+
 /* Macros for the most common types used in 'extra_type'.
  *
  * Reading/writing the register specified as WO/RO (respectively) will trigger the 'Undefined instruction' exception.
  * Therefore CONST can be used with RO if the instruction to write the given register doesn't exist.
  * Writes to a CONST register are simply ignored unless RO is used too.
- * 
+ *
  * CONST has to be used as the last one in 'extra_type', e.g., 'RW | CONST(0xCAFE)'.
  * IGNORED silences the unhandled warning.
  */
@@ -229,6 +237,520 @@ READ_CONFIG(revidr_el1,        revidr)
 #define RESETVALUE(value)      .resetvalue = value
 #define RW_FNS(name)           READFN(name), WRITEFN(name)
 #define WRITEFN(name)          .writefn = write_ ## name
+
+
+ARMCPRegInfo aarch32_registers[] = {
+    // The params are:  name              cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(ACTLR,            15,   0,   1,   0,   1,   1, RW)  // Auxiliary Control Register
+    ARM32_CP_REG_DEFINE(ACTLR2,           15,   0,   1,   0,   3,   1, RW)  // Auxiliary Control Register 2
+    ARM32_CP_REG_DEFINE(ADFSR,            15,   0,   5,   1,   0,   1, RW)  // Auxiliary Data Fault Status Register
+    ARM32_CP_REG_DEFINE(AIDR,             15,   1,   0,   0,   7,   1, RW)  // Auxiliary ID Register
+    ARM32_CP_REG_DEFINE(AIFSR,            15,   0,   5,   1,   1,   1, RW)  // Auxiliary Instruction Fault Status Register
+    ARM32_CP_REG_DEFINE(AMAIR0,           15,   0,  10,   3,   0,   1, RW)  // Auxiliary Memory Attribute Indirection Register 0
+    ARM32_CP_REG_DEFINE(AMAIR1,           15,   0,  10,   3,   1,   1, RW)  // Auxiliary Memory Attribute Indirection Register 1
+    ARM32_CP_REG_DEFINE(AMCFGR,           15,   0,  13,   2,   1,   0, RW)  // Activity Monitors Configuration Register
+    ARM32_CP_REG_DEFINE(AMCGCR,           15,   0,  13,   2,   2,   0, RW)  // Activity Monitors Counter Group Configuration Register
+    ARM32_CP_REG_DEFINE(AMCNTENCLR0,      15,   0,  13,   2,   4,   0, RW)  // Activity Monitors Count Enable Clear Register 0
+    ARM32_CP_REG_DEFINE(AMCNTENCLR1,      15,   0,  13,   3,   0,   0, RW)  // Activity Monitors Count Enable Clear Register 1
+    ARM32_CP_REG_DEFINE(AMCNTENSET0,      15,   0,  13,   2,   5,   0, RW)  // Activity Monitors Count Enable Set Register 0
+    ARM32_CP_REG_DEFINE(AMCNTENSET1,      15,   0,  13,   3,   1,   0, RW)  // Activity Monitors Count Enable Set Register 1
+    ARM32_CP_REG_DEFINE(AMCR,             15,   0,  13,   2,   0,   0, RW)  // Activity Monitors Control Register
+    ARM32_CP_REG_DEFINE(AMEVTYPER00,      15,   0,  13,   6,   0,   0, RW)  // Activity Monitors Event Type Registers 0 (0/3)
+    ARM32_CP_REG_DEFINE(AMEVTYPER01,      15,   0,  13,   6,   1,   0, RW)  // Activity Monitors Event Type Registers 0 (1/3)
+    ARM32_CP_REG_DEFINE(AMEVTYPER02,      15,   0,  13,   6,   2,   0, RW)  // Activity Monitors Event Type Registers 0 (2/3)
+    ARM32_CP_REG_DEFINE(AMEVTYPER03,      15,   0,  13,   6,   3,   0, RW)  // Activity Monitors Event Type Registers 0 (3/3)
+    ARM32_CP_REG_DEFINE(AMEVTYPER10,      15,   0,  13,  14,   0,   0, RW)  // Activity Monitors Event Type Registers 1 (0/3)
+    ARM32_CP_REG_DEFINE(AMEVTYPER11,      15,   0,  13,  14,   1,   0, RW)  // Activity Monitors Event Type Registers 1 (1/3)
+    ARM32_CP_REG_DEFINE(AMEVTYPER12,      15,   0,  13,  14,   2,   0, RW)  // Activity Monitors Event Type Registers 1 (2/3)
+    ARM32_CP_REG_DEFINE(AMEVTYPER13,      15,   0,  13,  14,   3,   0, RW)  // Activity Monitors Event Type Registers 1 (3/3)
+    ARM32_CP_REG_DEFINE(AMUSERENR,        15,   0,  13,   2,   3,   0, RW)  // Activity Monitors User Enable Register
+    ARM32_CP_REG_DEFINE(CCSIDR,           15,   1,   0,   0,   0,   1, RW, READFN(ccsidr_el1))  // Current Cache Size ID Register
+    ARM32_CP_REG_DEFINE(CCSIDR2,          15,   1,   0,   0,   2,   1, RW, READFN(ccsidr2_el1))  // Current Cache Size ID Register 2
+    ARM32_CP_REG_DEFINE(CLIDR,            15,   1,   0,   0,   1,   1, RW, READFN(clidr_el1))  // Cache Level ID Register
+    ARM32_CP_REG_DEFINE(CNTFRQ,           15,   0,  14,   0,   0,   0, RW)  // Counter-timer Frequency register
+    ARM32_CP_REG_DEFINE(CNTHCTL,          15,   4,  14,   1,   0,   2, RW)  // Counter-timer Hyp Control register
+    ARM32_CP_REG_DEFINE(CNTHP_CTL,        15,   4,  14,   2,   1,   2, RW)  // Counter-timer Hyp Physical Timer Control register
+    ARM32_CP_REG_DEFINE(CNTHP_TVAL,       15,   4,  14,   2,   0,   2, RW)  // Counter-timer Hyp Physical Timer Timer Value register
+    ARM32_CP_REG_DEFINE(CNTKCTL,          15,   0,  14,   1,   0,   1, RW)  // Counter-timer Kernel Control register
+    ARM32_CP_REG_DEFINE(CNTP_CTL,         15,   0,  14,   2,   1,   0, RW)  // Counter-timer Physical Timer Control register
+    ARM32_CP_REG_DEFINE(CNTP_TVAL,        15,   0,  14,   2,   0,   0, RW)  // Counter-timer Physical Timer Timer Value register
+    ARM32_CP_REG_DEFINE(CNTV_CTL,         15,   0,  14,   3,   1,   0, RW)  // Counter-timer Virtual Timer Control register
+    ARM32_CP_REG_DEFINE(CNTV_TVAL,        15,   0,  14,   3,   0,   0, RW)  // Counter-timer Virtual Timer Timer Value register
+    ARM32_CP_REG_DEFINE(CONTEXTIDR,       15,   0,  13,   0,   1,   1, RW, FIELD(cp15.contextidr_ns))  // Context ID Register
+    ARM32_CP_REG_DEFINE(CPACR,            15,   0,   1,   0,   2,   1, RW, FIELD(cp15.cpacr_el1))  // Architectural Feature Access Control Register
+    ARM32_CP_REG_DEFINE(CSSELR,           15,   2,   0,   0,   0,   1, RW, FIELD(cp15.csselr_ns))  // Cache Size Selection Register
+    ARM32_CP_REG_DEFINE(CTR,              15,   0,   0,   0,   1,   1, RW, READFN(ctr_el0))  // Cache Type Register
+    ARM32_CP_REG_DEFINE(DACR,             15,   0,   3,   0,   0,   1, RW, FIELD(cp15.dacr_ns))  // Domain Access Control Register
+    ARM32_CP_REG_DEFINE(DBGAUTHSTATUS,    14,   0,   7,  14,   6,   1, RW)  // Debug Authentication Status register
+    ARM32_CP_REG_DEFINE(DBGBCR0,          14,   0,   0,   0,   5,   1, RW, FIELD(cp15.dbgbcr[0]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR1,          14,   0,   0,   1,   5,   1, RW, FIELD(cp15.dbgbcr[1]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR2,          14,   0,   0,   2,   5,   1, RW, FIELD(cp15.dbgbcr[2]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR3,          14,   0,   0,   3,   5,   1, RW, FIELD(cp15.dbgbcr[3]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR4,          14,   0,   0,   4,   5,   1, RW, FIELD(cp15.dbgbcr[4]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR5,          14,   0,   0,   5,   5,   1, RW, FIELD(cp15.dbgbcr[5]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR6,          14,   0,   0,   6,   5,   1, RW, FIELD(cp15.dbgbcr[6]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR7,          14,   0,   0,   7,   5,   1, RW, FIELD(cp15.dbgbcr[7]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR8,          14,   0,   0,   8,   5,   1, RW, FIELD(cp15.dbgbcr[8]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR9,          14,   0,   0,   9,   5,   1, RW, FIELD(cp15.dbgbcr[9]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR10,         14,   0,   0,  10,   5,   1, RW, FIELD(cp15.dbgbcr[10]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR11,         14,   0,   0,  11,   5,   1, RW, FIELD(cp15.dbgbcr[11]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR12,         14,   0,   0,  12,   5,   1, RW, FIELD(cp15.dbgbcr[12]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR13,         14,   0,   0,  13,   5,   1, RW, FIELD(cp15.dbgbcr[13]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR14,         14,   0,   0,  14,   5,   1, RW, FIELD(cp15.dbgbcr[14]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBCR15,         14,   0,   0,  15,   5,   1, RW, FIELD(cp15.dbgbcr[15]))  // Debug Breakpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGBVR0,          14,   0,   0,   0,   4,   1, RW, FIELD(cp15.dbgbvr[0]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR1,          14,   0,   0,   1,   4,   1, RW, FIELD(cp15.dbgbvr[1]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR2,          14,   0,   0,   2,   4,   1, RW, FIELD(cp15.dbgbvr[2]))  // Debug Breakpoint Value Registers
+    // The params are:  name              cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(DBGBVR3,          14,   0,   0,   3,   4,   1, RW, FIELD(cp15.dbgbvr[3]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR4,          14,   0,   0,   4,   4,   1, RW, FIELD(cp15.dbgbvr[4]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR5,          14,   0,   0,   5,   4,   1, RW, FIELD(cp15.dbgbvr[5]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR6,          14,   0,   0,   6,   4,   1, RW, FIELD(cp15.dbgbvr[6]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR7,          14,   0,   0,   7,   4,   1, RW, FIELD(cp15.dbgbvr[7]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR8,          14,   0,   0,   8,   4,   1, RW, FIELD(cp15.dbgbvr[8]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR9,          14,   0,   0,   9,   4,   1, RW, FIELD(cp15.dbgbvr[9]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR10,         14,   0,   0,  10,   4,   1, RW, FIELD(cp15.dbgbvr[10]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR11,         14,   0,   0,  11,   4,   1, RW, FIELD(cp15.dbgbvr[11]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR12,         14,   0,   0,  12,   4,   1, RW, FIELD(cp15.dbgbvr[12]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR13,         14,   0,   0,  13,   4,   1, RW, FIELD(cp15.dbgbvr[13]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR14,         14,   0,   0,  14,   4,   1, RW, FIELD(cp15.dbgbvr[14]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBVR15,         14,   0,   0,  15,   4,   1, RW, FIELD(cp15.dbgbvr[15]))  // Debug Breakpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR0,         14,   0,   1,   0,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR1,         14,   0,   1,   1,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR2,         14,   0,   1,   2,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR3,         14,   0,   1,   3,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR4,         14,   0,   1,   4,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR5,         14,   0,   1,   5,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR6,         14,   0,   1,   6,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR7,         14,   0,   1,   7,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR8,         14,   0,   1,   8,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR9,         14,   0,   1,   9,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR10,        14,   0,   1,  10,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR11,        14,   0,   1,  11,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR12,        14,   0,   1,  12,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR13,        14,   0,   1,  13,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR14,        14,   0,   1,  14,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGBXVR15,        14,   0,   1,  15,   1,   1, RW)  // Debug Breakpoint Extended Value Registers
+    ARM32_CP_REG_DEFINE(DBGCLAIMCLR,      14,   0,   7,   9,   6,   1, RW)  // Debug CLAIM Tag Clear register
+    ARM32_CP_REG_DEFINE(DBGCLAIMSET,      14,   0,   7,   8,   6,   1, RW)  // Debug CLAIM Tag Set register
+    ARM32_CP_REG_DEFINE(DBGDCCINT,        14,   0,   0,   2,   0,   1, RW)  // DCC Interrupt Enable Register
+    ARM32_CP_REG_DEFINE(DBGDEVID,         14,   0,   7,   2,   7,   1, RW)  // Debug Device ID register 0
+    ARM32_CP_REG_DEFINE(DBGDEVID1,        14,   0,   7,   1,   7,   1, RW)  // Debug Device ID register 1
+    ARM32_CP_REG_DEFINE(DBGDEVID2,        14,   0,   7,   0,   7,   1, RW)  // Debug Device ID register 2
+    ARM32_CP_REG_DEFINE(DBGDIDR,          14,   0,   0,   0,   0,   0, RW)  // Debug ID Register
+    ARM32_CP_REG_DEFINE(DBGDRAR,          14,   0,   1,   0,   0,   0, RW)  // Debug ROM Address Register
+    ARM32_CP_REG_DEFINE(DBGDSAR,          14,   0,   2,   0,   0,   0, RW)  // Debug Self Address Register
+    ARM32_CP_REG_DEFINE(DBGDSCRext,       14,   0,   0,   2,   2,   1, RW, FIELD(cp15.mdscr_el1))  // Debug Status and Control Register, External View
+    ARM32_CP_REG_DEFINE(DBGDSCRint,       14,   0,   0,   1,   0,   0, RW, FIELD(cp15.mdscr_el1))  // Debug Status and Control Register, Internal ViewAArch32 System Registers
+    ARM32_CP_REG_DEFINE(DBGDTRRXext,      14,   0,   0,   0,   2,   1, RW)  // Debug OS Lock Data Transfer Register, Receive, External View
+    ARM32_CP_REG_DEFINE(DBGDTRRXint,      14,   0,   0,   5,   0,   0, RW)  // Debug Data Transfer Register, Receive
+    ARM32_CP_REG_DEFINE(DBGDTRTXext,      14,   0,   0,   3,   2,   1, RW)  // Debug OS Lock Data Transfer Register, Transmit
+    ARM32_CP_REG_DEFINE(DBGOSDLR,         14,   0,   1,   3,   4,   1, RW, FIELD(cp15.osdlr_el1))  // Debug OS Double Lock Register
+    ARM32_CP_REG_DEFINE(DBGOSECCR,        14,   0,   0,   6,   2,   1, RW)  // Debug OS Lock Exception Catch Control Register
+    ARM32_CP_REG_DEFINE(DBGOSLAR,         14,   0,   1,   0,   4,   1, RW)  // Debug OS Lock Access Register
+    ARM32_CP_REG_DEFINE(DBGOSLSR,         14,   0,   1,   1,   4,   1, RW, FIELD(cp15.oslsr_el1))  // Debug OS Lock Status Register
+    ARM32_CP_REG_DEFINE(DBGPRCR,          14,   0,   1,   4,   4,   1, RW)  // Debug Power Control Register
+    ARM32_CP_REG_DEFINE(DBGVCR,           14,   0,   0,   7,   0,   1, RW)  // Debug Vector Catch Register
+    ARM32_CP_REG_DEFINE(DBGWCR0,          14,   0,   0,   0,   7,   1, RW, FIELD(cp15.dbgwcr[0]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR1,          14,   0,   0,   1,   7,   1, RW, FIELD(cp15.dbgwcr[1]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR2,          14,   0,   0,   2,   7,   1, RW, FIELD(cp15.dbgwcr[2]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR3,          14,   0,   0,   3,   7,   1, RW, FIELD(cp15.dbgwcr[3]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR4,          14,   0,   0,   4,   7,   1, RW, FIELD(cp15.dbgwcr[4]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR5,          14,   0,   0,   5,   7,   1, RW, FIELD(cp15.dbgwcr[5]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR6,          14,   0,   0,   6,   7,   1, RW, FIELD(cp15.dbgwcr[6]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR7,          14,   0,   0,   7,   7,   1, RW, FIELD(cp15.dbgwcr[7]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR8,          14,   0,   0,   8,   7,   1, RW, FIELD(cp15.dbgwcr[8]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR9,          14,   0,   0,   9,   7,   1, RW, FIELD(cp15.dbgwcr[9]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR10,         14,   0,   0,  10,   7,   1, RW, FIELD(cp15.dbgwcr[10]))  // Debug Watchpoint Control Registers
+    // The params are:  name              cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(DBGWCR11,         14,   0,   0,  11,   7,   1, RW, FIELD(cp15.dbgwcr[11]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR12,         14,   0,   0,  12,   7,   1, RW, FIELD(cp15.dbgwcr[12]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR13,         14,   0,   0,  13,   7,   1, RW, FIELD(cp15.dbgwcr[13]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR14,         14,   0,   0,  14,   7,   1, RW, FIELD(cp15.dbgwcr[14]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWCR15,         14,   0,   0,  15,   7,   1, RW, FIELD(cp15.dbgwcr[15]))  // Debug Watchpoint Control Registers
+    ARM32_CP_REG_DEFINE(DBGWFAR,          14,   0,   0,   6,   0,   1, RW)  // Debug Watchpoint Fault Address Register
+    ARM32_CP_REG_DEFINE(DBGWVR0,          14,   0,   0,   0,   6,   1, RW, FIELD(cp15.dbgwvr[0]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR1,          14,   0,   0,   1,   6,   1, RW, FIELD(cp15.dbgwvr[1]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR2,          14,   0,   0,   2,   6,   1, RW, FIELD(cp15.dbgwvr[2]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR3,          14,   0,   0,   3,   6,   1, RW, FIELD(cp15.dbgwvr[3]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR4,          14,   0,   0,   4,   6,   1, RW, FIELD(cp15.dbgwvr[4]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR5,          14,   0,   0,   5,   6,   1, RW, FIELD(cp15.dbgwvr[5]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR6,          14,   0,   0,   6,   6,   1, RW, FIELD(cp15.dbgwvr[6]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR7,          14,   0,   0,   7,   6,   1, RW, FIELD(cp15.dbgwvr[7]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR8,          14,   0,   0,   8,   6,   1, RW, FIELD(cp15.dbgwvr[8]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR9,          14,   0,   0,   9,   6,   1, RW, FIELD(cp15.dbgwvr[9]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR10,         14,   0,   0,  10,   6,   1, RW, FIELD(cp15.dbgwvr[10]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR11,         14,   0,   0,  11,   6,   1, RW, FIELD(cp15.dbgwvr[11]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR12,         14,   0,   0,  12,   6,   1, RW, FIELD(cp15.dbgwvr[12]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR13,         14,   0,   0,  13,   6,   1, RW, FIELD(cp15.dbgwvr[13]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR14,         14,   0,   0,  14,   6,   1, RW, FIELD(cp15.dbgwvr[14]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DBGWVR15,         14,   0,   0,  15,   6,   1, RW, FIELD(cp15.dbgwvr[15]))  // Debug Watchpoint Value Registers
+    ARM32_CP_REG_DEFINE(DFAR,             15,   0,   6,   0,   0,   1, RW, FIELD(cp15.dfar_ns))  // Data Fault Address Register
+    ARM32_CP_REG_DEFINE(DFSR,             15,   0,   5,   0,   0,   1, RW, FIELD(cp15.dfsr_ns))  // Data Fault Status Register
+    ARM32_CP_REG_DEFINE(DISR,             15,   0,  12,   1,   1,   1, RW, FIELD(cp15.disr_el1))  // Deferred Interrupt Status Register
+    ARM32_CP_REG_DEFINE(DLR,              15,   3,   4,   5,   1,   0, RW)  // Debug Link Register
+    ARM32_CP_REG_DEFINE(DSPSR,            15,   3,   4,   5,   0,   0, RW)  // Debug Saved Program Status Register
+    ARM32_CP_REG_DEFINE(ERRIDR,           15,   0,   5,   3,   0,   0, RW)  // Error Record ID Register
+    ARM32_CP_REG_DEFINE(ERRSELR,          15,   0,   5,   3,   1,   0, RW)  // Error Record Select Register
+    ARM32_CP_REG_DEFINE(ERXADDR,          15,   0,   5,   4,   3,   0, RW)  // Selected Error Record Address Register
+    ARM32_CP_REG_DEFINE(ERXADDR2,         15,   0,   5,   4,   7,   0, RW)  // Selected Error Record Address Register 2
+    ARM32_CP_REG_DEFINE(ERXCTLR,          15,   0,   5,   4,   1,   0, RW)  // Selected Error Record Control Register
+    ARM32_CP_REG_DEFINE(ERXCTLR2,         15,   0,   5,   4,   5,   0, RW)  // Selected Error Record Control Register 2
+    ARM32_CP_REG_DEFINE(ERXFR,            15,   0,   5,   4,   0,   0, RW)  // Selected Error Record Feature Register
+    ARM32_CP_REG_DEFINE(ERXFR2,           15,   0,   5,   4,   4,   0, RW)  // Selected Error Record Feature Register 2
+    ARM32_CP_REG_DEFINE(ERXMISC0,         15,   0,   5,   5,   0,   0, RW)  // Selected Error Record Miscellaneous Register 0
+    ARM32_CP_REG_DEFINE(ERXMISC1,         15,   0,   5,   5,   1,   0, RW)  // Selected Error Record Miscellaneous Register 1
+    ARM32_CP_REG_DEFINE(ERXMISC2,         15,   0,   5,   5,   4,   0, RW)  // Selected Error Record Miscellaneous Register 2
+    ARM32_CP_REG_DEFINE(ERXMISC3,         15,   0,   5,   5,   5,   0, RW)  // Selected Error Record Miscellaneous Register 3
+    ARM32_CP_REG_DEFINE(ERXMISC4,         15,   0,   5,   5,   2,   0, RW)  // Selected Error Record Miscellaneous Register 4
+    ARM32_CP_REG_DEFINE(ERXMISC5,         15,   0,   5,   5,   3,   0, RW)  // Selected Error Record Miscellaneous Register 5
+    ARM32_CP_REG_DEFINE(ERXMISC6,         15,   0,   5,   5,   6,   0, RW)  // Selected Error Record Miscellaneous Register 6
+    ARM32_CP_REG_DEFINE(ERXMISC7,         15,   0,   5,   5,   7,   0, RW)  // Selected Error Record Miscellaneous Register 7
+    ARM32_CP_REG_DEFINE(ERXSTATUS,        15,   0,   5,   4,   2,   0, RW)  // Selected Error Record Primary Status RegisterAArch32 System Registers
+    ARM32_CP_REG_DEFINE(FCSEIDR,          15,   0,  13,   0,   0,   1, RW, FIELD(cp15.fcseidr_ns))  // FCSE Process ID register
+    ARM32_CP_REG_DEFINE(HACR,             15,   4,   1,   1,   7,   2, RW)  // Hyp Auxiliary Configuration Register
+    ARM32_CP_REG_DEFINE(HACTLR,           15,   4,   1,   0,   1,   2, RW)  // Hyp Auxiliary Control Register
+    ARM32_CP_REG_DEFINE(HACTLR2,          15,   4,   1,   0,   3,   2, RW)  // Hyp Auxiliary Control Register 2
+    ARM32_CP_REG_DEFINE(HADFSR,           15,   4,   5,   1,   0,   2, RW)  // Hyp Auxiliary Data Fault Status Register
+    ARM32_CP_REG_DEFINE(HAIFSR,           15,   4,   5,   1,   1,   2, RW)  // Hyp Auxiliary Instruction Fault Status Register
+    ARM32_CP_REG_DEFINE(HAMAIR0,          15,   4,  10,   3,   0,   2, RW)  // Hyp Auxiliary Memory Attribute Indirection Register 0
+    ARM32_CP_REG_DEFINE(HAMAIR1,          15,   4,  10,   3,   1,   2, RW)  // Hyp Auxiliary Memory Attribute Indirection Register 1
+    ARM32_CP_REG_DEFINE(HCPTR,            15,   4,   1,   1,   2,   2, RW, FIELD(cp15.cptr_el[2]))  // Hyp Architectural Feature Trap Register
+    ARM32_CP_REG_DEFINE(HCR,              15,   4,   1,   1,   0,   2, RW, FIELD(cp15.hcr_el2), RESETVALUE(0x2)) // Hyp Configuration Register
+    ARM32_CP_REG_DEFINE(HCR2,             15,   4,   1,   1,   4,   2, RW)  // Hyp Configuration Register 2
+    ARM32_CP_REG_DEFINE(HDCR,             15,   4,   1,   1,   1,   2, RW, FIELD(cp15.mdcr_el2), RESETVALUE(0x4))  // Hyp Debug Control Register
+    ARM32_CP_REG_DEFINE(HDFAR,            15,   4,   6,   0,   0,   2, RW)  // Hyp Data Fault Address Register
+    ARM32_CP_REG_DEFINE(HIFAR,            15,   4,   6,   0,   2,   2, RW)  // Hyp Instruction F ault Address Register
+    ARM32_CP_REG_DEFINE(HMAIR0,           15,   4,  10,   2,   0,   2, RW)  // Hyp Memory Attribute Indirection Register 0
+    ARM32_CP_REG_DEFINE(HMAIR1,           15,   4,  10,   2,   1,   2, RW)  // Hyp Memory Attribute Indirection Register 1
+    // The params are:  name              cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(HPFAR,            15,   4,   6,   0,   4,   2, RW, FIELD(cp15.hpfar_el2))  // Hyp IP A Fault Address Register
+    ARM32_CP_REG_DEFINE(HRMR,             15,   4,  12,   0,   2,   0, RW)  // Hyp Reset Management Register
+    ARM32_CP_REG_DEFINE(HSCTLR,           15,   4,   1,   0,   0,   2, RW, FIELD(cp15.hsctlr))  // Hyp System Control Register
+    ARM32_CP_REG_DEFINE(HSR,              15,   4,   5,   2,   0,   2, RW, FIELD(cp15.hsr))  // Hyp Syndrome Register
+    ARM32_CP_REG_DEFINE(HSTR,             15,   4,   1,   1,   3,   2, RW, FIELD(cp15.hstr_el2))  // Hyp System Trap Register
+    ARM32_CP_REG_DEFINE(HTCR,             15,   4,   2,   0,   2,   2, RW)  // Hyp Translation Control Register
+    ARM32_CP_REG_DEFINE(HTPIDR,           15,   4,  13,   0,   2,   2, RW)  // Hyp Software Thread ID Register
+    ARM32_CP_REG_DEFINE(HTRFCR,           15,   4,   1,   2,   1,   2, RW)  // Hyp Trace Filter Control Register
+    ARM32_CP_REG_DEFINE(HVBAR,            15,   4,  12,   0,   0,   2, RW, FIELD(cp15.hvbar))  // Hyp Vector Base Address Register
+    // For every 32-bit ICC_* register except ICC_MCTLR, ICC_MGRPEN1 and ICC_MSRE there's also an eqivalent ICV_* register with the same encoding.
+    ARM32_CP_REG_DEFINE(ICC_AP0R0,        15,   0,  12,   8,   4,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Active Priorities Group 0 Registers
+    ARM32_CP_REG_DEFINE(ICC_AP0R1,        15,   0,  12,   8,   5,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Active Priorities Group 0 Registers
+    ARM32_CP_REG_DEFINE(ICC_AP0R2,        15,   0,  12,   8,   6,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Active Priorities Group 0 Registers
+    ARM32_CP_REG_DEFINE(ICC_AP0R3,        15,   0,  12,   8,   7,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Active Priorities Group 0 Registers
+    ARM32_CP_REG_DEFINE(ICC_AP1R0,        15,   0,  12,   9,   0,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Active Priorities Group 1 Registers
+    ARM32_CP_REG_DEFINE(ICC_AP1R1,        15,   0,  12,   9,   1,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Active Priorities Group 1 Registers
+    ARM32_CP_REG_DEFINE(ICC_AP1R2,        15,   0,  12,   9,   2,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Active Priorities Group 1 Registers
+    ARM32_CP_REG_DEFINE(ICC_AP1R3,        15,   0,  12,   9,   3,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Active Priorities Group 1 Registers
+    ARM32_CP_REG_DEFINE(ICC_BPR0,         15,   0,  12,   8,   3,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Binary Point Register 0
+    ARM32_CP_REG_DEFINE(ICC_BPR1,         15,   0,  12,  12,   3,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Binary Point Register 1
+    ARM32_CP_REG_DEFINE(ICC_CTLR,         15,   0,  12,  12,   4,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Control Register
+    ARM32_CP_REG_DEFINE(ICC_DIR,          15,   0,  12,  11,   1,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Deactivate Interrupt RegisterAArch32 System Registers
+    ARM32_CP_REG_DEFINE(ICC_EOIR0,        15,   0,  12,   8,   1,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller End Of Interrupt Register 0
+    ARM32_CP_REG_DEFINE(ICC_EOIR1,        15,   0,  12,  12,   1,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller End Of Interrupt Register 1
+    ARM32_CP_REG_DEFINE(ICC_HPPIR0,       15,   0,  12,   8,   2,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Highest Priority Pending Interrupt Register 0
+    ARM32_CP_REG_DEFINE(ICC_HPPIR1,       15,   0,  12,  12,   2,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Highest Priority Pending Interrupt Register 1
+    ARM32_CP_REG_DEFINE(ICC_HSRE,         15,   4,  12,   9,   5,   2, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Hyp System Register Enable register
+    ARM32_CP_REG_DEFINE(ICC_IAR0,         15,   0,  12,   8,   0,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Interrupt Acknowledge Register 0
+    ARM32_CP_REG_DEFINE(ICC_IAR1,         15,   0,  12,  12,   0,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Interrupt Acknowledge Register 1
+    ARM32_CP_REG_DEFINE(ICC_IGRPEN0,      15,   0,  12,  12,   6,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Interrupt Group 0 Enable register
+    ARM32_CP_REG_DEFINE(ICC_IGRPEN1,      15,   0,  12,  12,   7,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Interrupt Group 1 Enable register
+    ARM32_CP_REG_DEFINE(ICC_MCTLR,        15,   6,  12,  12,   4,   3, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Monitor Control Register
+    ARM32_CP_REG_DEFINE(ICC_MGRPEN1,      15,   6,  12,  12,   7,   3, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Monitor Interrupt Group 1 Enable register
+    ARM32_CP_REG_DEFINE(ICC_MSRE,         15,   6,  12,  12,   5,   3, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Monitor System Register Enable register
+    ARM32_CP_REG_DEFINE(ICC_PMR,          15,   0,   4,   6,   0,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Interrupt Priority Mask Register
+    ARM32_CP_REG_DEFINE(ICC_RPR,          15,   0,  12,  11,   3,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Running Priority Register
+    ARM32_CP_REG_DEFINE(ICC_SRE,          15,   0,  12,  12,   5,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller System Register Enable register
+    ARM32_CP_REG_DEFINE(ICH_AP0R0,        15,   4,  12,   8,   0,   2, RW)  // Interrupt Controller Hyp Active Priorities Group 0 Registers
+    ARM32_CP_REG_DEFINE(ICH_AP0R1,        15,   4,  12,   8,   1,   2, RW)  // Interrupt Controller Hyp Active Priorities Group 0 Registers
+    ARM32_CP_REG_DEFINE(ICH_AP0R2,        15,   4,  12,   8,   2,   2, RW)  // Interrupt Controller Hyp Active Priorities Group 0 Registers
+    ARM32_CP_REG_DEFINE(ICH_AP0R3,        15,   4,  12,   8,   3,   2, RW)  // Interrupt Controller Hyp Active Priorities Group 0 Registers
+    ARM32_CP_REG_DEFINE(ICH_AP1R0,        15,   4,  12,   9,   0,   2, RW)  // Interrupt Controller Hyp Active Priorities Group 1 Registers
+    ARM32_CP_REG_DEFINE(ICH_AP1R1,        15,   4,  12,   9,   1,   2, RW)  // Interrupt Controller Hyp Active Priorities Group 1 Registers
+    ARM32_CP_REG_DEFINE(ICH_AP1R2,        15,   4,  12,   9,   2,   2, RW)  // Interrupt Controller Hyp Active Priorities Group 1 Registers
+    ARM32_CP_REG_DEFINE(ICH_AP1R3,        15,   4,  12,   9,   3,   2, RW)  // Interrupt Controller Hyp Active Priorities Group 1 Registers
+    ARM32_CP_REG_DEFINE(ICH_EISR,         15,   4,  12,  11,   3,   2, RW)  // Interrupt Controller End of Interrupt Status Register
+    ARM32_CP_REG_DEFINE(ICH_ELRSR,        15,   4,  12,  11,   5,   2, RW)  // Interrupt Controller Empty List Register Status Register
+    ARM32_CP_REG_DEFINE(ICH_HCR,          15,   4,  12,  11,   0,   2, RW)  // Interrupt Controller Hyp Control Register
+    ARM32_CP_REG_DEFINE(ICH_LR0,          15,   4,  12,  12,   0,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR1,          15,   4,  12,  12,   1,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR2,          15,   4,  12,  12,   2,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR3,          15,   4,  12,  12,   3,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR4,          15,   4,  12,  12,   4,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR5,          15,   4,  12,  12,   5,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR6,          15,   4,  12,  12,   6,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR7,          15,   4,  12,  12,   7,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR8,          15,   4,  12,  13,   0,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR9,          15,   4,  12,  13,   1,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR10,         15,   4,  12,  13,   2,   2, RW)  // Interrupt Controller List Registers
+    // The params are:  name              cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(ICH_LR11,         15,   4,  12,  13,   3,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR12,         15,   4,  12,  13,   4,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR13,         15,   4,  12,  13,   5,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR14,         15,   4,  12,  13,   6,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LR15,         15,   4,  12,  13,   7,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC0,         15,   4,  12,  14,   0,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC1,         15,   4,  12,  14,   1,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC2,         15,   4,  12,  14,   2,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC3,         15,   4,  12,  14,   3,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC4,         15,   4,  12,  14,   4,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC5,         15,   4,  12,  14,   5,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC6,         15,   4,  12,  14,   6,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC7,         15,   4,  12,  14,   7,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC8,         15,   4,  12,  15,   0,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC9,         15,   4,  12,  15,   1,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC10,        15,   4,  12,  15,   2,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC11,        15,   4,  12,  15,   3,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC12,        15,   4,  12,  15,   4,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC13,        15,   4,  12,  15,   5,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC14,        15,   4,  12,  15,   6,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_LRC15,        15,   4,  12,  15,   7,   2, RW)  // Interrupt Controller List Registers
+    ARM32_CP_REG_DEFINE(ICH_MISR,         15,   4,  12,  11,   2,   2, RW)  // Interrupt Controller Maintenance Interrupt State Register
+    ARM32_CP_REG_DEFINE(ICH_VMCR,         15,   4,  12,  11,   7,   2, RW)  // Interrupt Controller Virtual Machine Control Register
+    ARM32_CP_REG_DEFINE(ICH_VTR,          15,   4,  12,  11,   1,   2, RW)  // Interrupt Controller VGIC Type Register
+    ARM32_CP_REG_DEFINE(ID_AFR0,          15,   0,   0,   1,   3,   1, RW, READFN(id_afr0))  // Auxiliary Feature Register 0
+    ARM32_CP_REG_DEFINE(ID_DFR0,          15,   0,   0,   1,   2,   1, RW, READFN(id_dfr0))  // Debug Feature Register 0
+    ARM32_CP_REG_DEFINE(ID_DFR1,          15,   0,   0,   3,   5,   1, RW, READFN(id_dfr1))  // Debug Feature Register 1
+    ARM32_CP_REG_DEFINE(ID_ISAR0,         15,   0,   0,   2,   0,   1, RW, READFN(id_isar0))  // Instruction Set Attribute Register 0
+    ARM32_CP_REG_DEFINE(ID_ISAR1,         15,   0,   0,   2,   1,   1, RW, READFN(id_isar1))  // Instruction Set Attribute Register 1
+    ARM32_CP_REG_DEFINE(ID_ISAR2,         15,   0,   0,   2,   2,   1, RW, READFN(id_isar2))  // Instruction Set Attribute Register 2
+    ARM32_CP_REG_DEFINE(ID_ISAR3,         15,   0,   0,   2,   3,   1, RW, READFN(id_isar3))  // Instruction Set Attribute Register 3
+    ARM32_CP_REG_DEFINE(ID_ISAR4,         15,   0,   0,   2,   4,   1, RW, READFN(id_isar4))  // Instruction Set Attribute Register 4
+    ARM32_CP_REG_DEFINE(ID_ISAR5,         15,   0,   0,   2,   5,   1, RW, READFN(id_isar5))  // Instruction Set Attribute Register 5
+    ARM32_CP_REG_DEFINE(ID_ISAR6,         15,   0,   0,   2,   7,   1, RW, READFN(id_isar6))  // Instruction Set Attribute Register 6
+    ARM32_CP_REG_DEFINE(ID_MMFR0,         15,   0,   0,   1,   4,   1, RW, READFN(id_mmfr0))  // Memory Model Feature Register 0
+    ARM32_CP_REG_DEFINE(ID_MMFR1,         15,   0,   0,   1,   5,   1, RW, READFN(id_mmfr1))  // Memory Model Feature Register 1
+    ARM32_CP_REG_DEFINE(ID_MMFR2,         15,   0,   0,   1,   6,   1, RW, READFN(id_mmfr2))  // Memory Model Feature Register 2
+    ARM32_CP_REG_DEFINE(ID_MMFR3,         15,   0,   0,   1,   7,   1, RW, READFN(id_mmfr3))  // Memory Model Feature Register 3
+    ARM32_CP_REG_DEFINE(ID_MMFR4,         15,   0,   0,   2,   6,   1, RW, READFN(id_mmfr4))  // Memory Model Feature Register 4
+    ARM32_CP_REG_DEFINE(ID_MMFR5,         15,   0,   0,   3,   6,   1, RW, READFN(id_mmfr5))  // Memory Model Feature Register 5
+    ARM32_CP_REG_DEFINE(ID_PFR0,          15,   0,   0,   1,   0,   1, RW, READFN(id_pfr0))  // Processor Feature Register 0
+    ARM32_CP_REG_DEFINE(ID_PFR1,          15,   0,   0,   1,   1,   1, RW, READFN(id_pfr1))  // Processor Feature Register 1
+    ARM32_CP_REG_DEFINE(ID_PFR2,          15,   0,   0,   3,   4,   1, RW, READFN(id_pfr2))  // Processor Feature Register 2
+    ARM32_CP_REG_DEFINE(IFAR,             15,   0,   6,   0,   2,   1, RW)  // Instruction Fault Address Register
+    ARM32_CP_REG_DEFINE(IFSR,             15,   0,   5,   0,   1,   1, RW, FIELD(cp15.ifsr_ns))  // Instruction Fault Status Register
+    ARM32_CP_REG_DEFINE(ISR,              15,   0,  12,   1,   0,   1, RW)  // Interrupt Status Register
+    ARM32_CP_REG_DEFINE(JIDR,             14,   7,   0,   0,   0,   0, RW)  // Jazelle ID Register
+    ARM32_CP_REG_DEFINE(JMCR,             14,   7,   2,   0,   0,   0, RW)  // Jazelle Main Configuration Register
+    ARM32_CP_REG_DEFINE(JOSCR,            14,   7,   1,   0,   0,   0, RW)  // Jazelle OS Control Register
+    ARM32_CP_REG_DEFINE(MAIR0,            15,   0,  10,   2,   0,   1, RW, FIELD(cp15.mair0_ns), RESETVALUE(0x00098AA4))  // Memory Attribute Indirection Register 0
+    ARM32_CP_REG_DEFINE(MAIR1,            15,   0,  10,   2,   1,   1, RW, FIELD(cp15.mair1_ns), RESETVALUE(0x44E048E0))  // Memory Attribute Indirection Register 1
+    ARM32_CP_REG_DEFINE(MIDR,             15,   0,   0,   0,   0,   1, RO, READFN(midr))  // Main ID Register
+    ARM32_CP_REG_DEFINE(MPIDR,            15,   0,   0,   0,   5,   1, RO, READFN(mpidr_el1))  // Multiprocessor Affinity RegisterAArch32 System Registers
+    ARM32_CP_REG_DEFINE(NSACR,            15,   0,   1,   1,   2,   1, RW, FIELD(cp15.nsacr), RESETVALUE(0xC00))  // Non-Secure Access Control Register
+    ARM32_CP_REG_DEFINE(PAR,              15,   0,   7,   4,   0,   1, RW, FIELD(cp15.par_ns))  // Physical Address Register
+    ARM32_CP_REG_DEFINE(PMCCFILTR,        15,   0,  14,  15,   7,   0, RW, FIELD(cp15.pmccfiltr_el0))  // Performance Monitors Cycle Count Filter Register
+    ARM32_CP_REG_DEFINE(PMCCNTR,          15,   0,   9,  13,   0,   0, RW)  // Performance Monitors Cycle Count Register
+    ARM32_CP_REG_DEFINE(PMCEID0,          15,   0,   9,  12,   6,   0, RO | ARM_CP_CONST, RESETVALUE(0x6E1FFFDB))  // Performance Monitors Common Event Identification register 0
+    ARM32_CP_REG_DEFINE(PMCEID1,          15,   0,   9,  12,   7,   0, RO | ARM_CP_CONST, RESETVALUE(0x0000001E))  // Performance Monitors Common Event Identification register 1
+    ARM32_CP_REG_DEFINE(PMCEID2,          15,   0,   9,  14,   4,   0, RO)  // Performance Monitors Common Event Identification register 2
+    // The params are:  name              cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(PMCEID3,          15,   0,   9,  14,   5,   0, RO)  // Performance Monitors Common Event Identification register 3
+    ARM32_CP_REG_DEFINE(PMCNTENCLR,       15,   0,   9,  12,   2,   0, RW, FIELD(cp15.c9_pmcnten))  // Performance Monitors Count Enable Clear register
+    ARM32_CP_REG_DEFINE(PMCNTENSET,       15,   0,   9,  12,   1,   0, RW, FIELD(cp15.c9_pmcnten))  // Performance Monitors Count Enable Set register
+    ARM32_CP_REG_DEFINE(PMCR,             15,   0,   9,  12,   0,   0, RW, FIELD(cp15.c9_pmcr))  // Performance Monitors Control Register
+    ARM32_CP_REG_DEFINE(PMEVCNTR0,        15,   0,  14,   8,   0,   0, RW, FIELD(cp15.c14_pmevcntr[0]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR1,        15,   0,  14,   8,   1,   0, RW, FIELD(cp15.c14_pmevcntr[1]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR2,        15,   0,  14,   8,   2,   0, RW, FIELD(cp15.c14_pmevcntr[2]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR3,        15,   0,  14,   8,   3,   0, RW, FIELD(cp15.c14_pmevcntr[3]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR4,        15,   0,  14,   8,   4,   0, RW, FIELD(cp15.c14_pmevcntr[4]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR5,        15,   0,  14,   8,   5,   0, RW, FIELD(cp15.c14_pmevcntr[5]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR6,        15,   0,  14,   8,   6,   0, RW, FIELD(cp15.c14_pmevcntr[6]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR7,        15,   0,  14,   8,   7,   0, RW, FIELD(cp15.c14_pmevcntr[7]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR8,        15,   0,  14,   9,   0,   0, RW, FIELD(cp15.c14_pmevcntr[8]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR9,        15,   0,  14,   9,   1,   0, RW, FIELD(cp15.c14_pmevcntr[9]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR10,       15,   0,  14,   9,   2,   0, RW, FIELD(cp15.c14_pmevcntr[10]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR11,       15,   0,  14,   9,   3,   0, RW, FIELD(cp15.c14_pmevcntr[11]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR12,       15,   0,  14,   9,   4,   0, RW, FIELD(cp15.c14_pmevcntr[12]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR13,       15,   0,  14,   9,   5,   0, RW, FIELD(cp15.c14_pmevcntr[13]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR14,       15,   0,  14,   9,   6,   0, RW, FIELD(cp15.c14_pmevcntr[14]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR15,       15,   0,  14,   9,   7,   0, RW, FIELD(cp15.c14_pmevcntr[15]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR16,       15,   0,  14,  10,   0,   0, RW, FIELD(cp15.c14_pmevcntr[16]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR17,       15,   0,  14,  10,   1,   0, RW, FIELD(cp15.c14_pmevcntr[17]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR18,       15,   0,  14,  10,   2,   0, RW, FIELD(cp15.c14_pmevcntr[18]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR19,       15,   0,  14,  10,   3,   0, RW, FIELD(cp15.c14_pmevcntr[19]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR20,       15,   0,  14,  10,   4,   0, RW, FIELD(cp15.c14_pmevcntr[20]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR21,       15,   0,  14,  10,   5,   0, RW, FIELD(cp15.c14_pmevcntr[21]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR22,       15,   0,  14,  10,   6,   0, RW, FIELD(cp15.c14_pmevcntr[22]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR23,       15,   0,  14,  10,   7,   0, RW, FIELD(cp15.c14_pmevcntr[23]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR24,       15,   0,  14,  11,   0,   0, RW, FIELD(cp15.c14_pmevcntr[24]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR25,       15,   0,  14,  11,   1,   0, RW, FIELD(cp15.c14_pmevcntr[25]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR26,       15,   0,  14,  11,   2,   0, RW, FIELD(cp15.c14_pmevcntr[26]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR27,       15,   0,  14,  11,   3,   0, RW, FIELD(cp15.c14_pmevcntr[27]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR28,       15,   0,  14,  11,   4,   0, RW, FIELD(cp15.c14_pmevcntr[28]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR29,       15,   0,  14,  11,   5,   0, RW, FIELD(cp15.c14_pmevcntr[29]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVCNTR30,       15,   0,  14,  11,   6,   0, RW, FIELD(cp15.c14_pmevcntr[30]))  // Performance Monitors Event Count Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER0,       15,   0,  14,  12,   0,   0, RW, FIELD(cp15.c14_pmevtyper[0]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER1,       15,   0,  14,  12,   1,   0, RW, FIELD(cp15.c14_pmevtyper[1]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER2,       15,   0,  14,  12,   2,   0, RW, FIELD(cp15.c14_pmevtyper[2]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER3,       15,   0,  14,  12,   3,   0, RW, FIELD(cp15.c14_pmevtyper[3]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER4,       15,   0,  14,  12,   4,   0, RW, FIELD(cp15.c14_pmevtyper[4]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER5,       15,   0,  14,  12,   5,   0, RW, FIELD(cp15.c14_pmevtyper[5]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER6,       15,   0,  14,  12,   6,   0, RW, FIELD(cp15.c14_pmevtyper[6]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER7,       15,   0,  14,  12,   7,   0, RW, FIELD(cp15.c14_pmevtyper[7]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER8,       15,   0,  14,  13,   0,   0, RW, FIELD(cp15.c14_pmevtyper[8]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER9,       15,   0,  14,  13,   1,   0, RW, FIELD(cp15.c14_pmevtyper[9]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER10,      15,   0,  14,  13,   2,   0, RW, FIELD(cp15.c14_pmevtyper[10]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER11,      15,   0,  14,  13,   3,   0, RW, FIELD(cp15.c14_pmevtyper[11]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER12,      15,   0,  14,  13,   4,   0, RW, FIELD(cp15.c14_pmevtyper[12]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER13,      15,   0,  14,  13,   5,   0, RW, FIELD(cp15.c14_pmevtyper[13]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER14,      15,   0,  14,  13,   6,   0, RW, FIELD(cp15.c14_pmevtyper[14]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER15,      15,   0,  14,  13,   7,   0, RW, FIELD(cp15.c14_pmevtyper[15]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER16,      15,   0,  14,  14,   0,   0, RW, FIELD(cp15.c14_pmevtyper[16]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER17,      15,   0,  14,  14,   1,   0, RW, FIELD(cp15.c14_pmevtyper[17]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER18,      15,   0,  14,  14,   2,   0, RW, FIELD(cp15.c14_pmevtyper[18]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER19,      15,   0,  14,  14,   3,   0, RW, FIELD(cp15.c14_pmevtyper[19]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER22,      15,   0,  14,  14,   4,   0, RW, FIELD(cp15.c14_pmevtyper[20]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER20,      15,   0,  14,  14,   5,   0, RW, FIELD(cp15.c14_pmevtyper[21]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER21,      15,   0,  14,  14,   6,   0, RW, FIELD(cp15.c14_pmevtyper[22]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER23,      15,   0,  14,  14,   7,   0, RW, FIELD(cp15.c14_pmevtyper[23]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER24,      15,   0,  14,  15,   0,   0, RW, FIELD(cp15.c14_pmevtyper[24]))  // Performance Monitors Event Type Registers
+    // The params are:  name              cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(PMEVTYPER25,      15,   0,  14,  15,   1,   0, RW, FIELD(cp15.c14_pmevtyper[25]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER26,      15,   0,  14,  15,   2,   0, RW, FIELD(cp15.c14_pmevtyper[26]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER27,      15,   0,  14,  15,   3,   0, RW, FIELD(cp15.c14_pmevtyper[27]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER28,      15,   0,  14,  15,   4,   0, RW, FIELD(cp15.c14_pmevtyper[28]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER29,      15,   0,  14,  15,   5,   0, RW, FIELD(cp15.c14_pmevtyper[29]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMEVTYPER30,      15,   0,  14,  15,   6,   0, RW, FIELD(cp15.c14_pmevtyper[30]))  // Performance Monitors Event Type Registers
+    ARM32_CP_REG_DEFINE(PMINTENCLR,       15,   0,   9,  14,   2,   1, RW, FIELD(cp15.c9_pminten))  // Performance Monitors Interrupt Enable Clear register
+    ARM32_CP_REG_DEFINE(PMINTENSET,       15,   0,   9,  14,   1,   1, RW, FIELD(cp15.c9_pminten))  // Performance Monitors Interrupt Enable Set register
+    ARM32_CP_REG_DEFINE(PMMIR,            15,   0,   9,  14,   6,   1, RW)  // Performance Monitors Machine Identification Register
+    ARM32_CP_REG_DEFINE(PMOVSR,           15,   0,   9,  12,   3,   0, RW, FIELD(cp15.c9_pmovsr))  // Performance Monitors Overflow Flag Status Register
+    ARM32_CP_REG_DEFINE(PMOVSSET,         15,   0,   9,  14,   3,   0, RW)  // Performance Monitors Overflow Flag Status Set register
+    ARM32_CP_REG_DEFINE(PMSELR,           15,   0,   9,  12,   5,   0, RW, FIELD(cp15.c9_pmselr))  // Performance Monitors Event Counter Selection Register
+    ARM32_CP_REG_DEFINE(PMSWINC,          15,   0,   9,  12,   4,   0, RW)  // Performance Monitors Software Increment register
+    ARM32_CP_REG_DEFINE(PMUSERENR,        15,   0,   9,  14,   0,   0, RW, FIELD(cp15.c9_pmuserenr))  // Performance Monitors User Enable Register
+    ARM32_CP_REG_DEFINE(PMXEVCNTR,        15,   0,   9,  13,   2,   0, RW)  // Performance Monitors Selected Event Count Register
+    ARM32_CP_REG_DEFINE(PMXEVTYPER,       15,   0,   9,  13,   1,   0, RW)  // Performance Monitors Selected Event Type Register
+    ARM32_CP_REG_DEFINE(REVIDR,           15,   0,   0,   0,   6,   1, RO, READFN(revidr_el1))  // Revision ID Register
+    ARM32_CP_REG_DEFINE(RMR,              15,   0,  12,   0,   2,   1, RW)  // Reset Management Register
+    ARM32_CP_REG_DEFINE(RVBAR,            15,   0,  12,   0,   1,   1, RO, FIELD(cp15.rvbar))  // Reset Vector Base Address Register
+    ARM32_CP_REG_DEFINE(SCR,              15,   0,   1,   1,   0,   3, RW, FIELD(cp15.scr_el3))  // Secure Configuration Register
+    ARM32_CP_REG_DEFINE(SCTLR,            15,   0,   1,   0,   0,   1, RW, FIELD(cp15.sctlr_ns))  // System Control Register
+    ARM32_CP_REG_DEFINE(SDCR,             15,   0,   1,   3,   1,   3, RW)  // Secure Debug Control Register
+    ARM32_CP_REG_DEFINE(SDER,             15,   0,   1,   1,   1,   3, RW, FIELD(cp15.sder))  // Secure Debug Enable RegisterAArch32 System Registers
+    ARM32_CP_REG_DEFINE(TCMTR,            15,   0,   0,   0,   2,   1, RW)  // TCM Type Register
+    ARM32_CP_REG_DEFINE(TLBTR,            15,   0,   0,   0,   3,   1, RW)  // TLB Type Register
+    ARM32_CP_REG_DEFINE(TPIDRPRW,         15,   0,  13,   0,   4,   1, RW, FIELD(cp15.tpidrprw_ns))  // PL1 Software Thread ID Register
+    ARM32_CP_REG_DEFINE(TPIDRURO,         15,   0,  13,   0,   3,   0, RW, FIELD(cp15.tpidruro_ns))  // PL0 Read-Only Software Thread ID Register
+    ARM32_CP_REG_DEFINE(TPIDRURW,         15,   0,  13,   0,   2,   0, RW, FIELD(cp15.tpidrurw_ns))  // PL0 Read/W rite Software Thread ID Register
+    ARM32_CP_REG_DEFINE(TRFCR,            15,   0,   1,   2,   1,   1, RW)  // Trace Filter Control Register
+    ARM32_CP_REG_DEFINE(TTBCR,            15,   0,   2,   0,   2,   1, RW)  // Translation Table Base Control Register
+    ARM32_CP_REG_DEFINE(TTBCR2,           15,   0,   2,   0,   3,   1, RW)  // Translation Table Base Control Register 2
+    ARM32_CP_REG_DEFINE(TTBR0,            15,   0,   2,   0,   0,   1, RW, FIELD(cp15.ttbr0_ns))  // Translation Table Base Register 0
+    ARM32_CP_REG_DEFINE(TTBR1,            15,   0,   2,   0,   1,   1, RW, FIELD(cp15.ttbr1_ns))  // Translation Table Base Register 1
+    ARM32_CP_REG_DEFINE(VBAR,             15,   0,  12,   0,   0,   1, RW, FIELD(cp15.vbar_ns))  // Vector Base Address Register
+    ARM32_CP_REG_DEFINE(VDFSR,            15,   4,   5,   2,   3,   0, RW)  // Virtual SError Exception Syndrome Register
+    ARM32_CP_REG_DEFINE(VDISR,            15,   4,  12,   1,   1,   2, RW, FIELD(cp15.vdisr_el2))  // Virtual Deferred Interrupt Status Register
+    ARM32_CP_REG_DEFINE(VMPIDR,           15,   4,   0,   0,   5,   2, RW, FIELD(cp15.vmpidr_el2))  // Virtualization Multiprocessor ID Register
+    ARM32_CP_REG_DEFINE(VPIDR,            15,   4,   0,   0,   0,   2, RW, FIELD(cp15.vpidr_el2))  // Virtualization Processor ID Register
+    ARM32_CP_REG_DEFINE(VTCR,             15,   4,   2,   1,   2,   2, RW, FIELD(cp15.vtcr_el2))  // Virtualization Translation Control Register
+    ARM32_CP_REG_DEFINE(VSCTLR,           15,   4,   2,   0,   0,   2, RW)  // Virtualization System Control Register
+
+    // The params are:        name              cp, op1, crm,  el, extra_type, ...
+    ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR00,       15,   0,   0,   0, RW)  // Activity Monitors Event Counter Registers 0 (0/3)
+    ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR01,       15,   1,   0,   0, RW)  // Activity Monitors Event Counter Registers 0 (1/3)
+    ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR02,       15,   2,   0,   0, RW)  // Activity Monitors Event Counter Registers 0 (2/3)
+    ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR03,       15,   3,   0,   0, RW)  // Activity Monitors Event Counter Registers 0 (3/3)
+    ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR10,       15,   0,   4,   0, RW)  // Activity Monitors Event Counter Registers 1 (0/3)
+    ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR11,       15,   1,   4,   0, RW)  // Activity Monitors Event Counter Registers 1 (1/3)
+    ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR12,       15,   2,   4,   0, RW)  // Activity Monitors Event Counter Registers 1 (2/3)
+    ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR13,       15,   3,   4,   0, RW)  // Activity Monitors Event Counter Registers 1 (3/3)
+    ARM32_CP_64BIT_REG_DEFINE(CNTHP_CVAL,       15,   6,  14,   2, RW)  // Counter-timer Hyp Physical CompareV alue register
+    ARM32_CP_64BIT_REG_DEFINE(CNTPCT,           15,   0,  14,   0, RW) // Counter-timer Physical Count register
+    ARM32_CP_64BIT_REG_DEFINE(CNTPCTSS,         15,   8,  14,   0, RW)  // Counter-timer Self-Synchronized Physical Count register
+    ARM32_CP_64BIT_REG_DEFINE(CNTP_CVAL,        15,   2,  14,   0, RW)  // Counter-timer Physical Timer Compare Value register
+    ARM32_CP_64BIT_REG_DEFINE(CNTVCT,           15,   1,  14,   0, RW)  // Counter-timer Virtual Count register
+    ARM32_CP_64BIT_REG_DEFINE(CNTVCTSS,         15,   9,  14,   0, RW)  // Counter-timer Self-Synchronized Virtual Count register
+    ARM32_CP_64BIT_REG_DEFINE(CNTVOFF,          15,   4,  14,   2, RW)  // Counter-timer Virtual Offset register
+    ARM32_CP_64BIT_REG_DEFINE(CNTV_CVAL,        15,   3,  14,   0, RW)  // Counter-timer Virtual Timer Compare Value register
+    ARM32_CP_64BIT_REG_DEFINE(DBGDRAR,          14,   0,   1,   0, RW)  // Debug ROM Address Register
+    ARM32_CP_64BIT_REG_DEFINE(DBGDSAR,          14,   0,   2,   0, RW)  // Debug Self Address Register
+    ARM32_CP_64BIT_REG_DEFINE(HTTBR,            15,   4,   2,   2, RW)  // Hyp Translation T able Base Register
+    ARM32_CP_64BIT_REG_DEFINE(ICC_ASGI1R,       15,   1,  12,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Alias Software Generated Interrupt Group 1 Register
+    ARM32_CP_64BIT_REG_DEFINE(ICC_SGI0R,        15,   2,  12,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Software Generated Interrupt Group 0 Register
+    ARM32_CP_64BIT_REG_DEFINE(ICC_SGI1R,        15,   0,  12,   1, RW, RW_FNS(interrupt_cpu_interface))  // Interrupt Controller Software Generated Interrupt Group 1 Register
+    ARM32_CP_64BIT_REG_DEFINE(PAR,              15,   0,   7,   1, RW, FIELD(cp15.par_ns))  // Physical Address Register
+    ARM32_CP_64BIT_REG_DEFINE(PMCCNTR,          15,   0,   9,   0, RW)  // Performance Monitors Cycle Count Register
+    ARM32_CP_64BIT_REG_DEFINE(TTBR0,            15,   0,   2,   1, RW, FIELD(cp15.ttbr0_ns))  // Translation Table Base Register 0
+    ARM32_CP_64BIT_REG_DEFINE(TTBR1,            15,   1,   2,   1, RW, FIELD(cp15.ttbr1_ns))  // Translation Table Base Register 1
+    ARM32_CP_64BIT_REG_DEFINE(VTTBR,            15,   6,   2,   2, RW, FIELD(cp15.vttbr_el2))  // Virtualization Translation Table Base Register
+                                                                                           //
+    /*
+     * Some registers in the ARM Manuals have the same encodings, but different names.
+     * Usually different names are given to distinguish between the different context of
+     * the access to the register (for example different PL/EL)
+     *
+     * The following registers have duplicated encodings (with the existing registers):
+     *   CNTHPS_CTL, CNTHPS_CVAL, CNTHPS_TVAL, CNTHV_CTL, CNTHV_CVAL, CNTHV_TVAL,
+     *   CNTHVS_CTL, CNTHVS_CVAL, CNTHVS_TVAL, DBGDTRTXint, MVBAR, NMRR, PRRR
+     */
+};
+
+ARMCPRegInfo aarch32_instructions[] = {
+    // The params are:  name              cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(ATS12NSOPR,       15,   0,   7,   8,   4,   2, RW)  // Address Translate Stages 1 and 2 Non-secure Only PL1 Read
+    ARM32_CP_REG_DEFINE(ATS12NSOPW,       15,   0,   7,   8,   5,   2, RW)  // Address Translate Stages 1 and 2 Non-secure Only PL1 Write
+    ARM32_CP_REG_DEFINE(ATS12NSOUR,       15,   0,   7,   8,   6,   2, RW)  // Address Translate Stages 1 and 2 Non-secure Only Unprivileged Read
+    ARM32_CP_REG_DEFINE(ATS12NSOUW,       15,   0,   7,   8,   7,   2, RW)  // Address Translate Stages 1 and 2 Non-secure Only Unprivileged Write
+    ARM32_CP_REG_DEFINE(ATS1CPR,          15,   0,   7,   8,   0,   1, RW)  // Address Translate Stage 1 Current state PL1 Read
+    ARM32_CP_REG_DEFINE(ATS1CPRP,         15,   0,   7,   9,   0,   1, RW)  // Address Translate Stage 1 Current state PL1 Read PAN
+    ARM32_CP_REG_DEFINE(ATS1CPW,          15,   0,   7,   8,   1,   1, RW)  // Address Translate Stage 1 Current state PL1 Write
+    ARM32_CP_REG_DEFINE(ATS1CPWP,         15,   0,   7,   9,   1,   1, RW)  // Address Translate Stage 1 Current state PL1 Write PAN
+    ARM32_CP_REG_DEFINE(ATS1CUR,          15,   0,   7,   8,   2,   1, RW)  // Address Translate Stage 1 Current state Unprivileged Read
+    ARM32_CP_REG_DEFINE(ATS1CUW,          15,   0,   7,   8,   3,   1, RW)  // Address Translate Stage 1 Current state Unprivileged Write
+    ARM32_CP_REG_DEFINE(ATS1HR,           15,   4,   7,   8,   0,   2, RW)  // Address Translate Stage 1 Hyp mode Read
+    ARM32_CP_REG_DEFINE(ATS1HW,           15,   4,   7,   8,   1,   2, RW)  // Address Translate Stage 1 Hyp mode Write
+    ARM32_CP_REG_DEFINE(BPIALL,           15,   0,   7,   5,   6,   1, RW)  // Branch Predictor Invalidate All
+    ARM32_CP_REG_DEFINE(BPIALLIS,         15,   0,   7,   1,   6,   1, RW)  // Branch Predictor Invalidate All, Inner Shareable
+    ARM32_CP_REG_DEFINE(BPIMVA,           15,   0,   7,   5,   7,   1, RW)  // Branch Predictor Invalidate by VA
+    ARM32_CP_REG_DEFINE(CFPRCTX,          15,   0,   7,   3,   4,   0, RW)  // Control Flow Prediction Restriction by Context
+    ARM32_CP_REG_DEFINE(CP15DMB,          15,   0,   7,  10,   5,   0, RW)  // Data Memory Barrier System instruction
+    ARM32_CP_REG_DEFINE(CP15DSB,          15,   0,   7,  10,   4,   0, RW)  // Data Synchronization Barrier System instruction
+    ARM32_CP_REG_DEFINE(CP15ISB,          15,   0,   7,   5,   4,   0, RW)  // Instruction Synchronization Barrier System instruction
+    ARM32_CP_REG_DEFINE(CPPRCTX,          15,   0,   7,   3,   7,   0, RW)  // Cache Prefetch Prediction Restriction by Context
+    ARM32_CP_REG_DEFINE(DCCIMVAC,         15,   0,   7,  14,   1,   1, RW)  // Data Cache line Clean and Invalidate by VA to PoC
+    ARM32_CP_REG_DEFINE(DCCISW,           15,   0,   7,  14,   2,   1, RW)  // Data Cache line Clean and Invalidate by Set/Way
+    ARM32_CP_REG_DEFINE(DCCMVAC,          15,   0,   7,  10,   1,   1, RW)  // Data Cache line Clean by VA to PoC
+    ARM32_CP_REG_DEFINE(DCCMVAU,          15,   0,   7,  11,   1,   1, RW)  // Data Cache line Clean by VA to PoU
+    ARM32_CP_REG_DEFINE(DCCSW,            15,   0,   7,  10,   2,   1, RW)  // Data Cache line Clean by Set/W ay
+    ARM32_CP_REG_DEFINE(DCIMVAC,          15,   0,   7,   6,   1,   1, RW)  // Data Cache line Invalidate by VA to PoC
+    ARM32_CP_REG_DEFINE(DCISW,            15,   0,   7,   6,   2,   1, RW)  // Data Cache line Invalidate by Set/Way
+    ARM32_CP_REG_DEFINE(DTLBIALL,         15,   0,   8,   6,   0,   1, RW)  // Data TLB Invalidate All
+    ARM32_CP_REG_DEFINE(DTLBIASID,        15,   0,   8,   6,   2,   1, RW)  // Data TLB Invalidate by ASID match
+    ARM32_CP_REG_DEFINE(DTLBIMVA,         15,   0,   8,   6,   1,   1, RW)  // Data TLB Invalidate by VA
+    ARM32_CP_REG_DEFINE(DVPRCTX,          15,   0,   7,   3,   5,   0, RW)  // Data V alue Prediction Restriction by Context
+    ARM32_CP_REG_DEFINE(ICIALLU,          15,   0,   7,   5,   0,   1, RW)  // Instruction Cache Invalidate All to PoU
+    ARM32_CP_REG_DEFINE(ICIALLUIS,        15,   0,   7,   1,   0,   1, RW)  // Instruction Cache Invalidate All to PoU, Inner Shareable
+    ARM32_CP_REG_DEFINE(ICIMVAU,          15,   0,   7,   5,   1,   1, RW)  // Instruction Cache line Invalidate by VA to PoU AArch32 System Instructions
+    ARM32_CP_REG_DEFINE(ITLBIALL,         15,   0,   8,   5,   0,   1, RW)  // Instruction TLB Invalidate All
+    ARM32_CP_REG_DEFINE(ITLBIASID,        15,   0,   8,   5,   2,   1, RW)  // Instruction TLB Invalidate by ASID match
+    ARM32_CP_REG_DEFINE(ITLBIMVA,         15,   0,   8,   5,   1,   1, RW)  // Instruction TLB Invalidate by VA
+    ARM32_CP_REG_DEFINE(TLBIALL,          15,   0,   8,   7,   0,   1, RW)  // TLB Invalidate All
+    ARM32_CP_REG_DEFINE(TLBIALLH,         15,   4,   8,   7,   0,   2, RW)  // TLB Invalidate All, Hyp mode
+    ARM32_CP_REG_DEFINE(TLBIALLHIS,       15,   4,   8,   3,   0,   2, RW)  // TLB Invalidate All, Hyp mode, Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIALLIS,        15,   0,   8,   3,   0,   1, RW)  // TLB Invalidate All, Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIALLNSNH,      15,   4,   8,   7,   4,   2, RW)  // TLB Invalidate All, Non-Secure Non-Hyp
+    ARM32_CP_REG_DEFINE(TLBIALLNSNHIS,    15,   4,   8,   3,   4,   2, RW)  // TLB Invalidate All, Non-Secure Non-Hyp, Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIASID,         15,   0,   8,   7,   2,   1, RW)  // TLB Invalidate by ASID match
+    ARM32_CP_REG_DEFINE(TLBIASIDIS,       15,   0,   8,   3,   2,   1, RW)  // TLB Invalidate by ASID match, Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIIPAS2,        15,   4,   8,   4,   1,   2, RW)  // TLB Invalidate by Intermediate Physical Address, Stage 2
+    ARM32_CP_REG_DEFINE(TLBIIPAS2IS,      15,   4,   8,   0,   1,   2, RW)  // TLB Invalidate by Intermediate Physical Address, Stage 2, Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIIPAS2L,       15,   4,   8,   4,   5,   2, RW)  // TLB Invalidate by Intermediate Physical Address, Stage 2, Last level
+    ARM32_CP_REG_DEFINE(TLBIIPAS2LIS,     15,   4,   8,   0,   5,   2, RW)  // TLB Invalidate by Intermediate Physical Address, Stage 2, Last level, Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIMVA,          15,   0,   8,   7,   1,   1, RW)  // TLB Invalidate by VA
+    ARM32_CP_REG_DEFINE(TLBIMVAA,         15,   0,   8,   7,   3,   1, RW)  // TLB Invalidate by VA, All ASID
+    ARM32_CP_REG_DEFINE(TLBIMVAAIS,       15,   0,   8,   3,   3,   1, RW)  // TLB Invalidate by VA, All ASID , Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIMVAAL,        15,   0,   8,   7,   7,   1, RW)  // TLB Invalidate by VA, All ASID , Last level
+    ARM32_CP_REG_DEFINE(TLBIMVAALIS,      15,   0,   8,   3,   7,   1, RW)  // TLB Invalidate by VA, All ASID , Last level, Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIMVAH,         15,   4,   8,   7,   1,   2, RW)  // TLB Invalidate by VA, Hyp mode
+    ARM32_CP_REG_DEFINE(TLBIMVAHIS,       15,   4,   8,   3,   1,   2, RW)  // TLB Invalidate by VA, Hyp mode, Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIMVAIS,        15,   0,   8,   3,   1,   1, RW)  // TLB Invalidate by VA, Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIMVAL,         15,   0,   8,   7,   5,   1, RW)  // TLB Invalidate by VA, Last level
+    ARM32_CP_REG_DEFINE(TLBIMVALH,        15,   4,   8,   7,   5,   2, RW)  // TLB Invalidate by VA, Last level, Hyp mode
+    ARM32_CP_REG_DEFINE(TLBIMVALHIS,      15,   4,   8,   3,   5,   2, RW)  // TLB Invalidate by VA, Last level, Hyp mode, Inner Shareable
+    ARM32_CP_REG_DEFINE(TLBIMVALIS,       15,   0,   8,   3,   5,   1, RW)  // TLB Invalidate by VA, Last level, Inner Shareable
+};
 
 ARMCPRegInfo aarch64_registers[] = {
     // The params are:   name                   op0, op1, crn, crm, op2, el, extra_type, ...

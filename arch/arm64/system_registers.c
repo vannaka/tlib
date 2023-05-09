@@ -1755,6 +1755,42 @@ ARMCPRegInfo cortex_a76_regs[] = {
     ARM64_CP_REG_DEFINE(CPUACTLR3_EL1,           3,   0,  15,   1,   2,  1, RW)
 };
 
+ARMCPRegInfo cortex_r52_regs[] =
+{
+    // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
+    ARM32_CP_REG_DEFINE(CPUACTLR,            15,   0,   0,  15,   0,  1, RW) // CPU Auxiliary Control Register
+
+    ARM32_CP_REG_DEFINE(IMP_ATCMREGIONR,     15,   0,   9,   1,   0,  1, RW) // TCM Region Registers A, B, and C
+    ARM32_CP_REG_DEFINE(IMP_BTCMREGIONR,     15,   0,   9,   1,   1,  1, RW) // TCM Region Registers A, B, and C
+    ARM32_CP_REG_DEFINE(IMP_CTCMREGIONR,     15,   0,   9,   1,   2,  1, RW) // TCM Region Registers A, B, and C
+    ARM32_CP_REG_DEFINE(IMP_CSCTLR,          15,   1,   9,   1,   0,  1, RW) // Cache Segregation Control Register
+    ARM32_CP_REG_DEFINE(IMP_BPCTLR,          15,   1,   9,   1,   1,  1, RW) // Branch Predictor Control Register
+    ARM32_CP_REG_DEFINE(IMP_MEMPROTCLR,      15,   1,   9,   1,   2,  1, RW) // Memory Protection Control Register
+    ARM32_CP_REG_DEFINE(IMP_SLAVEPCTLR,      15,   0,  11,   0,   0,  1, RW | CONST(0x1)) // Slave Port Control Register
+    ARM32_CP_REG_DEFINE(IMP_PERIPHPREGIONR,  15,   0,  15,   0,   0,  1, RW) // Peripheral Port Region Register
+    ARM32_CP_REG_DEFINE(IMP_FLASHIFREGIONR,  15,   0,  15,   0,   1,  1, RW) // Flash Interface Region Register
+    ARM32_CP_REG_DEFINE(IMP_BUILDOPTR,       15,   0,  15,   2,   0,  1, RO) // Build Options Register
+    ARM32_CP_REG_DEFINE(IMP_PINOPTR,         15,   0,  15,   2,   7,  1, RO) // Pin Options Register
+    ARM32_CP_REG_DEFINE(IMP_CBAR,            15,   1,  15,   3,   0,  1, RO) // Configuration Base Address Register
+    ARM32_CP_REG_DEFINE(IMP_QOSR,            15,   1,  15,   3,   1,  1, RW) // Quality Of Service Register
+    ARM32_CP_REG_DEFINE(IMP_BUSTIMEOUTR,     15,   1,  15,   3,   2,  1, RW) // Bus Timeout Register
+    ARM32_CP_REG_DEFINE(IMP_INTMONR,         15,   1,  15,   3,   4,  1, RW) // Interrupt Monitoring Register
+    ARM32_CP_REG_DEFINE(IMP_ICERR0,          15,   2,  15,   0,   0,  1, RW) // Instruction Cache Error Record Registers 0
+    ARM32_CP_REG_DEFINE(IMP_ICERR1,          15,   2,  15,   0,   1,  1, RW) // Instruction Cache Error Record Registers 0
+    ARM32_CP_REG_DEFINE(IMP_DCERR0,          15,   2,  15,   1,   0,  1, RW) // Data Cache Error Record Registers 0 and 1
+    ARM32_CP_REG_DEFINE(IMP_DCERR1,          15,   2,  15,   1,   1,  1, RW) // Data Cache Error Record Registers 0 and 1
+    ARM32_CP_REG_DEFINE(IMP_TCMERR0,         15,   2,  15,   2,   0,  1, RW) // TCM Error Record Register 0 and 1
+    ARM32_CP_REG_DEFINE(IMP_TCMERR1,         15,   2,  15,   2,   1,  1, RW) // TCM Error Record Register 0 and 1
+    ARM32_CP_REG_DEFINE(IMP_TCMSYNDR0,       15,   2,  15,   2,   2,  1, RO) // TCM Syndrome Register 0 and 1
+    ARM32_CP_REG_DEFINE(IMP_TCMSYNDR1,       15,   2,  15,   2,   3,  1, RO) // TCM Syndrome Register 0 and 1
+    ARM32_CP_REG_DEFINE(IMP_FLASHERR0,       15,   2,  15,   3,   0,  1, RW) // Flash Error Record Registers 0 and 1
+    ARM32_CP_REG_DEFINE(IMP_FLASHERR1,       15,   2,  15,   3,   1,  1, RW) // Flash Error Record Registers 0 and 1
+    ARM32_CP_REG_DEFINE(IMP_CDBGDR0,         15,   3,  15,   0,   0,  2, RO) // Cache Debug Data Register 0
+    ARM32_CP_REG_DEFINE(IMP_CDBGDR1,         15,   3,  15,   0,   1,  2, RO) // Cache Debug Data Register 1
+    ARM32_CP_REG_DEFINE(IMP_TESTR0,          15,   4,  15,   0,   0,  1, RO) // Test Register 0
+    ARM32_CP_REG_DEFINE(IMP_TESTR1,          15,   4,  15,   0,   1,  1, WO) // This register is only for testing
+};
+
 ARMCPRegInfo mpu_registers[] = {
     // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
     ARM32_CP_REG_DEFINE(PRSELR,              15,   0,   6,   2,   1,  1, RW, FIELD(pmsav8.prselr)) // Protection Region Selection Register

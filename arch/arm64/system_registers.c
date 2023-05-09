@@ -75,7 +75,7 @@ static inline uint64_t get_id_aa64pfr0_value(CPUState *env)
     WRITE_FUNCTION(width, mnemonic, write_statement)
 
 #define RW_FUNCTIONS_PTR(width, mnemonic, pointer) \
-    RW_FUNCTIONS(width, mnemonic, *pointer, *pointer = value)
+    RW_FUNCTIONS(width, mnemonic, *(pointer), *(pointer) = value)
 
 // Many 'MRS/MSR *_EL1' instructions access '*_EL2' registers if EL is 2 and HCR_EL2's E2H bit is set.
 #define RW_FUNCTIONS_EL1_ACCESSING_EL2_IF_E2H_SET(width, mnemonic, field_base) \

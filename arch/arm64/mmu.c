@@ -195,13 +195,13 @@ int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int m
         case DESCRIPTOR_TYPE_BLOCK_ENTRY:
             if (level == 1 && page_size_shift != 12) {
                 tlib_printf(LOG_LEVEL_ERROR, "%s: block entry allowed on level 1 only with 4K pages!", __func__);
-                syn_dfsc = SYN_DFSC_PERMISSION_FAULT_LEVEL1;
+                syn_dfsc = SYN_DFSC_TRANSLATION_FAULT_LEVEL1;
                 goto do_fault;
             }
 
             if (level > 2) {
                 tlib_printf(LOG_LEVEL_ERROR, "%s: block descriptor not allowed on level %d!", __func__, level);
-                syn_dfsc = SYN_DFSC_PERMISSION_FAULT_LEVEL1 + level - 1;
+                syn_dfsc = SYN_DFSC_TRANSLATION_FAULT_LEVEL0 + level;
                 goto do_fault;
             }
 

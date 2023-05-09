@@ -81,13 +81,29 @@ static inline uint64_t get_id_aa64pfr0_value(CPUState *env)
 #define RW_FUNCTIONS_EL1_ACCESSING_EL2_IF_E2H_SET(width, mnemonic, field_base) \
     RW_FUNCTIONS_PTR(width, mnemonic, &field_base[el2_and_hcr_el2_e2h_set(env) ? 2 : 1])
 
-static inline uint32_t encode_system_register_id(const ARMCPRegInfo *info)
+static inline uint32_t encode_as_aarch64_register(CPUState *env, const ARMCPRegInfo *info)
 {
-    return (info->op0 << CP_REG_ARM64_SYSREG_OP0_SHIFT) |
+    // if the function is used to encode aarch32 register in the same way
+    // as aarch64 register, we have to set op0 artificialy.
+    uint8_t op0 = (env->aarch64) ? info->op0 : 0x3;
+
+    return (op0 << CP_REG_ARM64_SYSREG_OP0_SHIFT) |
         (info->op1 << CP_REG_ARM64_SYSREG_OP1_SHIFT) |
         (info->crn << CP_REG_ARM64_SYSREG_CRN_SHIFT) |
         (info->crm << CP_REG_ARM64_SYSREG_CRM_SHIFT) |
         (info->op2 << CP_REG_ARM64_SYSREG_OP2_SHIFT);
+}
+
+uint32_t encode_as_aarch32_64bit_register(const ARMCPRegInfo *info) {
+    return (info->op1 << CP_REG_ARM32_64BIT_SYSREG_OP1_SHIFT) |
+           (info->crm << CP_REG_ARM32_64BIT_SYSREG_CRM_SHIFT);
+}
+
+uint32_t encode_as_aarch32_32bit_register(const ARMCPRegInfo *info) {
+    return (info->op1 << CP_REG_ARM32_32BIT_SYSREG_OP1_SHIFT) |
+        (info->crn << CP_REG_ARM32_32BIT_SYSREG_CRN_SHIFT) |
+        (info->op2 << CP_REG_ARM32_32BIT_SYSREG_OP2_SHIFT) |
+        (info->crm << CP_REG_ARM32_32BIT_SYSREG_CRM_SHIFT);
 }
 
 READ_FUNCTION(64, mpidr_el1, *mpidr_el1_register_pointer(env))
@@ -95,13 +111,22 @@ READ_FUNCTION(64, mpidr_el1, *mpidr_el1_register_pointer(env))
 RW_FUNCTIONS(64, fpcr,  vfp_get_fpcr(env), vfp_set_fpcr(env, value))
 RW_FUNCTIONS(64, fpsr,  vfp_get_fpsr(env), vfp_set_fpsr(env, value))
 
-RW_FUNCTIONS(64, generic_timer,
-             tlib_read_system_register_generic_timer(encode_system_register_id(info)),
-             tlib_write_system_register_generic_timer(encode_system_register_id(info), value))
+RW_FUNCTIONS(64, generic_timer_aarch64,
+             tlib_read_system_register_generic_timer_64(encode_as_aarch64_register(env, info)),
+             tlib_write_system_register_generic_timer_64(encode_as_aarch64_register(env, info), value))
+
+RW_FUNCTIONS(64, generic_timer_aarch32_32,
+             tlib_read_system_register_generic_timer_32(encode_as_aarch32_32bit_register(info)),
+             tlib_write_system_register_generic_timer_32(encode_as_aarch32_32bit_register(info), value))
+
+RW_FUNCTIONS(64, generic_timer_aarch32_64,
+             tlib_read_system_register_generic_timer_64(encode_as_aarch32_64bit_register(info)),
+             tlib_write_system_register_generic_timer_64(encode_as_aarch32_64bit_register(info), value))
 
 RW_FUNCTIONS(64, interrupt_cpu_interface,
-             tlib_read_system_register_interrupt_cpu_interface(encode_system_register_id(info)),
-             tlib_write_system_register_interrupt_cpu_interface(encode_system_register_id(info), value))
+             tlib_read_system_register_interrupt_cpu_interface(encode_as_aarch64_register(env, info)),
+             tlib_write_system_register_interrupt_cpu_interface(encode_as_aarch64_register(env, info), value))
+
 
 RW_FUNCTIONS_PTR(64, cpacr_el1,     cpacr_el1_register_pointer(env))
 RW_FUNCTIONS_PTR(64, spsr_el1,      spsr_el1_register_pointer(env))
@@ -280,15 +305,15 @@ ARMCPRegInfo aarch32_registers[] = {
     ARM32_CP_REG_DEFINE(CCSIDR,           15,   1,   0,   0,   0,   1, RW, READFN(ccsidr_el1))  // Current Cache Size ID Register
     ARM32_CP_REG_DEFINE(CCSIDR2,          15,   1,   0,   0,   2,   1, RW, READFN(ccsidr2_el1))  // Current Cache Size ID Register 2
     ARM32_CP_REG_DEFINE(CLIDR,            15,   1,   0,   0,   1,   1, RW, READFN(clidr_el1))  // Cache Level ID Register
-    ARM32_CP_REG_DEFINE(CNTFRQ,           15,   0,  14,   0,   0,   0, RW)  // Counter-timer Frequency register
-    ARM32_CP_REG_DEFINE(CNTHCTL,          15,   4,  14,   1,   0,   2, RW)  // Counter-timer Hyp Control register
-    ARM32_CP_REG_DEFINE(CNTHP_CTL,        15,   4,  14,   2,   1,   2, RW)  // Counter-timer Hyp Physical Timer Control register
-    ARM32_CP_REG_DEFINE(CNTHP_TVAL,       15,   4,  14,   2,   0,   2, RW)  // Counter-timer Hyp Physical Timer Timer Value register
+    ARM32_CP_REG_DEFINE(CNTFRQ,           15,   0,  14,   0,   0,   0, RW, RW_FNS(generic_timer_aarch32_32))  // Counter-timer Frequency register
+    ARM32_CP_REG_DEFINE(CNTHCTL,          15,   4,  14,   1,   0,   2, RW, RW_FNS(generic_timer_aarch32_32))  // Counter-timer Hyp Control register
+    ARM32_CP_REG_DEFINE(CNTHP_CTL,        15,   4,  14,   2,   1,   2, RW, RW_FNS(generic_timer_aarch32_32))  // Counter-timer Hyp Physical Timer Control register
+    ARM32_CP_REG_DEFINE(CNTHP_TVAL,       15,   4,  14,   2,   0,   2, RW, RW_FNS(generic_timer_aarch32_32))  // Counter-timer Hyp Physical Timer Timer Value register
     ARM32_CP_REG_DEFINE(CNTKCTL,          15,   0,  14,   1,   0,   1, RW)  // Counter-timer Kernel Control register
-    ARM32_CP_REG_DEFINE(CNTP_CTL,         15,   0,  14,   2,   1,   0, RW)  // Counter-timer Physical Timer Control register
-    ARM32_CP_REG_DEFINE(CNTP_TVAL,        15,   0,  14,   2,   0,   0, RW)  // Counter-timer Physical Timer Timer Value register
-    ARM32_CP_REG_DEFINE(CNTV_CTL,         15,   0,  14,   3,   1,   0, RW)  // Counter-timer Virtual Timer Control register
-    ARM32_CP_REG_DEFINE(CNTV_TVAL,        15,   0,  14,   3,   0,   0, RW)  // Counter-timer Virtual Timer Timer Value register
+    ARM32_CP_REG_DEFINE(CNTP_CTL,         15,   0,  14,   2,   1,   0, RW, RW_FNS(generic_timer_aarch32_32))  // Counter-timer Physical Timer Control register
+    ARM32_CP_REG_DEFINE(CNTP_TVAL,        15,   0,  14,   2,   0,   0, RW, RW_FNS(generic_timer_aarch32_32))  // Counter-timer Physical Timer Timer Value register
+    ARM32_CP_REG_DEFINE(CNTV_CTL,         15,   0,  14,   3,   1,   0, RW, RW_FNS(generic_timer_aarch32_32))  // Counter-timer Virtual Timer Control register
+    ARM32_CP_REG_DEFINE(CNTV_TVAL,        15,   0,  14,   3,   0,   0, RW, RW_FNS(generic_timer_aarch32_32))  // Counter-timer Virtual Timer Timer Value register
     ARM32_CP_REG_DEFINE(CONTEXTIDR,       15,   0,  13,   0,   1,   1, RW, FIELD(cp15.contextidr_ns))  // Context ID Register
     ARM32_CP_REG_DEFINE(CPACR,            15,   0,   1,   0,   2,   1, RW, FIELD(cp15.cpacr_el1))  // Architectural Feature Access Control Register
     ARM32_CP_REG_DEFINE(CSSELR,           15,   2,   0,   0,   0,   1, RW, FIELD(cp15.csselr_ns))  // Cache Size Selection Register
@@ -669,14 +694,14 @@ ARMCPRegInfo aarch32_registers[] = {
     ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR11,       15,   1,   4,   0, RW)  // Activity Monitors Event Counter Registers 1 (1/3)
     ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR12,       15,   2,   4,   0, RW)  // Activity Monitors Event Counter Registers 1 (2/3)
     ARM32_CP_64BIT_REG_DEFINE(AMEVCNTR13,       15,   3,   4,   0, RW)  // Activity Monitors Event Counter Registers 1 (3/3)
-    ARM32_CP_64BIT_REG_DEFINE(CNTHP_CVAL,       15,   6,  14,   2, RW)  // Counter-timer Hyp Physical CompareV alue register
-    ARM32_CP_64BIT_REG_DEFINE(CNTPCT,           15,   0,  14,   0, RW) // Counter-timer Physical Count register
-    ARM32_CP_64BIT_REG_DEFINE(CNTPCTSS,         15,   8,  14,   0, RW)  // Counter-timer Self-Synchronized Physical Count register
-    ARM32_CP_64BIT_REG_DEFINE(CNTP_CVAL,        15,   2,  14,   0, RW)  // Counter-timer Physical Timer Compare Value register
-    ARM32_CP_64BIT_REG_DEFINE(CNTVCT,           15,   1,  14,   0, RW)  // Counter-timer Virtual Count register
-    ARM32_CP_64BIT_REG_DEFINE(CNTVCTSS,         15,   9,  14,   0, RW)  // Counter-timer Self-Synchronized Virtual Count register
-    ARM32_CP_64BIT_REG_DEFINE(CNTVOFF,          15,   4,  14,   2, RW)  // Counter-timer Virtual Offset register
-    ARM32_CP_64BIT_REG_DEFINE(CNTV_CVAL,        15,   3,  14,   0, RW)  // Counter-timer Virtual Timer Compare Value register
+    ARM32_CP_64BIT_REG_DEFINE(CNTHP_CVAL,       15,   6,  14,   2, RW, RW_FNS(generic_timer_aarch32_64))  // Counter-timer Hyp Physical CompareV alue register
+    ARM32_CP_64BIT_REG_DEFINE(CNTPCT,           15,   0,  14,   0, RW, RW_FNS(generic_timer_aarch32_64)) // Counter-timer Physical Count register
+    ARM32_CP_64BIT_REG_DEFINE(CNTPCTSS,         15,   8,  14,   0, RW, RW_FNS(generic_timer_aarch32_64))  // Counter-timer Self-Synchronized Physical Count register
+    ARM32_CP_64BIT_REG_DEFINE(CNTP_CVAL,        15,   2,  14,   0, RW, RW_FNS(generic_timer_aarch32_64))  // Counter-timer Physical Timer Compare Value register
+    ARM32_CP_64BIT_REG_DEFINE(CNTVCT,           15,   1,  14,   0, RW, RW_FNS(generic_timer_aarch32_64))  // Counter-timer Virtual Count register
+    ARM32_CP_64BIT_REG_DEFINE(CNTVCTSS,         15,   9,  14,   0, RW, RW_FNS(generic_timer_aarch32_64))  // Counter-timer Self-Synchronized Virtual Count register
+    ARM32_CP_64BIT_REG_DEFINE(CNTVOFF,          15,   4,  14,   2, RW, RW_FNS(generic_timer_aarch32_64))  // Counter-timer Virtual Offset register
+    ARM32_CP_64BIT_REG_DEFINE(CNTV_CVAL,        15,   3,  14,   0, RW, RW_FNS(generic_timer_aarch32_64))  // Counter-timer Virtual Timer Compare Value register
     ARM32_CP_64BIT_REG_DEFINE(DBGDRAR,          14,   0,   1,   0, RW)  // Debug ROM Address Register
     ARM32_CP_64BIT_REG_DEFINE(DBGDSAR,          14,   0,   2,   0, RW)  // Debug Self Address Register
     ARM32_CP_64BIT_REG_DEFINE(HTTBR,            15,   4,   2,   2, RW)  // Hyp Translation T able Base Register
@@ -879,43 +904,43 @@ ARMCPRegInfo aarch64_registers[] = {
     ARM64_CP_REG_DEFINE(CLIDR_EL1,               3,   1,   0,   0,   1,  1, RO, READFN(clidr_el1))
     // TODO: Implement trap on access to CNT* registers
     // The configuration of traping depends on flags from CNTHCTL_EL2 and CNTKCTL_EL1 registers
-    ARM64_CP_REG_DEFINE(CNTFRQ_EL0,              3,   3,  14,   0,   0,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHCTL_EL2,             3,   4,  14,   1,   0,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHP_CTL_EL2,           3,   4,  14,   2,   1,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHP_CVAL_EL2,          3,   4,  14,   2,   2,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHP_TVAL_EL2,          3,   4,  14,   2,   0,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHPS_CTL_EL2,          3,   4,  14,   5,   1,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHPS_CVAL_EL2,         3,   4,  14,   5,   2,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHPS_TVAL_EL2,         3,   4,  14,   5,   0,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHV_CTL_EL2,           3,   4,  14,   3,   1,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHV_CVAL_EL2,          3,   4,  14,   3,   2,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHV_TVAL_EL2,          3,   4,  14,   3,   0,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHVS_CTL_EL2,          3,   4,  14,   4,   1,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHVS_CVAL_EL2,         3,   4,  14,   4,   2,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTHVS_TVAL_EL2,         3,   4,  14,   4,   0,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTKCTL_EL1,             3,   0,  14,   1,   0,  1, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTKCTL_EL12,            3,   5,  14,   1,   0,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTP_CTL_EL0,            3,   3,  14,   2,   1,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTP_CTL_EL02,           3,   5,  14,   2,   1,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTP_CVAL_EL0,           3,   3,  14,   2,   2,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTP_CVAL_EL02,          3,   5,  14,   2,   2,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTP_TVAL_EL0,           3,   3,  14,   2,   0,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTP_TVAL_EL02,          3,   5,  14,   2,   0,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTPCT_EL0,              3,   3,  14,   0,   1,  0, RO, READFN(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTPCTSS_EL0,            3,   3,  14,   0,   5,  0, RO, READFN(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTPOFF_EL2,             3,   4,  14,   0,   6,  2, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTPS_CTL_EL1,           3,   7,  14,   2,   1,  1, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTPS_CVAL_EL1,          3,   7,  14,   2,   2,  1, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTPS_TVAL_EL1,          3,   7,  14,   2,   0,  1, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTV_CTL_EL0,            3,   3,  14,   3,   1,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTV_CTL_EL02,           3,   5,  14,   3,   1,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTV_CVAL_EL0,           3,   3,  14,   3,   2,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTV_CVAL_EL02,          3,   5,  14,   3,   2,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTV_TVAL_EL0,           3,   3,  14,   3,   0,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTV_TVAL_EL02,          3,   5,  14,   3,   0,  0, RW, RW_FNS(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTVCT_EL0,              3,   3,  14,   0,   2,  0, RO, READFN(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTVCTSS_EL0,            3,   3,  14,   0,   6,  0, RO, READFN(generic_timer))
-    ARM64_CP_REG_DEFINE(CNTVOFF_EL2,             3,   4,  14,   0,   3,  2, RW, RW_FNS(generic_timer))
+    ARM64_CP_REG_DEFINE(CNTFRQ_EL0,              3,   3,  14,   0,   0,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHCTL_EL2,             3,   4,  14,   1,   0,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHP_CTL_EL2,           3,   4,  14,   2,   1,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHP_CVAL_EL2,          3,   4,  14,   2,   2,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHP_TVAL_EL2,          3,   4,  14,   2,   0,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHPS_CTL_EL2,          3,   4,  14,   5,   1,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHPS_CVAL_EL2,         3,   4,  14,   5,   2,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHPS_TVAL_EL2,         3,   4,  14,   5,   0,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHV_CTL_EL2,           3,   4,  14,   3,   1,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHV_CVAL_EL2,          3,   4,  14,   3,   2,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHV_TVAL_EL2,          3,   4,  14,   3,   0,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHVS_CTL_EL2,          3,   4,  14,   4,   1,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHVS_CVAL_EL2,         3,   4,  14,   4,   2,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTHVS_TVAL_EL2,         3,   4,  14,   4,   0,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTKCTL_EL1,             3,   0,  14,   1,   0,  1, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTKCTL_EL12,            3,   5,  14,   1,   0,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTP_CTL_EL0,            3,   3,  14,   2,   1,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTP_CTL_EL02,           3,   5,  14,   2,   1,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTP_CVAL_EL0,           3,   3,  14,   2,   2,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTP_CVAL_EL02,          3,   5,  14,   2,   2,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTP_TVAL_EL0,           3,   3,  14,   2,   0,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTP_TVAL_EL02,          3,   5,  14,   2,   0,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTPCT_EL0,              3,   3,  14,   0,   1,  0, RO, READFN(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTPCTSS_EL0,            3,   3,  14,   0,   5,  0, RO, READFN(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTPOFF_EL2,             3,   4,  14,   0,   6,  2, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTPS_CTL_EL1,           3,   7,  14,   2,   1,  1, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTPS_CVAL_EL1,          3,   7,  14,   2,   2,  1, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTPS_TVAL_EL1,          3,   7,  14,   2,   0,  1, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTV_CTL_EL0,            3,   3,  14,   3,   1,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTV_CTL_EL02,           3,   5,  14,   3,   1,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTV_CVAL_EL0,           3,   3,  14,   3,   2,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTV_CVAL_EL02,          3,   5,  14,   3,   2,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTV_TVAL_EL0,           3,   3,  14,   3,   0,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTV_TVAL_EL02,          3,   5,  14,   3,   0,  0, RW, RW_FNS(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTVCT_EL0,              3,   3,  14,   0,   2,  0, RO, READFN(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTVCTSS_EL0,            3,   3,  14,   0,   6,  0, RO, READFN(generic_timer_aarch64))
+    ARM64_CP_REG_DEFINE(CNTVOFF_EL2,             3,   4,  14,   0,   3,  2, RW, RW_FNS(generic_timer_aarch64))
     ARM64_CP_REG_DEFINE(CONTEXTIDR_EL1,          3,   0,  13,   0,   1,  1, RW | ARM_CP_TLB_FLUSH, RW_FNS(contextidr_el1))
     ARM64_CP_REG_DEFINE(CONTEXTIDR_EL12,         3,   5,  13,   0,   1,  2, RW | ARM_CP_TLB_FLUSH, FIELD(cp15.contextidr_el[1]))
     ARM64_CP_REG_DEFINE(CONTEXTIDR_EL2,          3,   4,  13,   0,   1,  2, RW | ARM_CP_TLB_FLUSH, FIELD(cp15.contextidr_el[2]))

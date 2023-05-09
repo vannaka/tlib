@@ -340,6 +340,8 @@ typedef struct ARMCoreConfig {
         uint64_t id_aa64smfr0;
         uint64_t reset_pmcr_el0;
     } isar;
+    uint32_t mpuir;
+    uint32_t hmpuir;
     uint64_t midr;
     uint32_t revidr;
     uint32_t reset_fpsid;

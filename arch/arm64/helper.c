@@ -237,6 +237,171 @@ void cpu_init_a53(CPUState *env, uint32_t id)
     env->arm_core_config->midr = 0x410FD034;
 }
 
+void cpu_init_r52(CPUState *env, uint32_t id)
+{
+    // Comments point to sections from
+    // the Arm Cortex-R52 Processor Technical Reference Manual (version: r1p3)
+
+    set_feature(env, ARM_FEATURE_V8);
+    set_feature(env, ARM_FEATURE_V7VE); // enables ERET
+    set_feature(env, ARM_FEATURE_V7);
+    set_feature(env, ARM_FEATURE_V4T); // enables BX
+    set_feature(env, ARM_FEATURE_V6);
+    set_feature(env, ARM_FEATURE_V5);
+
+    set_feature(env, ARM_FEATURE_NEON); // from 1.2.2
+    set_feature(env, ARM_FEATURE_GENERIC_TIMER); // from 1.2
+    set_feature(env, ARM_FEATURE_PMSA); // from 1.1.
+    set_feature(env, ARM_FEATURE_PMU); // from 1.1.1
+    set_feature(env, ARM_FEATURE_THUMB2); // from 3.3.83
+    set_feature(env, ARM_FEATURE_MVFR); // from 15.5
+
+    env->arm_core_config->has_el2 = true;        // EL2 virtualization, from 1.2
+
+    env->arm_core_config->isar.id_isar0 = 0x02101110; // from 3.2.1
+    env->arm_core_config->isar.id_isar1 = 0x13112111; // from 3.2.1
+    env->arm_core_config->isar.id_isar2 = 0x21232142; // from 3.2.1
+    env->arm_core_config->isar.id_isar3 = 0x01112131; // from 3.2.1
+    env->arm_core_config->isar.id_isar4 = 0x00010142; // from 3.2.1
+    env->arm_core_config->isar.id_isar5 = 0x00010001; // from 3.2.1
+    env->arm_core_config->isar.id_mmfr0 = 0x00211040; // from 3.2.1
+    env->arm_core_config->isar.id_mmfr1 = 0x40000000; // from 3.2.1
+    env->arm_core_config->isar.id_mmfr2 = 0x01200000; // from 3.2.1
+    env->arm_core_config->isar.id_mmfr3 = 0xF0102211; // from 3.2.1
+    env->arm_core_config->isar.id_mmfr4 = 0x00000010; // from 3.2.1
+    env->arm_core_config->isar.id_pfr0 = 0x00000131; // from 3.2.1
+    env->arm_core_config->isar.id_pfr1 = 0x10111001; // from 3.2.1
+    env->arm_core_config->isar.mvfr0 = 0x10110222; // full advanced SIMD, 0x10110021 for SP-only, from 15.5
+    env->arm_core_config->isar.mvfr1 = 0x12111111; // full advanced SIMD, 0x11000011 for SP-only, from 15.5
+    env->arm_core_config->isar.mvfr2 = 0x00000043; // full advanced SIMD, 0x00000040 for SP-only, from 15.5
+
+    env->arm_core_config->isar.id_dfr0 = // 32bit, from 3.3.24
+        (0x0 << 28) | // RES0
+        (0x3 << 24) | // PerfMon
+        (0x0 << 20) | // MProfDbg
+        (0x1 << 16) | // MMapTrc
+        (0x0 << 12) | // CopTrc
+        (0x0 << 8) | // MMapDbg, RES0
+        (0x0 << 4) | // CopSDbg, RES0
+        (0x6 << 0); // CopDbg
+
+    env->arm_core_config->isar.dbgdidr = // 32bit, from 11.4.1
+        (0x7 << 28) | // WRPs
+        (0x7 << 24) | // BRPs
+        (0x1 << 23) | // CTX_CMPs
+        (0x6 << 16) | // Version
+        (0x1 << 15) | // RES1
+        (0x0 << 14) | // nSUHD_imp
+        (0x0 << 13) | // RES0
+        (0x0 << 12) | // SE_imp
+        (0x0 << 0); // RES0
+
+    env->arm_core_config->isar.dbgdevid = // 32bit, from 11.4.2
+        (0x0 << 28) | // CIDMask
+        (0x0 << 24) | // AuxRegs
+        (0x1 << 20) | // DoubleLock
+        (0x1 << 16) | // VirExtns
+        (0x0 << 12) | // VectorCatch
+        (0xF << 8) | // BPAddrMask
+        (0x1 << 4) | // WPAddrMask
+        (0x3 << 0);  // PCsample
+
+    env->arm_core_config->isar.dbgdevid1 = // 32bit, from 11.4.3
+        (0x0 << 4) | // RES0
+        (0x2 << 0); // PCSROffset
+
+    env->arm_core_config->revidr = 0x00000000; // from 3.2.1
+    env->arm_core_config->reset_fpsid = 0x41034023; // from 15.5
+    env->arm_core_config->ctr = 0x8144c004; // from 3.2.1
+
+    env->arm_core_config->reset_sctlr = // 32bit, from 3.3.92
+        (0x0 << 31) | // RES0
+        (0x0 << 30) | // TE, here exceptions taken in A32 state
+        (0x3 << 28) | // RES1
+        (0x0 << 26) | // RES0
+        (0x0 << 25) | // EE, here little endianness exception, 0 in CPSR.E
+        (0x0 << 24) | // RES0
+        (0x3 << 22) | // RES1
+        (0x0 << 21) | // FI
+        (0x0 << 20) | // UWXN
+        (0x0 << 19) | // WXN
+        (0x1 << 18) | // nTWE
+        (0x0 << 17) | // BR
+        (0x1 << 16) | // nTWI
+        (0x0 << 13) | // RES0
+        (0x0 << 12) | // I
+        (0x1 << 11) | // RES1
+        (0x0 << 9) | // RES0
+        (0x0 << 8) | // SED
+        (0x0 << 7) | // ITD
+        (0x0 << 6) | // RES0
+        (0x1 << 5) | // CP15BEN
+        (0x3 << 3) | // RES1
+        (0x0 << 2) | // C
+        (0x0 << 1) | // A
+        (0x0 << 0); // M
+
+    env->arm_core_config->pmceid0 = 0x6E1FFFDB; // 3.2.11
+    env->arm_core_config->pmceid1 = 0x0000001E; // 3.2.11
+    env->arm_core_config->id_afr0 = 0x00000000; // 3.2.19
+
+    env->arm_core_config->clidr = // 32bit, from 3.3.13
+        (0x0 << 30) | // ICB
+        (0x1 << 27) | // LoUU, set if either cache is implemented
+        (0x1 << 24) | // LoC, set if either cache is implemented
+        (0x0 << 21) | // LoUIS
+        (0x0 << 18) | // Ctype7
+        (0x0 << 15) | // Ctype6
+        (0x0 << 12) | // Ctype5
+        (0x0 << 9) | // Ctype4
+        (0x0 << 6) | // Ctype3
+        (0x0 << 3) | // Ctype2
+        (0x3 << 0); // Ctype1, separate instructions and data caches
+
+    // TODO: Make affinity configurable from CPU class in C#
+    env->arm_core_config->mpidr = // 32bit, from 3.3.78
+        (0x1 << 31) | // M, RES1
+        (0x0 << 30) | // U, core is part of cluster (no single core)
+        (0x0 << 25) | // RES0
+        (0x0 << 24) | // MT
+        (0x0 << 16) | // Aff2
+        (0x0 << 8) | // Aff1
+        (0x0 << 0); // Aff0
+
+    env->arm_core_config->ccsidr[0] = // 32bit, 3.3.20
+        (0x0 << 31) | // WT, here no Write-Through
+        (0x1 << 30) | // WB, here support Write-Back
+        (0x1 << 29) | // RA, here support Read-Allocation
+        (0x1 << 28) | // WA, here support Write-Allocation
+        (0x7F << 13) | // NumSets, config for 32KB
+        (0x3 << 3) | // Associativity
+        (0x2 << 0); // LineSize
+
+    env->arm_core_config->ccsidr[1] = // 32bit, 3.3.20
+        (0x0 << 31) | // WT, here support Write-Through
+        (0x0 << 30) | // WB, here no Write-Back
+        (0x1 << 29) | // RA, here support Read-Allocation
+        (0x0 << 28) | // WA, here no Write-Allocation
+        (0x7F << 13) | // NumSets, config for 32KB
+        (0x3 << 3) | // Associativity
+        (0x2 << 0); // LineSize
+
+    env->arm_core_config->gic_num_lrs = 4; // from 3.2.14
+    env->arm_core_config->gic_vpribits = 5; // from 9.3.3
+    env->arm_core_config->gic_vprebits = 5; // from 9.3.3
+    env->arm_core_config->gic_pribits = 5; // from 9.3.4
+
+    env->arm_core_config->gt_cntfrq_hz = 0; // from 3.2.16
+
+    // TODO: Make amount of MPU regions configurable from CPU class in C#
+    env->arm_core_config->mpuir = // from 3.3.76
+        (16 << 8); // DREGION, here 16 EL1-controlled MPU regions
+    env->arm_core_config->hmpuir =
+        (16 << 0); // REGION, here 16 EL2-controlled MPU regions
+
+    // TODO: Add missing ones: reset_fpsid, reset_cbar, reset_auxcr, reset_hivecs
+}
+
 static void cpu_init_core_config(CPUState *env, uint32_t id)
 {
     env->arm_core_config = tlib_mallocz(sizeof(ARMCoreConfig));
@@ -251,6 +416,9 @@ static void cpu_init_core_config(CPUState *env, uint32_t id)
     case ARM_CPUID_CORTEXA75:
     case ARM_CPUID_CORTEXA76:
         cpu_init_a75_a76(env, id);
+        break;
+    case ARM_CPUID_CORTEXR52:
+        cpu_init_r52(env, id);
         break;
     default:
         cpu_abort(env, "Bad CPU ID: %x\n", id);

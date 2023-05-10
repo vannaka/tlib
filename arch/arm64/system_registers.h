@@ -32,6 +32,7 @@
 #define ARM_CP_SME             (1 << 14)
 #define ARM_CP_SUPPRESS_TB_END (1 << 15)
 #define ARM_CP_SVE             (1 << 16)
+#define ARM_CP_TLB_FLUSH       (1 << 18)  // TLB will be flushed after writing such a register
 #define ARM_CP_WO              (1 << 17)  // Write-Only
 
 // Minimum EL access

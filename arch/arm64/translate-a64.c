@@ -2098,6 +2098,10 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
             log_unhandled_sysreg_write(ri->name);
             return;
         }
+
+        if (ri->type & ARM_CP_TLB_FLUSH) {
+            gen_helper_sysreg_tlb_flush(cpu_env, tcg_constant_ptr(ri));
+        }
     }
 
     if ((tb_cflags(s->base.tb) & CF_USE_ICOUNT) && (ri->type & ARM_CP_IO)) {

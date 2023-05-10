@@ -32,6 +32,15 @@ void HELPER(memory_barrier_assert)(CPUARMState *env)
     tlib_assert((env->current_tb->cflags & CF_PARALLEL) == 0);
 }
 
+void HELPER(sysreg_tlb_flush)(CPUARMState *env, void *info_ptr)
+{
+    // TODO: Use register info to flush precisely.
+    const ARMCPRegInfo *info = info_ptr;
+    (void)info;
+
+    tlb_flush(env, 1);
+}
+
 /* Functions called by arch-independent code. */
 
 void cpu_exec_epilogue(CPUState *env)

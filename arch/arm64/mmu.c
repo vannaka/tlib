@@ -68,8 +68,8 @@ static inline void parse_desc(uint32_t va_size_shift, uint64_t desc, uint32_t ip
     *page_size = 1 << va_size_shift;
 }
 
-void handle_mmu_fault_v8(CPUState *env, target_ulong address, int access_type, bool suppress_faults,
-                         ISSFaultStatusCode fault_code, bool at_instruction_or_cache_maintenance,
+void handle_mmu_fault_v8(CPUState *env, target_ulong address, int access_type, uintptr_t return_address,
+                         bool suppress_faults, ISSFaultStatusCode fault_code, bool at_instruction_or_cache_maintenance,
                          bool s1ptw /* "stage 2 fault on an access made for a stage 1 translation table walk" */)
 {
     // The 'suppress_faults' (AKA 'no_page_fault') argument can be used to skip translation failure handling.
@@ -97,11 +97,17 @@ void handle_mmu_fault_v8(CPUState *env, target_ulong address, int access_type, b
     }
 
     env->exception.vaddress = address;
+    if (return_address) {
+        tlib_assert(env->current_tb);
+        cpu_restore_state_and_restore_instructions_count(env, env->current_tb, return_address);
+    }
+
     raise_exception(env, exception_type, syndrome, target_el);
 }
 
-int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int mmu_idx, target_ulong *phys_ptr, int *prot,
-                     target_ulong *page_size, bool suppress_faults, bool at_instruction_or_cache_maintenance)
+int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,
+                     bool suppress_faults, target_ulong *phys_ptr, int *prot, target_ulong *page_size,
+                     bool at_instruction_or_cache_maintenance)
 {
     ARMMMUIdx arm_mmu_idx = core_to_aa64_mmu_idx(mmu_idx);
     uint32_t current_el = arm_mmu_idx_to_el(arm_mmu_idx);
@@ -214,6 +220,7 @@ do_fault:
     if (fault_code == -1) {
         fault_code = SYN_FAULT_TRANSLATION_LEVEL_0 + level;
     }
-    handle_mmu_fault_v8(env, address, access_type, suppress_faults, fault_code, at_instruction_or_cache_maintenance, false);
+    handle_mmu_fault_v8(env, address, access_type, return_address, suppress_faults, fault_code,
+                        at_instruction_or_cache_maintenance, false);
     return TRANSLATE_FAIL;
 }

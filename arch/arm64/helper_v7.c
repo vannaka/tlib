@@ -47,12 +47,11 @@ int cpu_init(const char *cpu_model)
     return 0;
 }
 
-inline int get_phys_addr(CPUState *env, target_ulong address, int access_type, int mmu_idx, target_ulong *phys_ptr, int *prot,
-                                target_ulong *page_size, int no_page_fault)
+inline int get_phys_addr(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,
+                         bool suppress_faults, target_ulong *phys_ptr, int *prot, target_ulong *page_size)
 {
-    if(unlikely(cpu->external_mmu_enabled))
-    {
-        return get_external_mmu_phys_addr(env, address, access_type, phys_ptr, prot, no_page_fault);
+    if (unlikely(cpu->external_mmu_enabled)) {
+        return get_external_mmu_phys_addr(env, address, access_type, phys_ptr, prot, suppress_faults);
     }
 
     ARMMMUIdx arm_mmu_idx = core_to_aa64_mmu_idx(mmu_idx);
@@ -64,7 +63,8 @@ inline int get_phys_addr(CPUState *env, target_ulong address, int access_type, i
         *page_size = TARGET_PAGE_SIZE;
         return TRANSLATE_SUCCESS;
     } else {
-        return get_phys_addr_v8(env, address, access_type, mmu_idx, phys_ptr, prot, page_size, no_page_fault, false);
+        return get_phys_addr_v8(env, address, access_type, mmu_idx, return_address, suppress_faults, phys_ptr, prot, page_size,
+                                false);
     }
 }
 
@@ -74,10 +74,13 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
     target_ulong page_size = 0;
     int prot = 0;
 
+    int access_type = ACCESS_DATA_LOAD;
     int mmu_idx = cpu_mmu_index(env);
+    uintptr_t return_address = 0;
     bool suppress_faults = true;
 
-    if (get_phys_addr(env, addr, ACCESS_DATA_LOAD, mmu_idx, &phys_addr, &prot, &page_size, suppress_faults) != TRANSLATE_SUCCESS) {
+    int result = get_phys_addr(env, addr, access_type, mmu_idx, return_address, suppress_faults, &phys_addr, &prot, &page_size);
+    if (result != TRANSLATE_SUCCESS) {
         return -1;
     }
 
@@ -85,14 +88,15 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
 }
 
 // The name of the function is a little misleading. It doesn't handle MMU faults as much as TLB misses.
-int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, int mmu_idx, int no_page_fault)
+int cpu_handle_mmu_fault(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,
+                         bool suppress_faults)
 {
     target_ulong phys_addr = 0;
     target_ulong page_size = 0;
     int prot = 0;
     int ret;
 
-    ret = get_phys_addr(env, address, access_type, mmu_idx, &phys_addr, &prot, &page_size, no_page_fault);
+    ret = get_phys_addr(env, address, access_type, mmu_idx, return_address, suppress_faults, &phys_addr, &prot, &page_size);
     if (ret == TRANSLATE_SUCCESS) {
         /* Map a single [sub]page.  */
         phys_addr &= TARGET_PAGE_MASK;
@@ -113,7 +117,10 @@ int tlb_fill(CPUState *env1, target_ulong addr, int access_type, int mmu_idx, vo
 
     saved_env = env;
     env = env1;
-    ret = cpu_handle_mmu_fault(env, addr, access_type, mmu_idx, no_page_fault);
+    ret = cpu_handle_mmu_fault(env, addr, access_type, mmu_idx, (uintptr_t)retaddr, no_page_fault);
+
+    // 'ret' is always 'TRANSLATION_SUCCESS' with ARMv8-A MMU. If a failure occurs within MMU,
+    // 'raise_exception' is called which in the end results in 'cpu_loop_exit'.
     if (unlikely(ret == TRANSLATE_FAIL && !no_page_fault)) {
         // access_type == CODE ACCESS - do not fire block_end hooks!
         cpu_loop_exit_restore(env, (uintptr_t)retaddr, access_type != ACCESS_INST_FETCH);

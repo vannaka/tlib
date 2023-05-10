@@ -87,8 +87,6 @@ void raise_exception_ra(CPUARMState *env, uint32_t excp, uint32_t syndrome,
      * we must restore CPU state here before setting the syndrome
      * the caller passed us, and cannot use cpu_loop_exit_restore().
      */
-    // TODO: Verify. It was 'cpu_restore_state(cs, ra, true)' where 'true' is
-    //       passed to 'cpu_restore_state_from_tb' as 'reset_icount' value.
     cpu_restore_state_and_restore_instructions_count(cs, cs->current_tb, ra);
     raise_exception(env, excp, syndrome, target_el);
 }

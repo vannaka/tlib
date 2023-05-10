@@ -135,10 +135,11 @@ void cpu_reset_state(CPUState *env);
 void cpu_reset_v8_a64(CPUState *env);
 void cpu_reset_vfp(CPUState *env);
 void do_interrupt_v8a(CPUState *env);
-int get_phys_addr(CPUState *env, target_ulong address, int access_type, int mmu_idx, target_ulong *phys_ptr, int *prot,
-                  target_ulong *page_size, int no_page_fault);
-int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int mmu_idx, target_ulong *phys_ptr, int *prot,
-                     target_ulong *page_size, bool suppress_faults, bool at_instruction_or_cache_maintenance);
+int get_phys_addr(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,
+                  bool suppress_faults, target_ulong *phys_ptr, int *prot, target_ulong *page_size);
+int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,
+                     bool suppress_faults, target_ulong *phys_ptr, int *prot, target_ulong *page_size,
+                     bool at_instruction_or_cache_maintenance);
 int process_interrupt_v8a(int interrupt_request, CPUState *env);
 
 // TODO: Implement this properly. It's much more complicated for SPSR_EL1 and SPSR_EL2. See:

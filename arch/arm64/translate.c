@@ -3316,7 +3316,7 @@ void gen_gvec_srshr(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
          *   (-1 + 1) >> 1 == 0, or (0 + 1) >> 1 == 0.
          * I.e. always zero.
          */
-        tcg_gen_gvec_dup_imm(vece, rd_ofs, opr_sz, max_sz, 0);
+        tcg_gen_gvec_dup_imm(vece, rd_ofs, opr_sz, max_sz, 0, cpu_env);
     } else {
         tcg_gen_gvec_2i(rd_ofs, rm_ofs, opr_sz, max_sz, shift, &ops[vece]);
     }

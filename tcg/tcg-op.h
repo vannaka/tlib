@@ -26,6 +26,7 @@
 
 #include <inttypes.h>
 
+#include "tcg-memop.h"
 #include "tcg.h"
 #include "additional.h"
 
@@ -3723,6 +3724,85 @@ static inline void tcg_gen_gvec_mov(unsigned vece, uint32_t dofs, uint32_t aofs,
             tcg_abortf("%s with unsupported sizes: oprsz=%" PRIu32 ", maxsz=%" PRIu32, __func__, oprsz, maxsz);
         }
     }
+}
+
+static inline uint64_t dup_mask(unsigned vece)
+{
+    switch (vece) {
+    case MO_8:
+        return 0x0101010101010101ull;
+    case MO_16:
+        return 0x0001000100010001ull;
+    case MO_32:
+        return 0x0000000100000001ull;
+    case MO_64:
+        return 0x0000000000000001ull;
+    }
+    return 0;
+}
+
+static inline uint64_t dup_const(unsigned vece, uint64_t c)
+{
+    return dup_mask(vece) * c;
+}
+
+static inline void tcg_gen_gvec_dup_i64(unsigned vece, uint32_t dofs, uint32_t oprsz,
+                          uint32_t maxsz, TCGv_i64 reg, TCGv_ptr cpu_env)
+{
+    TCGv reg_tmp = tcg_temp_new_i64();
+    TCGv mul_tmp = tcg_temp_new_i64();
+    uint32_t shift;
+    switch (vece) {
+    case MO_8:
+        shift = 8;
+        break;
+    case MO_16:
+        shift = 16;
+        break;
+    case MO_32:
+        shift = 32;
+        break;
+    default:
+        shift = 0;
+    }
+    TCGv mask_tmp = tcg_const_i64(((0x1ull << shift) - 1));
+
+    tcg_gen_movi_i64(mul_tmp, dup_mask(vece));
+    if (vece != MO_64) {
+        tcg_gen_and_i64(reg_tmp, reg, mask_tmp);
+    } else {
+        tcg_gen_mov_i64(reg_tmp, reg);
+    }
+    tcg_gen_mul_i64(reg_tmp, reg_tmp, mul_tmp);
+    tcg_gen_st_i64(reg_tmp, cpu_env, dofs);
+    if (oprsz == maxsz && oprsz > 8) {
+        tcg_gen_st_i64(reg_tmp, cpu_env, dofs + 8);
+    }
+
+    tcg_temp_free_i64(reg_tmp);
+}
+
+static inline void tcg_gen_gvec_dup_imm(unsigned vece, uint32_t dofs, uint32_t oprsz,
+                          uint32_t maxsz, uint64_t imm, TCGv_ptr cpu_env)
+{
+    TCGv imm_tmp = tcg_const_i64(dup_const(vece, imm));
+
+    tcg_gen_st_i64(imm_tmp, cpu_env, dofs);
+    if (oprsz == maxsz && oprsz > 8) {
+        tcg_gen_st_i64(imm_tmp, cpu_env, dofs + 8);
+    }
+    tcg_temp_free_i64(imm_tmp);
+}
+
+static inline void tcg_gen_gvec_dup_mem(unsigned vece, uint32_t dofs, uint32_t aofs,
+                      uint32_t oprsz, uint32_t maxsz, TCGv_ptr cpu_env)
+{
+    TCGv aofs_tmp = tcg_temp_new_i64();
+
+    tcg_gen_ld_i64(aofs_tmp, cpu_env, aofs);
+    tcg_gen_gvec_dup_i64(vece, dofs, oprsz, maxsz, aofs_tmp, cpu_env);
+
+    tcg_temp_free_i64(aofs_tmp);
 }
 
 #if TARGET_LONG_BITS == 64

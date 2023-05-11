@@ -4015,7 +4015,7 @@ static void disas_ldst_single_struct(DisasContext *s, uint32_t insn)
             tcg_gen_qemu_ld_i64(tcg_tmp, clean_addr, get_mem_index(s), mop);
             tcg_gen_gvec_dup_i64(scale, vec_full_reg_offset(s, rt),
                                  (is_q + 1) * 8, vec_full_reg_size(s),
-                                 tcg_tmp);
+                                 tcg_tmp, cpu_env);
             tcg_temp_free_i64(tcg_tmp);
         } else {
             /* Load/store one element per register */
@@ -8013,7 +8013,7 @@ static void handle_simd_dupe(DisasContext *s, int is_q, int rd, int rn,
     index = imm5 >> (size + 1);
     tcg_gen_gvec_dup_mem(size, vec_full_reg_offset(s, rd),
                          vec_reg_offset(s, rn, index, size),
-                         is_q ? 16 : 8, vec_full_reg_size(s));
+                         is_q ? 16 : 8, vec_full_reg_size(s), cpu_env);
 }
 
 /* DUP (element, scalar)
@@ -8077,7 +8077,7 @@ static void handle_simd_dupg(DisasContext *s, int is_q, int rd, int rn,
     oprsz = is_q ? 16 : 8;
     maxsz = vec_full_reg_size(s);
 
-    tcg_gen_gvec_dup_i64(size, dofs, oprsz, maxsz, cpu_reg(s, rn));
+    tcg_gen_gvec_dup_i64(size, dofs, oprsz, maxsz, cpu_reg(s, rn), cpu_env);
 }
 
 /* INS (Element)
@@ -8299,7 +8299,7 @@ static void disas_simd_mod_imm(DisasContext *s, uint32_t insn)
     if (!((cmode & 0x9) == 0x1 || (cmode & 0xd) == 0x9)) {
         /* MOVI or MVNI, with MVNI negation handled above.  */
         tcg_gen_gvec_dup_imm(MO_64, vec_full_reg_offset(s, rd), is_q ? 16 : 8,
-                             vec_full_reg_size(s), imm);
+                             vec_full_reg_size(s), imm, cpu_env);
     } else {
         /* ORR or BIC, with BIC negation to AND handled above.  */
         if (is_neg) {
@@ -10690,7 +10690,7 @@ static void handle_vec_simd_shri(DisasContext *s, bool is_q, bool is_u,
             if (shift == 8 << size) {
                 /* Shift count the same size as element size produces zero.  */
                 tcg_gen_gvec_dup_imm(size, vec_full_reg_offset(s, rd),
-                                     is_q ? 16 : 8, vec_full_reg_size(s), 0);
+                                     is_q ? 16 : 8, vec_full_reg_size(s), 0, cpu_env);
                 return;
             }
             gvec_fn = tcg_gen_gvec_shri;

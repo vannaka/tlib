@@ -456,7 +456,7 @@ static bool do_mov_z(DisasContext *s, int rd, int rn)
 static void do_dupi_z(DisasContext *s, int rd, uint64_t word)
 {
     unsigned vsz = vec_full_reg_size(s);
-    tcg_gen_gvec_dup_imm(MO_64, vec_full_reg_offset(s, rd), vsz, vsz, word);
+    tcg_gen_gvec_dup_imm(MO_64, vec_full_reg_offset(s, rd), vsz, vsz, word, cpu_env);
 }
 
 /* Invoke a vector expander on three Pregs.  */
@@ -1789,7 +1789,7 @@ static bool do_predset(DisasContext *s, int esz, int rd, int pat, bool setflag)
         unsigned oprsz = size_for_gvec(setsz / 8);
 
         if (oprsz * 8 == setsz) {
-            tcg_gen_gvec_dup_imm(MO_64, ofs, oprsz, maxsz, word);
+            tcg_gen_gvec_dup_imm(MO_64, ofs, oprsz, maxsz, word, cpu_env);
             goto done;
         }
     }
@@ -2325,7 +2325,7 @@ static bool trans_DUP_s(DisasContext *s, arg_DUP_s *a)
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         tcg_gen_gvec_dup_i64(a->esz, vec_full_reg_offset(s, a->rd),
-                             vsz, vsz, cpu_reg_sp(s, a->rn));
+                             vsz, vsz, cpu_reg_sp(s, a->rn), cpu_env);
     }
     return true;
 }
@@ -2348,13 +2348,13 @@ static bool trans_DUP_x(DisasContext *s, arg_DUP_x *a)
 
         if ((index << esz) < vsz) {
             unsigned nofs = vec_reg_offset(s, a->rn, index, esz);
-            tcg_gen_gvec_dup_mem(esz, dofs, nofs, vsz, vsz);
+            tcg_gen_gvec_dup_mem(esz, dofs, nofs, vsz, vsz, cpu_env);
         } else {
             /*
              * While dup_mem handles 128-bit elements, dup_imm does not.
              * Thankfully element size doesn't matter for splatting zero.
              */
-            tcg_gen_gvec_dup_imm(MO_64, dofs, vsz, vsz, 0);
+            tcg_gen_gvec_dup_imm(MO_64, dofs, vsz, vsz, 0, cpu_env);
         }
     }
     return true;
@@ -2722,7 +2722,7 @@ static bool do_clast_vector(DisasContext *s, arg_rprr_esz *a, bool before)
     tcg_temp_free_i32(last);
 
     vsz = vec_full_reg_size(s);
-    tcg_gen_gvec_dup_i64(esz, vec_full_reg_offset(s, a->rd), vsz, vsz, ele);
+    tcg_gen_gvec_dup_i64(esz, vec_full_reg_offset(s, a->rd), vsz, vsz, ele, cpu_env);
     tcg_temp_free_i64(ele);
 
     /* If this insn used MOVPRFX, we may need a second move.  */
@@ -3518,7 +3518,7 @@ static bool trans_FDUP(DisasContext *s, arg_FDUP *a)
 
         /* Decode the VFP immediate.  */
         imm = vfp_expand_imm(a->esz, a->imm);
-        tcg_gen_gvec_dup_imm(a->esz, dofs, vsz, vsz, imm);
+        tcg_gen_gvec_dup_imm(a->esz, dofs, vsz, vsz, imm, cpu_env);
     }
     return true;
 }
@@ -3531,7 +3531,7 @@ static bool trans_DUP_i(DisasContext *s, arg_DUP_i *a)
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         int dofs = vec_full_reg_offset(s, a->rd);
-        tcg_gen_gvec_dup_imm(a->esz, dofs, vsz, vsz, a->imm);
+        tcg_gen_gvec_dup_imm(a->esz, dofs, vsz, vsz, a->imm, cpu_env);
     }
     return true;
 }
@@ -5048,7 +5048,7 @@ static void do_ldrq(DisasContext *s, int zt, int pg, TCGv_i64 addr, int dtype)
     /* Replicate that first quadword.  */
     if (vsz > 16) {
         int doff = vec_full_reg_offset(s, zt);
-        tcg_gen_gvec_dup_mem(4, doff + 16, doff, vsz - 16, vsz - 16);
+        tcg_gen_gvec_dup_mem(4, doff + 16, doff, vsz - 16, vsz - 16, cpu_env);
     }
 }
 
@@ -5135,11 +5135,11 @@ static void do_ldro(DisasContext *s, int zt, int pg, TCGv_i64 addr, int dtype)
     doff = vec_full_reg_offset(s, zt);
     vsz_r32 = ALIGN_DOWN(vsz, 32);
     if (vsz >= 64) {
-        tcg_gen_gvec_dup_mem(5, doff + 32, doff, vsz_r32 - 32, vsz_r32 - 32);
+        tcg_gen_gvec_dup_mem(5, doff + 32, doff, vsz_r32 - 32, vsz_r32 - 32, cpu_env);
     }
     vsz -= vsz_r32;
     if (vsz) {
-        tcg_gen_gvec_dup_imm(MO_64, doff + vsz_r32, vsz, vsz, 0);
+        tcg_gen_gvec_dup_imm(MO_64, doff + vsz_r32, vsz, vsz, 0, cpu_env);
     }
 }
 
@@ -5222,7 +5222,7 @@ static bool trans_LD1R_zpri(DisasContext *s, arg_rpri_load *a)
 
     /* Broadcast to *all* elements.  */
     tcg_gen_gvec_dup_i64(esz, vec_full_reg_offset(s, a->rd),
-                         vsz, vsz, temp);
+                         vsz, vsz, temp, cpu_env);
     tcg_temp_free_i64(temp);
 
     /* Zero the inactive elements.  */

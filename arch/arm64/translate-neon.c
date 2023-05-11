@@ -1304,7 +1304,7 @@ static bool trans_VSHR_S_2sh(DisasContext *s, arg_2reg_shift *a)
 static void gen_zero_rd_2sh(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
                             int64_t shift, uint32_t oprsz, uint32_t maxsz)
 {
-    tcg_gen_gvec_dup_imm(vece, rd_ofs, oprsz, maxsz, 0);
+    tcg_gen_gvec_dup_imm(vece, rd_ofs, oprsz, maxsz, 0, cpu_env);
 }
 
 static bool trans_VSHR_U_2sh(DisasContext *s, arg_2reg_shift *a)
@@ -1786,7 +1786,7 @@ static bool do_1reg_imm(DisasContext *s, arg_1reg_imm *a,
 static void gen_VMOV_1r(unsigned vece, uint32_t dofs, uint32_t aofs,
                         int64_t c, uint32_t oprsz, uint32_t maxsz)
 {
-    tcg_gen_gvec_dup_imm(MO_64, dofs, oprsz, maxsz, c);
+    tcg_gen_gvec_dup_imm(MO_64, dofs, oprsz, maxsz, c, cpu_env);
 }
 
 static bool trans_Vimm_1r(DisasContext *s, arg_1reg_imm *a)
@@ -2948,7 +2948,7 @@ static bool trans_VDUP_scalar(DisasContext *s, arg_VDUP_scalar *a)
 
     tcg_gen_gvec_dup_mem(a->size, neon_full_reg_offset(a->vd),
                          neon_element_offset(a->vm, a->index, a->size),
-                         a->q ? 16 : 8, a->q ? 16 : 8);
+                         a->q ? 16 : 8, a->q ? 16 : 8, cpu_env);
     return true;
 }
 

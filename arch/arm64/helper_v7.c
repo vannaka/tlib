@@ -73,11 +73,11 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
     target_ulong phys_addr = 0;
     target_ulong page_size = 0;
     int prot = 0;
-    int ret;
 
-    ret = get_phys_addr(env, addr, 0, 0, &phys_addr, &prot, &page_size, 1);
+    int mmu_idx = cpu_mmu_index(env);
+    bool suppress_faults = true;
 
-    if (ret != 0) {
+    if (get_phys_addr(env, addr, ACCESS_DATA_LOAD, mmu_idx, &phys_addr, &prot, &page_size, suppress_faults) != TRANSLATE_SUCCESS) {
         return -1;
     }
 

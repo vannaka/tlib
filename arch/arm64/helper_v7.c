@@ -81,7 +81,7 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
         return -1;
     }
 
-    return phys_addr;
+    return phys_addr & TARGET_PAGE_MASK;
 }
 
 // The name of the function is a little misleading. It doesn't handle MMU faults as much as TLB misses.

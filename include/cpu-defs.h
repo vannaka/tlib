@@ -224,7 +224,6 @@ typedef struct ExtMmuRange
     int32_t tlib_is_on_memory_access_enabled;                                 \
     int allow_unaligned_accesses;                                             \
                                                                               \
-    bool guest_profiler_enabled;                                              \
     bool count_opcodes;                                                       \
     uint32_t opcode_counters_size;                                            \
     opcode_counter_descriptor opcode_counters[MAX_OPCODE_COUNTERS];           \
@@ -239,6 +238,7 @@ typedef struct ExtMmuRange
     long temp_buf[CPU_TEMP_BUF_NLONGS];                                       \
     /* when set any exception will force `cpu_exec` to finish immediately */  \
     int32_t return_on_exception;                                              \
+    bool guest_profiler_enabled;                                              \
                                                                               \
 
 #endif

@@ -64,6 +64,11 @@ void do_interrupt(CPUState *env)
 
 int process_interrupt(int interrupt_request, CPUState *env)
 {
+    // CPU_INTERRUPT_EXITTB is handled in arch-independent code.
+    if (interrupt_request & CPU_INTERRUPT_EXITTB) {
+        return 0;
+    }
+
     return process_interrupt_v8a(interrupt_request, env);
 }
 
@@ -803,11 +808,6 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
 
 int process_interrupt_v8a(int interrupt_request, CPUState *env)
 {
-    // CPU_INTERRUPT_EXITTB is handled in arch-independent code.
-    if (interrupt_request & CPU_INTERRUPT_EXITTB) {
-        return 0;
-    }
-
     uint32_t current_el = arm_current_el(env);
     uint32_t target_el = 1;
 

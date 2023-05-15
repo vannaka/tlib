@@ -65,7 +65,7 @@ void do_interrupt(CPUState *env)
 int process_interrupt(int interrupt_request, CPUState *env)
 {
     // CPU_INTERRUPT_EXITTB is handled in arch-independent code.
-    if (interrupt_request & CPU_INTERRUPT_EXITTB) {
+    if (interrupt_request & CPU_INTERRUPT_EXITTB || tlib_is_in_debug_mode()) {
         return 0;
     }
 

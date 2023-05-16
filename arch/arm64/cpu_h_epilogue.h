@@ -620,3 +620,57 @@ static inline void find_pending_irq_if_primask_unset(CPUState *env)
     }
 #endif
 }
+
+static inline int get_fp_exc_el(CPUARMState *env, int el)
+{
+    uint64_t hcr_el2_e2h = arm_hcr_el2_eff(env) & HCR_E2H;
+    uint64_t hcr_el2_tge = arm_hcr_el2_eff(env) & HCR_TGE;
+
+    // Mainly based on CPACR_EL1's Configurations section and FPEN bits
+    // (ARM Architecture Reference Manual for A-Profile architecture D17.2.30).
+    if (!hcr_el2_e2h || !hcr_el2_tge) {
+        int fpen = FIELD_EX64(env->cp15.cpacr_el1, CPACR_EL1, FPEN);
+        switch (fpen) {
+        case 0b01:
+            if (el > 0) {
+                break;
+            }
+        /* fallthrough */
+        case 0b00:
+        case 0b10:
+            if (!arm_el_is_aa64(env, 3) && arm_is_secure(env)) {
+                return 3;
+            }
+            if (el <= 1) {
+                return 1;
+            }
+            break;
+        /* 0b11 - no trap */
+        }
+    }
+
+    if (el <= 2) {
+        if (hcr_el2_e2h) {
+            switch (FIELD_EX64(env->cp15.cptr_el[2], CPTR_EL2, FPEN)) {
+            case 0b01:
+                if (el > 0 || !hcr_el2_tge) {
+                    break;
+                }
+            /* fallthrough */
+            case 0b00:
+            case 0b10:
+                return 2;
+            /* 0b11 - no trap */
+            }
+        } else if (arm_feature(env, ARM_FEATURE_EL2)) {
+            if (FIELD_EX64(env->cp15.cptr_el[2], CPTR_EL2, TFP)) {
+                return 2;
+            }
+        }
+    }
+
+    if (FIELD_EX64(env->cp15.cptr_el[3], CPTR_EL3, TFP)) {
+        return 3;
+    }
+    return 0;
+}

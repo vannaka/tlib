@@ -1481,8 +1481,7 @@ void HELPER(rebuild_hflags_a32)(CPUState * env, int el)
     DP_TBFLAG_ANY(env->hflags, MMUIDX, arm_to_core_mmu_idx(mmuidx));
 
     // FPEXC_EL - Target Exception Level for handling Floating-Point-Disabled Exception
-    // TODO: For now use 0 (which means that FPU is enabled). Add proper handling later
-    DP_TBFLAG_ANY(env->hflags, FPEXC_EL, 0);
+    DP_TBFLAG_ANY(env->hflags, FPEXC_EL, get_fp_exc_el(env, el));
 
     // ALIGN_MEM - Aligment check enable, SCTLR_ELx.A
     DP_TBFLAG_ANY(env->hflags, ALIGN_MEM, env->cp15.sctlr_el[el] & SCTLR_A);

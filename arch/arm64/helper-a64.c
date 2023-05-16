@@ -1123,9 +1123,7 @@ void HELPER(rebuild_hflags_a64)(CPUARMState *env, int el)
     ARMMMUIdx mmuidx = el_to_arm_mmu_idx(env, el);
     DP_TBFLAG_ANY(env->hflags, MMUIDX, arm_to_core_mmu_idx(mmuidx));
 
-    // FPEXC.EX is RAZ/WI so always 0
-    // TODO: make sure only FPEXC.EX is taken into account
-    DP_TBFLAG_ANY(env->hflags, FPEXC_EL, 0);
+    DP_TBFLAG_ANY(env->hflags, FPEXC_EL, get_fp_exc_el(env, el));
 
     // TODO: we only checking SCTLR_ELx.A, but field comment also writes about CCR.UNALIGN_TRP
     DP_TBFLAG_ANY(env->hflags, ALIGN_MEM, sctlr & SCTLR_A);

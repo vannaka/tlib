@@ -199,6 +199,12 @@ static inline uint32_t syn_data_abort_no_iss(bool same_el, bool fnv, bool ea, bo
     return syndrome32_create(ec, il, iss);
 }
 
+static inline uint32_t syn_fp_access_trap(uint32_t cv, uint32_t cond, bool is_16bit,
+                                          uint32_t coproc)
+{
+    return syndrome32_create(SYN_EC_TRAPPED_SME_SVE_SIMD_FP, !is_16bit, (cv << 24) | (cond << 20) | coproc);
+}
+
 static inline uint32_t syn_instruction_abort(bool same_el, bool s1ptw, ISSFaultStatusCode ifsc)
 {
     SyndromeExceptionClass ec = same_el ? SYN_EC_INSTRUCTION_ABORT_SAME_EL : SYN_EC_INSTRUCTION_ABORT_LOWER_EL;

@@ -69,10 +69,17 @@ uint32_t tlib_set_available_els(bool el2_enabled, bool el3_enabled)
 
     set_el_features(cpu, el2_enabled, el3_enabled);
 
-    // Reset the Exception Level a CPU starts in.
-    uint32_t reset_el = arm_highest_el(cpu);
-    cpu->pstate = deposit32(cpu->pstate, 2, 2, reset_el);
-    tlib_on_execution_mode_changed(reset_el, arm_is_secure(env));
+    if (is_a64(env)) {
+        // Reset the Exception Level a CPU starts in.
+        uint32_t reset_el = arm_highest_el(cpu);
+        cpu->pstate = deposit32(cpu->pstate, 2, 2, reset_el);
+
+        tlib_on_execution_mode_changed(reset_el, arm_is_secure(env));
+    } else {
+        uint32_t reset_mode = arm_get_highest_cpu_mode(env);
+        cpsr_write(env, reset_mode, CPSR_M, CPSRWriteRaw);
+    }
+
     arm_rebuild_hflags(cpu);
 
     return SUCCESS;

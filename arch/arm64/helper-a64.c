@@ -497,7 +497,7 @@ uint64_t HELPER(crc32_64)(uint64_t acc, uint64_t val, uint32_t bytes)
 
     stq_le_p(buf, val);
 
-    return crc32(acc, buf, bytes);
+    return tlib_crc32(acc, buf, bytes);
 }
 
 uint64_t HELPER(crc32c_64)(uint64_t acc, uint64_t val, uint32_t bytes)

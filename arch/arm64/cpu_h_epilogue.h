@@ -124,7 +124,6 @@ enum {
 // Provide missing prototypes.
 int arm_rmode_to_sf(int rmode);
 int bank_number(int mode);
-uint64_t crc32(uint64_t crc, const uint8_t *data, uint32_t n_bytes);
 int exception_target_el(CPUARMState *env);
 uint64_t mte_check(CPUARMState *env, uint32_t desc, uint64_t ptr, uintptr_t ra);
 bool mte_probe(CPUARMState *env, uint32_t desc, uint64_t ptr);
@@ -144,6 +143,7 @@ int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int m
                      bool suppress_faults, target_ulong *phys_ptr, int *prot, target_ulong *page_size,
                      bool at_instruction_or_cache_maintenance);
 int process_interrupt_v8a(int interrupt_request, CPUState *env);
+uint64_t tlib_crc32(uint64_t crc, const uint8_t *data, uint32_t n_bytes);
 
 // TODO: Implement this properly. It's much more complicated for SPSR_EL1 and SPSR_EL2. See:
 // https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/SPSR-EL1--Saved-Program-Status-Register--EL1-

@@ -36,7 +36,9 @@ typedef enum {
     X_28_64      = 28,
     X_29_64      = 29,
     X_30_64      = 30,
-    X_31_64      = 31,
+    // There's no X31 register even though Stack Pointer is often represented with
+    // 31 in the instruction encoding (but it can also mean Zero Register: XZR/WZR).
+    SP_64        = 31,
     PC_64        = 32,
     PSTATE_32    = 33,
     FPSR_32      = 66,
@@ -55,8 +57,10 @@ typedef enum {
     R_10_32      = 110,
     R_11_32      = 111,
     R_12_32      = 112,
+    // If AArch32 it can be also accessed with SP_64.
     R_13_32      = 113,
     R_14_32      = 114,
+    // If AArch32 it can be also accessed with PC_64.
     R_15_32      = 115,
     CPSR_32      = 125,
 } Registers;

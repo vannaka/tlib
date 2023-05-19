@@ -28,7 +28,10 @@ uint64_t tlib_get_register_value_64(int reg_number)
     case PC_64:
         // The PC register's index is the same for both AArch32 and AArch64.
         return is_a64(cpu) ? cpu->pc : cpu->regs[15];
-    case X_0_64 ... X_31_64:
+    case SP_64:
+        // The SP register's index is the same for both AArch32 and AArch64.
+        return is_a64(cpu) ? cpu->xregs[31] : cpu->regs[13];
+    case X_0_64 ... X_30_64:
         return cpu->xregs[reg_number - X_0_64];
     }
 
@@ -66,7 +69,15 @@ void tlib_set_register_value_64(int reg_number, uint64_t value)
             cpu->regs[15] = (uint32_t)value;
         }
         return;
-    case X_0_64 ... X_31_64:
+    case SP_64:
+        // The SP register's index is the same for both AArch32 and AArch64.
+        if (is_a64(cpu)) {
+            cpu->xregs[31] = value;
+        } else {
+            cpu->regs[13] = (uint32_t)value;
+        }
+        return;
+    case X_0_64 ... X_30_64:
         cpu->xregs[reg_number - X_0_64] = value;
         return;
     }

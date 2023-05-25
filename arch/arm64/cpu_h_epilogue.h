@@ -20,6 +20,8 @@
 #define MAX(x, y)                (x > y ? x : y)
 #define MIN(a, b)                (a > b ? b : a)
 
+#define container_of(var, type, base) (type*)(var)
+
 // We don't need to extract non-specific CPUStates from ARM-specific CPUArchState.
 // It's the same for us.
 #define env_cpu(env)             env

@@ -336,8 +336,6 @@ typedef struct
     void *disas_log;
 } TranslatorOps;
 
-#define container_of(var, type, base) (type*)(var)
-
 #define  INDEX_op_rotli_vec                     0
 #define  R_SVCR_SM_MASK                         stub_abort("R_SVCR_SM_MASK")
 #define  R_SVCR_ZA_MASK                         stub_abort("R_SVCR_ZA_MASK")

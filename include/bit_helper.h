@@ -75,22 +75,22 @@ static inline int64_t sextract64(uint64_t value, uint8_t start, uint8_t length)
 
 static inline uint32_t rol32(uint32_t word, unsigned int shift)
 {
-    return (word << shift) | (word >> (32 - shift));
+    return (word << shift) | (word >> ((32 - shift) & 31));
 }
 
 static inline uint64_t rol64(uint64_t word, unsigned int shift)
 {
-    return (word << shift) | (word >> (64 - shift));
+    return (word << shift) | (word >> ((64 - shift) & 63));
 }
 
 static inline uint32_t ror32(uint32_t word, unsigned int shift)
 {
-    return (word >> shift) | (word << (32 - shift));
+    return (word >> shift) | (word << ((32 - shift) & 31));
 }
 
 static inline uint64_t ror64(uint64_t word, unsigned int shift)
 {
-    return (word >> shift) | (word << (64 - shift));
+    return (word >> shift) | (word << ((64 - shift) & 63));
 }
 
 static inline uint32_t ctpop(uint32_t val) {

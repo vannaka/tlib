@@ -603,6 +603,12 @@ void do_v7m_exception_exit(CPUState *env)
     uint32_t type;
     uint32_t xpsr;
 
+    /* Restore FAULTMASK to 0 only if the interrupt that we are exiting is not NMI */
+    /* See ARMv7-M Architecture Reference Manual - B1.4.3 */
+    if (env->v7m.exception != 2) {
+        cpu->v7m.faultmask = 0;
+    }
+
     type = env->regs[15];
     if (env->v7m.exception != 0) {
         tlib_nvic_complete_irq(env->v7m.exception);

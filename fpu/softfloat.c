@@ -2276,7 +2276,6 @@ float32 float32_muladd(float32 a, float32 b, float32 c, int flags STATUS_PARAM)
     uint32_t aSig, bSig, cSig;
     flag pInf, pZero, pSign;
     uint64_t pSig64, cSig64, zSig64;
-    uint32_t pSig;
     int shiftcount;
     flag signflip, infzero;
 
@@ -2392,8 +2391,10 @@ float32 float32_muladd(float32 a, float32 b, float32 c, int flags STATUS_PARAM)
         if (!cSig) {
             /* Throw out the special case of c being an exact zero now */
             shift64RightJamming(pSig64, 32, &pSig64);
-            pSig = pSig64;
-            return roundAndPackFloat32(zSign, pExp - 1, pSig STATUS_VAR);
+
+            zExp = pExp - 1;
+            zSig64 = pSig64;
+            goto halve_round_and_pack_float32;
         }
         normalizeFloat32Subnormal(cSig, &cExp, &cSig);
     }
@@ -2457,6 +2458,11 @@ float32 float32_muladd(float32 a, float32 b, float32 c, int flags STATUS_PARAM)
         zExp -= shiftcount;
     }
     shift64RightJamming(zSig64, 32, &zSig64);
+
+halve_round_and_pack_float32:
+    if ((flags & float_muladd_halve_result) && (zExp >= 1)) {
+        zExp -= 1;
+    }
     return roundAndPackFloat32(zSign, zExp, zSig64 STATUS_VAR);
 }
 
@@ -3912,7 +3918,7 @@ float64 float64_muladd(float64 a, float64 b, float64 c, int flags STATUS_PARAM)
 {
     flag aSign, bSign, cSign, zSign;
     int aExp, bExp, cExp, pExp, zExp, expDiff;
-    uint64_t aSig, bSig, cSig;
+    uint64_t aSig, bSig, cSig, zSig;
     flag pInf, pZero, pSign;
     uint64_t pSig0, pSig1, cSig0, cSig1, zSig0, zSig1;
     int shiftcount;
@@ -4030,7 +4036,10 @@ float64 float64_muladd(float64 a, float64 b, float64 c, int flags STATUS_PARAM)
         if (!cSig) {
             /* Throw out the special case of c being an exact zero now */
             shift128RightJamming(pSig0, pSig1, 64, &pSig0, &pSig1);
-            return roundAndPackFloat64(zSign, pExp - 1, pSig1 STATUS_VAR);
+
+            zExp = pExp;
+            zSig = pSig1;
+            goto halve_round_and_pack_float64;
         }
         normalizeFloat64Subnormal(cSig, &cExp, &cSig);
     }
@@ -4065,7 +4074,7 @@ float64 float64_muladd(float64 a, float64 b, float64 c, int flags STATUS_PARAM)
             zExp--;
         }
         shift128RightJamming(zSig0, zSig1, 64, &zSig0, &zSig1);
-        return roundAndPackFloat64(zSign, zExp, zSig1 STATUS_VAR);
+        zSig = zSig1;
     } else {
         /* Subtraction */
         if (expDiff > 0) {
@@ -4109,8 +4118,14 @@ float64 float64_muladd(float64 a, float64 b, float64 c, int flags STATUS_PARAM)
             zSig0 = zSig1 << shiftcount;
             zExp -= (shiftcount + 64);
         }
-        return roundAndPackFloat64(zSign, zExp, zSig0 STATUS_VAR);
+        zSig = zSig0;
     }
+
+halve_round_and_pack_float64:
+    if ((flags & float_muladd_halve_result) && (zExp >= 1)) {
+        zExp -= 1;
+    }
+    return roundAndPackFloat64(zSign, zExp, zSig STATUS_VAR);
 }
 
 /*----------------------------------------------------------------------------

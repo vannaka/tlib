@@ -214,6 +214,7 @@ enum {
     float_muladd_negate_c       = 1,
     float_muladd_negate_product = 2,
     float_muladd_negate_result  = 3,
+    float_muladd_halve_result   = 4,
 };
 
 /*----------------------------------------------------------------------------

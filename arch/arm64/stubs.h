@@ -69,7 +69,6 @@ FUNC_STUB_GENERIC(tlb_vaddr_to_host, void*)
 #define MO_128 stub_abort("MO_128")
 
 // Couldn't have been ported easily because of a complex softfloat licensing.
-#define float_muladd_halve_result   stub_abort("float_muladd_halve_result")
 #define float16_one_point_five      stub_abort("float16_one_point_five")
 #define float16_three               stub_abort("float16_three")
 #define float16_two                 stub_abort("float16_two")

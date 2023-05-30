@@ -123,6 +123,36 @@ enum {
     SPSR_UND,
 };
 
+#define FLOAT_TO_INT_FUNC(from_type, to_type)                                                                 \
+static inline to_type from_type ## _to_ ## to_type ## _scalbn(from_type a, int rmode, int scale STATUS_PARAM) \
+{                                                                                                             \
+    return from_type ## _to_ ## to_type(a STATUS_VAR);                                                        \
+}
+
+#define INT_TO_FLOAT_FUNC(from_type, to_type)                                                      \
+static inline to_type from_type ## _to_ ## to_type ## _scalbn(from_type a, int scale STATUS_PARAM) \
+{                                                                                                  \
+    return from_type ## _to_ ## to_type(a STATUS_VAR);                                             \
+}
+
+FLOAT_TO_INT_FUNC(float64, int64)
+FLOAT_TO_INT_FUNC(float64, uint64)
+FLOAT_TO_INT_FUNC(float32, int32)
+FLOAT_TO_INT_FUNC(float32, uint32)
+FLOAT_TO_INT_FUNC(float64, int32)
+FLOAT_TO_INT_FUNC(float64, uint32)
+FLOAT_TO_INT_FUNC(float32, int64)
+FLOAT_TO_INT_FUNC(float32, uint64)
+
+INT_TO_FLOAT_FUNC(int64, float64)
+INT_TO_FLOAT_FUNC(int64, float32)
+INT_TO_FLOAT_FUNC(uint64, float64)
+INT_TO_FLOAT_FUNC(uint64, float32)
+INT_TO_FLOAT_FUNC(int32, float64)
+INT_TO_FLOAT_FUNC(int32, float32)
+INT_TO_FLOAT_FUNC(uint32, float64)
+INT_TO_FLOAT_FUNC(uint32, float32)
+
 // Provide missing prototypes.
 int arm_rmode_to_sf(int rmode);
 int bank_number(int mode);

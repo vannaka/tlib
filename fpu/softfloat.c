@@ -3146,7 +3146,7 @@ float32 float64_to_float32(float64 a STATUS_PARAM)
 static float16 packFloat16(flag zSign, int16 zExp, uint16_t zSig)
 {
     return make_float16(
-        (((uint32_t)zSign) << 15) + (((uint32_t)zExp) << 10) + zSig);
+        (((uint32_t)zSign) << 15) + (((uint32_t)zExp & 0x1F) << 10) + zSig);
 }
 
 /* Half precision floats come in two formats: standard IEEE and "ARM" format.

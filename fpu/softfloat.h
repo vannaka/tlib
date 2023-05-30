@@ -406,6 +406,8 @@ int float64_lt_quiet(float64, float64 STATUS_PARAM);
 int float64_unordered_quiet(float64, float64 STATUS_PARAM);
 int float64_compare(float64, float64 STATUS_PARAM);
 int float64_compare_quiet(float64, float64 STATUS_PARAM);
+float64 float64_min(float64, float64 STATUS_PARAM);
+float64 float64_max(float64, float64 STATUS_PARAM);
 float64 float64_minnum(float64, float64 STATUS_PARAM);
 float64 float64_maxnum(float64, float64 STATUS_PARAM);
 int float64_is_quiet_nan(float64 STATUS_PARAM);

@@ -6864,7 +6864,7 @@ uint64_t float64_to_uint64 (float64 a STATUS_PARAM)
     } else {
         shift64ExtraRightJamming(aSig, 0, shiftCount, &aSig, &aSigExtra);
     }
-    return roundAndPackInt64(aSign, aSig, aSigExtra STATUS_VAR);
+    return roundAndPackUint64(aSign, aSig, aSigExtra STATUS_VAR);
 invalid:
     return (aExp == 0x7FF) && extractFloat64Frac(a) ? LIT64(0xFFFFFFFFFFFFFFFF)
                 : aSign ? 0 : LIT64(0xFFFFFFFFFFFFFFFF);
@@ -7344,7 +7344,7 @@ uint64_t float64_to_uint64_rod(float64 a STATUS_PARAM)
     } else {
         shift64ExtraRightJamming(aSig, 0, shiftCount, &aSig, &aSigExtra);
     }
-    return rodAndPackInt64(aSign, aSig, aSigExtra STATUS_VAR);
+    return rodAndPackUint64(aSign, aSig, aSigExtra STATUS_VAR);
 invalid:
     return (aExp == 0x7FF) && extractFloat64Frac(a) ? LIT64(0xFFFFFFFFFFFFFFFF)
                 : aSign ? 0 : LIT64(0xFFFFFFFFFFFFFFFF);

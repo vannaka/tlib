@@ -31,6 +31,10 @@
 #define float32_default_nan(...) float32_default_nan
 #define float64_default_nan(...) float64_default_nan
 
+#define float16_silence_nan(a, fpst) float16_maybe_silence_nan(a, fpst)
+#define float32_silence_nan(a, fpst) float32_maybe_silence_nan(a, fpst)
+#define float64_silence_nan(a, fpst) float64_maybe_silence_nan(a, fpst)
+
 // Adjust assertion calls.
 #define g_assert_not_reached() tlib_assert_not_reached()
 

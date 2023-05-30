@@ -257,7 +257,7 @@ static int64_t roundAndPackUint64(flag zSign, uint64_t absZ0, uint64_t absZ1, fl
     roundingMode = status->float_rounding_mode;
     roundNearestEven = (roundingMode == float_round_nearest_even);
     increment = ((int64_t)absZ1 < 0);
-    if (!roundNearestEven) {
+    if (!roundNearestEven && (roundingMode != float_round_ties_away)) {
         if (roundingMode == float_round_to_zero) {
             increment = 0;
         } else if (absZ1) {

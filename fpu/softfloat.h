@@ -378,6 +378,7 @@ int64 float64_to_int64(float64 STATUS_PARAM);
 int64 float64_to_int64_round_to_zero(float64 STATUS_PARAM);
 uint64 float64_to_uint64 (float64 a STATUS_PARAM);
 uint64 float64_to_uint64_round_to_zero (float64 a STATUS_PARAM);
+float16 float64_to_float16(float64, flag STATUS_PARAM);
 float32 float64_to_float32(float64 STATUS_PARAM);
 floatx80 float64_to_floatx80(float64 STATUS_PARAM);
 float128 float64_to_float128(float64 STATUS_PARAM);

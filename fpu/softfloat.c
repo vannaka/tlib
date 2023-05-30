@@ -3275,6 +3275,27 @@ float16 float32_to_float16(float32 a, flag ieee STATUS_PARAM)
     return packFloat16(aSign, aExp + 14, aSig >> 13);
 }
 
+float16 float64_to_float16(float64 a, flag ieee STATUS_PARAM) {
+    flag aSign;
+    int16 aExp;
+    uint64_t aFrac;
+    a = float64_squash_input_denormal(a STATUS_VAR);
+
+    aFrac = extractFloat64Frac(a);
+    aExp = extractFloat64Exp(a);
+    aSign = extractFloat64Sign(a);
+    if (aExp == 0x7FF) {
+        if (aFrac) {
+            return commonNaNToFloat16(float64ToCommonNaN(a STATUS_VAR) STATUS_VAR); // NaN
+        }
+        return packFloat16(aSign, 0xFF, 0); // Infinity
+    }
+    if (aExp > 0x40F){
+        return packFloat16(aSign, 0xFF, 0); // Infinity
+    }
+    return packFloat16(aSign, aExp | ((aExp & 0x400) >> 6), aFrac >> 42);
+}
+
 /*----------------------------------------------------------------------------
  | Returns the result of converting the double-precision floating-point value
  | `a' to the extended double-precision floating-point format.  The conversion

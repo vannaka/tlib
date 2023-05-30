@@ -344,6 +344,11 @@ INLINE float32 float32_set_sign(float32 a, int sign)
     return make_float32((float32_val(a) & 0x7fffffff) | (sign << 31));
 }
 
+INLINE float64 float64_set_sign(float64 a, int sign)
+{
+    return make_float64((float64_val(a) & 0x7FFFFFFFFFFFFFFF) | ((int64_t)sign << 63));
+}
+
 #define float32_zero     make_float32(0)
 #define float32_one      make_float32(0x3f800000)
 #define float32_ln2      make_float32(0x3f317218)

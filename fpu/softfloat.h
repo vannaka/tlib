@@ -151,6 +151,9 @@ typedef struct float_status {
     flag no_signaling_nans;
 } float_status;
 
+float32 float32_squash_input_denormal(float32 a STATUS_PARAM);
+float64 float64_squash_input_denormal(float64 a STATUS_PARAM);
+
 void set_float_rounding_mode(int val STATUS_PARAM);
 void set_float_exception_flags(int val STATUS_PARAM);
 INLINE void set_float_detect_tininess(int val STATUS_PARAM)

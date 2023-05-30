@@ -99,9 +99,7 @@ FUNC_STUB(float16_sub)
 FUNC_STUB(float16_to_int16)
 FUNC_STUB(float16_to_uint16)
 FUNC_STUB(float32_silence_nan)
-FUNC_STUB(float32_squash_input_denormal)
 FUNC_STUB(float64_silence_nan)
-FUNC_STUB(float64_squash_input_denormal)
 
 FUNC_STUB(crc32c)
 

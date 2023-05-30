@@ -181,6 +181,18 @@ INLINE int get_float_exception_flags(float_status *status)
 {
     return STATUS(float_exception_flags);
 }
+INLINE int get_flush_inputs_to_zero(float_status *status)
+{
+    return STATUS(flush_inputs_to_zero);
+}
+INLINE int get_float_rounding_mode(float_status *status)
+{
+    return STATUS(float_rounding_mode);
+}
+INLINE int get_flush_to_zero(float_status *status)
+{
+    return STATUS(flush_to_zero);
+}
 void set_floatx80_rounding_precision(int val STATUS_PARAM);
 
 /*----------------------------------------------------------------------------

@@ -645,7 +645,7 @@ void do_interrupt_a64(CPUState *env)
         tlib_printf(LOG_LEVEL_DEBUG, "Handling SVC exception");
         break;
     case EXCP_UDEF:
-        tlib_printf(LOG_LEVEL_ERROR, "Unknown instruction: 0x%" PRIx32, ldl_code(env->pc));
+        tlib_printf(LOG_LEVEL_WARNING, "Unknown instruction at PC=0x%" PRIx64 ": %" PRIx32, env->pc, ldl_code(env->pc));
         break;
     default:
         cpu_abort(env, "Unhandled exception 0x%x\n", env->exception_index);

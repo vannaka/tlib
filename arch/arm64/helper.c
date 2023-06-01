@@ -645,7 +645,24 @@ void do_interrupt_a64(CPUState *env)
         tlib_printf(LOG_LEVEL_DEBUG, "Handling SVC exception");
         break;
     case EXCP_UDEF:
-        tlib_printf(LOG_LEVEL_WARNING, "Unknown instruction at PC=0x%" PRIx64 ": %" PRIx32, env->pc, ldl_code(env->pc));
+        switch (syn_get_ec(env->exception.syndrome)) {
+        case SYN_EC_BRANCH_TARGET:
+        case SYN_EC_TRAPPED_MSR_MRS_SYSTEM_INST:
+        case SYN_EC_TRAPPED_SME:
+        case SYN_EC_TRAPPED_SME_SVE_SIMD_FP:
+        case SYN_EC_TRAPPED_SVE:
+        case SYN_EC_TRAPPED_WF:
+            break;
+        case SYN_EC_ILLEGAL_EXECUTION_STATE:
+            tlib_printf(LOG_LEVEL_WARNING, "Handling illegal execution state exception; PSTATE=0x%" PRIx32, env->pstate);
+            break;
+        case SYN_EC_UNKNOWN_REASON:
+            tlib_printf(LOG_LEVEL_WARNING, "Unknown instruction at PC=0x%" PRIx64 ": %" PRIx32, env->pc, ldl_code(env->pc));
+            break;
+        default:
+            // All the syndromes used with EXCP_UDEF have explicit cases.
+            tlib_assert_not_reached();
+        }
         break;
     default:
         cpu_abort(env, "Unhandled exception 0x%x\n", env->exception_index);

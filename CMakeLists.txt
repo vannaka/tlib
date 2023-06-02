@@ -33,8 +33,20 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 	    "Debug" "Release" "RelWithDebInfo")
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_definitions(-fomit-frame-pointer)
+option (TLIB_PROFILING_BUILD "Build optimized for profiling" OFF)
+if(TLIB_PROFILING_BUILD)
+    message(STATUS "Profiling enhancements are enabled")
+    add_definitions (
+        # Forcing not to omit frame pointer can have negative impact on performance, 
+        # so the end profiling result will not exactly be equal to running on live system.
+        # Unfortunately without frame pointers perf might have problem with unwinding stack
+        # and call traces in reports will become less readable if using frame pointers for stack unwinding.
+        -fno-omit-frame-pointer
+        -g3
+        -DTLIB_PROFILING_BUILD=1
+    )
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_definitions(-fomit-frame-pointer)
 endif()
 
 option (TARGET_BIG_ENDIAN "Target big endian" OFF)
@@ -98,6 +110,7 @@ ExternalProject_Add (tcglib
         -DHOST_LONG_BITS:INT=${HOST_WORD_SIZE}
         -DTARGET_INSN_START_EXTRA_WORDS:INT=${TARGET_INSN_START_EXTRA_WORDS}
         -DTARGET_LONG_BITS:INT=${TARGET_WORD_SIZE}
+        -DTLIB_PROFILING_BUILD:BOOL=${TLIB_PROFILING_BUILD}
     INSTALL_COMMAND "")
 
 string (TOUPPER "${HOST_ARCH}" HOST_ARCH_U)

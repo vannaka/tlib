@@ -1,7 +1,9 @@
 #ifndef ADDITIONAL_H
 #define ADDITIONAL_H
 
+#include <stdarg.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 void *TCG_malloc(size_t size);
 void *TCG_realloc(void *ptr, size_t size);
@@ -54,5 +56,18 @@ extern unsigned int sizeof_CPUTLBEntry;
 #define TCG_MAX_SEARCH_SIZE   (TCG_MAX_CODE_SIZE * 0.3)
 
 #define OPPARAM_BUF_SIZE      (OPC_BUF_SIZE * MAX_OPC_PARAM)
+
+void tlib_abort(char *msg);
+
+static inline void tcg_abortf(char *fmt, ...)
+{
+    char result[1024];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(result, 1024, fmt, ap);
+    tlib_abort(result);
+    va_end(ap);
+    __builtin_unreachable();
+}
 
 #endif

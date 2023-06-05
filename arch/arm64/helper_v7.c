@@ -10,7 +10,7 @@ int bank_number(int mode)
     switch (mode) {
     case ARM_CPU_MODE_USR:
     case ARM_CPU_MODE_SYS:
-        return 0;
+        return BANK_USRSYS;
     case ARM_CPU_MODE_SVC:
         return 1;
     case ARM_CPU_MODE_ABT:

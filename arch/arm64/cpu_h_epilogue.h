@@ -55,6 +55,9 @@
 
 #define ARM_GETPC()         ((uintptr_t)GETPC())
 
+// Keep in line with 'helper_v7.c : bank_number'.
+#define BANK_USRSYS 0
+
 // DISAS_NEXT and DISAS_JUMP (and some unused 'DISAS_') are defined in the common 'exec-all.h'.
 #define DISAS_NORETURN  4
 #define DISAS_TOO_MANY  5

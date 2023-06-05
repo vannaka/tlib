@@ -169,7 +169,6 @@ typedef struct
 
 
 #define  ARMFault_AsyncExternal        stub_abort("ARMFault_AsyncExternal")
-#define  BANK_USRSYS                   stub_abort("BANK_USRSYS")
 
 FUNC_STUB(arm_cpreg_in_idspace)
 FUNC_STUB(arm_fi_to_lfsc)

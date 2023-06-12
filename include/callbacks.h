@@ -81,7 +81,7 @@ void *tlib_realloc(void *ptr, size_t size);
 void tlib_free(void *ptr);
 
 void tlib_abort(char *message);
-void tlib_log(enum log_level level, char *message);
+void tlib_log(int32_t level, char *message);
 
 void tlib_on_translation_block_find_slow(uint64_t pc);
 uint32_t tlib_on_block_begin(uint64_t address, uint32_t size);

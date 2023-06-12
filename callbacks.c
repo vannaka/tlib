@@ -30,7 +30,7 @@ void tlib_abort(char *message)
     abort();
 }
 
-DEFAULT_VOID_HANDLER2(void tlib_log, enum log_level level, char *message)
+DEFAULT_VOID_HANDLER2(void tlib_log, int32_t level, char *message)
 
 DEFAULT_INT_HANDLER1(uint64_t tlib_read_byte, uint64_t address)
 

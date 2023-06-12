@@ -56,7 +56,7 @@ void tlib_printf(enum log_level level, char *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
     vsnprintf(s, 1024, fmt, ap);
-    tlib_log(level, s);
+    tlib_log((int32_t)level, s);
     va_end(ap);
 }
 

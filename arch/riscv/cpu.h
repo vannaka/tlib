@@ -162,6 +162,7 @@ struct CPUState {
     uint32_t nmi_pending;
     target_ulong nmi_address;
     uint32_t nmi_length;
+    target_ulong nmi_mcause[32];
 
     int privilege_architecture;
 
@@ -254,7 +255,7 @@ static inline void __attribute__ ((always_inline,__noreturn__)) raise_exception_
     cpu_loop_exit_restore(env, pc, 1);
 }
 
-void cpu_set_nmi(CPUState *env, int number);
+void cpu_set_nmi(CPUState *env, int number, target_ulong mcause);
 
 void cpu_reset_nmi(CPUState *env, int number);
 

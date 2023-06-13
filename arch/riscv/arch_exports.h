@@ -13,7 +13,7 @@ void tlib_set_privilege_architecture(int32_t privilege_architecture);
 
 void tlib_set_nmi_vector(uint64_t nmi_adress, uint32_t nmi_lenght);
 
-void tlib_set_nmi(int32_t nmi, int32_t state);
+void tlib_set_nmi(int32_t nmi, int32_t state, uint64_t mcause);
 
 void tlib_allow_unaligned_accesses(int32_t allowed);
 

@@ -507,7 +507,7 @@ void do_nmi(CPUState *env)
 
     int32_t nmi_index = ctz64(env->nmi_pending);
 
-    csr_write_helper(env, nmi_index, CSR_MCAUSE);
+    csr_write_helper(env, env->nmi_mcause[nmi_index], CSR_MCAUSE);
     env->mepc = env->pc;
     env->pc = env->nmi_address + (nmi_index << 2);
 

@@ -188,16 +188,16 @@ void tlib_set_nmi_vector(uint64_t nmi_adress, uint32_t nmi_length)
 
 EXC_VOID_2(tlib_set_nmi_vector, uint64_t, nmi_adress, uint32_t, nmi_length)
 
-void tlib_set_nmi(int32_t nmi, int32_t state)
+void tlib_set_nmi(int32_t nmi, int32_t state, uint64_t mcause)
 {
     if (state) {
-        cpu_set_nmi(cpu, nmi);
+        cpu_set_nmi(cpu, nmi, (target_ulong)mcause);
     } else {
         cpu_reset_nmi(cpu, nmi);
     }
 }
 
-EXC_VOID_2(tlib_set_nmi, int32_t, nmi, int32_t, state)
+EXC_VOID_3(tlib_set_nmi, int32_t, nmi, int32_t, state, uint64_t, mcause)
 
 void tlib_allow_unaligned_accesses(int32_t allowed)
 {

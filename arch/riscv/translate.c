@@ -4829,12 +4829,13 @@ void restore_state_to_opc(CPUState *env, TranslationBlock *tb, target_ulong *dat
     env->pc = data[0];
 }
 
-void cpu_set_nmi(CPUState *env, int number)
+void cpu_set_nmi(CPUState *env, int number, target_ulong mcause)
 {
-    if (number >= env->nmi_length) {
+    if (number < 0 || number >= env->nmi_length) {
         tlib_abortf("NMI index %d not valid in cpu with nmi_length = %d", number, env->nmi_length);
     } else {
         env->nmi_pending |= (1 << number);
+        env->nmi_mcause[number] = mcause;
         set_interrupt_pending(env, CPU_INTERRUPT_HARD);
     }
 }

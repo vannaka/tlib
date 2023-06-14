@@ -1,5 +1,6 @@
 #include "atomic.h"
 #include "cpu.h"
+#include "pthread.h"
 
 static inline void ensure_locked_by_me(struct CPUState *env)
 {
@@ -12,9 +13,24 @@ static inline void ensure_locked_by_me(struct CPUState *env)
 
 static void initialize_atomic_memory_state(atomic_memory_state_t *sm)
 {
-    int i;
     if (!sm->is_mutex_initialized) {
-        pthread_mutex_init(&sm->global_mutex, NULL);
+        pthread_mutexattr_t attributes;
+        if (unlikely(pthread_mutexattr_init(&attributes))) {
+            tlib_abortf("Failed to initialize phthread_muttexattr_t");
+        }
+// This flag is only supported on Linux
+#if defined(__linux__)
+        if (unlikely(pthread_mutexattr_setrobust(&attributes, PTHREAD_MUTEX_ROBUST))) {
+            tlib_abortf("Failed to make the mutex robust");
+        }
+#endif
+        if (unlikely(pthread_mutex_init(&sm->global_mutex, &attributes))) {
+            tlib_abortf("Failed to initialize the pthread_mutex");
+        }
+        if (unlikely(pthread_mutexattr_destroy(&attributes))) {
+            tlib_abortf("Failed to destroy the pthread_mutexattr");
+        }
+
         pthread_cond_init(&sm->global_cond, NULL);
         sm->locking_cpu_id = NO_CPU_ID;
         sm->entries_count = 0;
@@ -25,7 +41,7 @@ static void initialize_atomic_memory_state(atomic_memory_state_t *sm)
 
     if (!sm->are_reservations_valid) {
         sm->reservations_count = 0;
-        for (i = 0; i < MAX_NUMBER_OF_CPUS; i++) {
+        for (int i = 0; i < MAX_NUMBER_OF_CPUS; i++) {
             sm->reservations[i].id = i;
             sm->reservations[i].active_flag = 0;
             sm->reservations[i].address = 0;

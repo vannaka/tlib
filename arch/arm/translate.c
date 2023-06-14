@@ -827,6 +827,7 @@ static inline void gen_set_pc_im(uint32_t val)
    This was exposed by Zephyr zero-latency interrupt tests. */
 static inline void gen_barrier(DisasContext *s)
 {
+    gen_helper_tlb_flush(cpu_env);
     gen_set_pc_im(s->base.pc);
     s->base.is_jmp = DISAS_UPDATE;
 }

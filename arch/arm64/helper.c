@@ -26,12 +26,6 @@ void HELPER(exception_bkpt_insn)(CPUARMState *env, uint32_t syndrome)
     helper_exception_with_syndrome(env, EXCP_BKPT, syndrome);
 }
 
-void HELPER(memory_barrier_assert)(CPUARMState *env)
-{
-    // A safety measure not to forget this isn't really implemented.
-    tlib_assert((env->current_tb->cflags & CF_PARALLEL) == 0);
-}
-
 void HELPER(sysreg_tlb_flush)(CPUARMState *env, void *info_ptr)
 {
     // TODO: Use register info to flush precisely.

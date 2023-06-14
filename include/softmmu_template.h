@@ -251,10 +251,10 @@ do_unaligned_access:
         }
     } else {
         /* the page is not in the TLB : fill it */
-        if (!tlb_fill(cpu, addr, READ_ACCESS_TYPE, mmu_idx, retaddr, !!err, DATA_SIZE)) {
+        if (!tlb_fill(cpu, addr, READ_ACCESS_TYPE, mmu_idx, retaddr, err == NULL ? 0 : 1, DATA_SIZE)) {
             goto redo;
         } else {
-            if (err) {
+            if (err != NULL) {
                 *err = 1;
             }
             res = -1;

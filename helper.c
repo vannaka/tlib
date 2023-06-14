@@ -123,3 +123,8 @@ void HELPER(on_interrupt_end_event)(uint64_t exception_index)
 {
     tlib_on_interrupt_end(exception_index);
 }
+
+void HELPER(tlb_flush)(CPUState* env)
+{
+     tlb_flush(env, 1);
+}

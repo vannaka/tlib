@@ -527,6 +527,8 @@ extern uintptr_t tlib_host_page_mask;
 #define ACCESS_DATA_LOAD  0
 #define ACCESS_DATA_STORE 1
 #define ACCESS_INST_FETCH 2
+/* Helper macro for debugging purposes */
+#define ACCESS_TYPE_STRING(access) (access == ACCESS_DATA_LOAD ? "LOAD" : (access == ACCESS_DATA_STORE ? "STORE" : "INSN_FETCH"))
 
 /* Return value from get_phys_addr* */
 #define TRANSLATE_FAIL    1

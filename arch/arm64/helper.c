@@ -689,76 +689,76 @@ void do_interrupt_a64(CPUState *env)
     }
 }
 
-bool check_scr_el3_mask(int ns, int aw, int fw, int ea, int irq, int fiq)
+bool check_scr_el3_mask(uint64_t scr_el3, int ns, int aw, int fw, int ea, int irq, int fiq)
 {
     bool result = 1;
     if (ns != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_NS) == ns);
+        result &= (!!(scr_el3 & SCR_NS) == ns);
     }
     if (aw != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_AW) == aw);
+        result &= (!!(scr_el3 & SCR_AW) == aw);
     }
     if (fw != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_FW) == fw);
+        result &= (!!(scr_el3 & SCR_FW) == fw);
     }
     if (ea != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_EA) == ea);
+        result &= (!!(scr_el3 & SCR_EA) == ea);
     }
     if (irq != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_IRQ) == irq);
+        result &= (!!(scr_el3 & SCR_IRQ) == irq);
     }
     if (fiq != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_FIQ) == fiq);
+        result &= (!!(scr_el3 & SCR_FIQ) == fiq);
     }
     return result;
 }
 
 // Pass '-1' if the given field should have no influence on the result.
-bool check_scr_el3(int ns, int eel2, int ea, int irq, int fiq, int rw)
+bool check_scr_el3(uint64_t scr_el3, int ns, int eel2, int ea, int irq, int fiq, int rw)
 {
     bool result = 1;
     if (ns != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_NS) == ns);
+        result &= (!!(scr_el3 & SCR_NS) == ns);
     }
     if (eel2 != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_EEL2) == eel2);
+        result &= (!!(scr_el3 & SCR_EEL2) == eel2);
     }
     if (ea != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_EA) == ea);
+        result &= (!!(scr_el3 & SCR_EA) == ea);
     }
     if (irq != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_IRQ) == irq);
+        result &= (!!(scr_el3 & SCR_IRQ) == irq);
     }
     if (fiq != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_FIQ) == fiq);
+        result &= (!!(scr_el3 & SCR_FIQ) == fiq);
     }
     if (rw != -1) {
-        result &= (!!(env->cp15.scr_el3 & SCR_RW) == rw);
+        result &= (!!(scr_el3 & SCR_RW) == rw);
     }
     return result;
 }
 
 // Pass '-1' if the given field should have no influence on the result.
-bool check_hcr_el2(int tge, int amo, int imo, int fmo, int e2h, int rw)
+bool check_hcr_el2(uint64_t hcr_el2, int tge, int amo, int imo, int fmo, int e2h, int rw)
 {
     bool result = 1;
     if (tge != -1) {
-        result &= (!!(arm_hcr_el2_eff(env) & HCR_TGE) == tge);
+        result &= (!!(hcr_el2 & HCR_TGE) == tge);
     }
     if (amo != -1) {
-        result &= (!!(arm_hcr_el2_eff(env) & HCR_AMO) == amo);
+        result &= (!!(hcr_el2 & HCR_AMO) == amo);
     }
     if (imo != -1) {
-        result &= (!!(arm_hcr_el2_eff(env) & HCR_IMO) == imo);
+        result &= (!!(hcr_el2 & HCR_IMO) == imo);
     }
     if (fmo != -1) {
-        result &= (!!(arm_hcr_el2_eff(env) & HCR_FMO) == fmo);
+        result &= (!!(hcr_el2 & HCR_FMO) == fmo);
     }
     if (e2h != -1) {
-        result &= (!!(arm_hcr_el2_eff(env) & HCR_E2H) == e2h);
+        result &= (!!(hcr_el2 & HCR_E2H) == e2h);
     }
     if (rw != -1) {
-        result &= (!!(arm_hcr_el2_eff(env) & HCR_RW) == rw);
+        result &= (!!(hcr_el2 & HCR_RW) == rw);
     }
     return result;
 }
@@ -802,12 +802,12 @@ bool fiq_masked(CPUState *env, uint32_t target_el, bool superpriority, bool igno
     return interrupt_masked(pstate_f, sctlr_nmi, allintmask, superpriority);
 }
 
-uint32_t aarch32_interrupt_masked(CPUState *env, uint32_t current_el, int exception_index)
+uint32_t aarch32_interrupt_masked(CPUState *env, uint64_t scr_el3, uint64_t hcr_el2, uint32_t current_el, int exception_index)
 {
     bool el3_enabled = arm_feature(env, ARM_FEATURE_EL3);
 
     uint32_t ignore = 0;
-    if (el3_enabled && check_scr_el3_mask(0, -1, -1, -1, -1, -1)) {
+    if (el3_enabled && check_scr_el3_mask(scr_el3, 0, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
             ignore = 0xB;
@@ -822,8 +822,8 @@ uint32_t aarch32_interrupt_masked(CPUState *env, uint32_t current_el, int except
             ignore = 0xB;
             break;
         }
-    } else if ((el3_enabled && check_scr_el3_mask(1, -1, -1, 0, 0, 0) && check_hcr_el2(0, 0, 0, 0, -1, -1))
-           || (!el3_enabled && check_hcr_el2(0, 0, 0, 0, -1, -1))) {
+    } else if ((el3_enabled && check_scr_el3_mask(scr_el3, 1, -1, -1, 0, 0, 0) && check_hcr_el2(hcr_el2, 0, 0, 0, 0, -1, -1))
+           || (!el3_enabled && check_hcr_el2(hcr_el2, 0, 0, 0, 0, -1, -1))) {
         switch (current_el) {
         case 0:
         case 1:
@@ -832,37 +832,8 @@ uint32_t aarch32_interrupt_masked(CPUState *env, uint32_t current_el, int except
             ignore = 0xB;
             break;
         }
-    } else if ((el3_enabled && check_scr_el3_mask(1, -1, -1, 0, 0, 0) && check_hcr_el2(0, 1, 1, 1, -1, -1))
-           || (!el3_enabled && check_hcr_el2(0, 1, 1, 1, -1, -1))) {
-        switch (current_el) {
-        case 0:
-        case 1:
-            ignore = 0xA;
-            break;
-        case 2:
-        case 3:
-            ignore = 0xB;
-            break;
-        }
-    } else if ((el3_enabled && check_scr_el3_mask(1, -1, -1, 0, 0, 0) && check_hcr_el2(1, -1, -1, -1, -1, -1))
-           || (!el3_enabled && check_hcr_el2(1, -1, -1, -1, -1, -1))) {
-        switch (current_el) {
-        case 0:
-            ignore = 0xA;
-            break;
-        case 1:
-            tlib_abortf("Invalid SCR or HCR for an EL1 interrupt masking!");
-            break;
-        case 2:
-        case 3:
-            ignore = 0xB;
-            break;
-        }
-    } else if (el3_enabled && check_scr_el3_mask(1, 0, 0, 1, 1, 1) && check_hcr_el2(0, -1, -1, -1, -1, -1)) {
-        if (exception_index & EXCP_IRQ) {
-            tlib_abortf("Invalid SCR or HCR for an IRQ masking!");
-        }
-
+    } else if ((el3_enabled && check_scr_el3_mask(scr_el3, 1, -1, -1, 0, 0, 0) && check_hcr_el2(hcr_el2, 0, 1, 1, 1, -1, -1))
+           || (!el3_enabled && check_hcr_el2(hcr_el2, 0, 1, 1, 1, -1, -1))) {
         switch (current_el) {
         case 0:
         case 1:
@@ -873,11 +844,8 @@ uint32_t aarch32_interrupt_masked(CPUState *env, uint32_t current_el, int except
             ignore = 0xB;
             break;
         }
-    } else if (el3_enabled && check_scr_el3_mask(1, 0, 0, 1, 1, 1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
-        if (exception_index & EXCP_IRQ) {
-            tlib_abortf("Invalid SCR or HCR for an IRQ masking!");
-        }
-
+    } else if ((el3_enabled && check_scr_el3_mask(scr_el3, 1, -1, -1, 0, 0, 0) && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1))
+           || (!el3_enabled && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1))) {
         switch (current_el) {
         case 0:
             ignore = 0xA;
@@ -886,13 +854,45 @@ uint32_t aarch32_interrupt_masked(CPUState *env, uint32_t current_el, int except
             tlib_abortf("Invalid SCR or HCR for an EL1 interrupt masking!");
             break;
         case 2:
+        case 3:
+            ignore = 0xB;
+            break;
+        }
+    } else if (el3_enabled && check_scr_el3_mask(scr_el3, 1, 0, 0, 1, 1, 1) && check_hcr_el2(hcr_el2, 0, -1, -1, -1, -1, -1)) {
+        if (exception_index & EXCP_IRQ) {
+            tlib_abortf("Invalid SCR or HCR for an IRQ masking!");
+        }
+
+        switch (current_el) {
+        case 0:
+        case 1:
+            ignore = 0xA;
+            break;
+        case 2:
+        case 3:
+            ignore = 0xB;
+            break;
+        }
+    } else if (el3_enabled && check_scr_el3_mask(scr_el3, 1, 0, 0, 1, 1, 1) && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1)) {
+        if (exception_index & EXCP_IRQ) {
+            tlib_abortf("Invalid SCR or HCR for an IRQ masking!");
+        }
+
+        switch (current_el) {
+        case 0:
+            ignore = 0xA;
+            break;
+        case 1:
+            tlib_abortf("Invalid SCR or HCR for an EL1 interrupt masking!");
+            break;
+        case 2:
             ignore = 0xA;
             break;
         case 3:
             ignore = 0xB;
             break;
         }
-    } else if (el3_enabled && check_scr_el3_mask(1, 1, 1, 1, 1, 1) && check_hcr_el2(0, 0, 0, 0, -1, -1)) {
+    } else if (el3_enabled && check_scr_el3_mask(scr_el3, 1, 1, 1, 1, 1, 1) && check_hcr_el2(hcr_el2, 0, 0, 0, 0, -1, -1)) {
         if (exception_index & EXCP_IRQ) {
             tlib_abortf("Invalid SCR or HCR for an IRQ masking!");
         }
@@ -905,7 +905,7 @@ uint32_t aarch32_interrupt_masked(CPUState *env, uint32_t current_el, int except
             ignore = 0xB;
             break;
         }
-    } else if (el3_enabled && check_scr_el3_mask(1, 1, 1, 1, 1, 1) && check_hcr_el2(0, 1, 1, 1, -1, -1)) {
+    } else if (el3_enabled && check_scr_el3_mask(scr_el3, 1, 1, 1, 1, 1, 1) && check_hcr_el2(hcr_el2, 0, 1, 1, 1, -1, -1)) {
         if (exception_index & EXCP_IRQ) {
             tlib_abortf("Invalid SCR or HCR for an IRQ masking!");
         }
@@ -920,7 +920,7 @@ uint32_t aarch32_interrupt_masked(CPUState *env, uint32_t current_el, int except
             ignore = 0xB;
             break;
         }
-    } else if (el3_enabled && check_scr_el3_mask(1, 1, 1, 1, 1, 1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
+    } else if (el3_enabled && check_scr_el3_mask(scr_el3, 1, 1, 1, 1, 1, 1) && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1)) {
         if (exception_index & EXCP_IRQ) {
             tlib_abortf("Invalid SCR or HCR for an IRQ masking!");
         }
@@ -961,11 +961,11 @@ uint32_t aarch32_interrupt_masked(CPUState *env, uint32_t current_el, int except
     }
 }
 
-uint32_t get_aarch32_interrupt_target_el(CPUState *env, uint32_t current_el)
+uint32_t get_aarch32_interrupt_target_el(CPUState *env, uint64_t scr_el3, uint64_t hcr_el2, uint32_t current_el)
 {
     bool el3_enabled = arm_feature(env, ARM_FEATURE_EL3);
 
-    if (el3_enabled && check_scr_el3(0, -1, -1, -1, -1, -1)) {
+    if (el3_enabled && check_scr_el3(scr_el3, 0, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
             return 1;
@@ -978,8 +978,8 @@ uint32_t get_aarch32_interrupt_target_el(CPUState *env, uint32_t current_el)
         case 3:
             return 1;
         }
-    } else if ((el3_enabled && check_scr_el3(1, -1, 0, 0, 0, -1) && check_hcr_el2(0, 0, 0, 0, -1, -1))
-           || (!el3_enabled && check_hcr_el2(0, 0, 0, 0, -1, -1))) {
+    } else if ((el3_enabled && check_scr_el3(scr_el3, 1, -1, 0, 0, 0, -1) && check_hcr_el2(hcr_el2, 0, 0, 0, 0, -1, -1))
+           || (!el3_enabled && check_hcr_el2(hcr_el2, 0, 0, 0, 0, -1, -1))) {
         switch (current_el) {
         case 0:
         case 1:
@@ -989,8 +989,8 @@ uint32_t get_aarch32_interrupt_target_el(CPUState *env, uint32_t current_el)
         case 3:
             return 1;
         }
-    } else if ((el3_enabled && check_scr_el3(1, -1, 0, 0, 0, -1) && check_hcr_el2(0, 1, 1, 1, -1, -1))
-           || (!el3_enabled && check_hcr_el2(0, 1, 1, 1, -1, -1))) {
+    } else if ((el3_enabled && check_scr_el3(scr_el3, 1, -1, 0, 0, 0, -1) && check_hcr_el2(hcr_el2, 0, 1, 1, 1, -1, -1))
+           || (!el3_enabled && check_hcr_el2(hcr_el2, 0, 1, 1, 1, -1, -1))) {
         switch (current_el) {
         case 0:
         case 1:
@@ -999,8 +999,8 @@ uint32_t get_aarch32_interrupt_target_el(CPUState *env, uint32_t current_el)
         case 3:
             return 1;
         }
-    } else if ((el3_enabled && check_scr_el3(1, -1, 0, 0, 0, -1) && check_hcr_el2(1, -1, -1, -1, -1, -1))
-           || (!el3_enabled && check_hcr_el2(1, -1, -1, -1, -1, -1))) {
+    } else if ((el3_enabled && check_scr_el3(scr_el3, 1, -1, 0, 0, 0, -1) && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1))
+           || (!el3_enabled && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1))) {
         switch (current_el) {
         case 0:
             return 2;
@@ -1012,7 +1012,7 @@ uint32_t get_aarch32_interrupt_target_el(CPUState *env, uint32_t current_el)
         case 3:
             return 1;
         }
-    } else if (el3_enabled && check_scr_el3(1, -1, 1, 1, 1, -1) && check_hcr_el2(0, -1, -1, -1, -1, -1)) {
+    } else if (el3_enabled && check_scr_el3(scr_el3, 1, -1, 1, 1, 1, -1) && check_hcr_el2(hcr_el2, 0, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1020,7 +1020,7 @@ uint32_t get_aarch32_interrupt_target_el(CPUState *env, uint32_t current_el)
         case 3:
             return 3;
         }
-    } else if (el3_enabled && check_scr_el3(1, -1, 1, 1, 1, -1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
+    } else if (el3_enabled && check_scr_el3(scr_el3, 1, -1, 1, 1, 1, -1) && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
             return 3;
@@ -1037,10 +1037,10 @@ uint32_t get_aarch32_interrupt_target_el(CPUState *env, uint32_t current_el)
     return 0;
 }
 
-int process_interrupt_v8a_aarch32(int interrupt_request, CPUState *env)
+int process_interrupt_v8a_aarch32(int interrupt_request, CPUState *env, uint64_t scr_el3, uint64_t hcr_el2)
 {
     uint32_t current_el = arm_current_el(env);
-    uint32_t target_el = get_aarch32_interrupt_target_el(env, current_el);
+    uint32_t target_el = get_aarch32_interrupt_target_el(env, scr_el3, hcr_el2, current_el);
 
     tlib_assert(current_el <= 3);
     if (target_el == 0) {
@@ -1057,7 +1057,7 @@ int process_interrupt_v8a_aarch32(int interrupt_request, CPUState *env)
         return 1;
     }
 
-    if (aarch32_interrupt_masked(env, current_el, exception_index)) {
+    if (aarch32_interrupt_masked(env, scr_el3, hcr_el2, current_el, exception_index)) {
         return 0;
     }
 
@@ -1076,7 +1076,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
     //
     // The 'check_scr_el3' and 'check_hcr_el2' will return true only if the state of the bits passed matches
     // their current state in SCR_EL3 and HCR_EL2 (respectively). The bit is ignored if '-1' is passed.
-    if (check_scr_el3(0, 0, 0, 0, 0, 0)) {
+    if (check_scr_el3(scr_el3, 0, 0, 0, 0, 0, 0)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1092,7 +1092,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(0, 0, 0, 0, 0, 1)) {
+    } else if (check_scr_el3(scr_el3, 0, 0, 0, 0, 0, 1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1107,7 +1107,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
         }
         // TODO: does all EA, IRQ, FIQ needs to be set at single time
         // or only one of them, depending on irq type needs to be set?
-    } else if (check_scr_el3(0, 0, 1, 1, 1, -1)) {
+    } else if (check_scr_el3(scr_el3, 0, 0, 1, 1, 1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1118,7 +1118,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             tlib_abortf("Invalid SCR_EL3 (0x%" PRIx64 ") for an EL2 interrupt", scr_el3);
             break;
         }
-    } else if (check_scr_el3(0, 1, 0, 0, 0, -1) && check_hcr_el2(0, 0, 0, 0, 0, 0)) {
+    } else if (check_scr_el3(scr_el3, 0, 1, 0, 0, 0, -1) && check_hcr_el2(hcr_el2, 0, 0, 0, 0, 0, 0)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1131,7 +1131,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(0, 1, 0, 0, 0, -1) && check_hcr_el2(0, 0, 0, 0, 0, 1)) {
+    } else if (check_scr_el3(scr_el3, 0, 1, 0, 0, 0, -1) && check_hcr_el2(hcr_el2, 0, 0, 0, 0, 0, 1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1141,7 +1141,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(0, 1, 0, 0, 0, -1) && check_hcr_el2(0, 0, 0, 0, 1, -1)) {
+    } else if (check_scr_el3(scr_el3, 0, 1, 0, 0, 0, -1) && check_hcr_el2(hcr_el2, 0, 0, 0, 0, 1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1153,7 +1153,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
         }
     // TODO: does all AMO, IMO, FMO needs to be set at single time
     // or only one of them?
-    } else if (check_scr_el3(0, 1, 0, 0, 0, -1) && check_hcr_el2(0, 1, 1, 1, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 0, 1, 0, 0, 0, -1) && check_hcr_el2(hcr_el2, 0, 1, 1, 1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1163,7 +1163,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(0, 1, 0, 0, 0, -1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 0, 1, 0, 0, 0, -1) && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 2:
@@ -1178,7 +1178,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
         }
     // TODO: does all EA, IRQ, FIQ needs to be set at single time
     // or only one of them, depending on irq type needs to be set?
-    } else if (check_scr_el3(0, 1, 1, 1, 1, -1) && check_hcr_el2(0, -1, -1, -1, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 0, 1, 1, 1, 1, -1) && check_hcr_el2(hcr_el2, 0, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1186,7 +1186,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
         case 3:
             return 3;
         }
-    } else if (check_scr_el3(0, 1, 1, 1, 1, -1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 0, 1, 1, 1, 1, -1) && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 2:
@@ -1197,7 +1197,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             tlib_abortf("Invalid SCR_EL3 (0x%" PRIx64 ") and HCR_EL2 (0x%" PRIx64 ") for an EL1 interrupt", scr_el3, hcr_el2);
             break;
         }
-    } else if (check_scr_el3(1, -1, 0, 0, 0, 0) && check_hcr_el2(0, 0, 0, 0, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 1, -1, 0, 0, 0, 0) && check_hcr_el2(hcr_el2, 0, 0, 0, 0, -1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1214,7 +1214,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(1, -1, 0, 0, 0, 0) && check_hcr_el2(0, 1, 1, 1, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 1, -1, 0, 0, 0, 0) && check_hcr_el2(hcr_el2, 0, 1, 1, 1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1227,7 +1227,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(1, -1, 0, 0, 0, 0) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 1, -1, 0, 0, 0, 0) && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 2:
@@ -1243,7 +1243,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(1, -1, 0, 0, 0, 1) && check_hcr_el2(0, 0, 0, 0, 0, 0)) {
+    } else if (check_scr_el3(scr_el3, 1, -1, 0, 0, 0, 1) && check_hcr_el2(hcr_el2, 0, 0, 0, 0, 0, 0)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1256,7 +1256,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(1, -1, 0, 0, 0, 1) && check_hcr_el2(0, 0, 0, 0, 0, 1)) {
+    } else if (check_scr_el3(scr_el3, 1, -1, 0, 0, 0, 1) && check_hcr_el2(hcr_el2, 0, 0, 0, 0, 0, 1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1266,7 +1266,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(1, -1, 0, 0, 0, 1) && check_hcr_el2(0, 0, 0, 0, 1, -1)) {
+    } else if (check_scr_el3(scr_el3, 1, -1, 0, 0, 0, 1) && check_hcr_el2(hcr_el2, 0, 0, 0, 0, 1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1276,7 +1276,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(1, -1, 0, 0, 0, 1) && check_hcr_el2(0, 1, 1, 1, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 1, -1, 0, 0, 0, 1) && check_hcr_el2(hcr_el2, 0, 1, 1, 1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1286,7 +1286,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(1, -1, 0, 0, 0, 1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 1, -1, 0, 0, 0, 1) && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 2:
@@ -1299,7 +1299,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
             // interrupt not taken and ignored, just return
             return IRQ_IGNORED;
         }
-    } else if (check_scr_el3(1, -1, 1, 1, 1, -1) && check_hcr_el2(0, -1, -1, -1, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 1, -1, 1, 1, 1, -1) && check_hcr_el2(hcr_el2, 0, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 1:
@@ -1307,7 +1307,7 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
         case 3:
             return 3;
         }
-    } else if (check_scr_el3(1, -1, 1, 1, 1, -1) && check_hcr_el2(1, -1, -1, -1, -1, -1)) {
+    } else if (check_scr_el3(scr_el3, 1, -1, 1, 1, 1, -1) && check_hcr_el2(hcr_el2, 1, -1, -1, -1, -1, -1)) {
         switch (current_el) {
         case 0:
         case 2:
@@ -1324,28 +1324,21 @@ uint32_t establish_interrupts_target_el(uint32_t current_el, uint64_t scr_el3, u
     tlib_assert_not_reached();
 }
 
-int process_interrupt_v8a_aarch64(int interrupt_request, CPUState *env)
+int process_interrupt_v8a_aarch64(int interrupt_request, CPUState *env, uint64_t scr_el3, uint64_t hcr_el2)
 {
+    tlib_assert(is_a64(env));
+
     uint32_t current_el = arm_current_el(env);
     uint32_t target_el = 1;
 
-    bool el2_enabled = arm_feature(env, ARM_FEATURE_EL2);
-    bool el3_enabled = arm_feature(env, ARM_FEATURE_EL3);
-    if (el2_enabled || el3_enabled) {
-        // TODO: Fix 'establish_interrupts_target_el' so that such a case is handled properly.
-        if (!el2_enabled || !el3_enabled) {
-            tlib_printf(LOG_LEVEL_WARNING, "IRQ processing might not work properly with only one of EL2/EL3 enabled.");
-        }
+    target_el = establish_interrupts_target_el(current_el, scr_el3, hcr_el2);
 
-        target_el = establish_interrupts_target_el(current_el, env->cp15.scr_el3, arm_hcr_el2_eff(env));
-
-        if (target_el == IRQ_IGNORED) {
-            return 0;
-        }
+    if (target_el == IRQ_IGNORED) {
+        return 0;
     }
 
     // ARMv8-A manual's rule LMWZH
-    if (is_a64(env) && target_el < current_el) {
+    if (target_el < current_el) {
         // mask interrupt
         return 0;
     }
@@ -1357,7 +1350,7 @@ int process_interrupt_v8a_aarch64(int interrupt_request, CPUState *env)
             if (target_el == 3) {
                 ignore_pstate_aif = true;
             } else if (target_el == 2) {
-                if (!are_hcr_e2h_and_tge_set(arm_hcr_el2_eff(env))) {
+                if (!are_hcr_e2h_and_tge_set(hcr_el2)) {
                     ignore_pstate_aif = true;
                 }
             }
@@ -1412,7 +1405,7 @@ int process_interrupt_v8a_aarch64(int interrupt_request, CPUState *env)
         env->exception_index = EXCP_VIRQ;
     } else if (interrupt_request & CPU_INTERRUPT_VSERR) {
         if (target_el == current_el) {
-            if (!(env->cp15.scr_el3 & SCR_NMEA) && !(pstate_read(env) & PSTATE_A)) {
+            if (!(scr_el3 & SCR_NMEA) && !(pstate_read(env) & PSTATE_A)) {
                 return 0;
             }
         } else if (target_el > current_el) {
@@ -1420,7 +1413,7 @@ int process_interrupt_v8a_aarch64(int interrupt_request, CPUState *env)
             if (target_el == 3) {
                 ignore_pstate_aif = true;
             } else if (target_el == 2) {
-                if (!are_hcr_e2h_and_tge_set(arm_hcr_el2_eff(env))) {
+                if (!are_hcr_e2h_and_tge_set(hcr_el2)) {
                     ignore_pstate_aif = true;
                 }
             }
@@ -1442,10 +1435,25 @@ int process_interrupt_v8a_aarch64(int interrupt_request, CPUState *env)
 
 int process_interrupt_v8a(int interrupt_request, CPUState *env)
 {
-    if (env->aarch64) {
-        return process_interrupt_v8a_aarch64(interrupt_request, env);
+    // ARMv8-A manual's rule QZPXL
+    // If EL3 is not enabled, the effective values of SCR_EL3 fields are:
+    // * 1 for EEL2 and RW
+    // * 0 for FIQ/IRQ/EA
+    // If EL2 is not enabled, the effective values of HCR (AArch32 naming) or HCR_EL2 fields are:
+    // * SCR_EL3.RW for RW
+    // * 0 for FMO/IMO/AMO, TGE and E2H
+    uint64_t scr_el3 = arm_is_el3_enabled(env) ? env->cp15.scr_el3 : (SCR_EEL2 | SCR_RW);
+    uint64_t hcr_el2;
+    if (arm_is_el2_enabled(env)) {
+        hcr_el2 = arm_hcr_el2_eff(env);
     } else {
-        return process_interrupt_v8a_aarch32(interrupt_request, env);
+        hcr_el2 = (scr_el3 & SCR_RW) ? HCR_RW : 0x0;
+    }
+
+    if (env->aarch64) {
+        return process_interrupt_v8a_aarch64(interrupt_request, env, scr_el3, hcr_el2);
+    } else {
+        return process_interrupt_v8a_aarch32(interrupt_request, env, scr_el3, hcr_el2);
     }
 }
 

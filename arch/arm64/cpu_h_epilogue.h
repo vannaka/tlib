@@ -280,6 +280,11 @@ static inline uint64_t arm_hcr_el2_eff(CPUARMState *env)
     return effective_hcr;
 }
 
+static inline bool arm_is_el3_enabled(CPUState *env)
+{
+    return arm_feature(env, ARM_FEATURE_EL3);
+}
+
 static inline int arm_mmu_idx_to_el(ARMMMUIdx arm_mmu_idx)
 {
     // TODO: M-Profile.

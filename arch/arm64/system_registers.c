@@ -565,7 +565,7 @@ ARMCPRegInfo aarch32_registers[] = {
     ARM32_CP_REG_DEFINE(ID_PFR0,          15,   0,   0,   1,   0,   1, RW, READFN(id_pfr0))  // Processor Feature Register 0
     ARM32_CP_REG_DEFINE(ID_PFR1,          15,   0,   0,   1,   1,   1, RW, READFN(id_pfr1))  // Processor Feature Register 1
     ARM32_CP_REG_DEFINE(ID_PFR2,          15,   0,   0,   3,   4,   1, RW, READFN(id_pfr2))  // Processor Feature Register 2
-    ARM32_CP_REG_DEFINE(IFAR,             15,   0,   6,   0,   2,   1, RW)  // Instruction Fault Address Register
+    ARM32_CP_REG_DEFINE(IFAR,             15,   0,   6,   0,   2,   1, RW, FIELD(cp15.ifar_ns)) // Instruction Fault Address Register
     ARM32_CP_REG_DEFINE(IFSR,             15,   0,   5,   0,   1,   1, RW, FIELD(cp15.ifsr_ns))  // Instruction Fault Status Register
     ARM32_CP_REG_DEFINE(ISR,              15,   0,  12,   1,   0,   1, RW)  // Interrupt Status Register
     ARM32_CP_REG_DEFINE(JIDR,             14,   7,   0,   0,   0,   0, RW)  // Jazelle ID Register

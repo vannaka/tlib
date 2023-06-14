@@ -3728,6 +3728,11 @@ static inline bool isar_feature_any_ras(const ARMISARegisters *id)
     return isar_feature_aa64_ras(id) || isar_feature_aa32_ras(id);
 }
 
+static inline bool pmsav8_default_cacheability_enabled(CPUState *env)
+{
+    return (extract32(env->cp15.hcr_el2, 12,1) == 1);
+}
+
 /*
  * Forward to the above feature tests given an ARMCPU pointer.
  */

@@ -363,33 +363,151 @@ int cpu_init(const char *cpu_model)
     return 0;
 }
 
+void set_mmu_fault_registers(int access_type, target_ulong address, int fault_type)
+{
+    if (access_type == ACCESS_INST_FETCH) {
+        env->cp15.ifsr_ns = fault_type;
+        env->cp15.ifar_ns = address;
+        env->exception_index = EXCP_PREFETCH_ABORT;
+    } else {
+        env->cp15.dfar_ns = fault_type;
+        env->cp15.dfsr_ns = address;
+        env->exception_index = EXCP_DATA_ABORT;
+    }
+}
+
+#define PMSA_ATTRIBUTE_ONLY_EL1(setting) ((setting & 0b1) == 0)
+#define PMSA_ATTRIBUTE_IS_READONLY(setting) ((setting & 0b10) != 0)
+
+enum PMSA_FAULT_TYPE {
+    ALIGNMENT_FAULT  = 0b100001, // Access unaligned
+    BACKGROUND_FAULT = 0b000000, // Not in any region && background not allowed
+    PERMISSION_FAULT = 0b001100, // Unsufficient permissions
+    TRANSLATION_FAIL = 0b000100, // Occurs when more than one region contains requested address
+};
+
+static inline uint32_t pmsav8_number_of_regions(CPUState *env)
+{
+    return extract32(env->arm_core_config->mpuir, 8, 8);
+}
+
+static inline int get_default_memory_map_access(uint32_t current_el, target_ulong address)
+{
+    int prot = 0; 
+    if (current_el > 1)
+    {
+        tlib_abortf("The EL > 1 is not supported yet");
+    }
+
+    /* This should take the access type under consideration as well, but it would influence only the cacheability and sherability.
+       Neither of this have any influence on our simulation - the memory is always treated in the same way. */
+    switch(address)
+    {
+        case 0x00000000 ... 0x7FFFFFFF:
+            prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+        break;
+        // Devices
+        case 0x80000000 ... 0xFFFFFFFF:
+            prot = PAGE_READ | PAGE_WRITE;
+            break;
+        default:
+            tlib_abortf("Address out of range. This should never happen");
+    }
+    return prot;
+}
+
+/* This supports only EL0 and EL1 acesses - no dual stage for now.
+All addresses are flat mapped -> (virtual address == physical address), all we do is figure out the access permissions and memory attributes.
+There is no distinction between reads from data/instruction fetch paths, hence the execute_never attribute.
+ACCESS_TYPE_READ and ACCESS_TYPE_INSN_FETCH are both cosidered reads access.
+There is no need to respect the cacheability and shareability settings - we handle it all as shareable and cacheable anyway,
+with all the necessary restrictions and precautions. */
+int get_phys_addr_pmsav8(CPUState *env, target_ulong address, int access_type, uint32_t current_el, uintptr_t return_address, bool suppress_faults, 
+                         target_ulong *phys_ptr, int *prot, target_ulong *page_size, bool at_instruction_or_cache_maintenance)
+{
+        bool region_found = false;
+        int num_regions = pmsav8_number_of_regions(env);
+        int fault_type = BACKGROUND_FAULT;
+        // Fixed for now to the minimum size to avoid adding to tlb
+        *page_size = 0x40;
+        *phys_ptr = address;
+
+        if ((access_type == ACCESS_INST_FETCH) && ((address & 0x1) != 0))
+        {
+            fault_type = ALIGNMENT_FAULT;
+            goto do_fault;
+        }
+        // TODO: check if defined in many regions
+        for (int region = 0; region < num_regions; region++) {
+            uint32_t prbarn = env->pmsav8.prbarn[region];
+            uint32_t prlarn = env->pmsav8.prlarn[region];
+            target_ulong region_start = prbarn & ~0x3Flu;
+            target_ulong region_end = prlarn | 0x3Flu;
+
+            bool enabled = extract32(prlarn, 0, 1);
+
+            if (enabled && (address >= region_start) && (address <= region_end)) {
+                bool execute_never = extract32(prbarn, 0, 1);
+                uint8_t access_permissions_bits = extract32(prbarn, 1, 2);
+                region_found = true;
+
+                if (!execute_never) {
+                    *prot |= PAGE_EXEC;
+                }
+
+                if (!PMSA_ATTRIBUTE_ONLY_EL1(access_permissions_bits) || current_el == 1) {
+                    *prot |= PAGE_READ;
+                    if (!PMSA_ATTRIBUTE_IS_READONLY(access_permissions_bits)) {
+                        *prot |= PAGE_WRITE;
+                    }
+                }
+
+                if (!is_page_access_valid(*prot, access_type)) {
+                    fault_type = PERMISSION_FAULT;
+                    goto do_fault;
+                }
+            }
+        }
+
+        // not found in regions: figure c1-2 page 42 of ARM DDI 0568A.c (ID110520)
+        if (!region_found && current_el == 1) {
+            *prot = pmsav8_default_cacheability_enabled(env) ? get_default_memory_map_access(current_el, address) : PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+        }
+
+        if (!is_page_access_valid(*prot, access_type)) {
+            fault_type = PERMISSION_FAULT;
+            goto do_fault;
+        }   
+
+        return TRANSLATE_SUCCESS;
+     do_fault:
+         set_mmu_fault_registers(access_type, address, fault_type);
+         return TRANSLATE_FAIL;
+}
+
 inline int get_phys_addr(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,
                          bool suppress_faults, target_ulong *phys_ptr, int *prot, target_ulong *page_size)
 {
     if (unlikely(cpu->external_mmu_enabled)) {
-        return get_external_mmu_phys_addr(env, address, access_type, phys_ptr, prot, suppress_faults);
-    }
-
-    // TODO: Implement PMSA and use it if SCTLR_M set.
-    if (arm_feature(env, ARM_FEATURE_PMSA)) {
-        *phys_ptr = address;
-        *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
-        *page_size = TARGET_PAGE_SIZE;
-        return TRANSLATE_SUCCESS;
+        return get_external_mmu_phys_addr(env, address, access_type, (target_phys_addr_t *)phys_ptr, prot, suppress_faults);
     }
 
     ARMMMUIdx arm_mmu_idx = core_to_aa64_mmu_idx(mmu_idx);
     uint32_t el = arm_mmu_idx_to_el(arm_mmu_idx);
+
     if ((arm_sctlr(env, el) & SCTLR_M) == 0) {
         /* MMU/MPU disabled.  */
         *phys_ptr = address;
         *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
         *page_size = TARGET_PAGE_SIZE;
         return TRANSLATE_SUCCESS;
-    } else {
-        return get_phys_addr_v8(env, address, access_type, mmu_idx, return_address, suppress_faults, phys_ptr, prot, page_size,
-                                false);
     }
+
+    if (arm_feature(env, ARM_FEATURE_PMSA)) {
+        return get_phys_addr_pmsav8(env, address, access_type, el, return_address, suppress_faults, phys_ptr, prot, page_size, false);
+    }
+    return get_phys_addr_v8(env, address, access_type, mmu_idx, return_address, suppress_faults, phys_ptr, prot, page_size,
+                                false);
 }
 
 target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
@@ -442,13 +560,11 @@ int tlb_fill(CPUState *env1, target_ulong addr, int access_type, int mmu_idx, vo
     saved_env = env;
     env = env1;
     ret = cpu_handle_mmu_fault(env, addr, access_type, mmu_idx, (uintptr_t)retaddr, no_page_fault);
-
-    // 'ret' is always 'TRANSLATION_SUCCESS' with ARMv8-A MMU. If a failure occurs within MMU,
-    // 'raise_exception' is called which in the end results in 'cpu_loop_exit'.
     if (unlikely(ret == TRANSLATE_FAIL && !no_page_fault)) {
         // access_type == CODE ACCESS - do not fire block_end hooks!
         cpu_loop_exit_restore(env, (uintptr_t)retaddr, access_type != ACCESS_INST_FETCH);
     }
+
     env = saved_env;
     return ret;
 }

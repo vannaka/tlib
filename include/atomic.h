@@ -15,7 +15,7 @@ struct CPUState;
 typedef struct address_reservation_t
 {
     uint32_t locking_cpu_id;
-    target_phys_addr_t address;
+    uint64_t address;
     uint8_t active_flag;
     uint8_t id;
 } address_reservation_t;

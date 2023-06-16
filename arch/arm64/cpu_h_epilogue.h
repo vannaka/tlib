@@ -346,6 +346,11 @@ static inline bool cpu_has_work(CPUState *env)
 {
     // clear WFI if waking up condition is met
     env->wfi &= !(is_interrupt_pending(env, CPU_INTERRUPT_HARD));
+    env->wfi &= !(is_interrupt_pending(env, CPU_INTERRUPT_FIQ));
+    env->wfi &= !(is_interrupt_pending(env, CPU_INTERRUPT_EXITTB));
+    env->wfi &= !(is_interrupt_pending(env, CPU_INTERRUPT_VFIQ));
+    env->wfi &= !(is_interrupt_pending(env, CPU_INTERRUPT_VIRQ));
+    env->wfi &= !(is_interrupt_pending(env, CPU_INTERRUPT_VSERR));
     return !env->wfi;
 }
 

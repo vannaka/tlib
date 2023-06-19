@@ -8406,7 +8406,7 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
                     gen_store_exclusive(s, rd, rs, 15, addr, 2);
                 }
                 tcg_temp_free(addr);
-            } else if ((insn & (1 << 6)) == 0) {
+            } else if (((insn >> 5) & 0x7) == 0) {
                 /* Table Branch.  */
                 if (rn == 15) {
                     addr = tcg_temp_new_i32();

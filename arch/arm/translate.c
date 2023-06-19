@@ -8435,15 +8435,16 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
                 op = (insn >> 4) & 0x3;
                 if (op == 2) {
                     ARCH(8);
-                    /* LDAEX/STLEX (and variants -B,-H)
+                    /* LDA(EX)/STL(EX) (and variants -B,-H)
                        LDAEX is LDREX + sync memory barrier, so might require a translation block to be finished
+                       For LDA (and EX) we don't implement the memory barrier. This is fine in simple single-CPU
+                       scenarios but might cause problems if used with multiple CPUs.
                     */
                    if(((insn >> 6) & 1) == 0)
                    {
                        /* LDA/STL (and variants -B,-H) stub 
                           They are likely just Load/Store + memory barrier
                        */
-                       tlib_abort("LDA/STL instructions are not implemented");
                    }
                 }
                 addr = tcg_temp_local_new();

@@ -2921,7 +2921,7 @@ void helper_clts(void)
 void helper_invlpg(target_ulong addr)
 {
     helper_svm_check_intercept_param(SVM_EXIT_INVLPG, 0);
-    tlb_flush_page(env, addr);
+    tlb_flush_page(env, addr, true);
 }
 
 void helper_rdtsc(void)
@@ -4900,7 +4900,7 @@ void helper_vmrun(int aflag, int next_eip_addend)
         break;
     case TLB_CONTROL_FLUSH_ALL_ASID:
         /* FIXME: this is not 100% correct but should work for now */
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
         break;
     }
 
@@ -5045,7 +5045,7 @@ void helper_invlpga(int aflag)
 
     /* XXX: could use the ASID to see if it is needed to do the
        flush */
-    tlb_flush_page(env, addr);
+    tlb_flush_page(env, addr, true);
 }
 
 void helper_svm_check_intercept_param(uint32_t type, uint64_t param)

@@ -1158,13 +1158,13 @@ void helper_st_asi(target_ulong addr, uint64_t val, int asi, int size)
         mmulev = (addr >> 8) & 15;
         switch (mmulev) {
         case 0:     // flush page
-            tlb_flush_page(env, addr & 0xfffff000);
+            tlb_flush_page(env, addr & 0xfffff000, true);
             break;
         case 1:     // flush segment (256k)
         case 2:     // flush region (16M)
         case 3:     // flush context (4G)
         case 4:     // flush entire
-            tlb_flush(env, 1);
+            tlb_flush(env, 1, true);
             break;
         default:
             break;
@@ -1184,7 +1184,7 @@ void helper_st_asi(target_ulong addr, uint64_t val, int asi, int size)
             // Mappings generated during no-fault mode or MMU
             // disabled mode are invalid in normal mode
             if ((oldreg & (MMU_E | MMU_NF | env->def->mmu_bm)) != (env->mmuregs[reg] & (MMU_E | MMU_NF | env->def->mmu_bm))) {
-                tlb_flush(env, 1);
+                tlb_flush(env, 1, true);
             }
             break;
         case 1:     // Context Table Pointer Register
@@ -1195,7 +1195,7 @@ void helper_st_asi(target_ulong addr, uint64_t val, int asi, int size)
             if (oldreg != env->mmuregs[reg]) {
                 /* we flush when the MMU context changes because
                    QEMU has no MMU context support */
-                tlb_flush(env, 1);
+                tlb_flush(env, 1, true);
             }
             break;
         case 3:     // Synchronous Fault Status Register with Clear
@@ -1708,6 +1708,6 @@ static void do_unassigned_access(target_phys_addr_t addr, int is_write, int is_e
     /* flush neverland mappings created during no-fault mode,
        so the sequential MMU faults report proper fault types */
     if (env->mmuregs[0] & MMU_NF) {
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
     }
 }

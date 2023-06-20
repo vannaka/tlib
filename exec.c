@@ -1241,11 +1241,13 @@ static CPUTLBEntry s_cputlb_empty_entry = {
 
 /* NOTE: if flush_global is true, also flush global entries (not
    implemented yet) */
-void tlb_flush(CPUState *env, int flush_global)
+void tlb_flush(CPUState *env, int flush_global, bool from_generated_code)
 {
-    /* must reset current TB so that interrupts cannot modify the
-       links while we are modifying them */
-    env->current_tb = NULL;
+    if (!from_generated_code) {
+        /* must reset current TB so that interrupts cannot modify the
+           links while we are modifying them */
+        env->current_tb = NULL;
+    }
 
     memset(env->tlb_table, 0xFF, CPU_TLB_SIZE * NB_MMU_MODES * sizeof (CPUTLBEntry));
 
@@ -1281,19 +1283,21 @@ void tlb_flush_masked(CPUState *env, uint32_t mmu_indexes_mask)
     memset(env->tb_jmp_cache, 0, TB_JMP_CACHE_SIZE * sizeof (void *));
 }
 
-void tlb_flush_page_masked(CPUState *env, target_ulong addr, uint32_t mmu_indexes_mask)
+void tlb_flush_page_masked(CPUState *env, target_ulong addr, uint32_t mmu_indexes_mask, bool from_generated_code)
 {
     int i;
     int mmu_idx;
 
     /* Check if we need to flush due to large pages.  */
     if ((addr & env->tlb_flush_mask) == env->tlb_flush_addr) {
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, false);
         return;
     }
-    /* must reset current TB so that interrupts cannot modify the
-       links while we are modifying them */
-    env->current_tb = NULL;
+    if (!from_generated_code) {
+        /* must reset current TB so that interrupts cannot modify the
+           links while we are modifying them */
+        env->current_tb = NULL;
+    }
 
     addr &= TARGET_PAGE_MASK;
     i = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
@@ -1306,9 +1310,9 @@ void tlb_flush_page_masked(CPUState *env, target_ulong addr, uint32_t mmu_indexe
     tlb_flush_jmp_cache(env, addr);
 }
 
-void tlb_flush_page(CPUState *env, target_ulong addr)
+void tlb_flush_page(CPUState *env, target_ulong addr, bool from_generated_code)
 {
-    tlb_flush_page_masked(env, addr, UINT32_MAX);
+    tlb_flush_page_masked(env, addr, UINT32_MAX, from_generated_code);
 }
 
 /* update the TLBs so that writes to code in the virtual page 'addr'
@@ -1582,7 +1586,7 @@ void cpu_register_physical_memory_log(target_phys_addr_t start_addr, ram_addr_t 
     /* since each CPU stores ram addresses in its TLB cache, we must
        reset the modified entries */
     /* XXX: slow ! */
-    tlb_flush(cpu, 1);
+    tlb_flush(cpu, 1, false);
 }
 
 /* XXX: temporary until new memory mapping API */

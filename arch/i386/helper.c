@@ -162,7 +162,7 @@ void cpu_x86_set_a20(CPUState *env, int a20_state)
 
         /* when a20 is changed, all the MMU mappings are invalid, so
            we must flush everything */
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, false);
         env->a20_mask = ~(1 << 20) | (a20_state << 20);
     }
 }
@@ -172,7 +172,7 @@ void cpu_x86_update_cr0(CPUState *env, uint32_t new_cr0)
     int pe_state;
 
     if ((new_cr0 & (CR0_PG_MASK | CR0_WP_MASK | CR0_PE_MASK)) != (env->cr[0] & (CR0_PG_MASK | CR0_WP_MASK | CR0_PE_MASK))) {
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, false);
     }
 
 #ifdef TARGET_X86_64
@@ -209,14 +209,14 @@ void cpu_x86_update_cr3(CPUState *env, target_ulong new_cr3)
 {
     env->cr[3] = new_cr3;
     if (env->cr[0] & CR0_PG_MASK) {
-        tlb_flush(env, 0);
+        tlb_flush(env, 0, true);
     }
 }
 
 void cpu_x86_update_cr4(CPUState *env, uint32_t new_cr4)
 {
     if ((new_cr4 & (CR4_PGE_MASK | CR4_PAE_MASK | CR4_PSE_MASK)) != (env->cr[4] & (CR4_PGE_MASK | CR4_PAE_MASK | CR4_PSE_MASK))) {
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
     }
     /* SSE handling */
     if (!(env->cpuid_features & CPUID_SSE)) {

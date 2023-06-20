@@ -1512,7 +1512,7 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
             }
             /* ??? Lots of these bits are not implemented.  */
             /* This may enable/disable the MMU, so do a TLB flush.  */
-            tlb_flush(env, 1);
+            tlb_flush(env, 1, true);
             break;
         case 1: /* Auxiliary control register.  */
             if (arm_feature(env, ARM_FEATURE_XSCALE)) {
@@ -1569,7 +1569,7 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
         break;
     case 3:                /* MMU Domain access control / MPU write buffer control.  */
         env->cp15.c3 = val;
-        tlb_flush(env, 1); /* Flush TLB as domain not tracked in TLB */
+        tlb_flush(env, 1, true); /* Flush TLB as domain not tracked in TLB */
         break;
     case 4:                /* Reserved.  */
         goto bad_reg;
@@ -1675,17 +1675,17 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
     case 8:     /* MMU TLB control.  */
         switch (op2) {
         case 0: /* Invalidate all.  */
-            tlb_flush(env, 0);
+            tlb_flush(env, 0, true);
             break;
         case 1: /* Invalidate single TLB entry.  */
-            tlb_flush_page(env, val & TARGET_PAGE_MASK);
+            tlb_flush_page(env, val & TARGET_PAGE_MASK, true);
             break;
         case 2: /* Invalidate on ASID.  */
-            tlb_flush(env, val == 0);
+            tlb_flush(env, val == 0, true);
             break;
         case 3: /* Invalidate single entry on MVA.  */
             /* ??? This is like case 1, but ignores ASID.  */
-            tlb_flush(env, 1);
+            tlb_flush(env, 1, true);
             break;
         default:
             goto bad_reg;
@@ -1816,14 +1816,14 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
                not modified virtual addresses, so this causes a TLB flush.
              */
             if (env->cp15.c13_fcse != val) {
-                tlb_flush(env, 1);
+                tlb_flush(env, 1, true);
             }
             env->cp15.c13_fcse = val;
             break;
         case 1:
             /* This changes the ASID, so do a TLB flush.  */
             if (env->cp15.c13_context != val && !arm_feature(env, ARM_FEATURE_MPU)) {
-                tlb_flush(env, 0);
+                tlb_flush(env, 0, true);
             }
             env->cp15.c13_context = val;
             break;

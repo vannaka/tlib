@@ -273,7 +273,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
         target_ulong mask = 0;
         if (env->privilege_architecture < RISCV_PRIV1_10) {
             if ((val_to_write ^ mstatus) & (MSTATUS_MXR | MSTATUS_MPP | MSTATUS_MPRV | MSTATUS_SUM | MSTATUS_VM)) {
-                tlb_flush(env, 1);
+                tlb_flush(env, 1, true);
             }
             mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV |
                    MSTATUS_SUM | MSTATUS_MPP | MSTATUS_MXR | MSTATUS_VS |
@@ -281,7 +281,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
         }
         if (env->privilege_architecture >= RISCV_PRIV1_10) {
             if ((val_to_write ^ mstatus) & (MSTATUS_MXR | MSTATUS_MPP | MSTATUS_MPRV | MSTATUS_SUM)) {
-                tlb_flush(env, 1);
+                tlb_flush(env, 1, true);
             }
             mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV |
                    MSTATUS_SUM | MSTATUS_MPP | MSTATUS_MXR | MSTATUS_VS;
@@ -376,7 +376,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
     }
     case CSR_SATP: /* CSR_SPTBR */ {
         if ((env->privilege_architecture < RISCV_PRIV1_10) && (val_to_write ^ env->sptbr)) {
-            tlb_flush(env, 1);
+            tlb_flush(env, 1, true);
             env->sptbr = val_to_write & (((target_ulong)
                                           1 << (TARGET_PHYS_ADDR_SPACE_BITS - PGSHIFT)) - 1);
             if (unlikely(env->guest_profiler_enabled)) {
@@ -387,7 +387,7 @@ inline void csr_write_helper(CPUState *env, target_ulong val_to_write, target_ul
             validate_vm(env,
                         get_field(val_to_write,
                                   SATP_MODE)) && ((val_to_write ^ env->satp) & (SATP_MODE | SATP_ASID | SATP_PPN))) {
-            tlb_flush(env, 1);
+            tlb_flush(env, 1, true);
             env->satp = val_to_write;
             if (unlikely(env->guest_profiler_enabled)) {
                 // We use the entire content of the SATP register to identify a context, even though it contains multiple fields

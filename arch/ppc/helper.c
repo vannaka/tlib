@@ -255,7 +255,7 @@ static inline void ppc6xx_tlb_invalidate_all(CPUState *env)
         tlb = &env->tlb.tlb6[nr];
         pte_invalidate(&tlb->pte0);
     }
-    tlb_flush(env, 1);
+    tlb_flush(env, 1, true);
 }
 
 static inline void __ppc6xx_tlb_invalidate_virt(CPUState *env, target_ulong eaddr, int is_code, int match_epn)
@@ -269,7 +269,7 @@ static inline void __ppc6xx_tlb_invalidate_virt(CPUState *env, target_ulong eadd
         tlb = &env->tlb.tlb6[nr];
         if (pte_is_valid(tlb->pte0) && (match_epn == 0 || eaddr == tlb->EPN)) {
             pte_invalidate(&tlb->pte0);
-            tlb_flush_page(env, tlb->EPN);
+            tlb_flush_page(env, tlb->EPN, true);
         }
     }
 }
@@ -574,7 +574,7 @@ void ppc_slb_invalidate_all (CPUState *env)
         }
     }
     if (do_invalidate) {
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
     }
 }
 
@@ -594,7 +594,7 @@ void ppc_slb_invalidate_one (CPUState *env, uint64_t T0)
          *      and we still don't have a tlb_flush_mask(env, n, mask)
          *      in Qemu, we just invalidate all TLBs
          */
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
     }
 }
 
@@ -848,7 +848,7 @@ static inline void ppc4xx_tlb_invalidate_all(CPUState *env)
         tlb = &env->tlb.tlbe[i];
         tlb->prot &= ~PAGE_VALID;
     }
-    tlb_flush(env, 1);
+    tlb_flush(env, 1, true);
 }
 
 static inline void ppc4xx_tlb_invalidate_virt(CPUState *env, target_ulong eaddr, uint32_t pid)
@@ -863,7 +863,7 @@ static inline void ppc4xx_tlb_invalidate_virt(CPUState *env, target_ulong eaddr,
         if (ppcemb_tlb_check(env, tlb, &raddr, eaddr, pid, 0, i) == 0) {
             end = tlb->EPN + tlb->size;
             for (page = tlb->EPN; page < end; page += TARGET_PAGE_SIZE) {
-                tlb_flush_page(env, page);
+                tlb_flush_page(env, page, true);
             }
             tlb->prot &= ~PAGE_VALID;
             break;
@@ -1035,7 +1035,7 @@ void booke206_flush_tlb(CPUState *env, int flags, const int check_iprot)
         tlb += booke206_tlb_size(env, i);
     }
 
-    tlb_flush(env, 1);
+    tlb_flush(env, 1, true);
 }
 
 target_phys_addr_t booke206_tlb_to_page_size(CPUState *env, ppcmas_tlb_t *tlb)
@@ -1668,7 +1668,7 @@ static inline void do_invalidate_BAT(CPUState *env, target_ulong BATu, target_ul
     base = BATu & ~0x0001FFFF;
     end = base + mask + 0x00020000;
     for (page = base; page != end; page += TARGET_PAGE_SIZE) {
-        tlb_flush_page(env, page);
+        tlb_flush_page(env, page, true);
     }
 }
 
@@ -1776,7 +1776,7 @@ void ppc_tlb_invalidate_all (CPUState *env)
         cpu_abort(env, "MPC8xx MMU model is not implemented\n");
         break;
     case POWERPC_MMU_BOOKE:
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
         break;
     case POWERPC_MMU_BOOKE206:
         booke206_flush_tlb(env, -1, 0);
@@ -1788,7 +1788,7 @@ void ppc_tlb_invalidate_all (CPUState *env)
     case POWERPC_MMU_64B:
     case POWERPC_MMU_2_06:
 #endif /* defined(TARGET_PPC64) */
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
         break;
     default:
         /* XXX: TODO */
@@ -1834,22 +1834,22 @@ void ppc_tlb_invalidate_one (CPUState *env, target_ulong addr)
         /* XXX: this case should be optimized,
          * giving a mask to tlb_flush_page
          */
-        tlb_flush_page(env, addr | (0x0 << 28));
-        tlb_flush_page(env, addr | (0x1 << 28));
-        tlb_flush_page(env, addr | (0x2 << 28));
-        tlb_flush_page(env, addr | (0x3 << 28));
-        tlb_flush_page(env, addr | (0x4 << 28));
-        tlb_flush_page(env, addr | (0x5 << 28));
-        tlb_flush_page(env, addr | (0x6 << 28));
-        tlb_flush_page(env, addr | (0x7 << 28));
-        tlb_flush_page(env, addr | (0x8 << 28));
-        tlb_flush_page(env, addr | (0x9 << 28));
-        tlb_flush_page(env, addr | (0xA << 28));
-        tlb_flush_page(env, addr | (0xB << 28));
-        tlb_flush_page(env, addr | (0xC << 28));
-        tlb_flush_page(env, addr | (0xD << 28));
-        tlb_flush_page(env, addr | (0xE << 28));
-        tlb_flush_page(env, addr | (0xF << 28));
+        tlb_flush_page(env, addr | (0x0 << 28), true);
+        tlb_flush_page(env, addr | (0x1 << 28), true);
+        tlb_flush_page(env, addr | (0x2 << 28), true);
+        tlb_flush_page(env, addr | (0x3 << 28), true);
+        tlb_flush_page(env, addr | (0x4 << 28), true);
+        tlb_flush_page(env, addr | (0x5 << 28), true);
+        tlb_flush_page(env, addr | (0x6 << 28), true);
+        tlb_flush_page(env, addr | (0x7 << 28), true);
+        tlb_flush_page(env, addr | (0x8 << 28), true);
+        tlb_flush_page(env, addr | (0x9 << 28), true);
+        tlb_flush_page(env, addr | (0xA << 28), true);
+        tlb_flush_page(env, addr | (0xB << 28), true);
+        tlb_flush_page(env, addr | (0xC << 28), true);
+        tlb_flush_page(env, addr | (0xD << 28), true);
+        tlb_flush_page(env, addr | (0xE << 28), true);
+        tlb_flush_page(env, addr | (0xF << 28), true);
         break;
 #if defined(TARGET_PPC64)
     case POWERPC_MMU_620:
@@ -1860,7 +1860,7 @@ void ppc_tlb_invalidate_one (CPUState *env, target_ulong addr)
          *      and we still don't have a tlb_flush_mask(env, n, mask) in Qemu,
          *      we just invalidate all TLBs
          */
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
         break;
 #endif /* defined(TARGET_PPC64) */
     default:
@@ -1878,7 +1878,7 @@ void ppc_store_asr (CPUState *env, target_ulong value)
 {
     if (env->asr != value) {
         env->asr = value;
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, false);
     }
 }
 #endif
@@ -1905,7 +1905,7 @@ void ppc_store_sdr1 (CPUState *env, target_ulong value)
             env->htab_mask = ((value & SDR_32_HTABMASK) << 16) | 0xFFFF;
             env->htab_base = value & SDR_32_HTABORG;
         }
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
     }
 }
 
@@ -1951,11 +1951,11 @@ void ppc_store_sr (CPUState *env, int srnum, target_ulong value)
             page = (16 << 20) * srnum;
             end = page + (16 << 20);
             for (; page != end; page += TARGET_PAGE_SIZE) {
-                tlb_flush_page(env, page);
+                tlb_flush_page(env, page, true);
             }
         }
 #else
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
 #endif
     }
 }
@@ -2433,7 +2433,7 @@ store_next:
     }
     /* If we disactivated any translation, flush TLBs */
     if (new_msr & ((1 << MSR_IR) | (1 << MSR_DR))) {
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, false);
     }
 
     if (msr_ile) {
@@ -2475,7 +2475,7 @@ store_next:
         /* XXX: The BookE changes address space when switching modes,
                 we should probably implement that as different MMU indexes,
                 but for the moment we do it the slow way and flush all.  */
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, false);
     }
 }
 

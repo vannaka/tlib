@@ -30,7 +30,7 @@
 #include "tb-helper.h"
 
 // The flush_global argument is required (although it isn't used).
-#define tlb_flush(x) tlb_flush(x, false)
+#define tlb_flush(x, y) tlb_flush(x, false, y)
 
 #define XTENSA_MPU_SEGMENT_MASK 0x0000001f
 #define XTENSA_MPU_ACC_RIGHTS_MASK 0x00000f00
@@ -67,7 +67,7 @@ void HELPER(wsr_rasid)(CPUState *env, uint32_t v)
     v = (v & 0xffffff00) | 0x1;
     if (v != env->sregs[RASID]) {
         env->sregs[RASID] = v;
-        tlb_flush(env);
+        tlb_flush(env, true);
     }
 }
 
@@ -272,17 +272,17 @@ static void xtensa_tlb_set_entry(CPUState *env, bool dtlb,
     if (xtensa_option_enabled(env->config, XTENSA_OPTION_MMU)) {
         if (entry->variable) {
             if (entry->asid) {
-                tlb_flush_page(env, entry->vaddr);
+                tlb_flush_page(env, entry->vaddr, true);
             }
             xtensa_tlb_set_entry_mmu(env, entry, dtlb, wi, ei, vpn, pte);
-            tlb_flush_page(env, entry->vaddr);
+            tlb_flush_page(env, entry->vaddr, true);
         } else {
             tlib_printf(LOG_LEVEL_ERROR,
                           "%s %d, %d, %d trying to set immutable entry\n",
                           __func__, dtlb, wi, ei);
         }
     } else {
-        tlb_flush_page(env, entry->vaddr);
+        tlb_flush_page(env, entry->vaddr, true);
         if (xtensa_option_enabled(env->config,
                     XTENSA_OPTION_REGION_TRANSLATION)) {
             entry->paddr = pte & REGION_PAGE_MASK;
@@ -474,7 +474,7 @@ void HELPER(itlb)(CPUState *env, uint32_t v, uint32_t dtlb)
         uint32_t wi;
         xtensa_tlb_entry *entry = get_tlb_entry(env, v, dtlb, &wi);
         if (entry->variable && entry->asid) {
-            tlb_flush_page(env, entry->vaddr);
+            tlb_flush_page(env, entry->vaddr, true);
             entry->asid = 0;
         }
     }
@@ -850,7 +850,7 @@ void HELPER(wsr_mpuenb)(CPUState *env, uint32_t v)
 
     if (v != env->sregs[MPUENB]) {
         env->sregs[MPUENB] = v;
-        tlb_flush(env);
+        tlb_flush(env, true);
     }
 }
 
@@ -862,7 +862,7 @@ void HELPER(wptlb)(CPUState *env, uint32_t p, uint32_t v)
         env->mpu_fg[segment].vaddr = v & -env->config->mpu_align;
         env->mpu_fg[segment].attr = p & XTENSA_MPU_ATTR_MASK;
         env->sregs[MPUENB] = deposit32(env->sregs[MPUENB], segment, 1, v);
-        tlb_flush(env);
+        tlb_flush(env, true);
     }
 }
 

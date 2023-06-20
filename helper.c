@@ -126,5 +126,5 @@ void HELPER(on_interrupt_end_event)(uint64_t exception_index)
 
 void HELPER(tlb_flush)(CPUState* env)
 {
-     tlb_flush(env, 1);
+     tlb_flush(env, 1, true);
 }

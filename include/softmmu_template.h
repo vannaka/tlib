@@ -120,7 +120,7 @@ __attribute__((always_inline)) inline DATA_TYPE REGPARM glue(glue(glue(__ld, SUF
         // That's why we flush the page and force
         // calling tlb_fill to check memory region
         // restrictions on each access.
-        tlb_flush_page(cpu, addr);
+        tlb_flush_page(cpu, addr, true);
     }
 
 redo:
@@ -216,7 +216,7 @@ static DATA_TYPE glue(glue(glue(slow_ld, SUFFIX), _err), MMUSUFFIX)(target_ulong
         // That's why we flush the page and force
         // calling tlb_fill to check memory region
         // restrictions on each access.
-        tlb_flush_page(cpu, addr);
+        tlb_flush_page(cpu, addr, true);
     }
 
 redo:
@@ -323,7 +323,7 @@ __attribute__((always_inline)) inline void REGPARM glue(glue(__st, SUFFIX), MMUS
         // That's why we flush the page and force
         // calling tlb_fill to check memory region
         // restrictions on each access.
-        tlb_flush_page(cpu, addr);
+        tlb_flush_page(cpu, addr, true);
     }
 
 redo:
@@ -407,7 +407,7 @@ void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr, DATA_TYPE val, in
         // That's why we flush the page and force
         // calling tlb_fill to check memory region
         // restrictions on each access.
-        tlb_flush_page(cpu, addr);
+        tlb_flush_page(cpu, addr, true);
     }
 
 redo:

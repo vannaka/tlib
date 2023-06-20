@@ -157,7 +157,7 @@ void helper_store_403_pbr (uint32_t num, target_ulong value)
     if (likely(env->pb[num] != value)) {
         env->pb[num] = value;
         /* Should be optimized */
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
     }
 }
 
@@ -3913,7 +3913,7 @@ void helper_4xx_tlbwe_hi (target_ulong entry, target_ulong val)
     if (tlb->prot & PAGE_VALID) {
         end = tlb->EPN + tlb->size;
         for (page = tlb->EPN; page < end; page += TARGET_PAGE_SIZE) {
-            tlb_flush_page(env, page);
+            tlb_flush_page(env, page, true);
         }
     }
     tlb->size = booke_tlb_to_page_size((val >> PPC4XX_TLBHI_SIZE_SHIFT) & PPC4XX_TLBHI_SIZE_MASK);
@@ -3940,7 +3940,7 @@ void helper_4xx_tlbwe_hi (target_ulong entry, target_ulong val)
     if (tlb->prot & PAGE_VALID) {
         end = tlb->EPN + tlb->size;
         for (page = tlb->EPN; page < end; page += TARGET_PAGE_SIZE) {
-            tlb_flush_page(env, page);
+            tlb_flush_page(env, page, true);
         }
     }
 }
@@ -4003,13 +4003,13 @@ void helper_440_tlbwe (uint32_t word, target_ulong entry, target_ulong value)
         }
         tlb->PID = env->spr[SPR_440_MMUCR] & 0x000000FF;
         if (do_flush_tlbs) {
-            tlb_flush(env, 1);
+            tlb_flush(env, 1, true);
         }
         break;
     case 1:
         RPN = value & 0xFFFFFC0F;
         if ((tlb->prot & PAGE_VALID) && tlb->RPN != RPN) {
-            tlb_flush(env, 1);
+            tlb_flush(env, 1, true);
         }
         tlb->RPN = RPN;
         break;
@@ -4121,7 +4121,7 @@ void helper_booke_setpid(uint32_t pidn, target_ulong pid)
 {
     env->spr[pidn] = pid;
     /* changing PIDs mean we're in a different address space now */
-    tlb_flush(env, 1);
+    tlb_flush(env, 1, true);
 }
 
 void helper_booke206_tlbwe(void)
@@ -4172,9 +4172,9 @@ void helper_booke206_tlbwe(void)
     }
 
     if (booke206_tlb_to_page_size(env, tlb) == TARGET_PAGE_SIZE) {
-        tlb_flush_page(env, tlb->mas2 & MAS2_EPN_MASK);
+        tlb_flush_page(env, tlb->mas2 & MAS2_EPN_MASK, true);
     } else {
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
     }
 }
 
@@ -4283,11 +4283,11 @@ void helper_booke206_tlbivax(target_ulong address)
     if (address & 0x8) {
         /* flush TLB1 entries */
         booke206_invalidate_ea_tlb(env, 1, address);
-        tlb_flush(env, 1);
+        tlb_flush(env, 1, true);
     } else {
         /* flush TLB0 entries */
         booke206_invalidate_ea_tlb(env, 0, address);
-        tlb_flush_page(env, address & MAS2_EPN_MASK);
+        tlb_flush_page(env, address & MAS2_EPN_MASK, true);
     }
 }
 

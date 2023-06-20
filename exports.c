@@ -270,7 +270,7 @@ EXC_INT_0(uint64_t, tlib_get_total_executed_instructions)
 void tlib_reset()
 {
     tb_flush(cpu);
-    tlb_flush(cpu, 1);
+    tlb_flush(cpu, 1, false);
     cpu_reset(cpu);
 }
 
@@ -578,7 +578,7 @@ EXC_INT_1(int32_t, tlib_set_return_on_exception, int32_t, value)
 
 void tlib_flush_page(uint64_t address)
 {
-    tlb_flush_page(cpu, address);
+    tlb_flush_page(cpu, address, false);
 }
 
 EXC_VOID_1(tlib_flush_page, uint64_t, address)
@@ -742,7 +742,7 @@ void tlib_set_page_io_accessed(uint64_t address)
     env->io_access_regions[i] = page_address;
     env->io_access_regions_count++;
 
-    tlb_flush_page(env, address);
+    tlb_flush_page(env, address, false);
 }
 
 EXC_VOID_1(tlib_set_page_io_accessed, uint64_t, address)
@@ -772,7 +772,7 @@ void tlib_clear_page_io_accessed(uint64_t address)
     }
 
     env->io_access_regions_count--;
-    tlb_flush_page(env, address);
+    tlb_flush_page(env, address, false);
 }
 
 EXC_VOID_1(tlib_clear_page_io_accessed, uint64_t, address)

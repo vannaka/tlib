@@ -26,13 +26,19 @@ void HELPER(exception_bkpt_insn)(CPUARMState *env, uint32_t syndrome)
     helper_exception_with_syndrome(env, EXCP_BKPT, syndrome);
 }
 
+void HELPER(memory_barrier_assert)(CPUARMState *env)
+{
+    // This is not a complete implementatation 
+    tlb_flush(env, 1, true);
+}
+
 void HELPER(sysreg_tlb_flush)(CPUARMState *env, void *info_ptr)
 {
     // TODO: Use register info to flush precisely.
     const ARMCPRegInfo *info = info_ptr;
     (void)info;
 
-    tlb_flush(env, 1);
+    tlb_flush(env, 1, true);
 }
 
 /* Functions called by arch-independent code. */

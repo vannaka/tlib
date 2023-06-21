@@ -1412,7 +1412,7 @@ static inline uint16_t tlbi_get_mmu_indexes_mask(CPUState *env, const ARMCPRegIn
     uint32_t tlbi_target_el = ARM_CP_GET_MIN_EL(ri->type);
     switch (tlbi_target_el) {
     case 1:
-        return arm_is_el2_enabled(env) && hcr_e2h_and_tge_set(env) ? el2_map : el1_map;
+        return arm_is_el2_enabled(env) && are_hcr_e2h_and_tge_set(arm_hcr_el2_eff(env)) ? el2_map : el1_map;
     case 2:
         return el2_map;
     case 3:

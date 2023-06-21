@@ -43,7 +43,7 @@ static inline uint32_t address_translation_el(CPUState *env, uint32_t el)
 {
     if(el == 0)
     {
-        return arm_is_el2_enabled(env) && hcr_e2h_and_tge_set(env) ? 2 : 1;
+        return arm_is_el2_enabled(env) && are_hcr_e2h_and_tge_set(arm_hcr_el2_eff(env)) ? 2 : 1;
     }
     return el;
 }

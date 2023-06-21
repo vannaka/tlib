@@ -377,11 +377,10 @@ static inline int get_dcbase_num_insns(DisasContextBase base)
     return base.tb->icount;
 }
 
-static inline bool hcr_e2h_and_tge_set(CPUState *env)
+static inline bool are_hcr_e2h_and_tge_set(uint64_t hcr_el2)
 {
-    uint64_t hcr_el2_eff = arm_hcr_el2_eff(env);
     uint64_t hcr_e2h_tge = HCR_E2H | HCR_TGE;
-    return (hcr_el2_eff & hcr_e2h_tge) == hcr_e2h_tge;
+    return (hcr_el2 & hcr_e2h_tge) == hcr_e2h_tge;
 }
 
 static inline void log_unhandled_sysreg_access(const char *sysreg_name, bool is_write)
@@ -482,7 +481,7 @@ static inline ARMMMUIdx el_to_arm_mmu_idx(CPUState *env, int el)
     ARMMMUIdx idx;
     switch (el) {
     case 0:
-        if (hcr_e2h_and_tge_set(env)) {
+        if (are_hcr_e2h_and_tge_set(arm_hcr_el2_eff(env))) {
             idx = ARMMMUIdx_SE20_0;
         } else {
             idx = ARMMMUIdx_SE10_0;

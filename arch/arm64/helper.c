@@ -16,7 +16,7 @@ uint64_t arm_sctlr(struct CPUState *env, int el)
 {
     tlib_assert(el >= 0 && el <= 3);
     if (el == 0) {
-        el = arm_is_el2_enabled(env) && hcr_e2h_and_tge_set(env) ? 2 : 1;
+        el = arm_is_el2_enabled(env) && are_hcr_e2h_and_tge_set(arm_hcr_el2_eff(env)) ? 2 : 1;
     }
     return env->cp15.sctlr_el[el];
 }
@@ -1357,7 +1357,7 @@ int process_interrupt_v8a_aarch64(int interrupt_request, CPUState *env)
             if (target_el == 3) {
                 ignore_pstate_aif = true;
             } else if (target_el == 2) {
-                if (!hcr_e2h_and_tge_set(env)) {
+                if (!are_hcr_e2h_and_tge_set(arm_hcr_el2_eff(env))) {
                     ignore_pstate_aif = true;
                 }
             }
@@ -1420,7 +1420,7 @@ int process_interrupt_v8a_aarch64(int interrupt_request, CPUState *env)
             if (target_el == 3) {
                 ignore_pstate_aif = true;
             } else if (target_el == 2) {
-                if (!hcr_e2h_and_tge_set(env)) {
+                if (!are_hcr_e2h_and_tge_set(arm_hcr_el2_eff(env))) {
                     ignore_pstate_aif = true;
                 }
             }

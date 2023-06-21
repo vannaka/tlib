@@ -727,7 +727,7 @@ void helper_mark_tbs_as_dirty(CPUState *env, target_ulong pc, int access_width, 
     // Try to find the page using the tlb contents
     phys_pc = get_page_addr_code(cpu, pc, false);
     if (phys_pc == -1 || !(p = page_find(phys_pc >> TARGET_PAGE_BITS))) {
-        if (cpu->current_tb != 0) {
+        if ((env->current_tb != 0) && (pc < env->current_tb->pc) && (pc >= (env->current_tb->pc + env->current_tb->size))) {
             // we are not on the same mem page, the mapping just does not exist
             return;
         }

@@ -370,8 +370,8 @@ void set_mmu_fault_registers(int access_type, target_ulong address, int fault_ty
         env->cp15.ifar_ns = address;
         env->exception_index = EXCP_PREFETCH_ABORT;
     } else {
-        env->cp15.dfar_ns = fault_type;
-        env->cp15.dfsr_ns = address;
+        env->cp15.dfsr_ns = fault_type;
+        env->cp15.dfar_ns = address;
         env->exception_index = EXCP_DATA_ABORT;
     }
 }

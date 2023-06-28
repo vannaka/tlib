@@ -175,6 +175,7 @@ void cpu_reset_v8_a32(CPUState *env);
 void cpu_reset_v8_a64(CPUState *env);
 void cpu_reset_vfp(CPUState *env);
 void do_interrupt_a32(CPUState *env);
+void set_pmsav8_region_count(CPUState *env, uint32_t count);
 void do_interrupt_a64(CPUState *env);
 int get_phys_addr(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,
                   bool suppress_faults, target_ulong *phys_ptr, int *prot, target_ulong *page_size);

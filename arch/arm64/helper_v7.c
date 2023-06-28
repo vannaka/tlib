@@ -391,6 +391,12 @@ static inline uint32_t pmsav8_number_of_regions(CPUState *env)
     return extract32(env->arm_core_config->mpuir, 8, 8);
 }
 
+void set_pmsav8_region_count(CPUState *env, uint32_t count)
+{
+    env->arm_core_config->mpuir = deposit32(env->arm_core_config->mpuir, 8, 8, count);
+}
+
+
 static inline int get_default_memory_map_access(uint32_t current_el, target_ulong address)
 {
     int prot = 0; 

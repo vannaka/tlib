@@ -47,6 +47,7 @@ static TCGv_i32 cpu_R[16];
 TCGv_i32 cpu_CF, cpu_NF, cpu_VF, cpu_ZF;
 TCGv_i64 cpu_exclusive_addr;
 TCGv_i64 cpu_exclusive_val;
+extern TCGv_i64 cpu_PC;
 
 
 static const char * const regnames[] =
@@ -335,6 +336,29 @@ void gen_set_cpsr(TCGv_i32 var, uint32_t mask)
     gen_helper_cpsr_write(cpu_env, var, tcg_constant_i32(mask));
 }
 
+void gen_exception_internal(int excp)
+{
+    tlib_assert(excp_is_internal(excp));
+    gen_helper_exception_internal(cpu_env, tcg_constant_i32(excp));
+}
+
+int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp)
+{
+    DisasContext *dc = (DisasContext *)base;
+    if(dc->aarch64) {
+        gen_a64_set_pc_im(bp->pc);
+    } else {
+        gen_set_pc_im(bp->pc);
+    }
+    gen_exception_internal(EXCP_DEBUG);
+    dc->base.is_jmp = DISAS_NORETURN;
+
+    /* Advance PC so that clearing the breakpoint will
+       invalidate this TB.  */
+    dc->base.pc += 4;
+    return 1;
+}
+
 static void gen_rebuild_hflags(DisasContext *s, bool new_el)
 {
     bool m_profile = arm_dc_feature(s, ARM_FEATURE_M);
@@ -353,12 +377,6 @@ static void gen_rebuild_hflags(DisasContext *s, bool new_el)
             gen_helper_rebuild_hflags_a32(cpu_env, tcg_el);
         }
     }
-}
-
-static void gen_exception_internal(int excp)
-{
-    tlib_assert(excp_is_internal(excp));
-    gen_helper_exception_internal(cpu_env, tcg_constant_i32(excp));
 }
 
 static void gen_singlestep_exception(DisasContext *s)

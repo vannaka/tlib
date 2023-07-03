@@ -101,8 +101,12 @@ void tlib_arch_dispose()
 
 #include "cpu_names.h"
 
-void cpu_init_a75_a76(CPUState *env, uint32_t id)
+void cpu_init_a75_a76_a78(CPUState *env, uint32_t id)
 {
+    assert(id == ARM_CPUID_CORTEXA75
+        || id == ARM_CPUID_CORTEXA76
+        || id == ARM_CPUID_CORTEXA78);
+
     set_feature(env, ARM_FEATURE_AARCH64);
     set_feature(env, ARM_FEATURE_V8);
     set_feature(env, ARM_FEATURE_NEON);
@@ -114,18 +118,20 @@ void cpu_init_a75_a76(CPUState *env, uint32_t id)
     env->arm_core_config->has_el3 = true;
 
     // From B2.4 AArch64 registers
-    env->arm_core_config->clidr = 0x82000023;
+    env->arm_core_config->clidr = 0x82000023;  // No L3 cache version.
     env->arm_core_config->ctr = 0x8444C004;
     env->arm_core_config->dcz_blocksize = 4;
     env->arm_core_config->id_aa64afr0 = 0;
     env->arm_core_config->id_aa64afr1 = 0;
     env->arm_core_config->isar.id_aa64dfr0  = 0x0000000010305408ull;
-    env->arm_core_config->isar.id_aa64isar0 = 0x0000100010210000ull;
+    env->arm_core_config->isar.id_aa64isar0 = 0x0000100010211120ull;  // Version with Cryptographic Extension.
     env->arm_core_config->isar.id_aa64isar1 = 0x0000000000100001ull;
     env->arm_core_config->isar.id_aa64mmfr0 = 0x0000000000101122ull;
     env->arm_core_config->isar.id_aa64mmfr1 = 0x0000000010212122ull;
     env->arm_core_config->isar.id_aa64mmfr2 = 0x0000000000001011ull;
-    env->arm_core_config->isar.id_aa64pfr0  = 0x1100000011111112ull;  // Version with GIC CPU interface enabled.
+    env->arm_core_config->isar.id_aa64pfr0  =
+        id == ARM_CPUID_CORTEXA75 ? 0x1100000011112222ull
+                                  : 0x1100000011111112ull;  // Version with GIC CPU interface enabled.
     env->arm_core_config->isar.id_aa64pfr1  = 0x0000000000000010ull;
     env->arm_core_config->id_afr0       = 0x00000000;
     env->arm_core_config->isar.id_dfr0  = 0x04010088;
@@ -134,7 +140,7 @@ void cpu_init_a75_a76(CPUState *env, uint32_t id)
     env->arm_core_config->isar.id_isar2 = 0x21232042;
     env->arm_core_config->isar.id_isar3 = 0x01112131;
     env->arm_core_config->isar.id_isar4 = 0x00010142;
-    env->arm_core_config->isar.id_isar5 = 0x01010001;
+    env->arm_core_config->isar.id_isar5 = 0x01011121;  // Version with Cryptographic Extension.
     env->arm_core_config->isar.id_isar6 = 0x00000010;
     env->arm_core_config->isar.id_mmfr0 = 0x10201105;
     env->arm_core_config->isar.id_mmfr1 = 0x40000000;
@@ -155,8 +161,7 @@ void cpu_init_a75_a76(CPUState *env, uint32_t id)
     env->arm_core_config->ccsidr[2] = 0x707fe03a;
 
     // From B2.97
-    // Bit 20 is RES1 in both A75 and A76 for SCTLR, not sure why Qemu uses 0x30c50838.
-    env->arm_core_config->reset_sctlr = 0x30d50838;
+    env->arm_core_config->reset_sctlr = 0x30c50838;
 
     // From B4.23
     env->arm_core_config->gic_num_lrs = 4;
@@ -425,7 +430,8 @@ static void cpu_init_core_config(CPUState *env, uint32_t id)
         break;
     case ARM_CPUID_CORTEXA75:
     case ARM_CPUID_CORTEXA76:
-        cpu_init_a75_a76(env, id);
+    case ARM_CPUID_CORTEXA78:
+        cpu_init_a75_a76_a78(env, id);
         break;
     case ARM_CPUID_CORTEXR52:
         cpu_init_r52(env, id);
@@ -471,7 +477,7 @@ void cpu_reset_v8_a64(CPUState *env)
     env->aarch64 = 1;
 
     // Reset values of some registers are defined per CPU model.
-    env->cp15.sctlr_el[1] = env->arm_core_config->reset_sctlr;
+    env->cp15.sctlr_el[1] = env->arm_core_config->reset_sctlr | (1u << 20);  // Bit20 is RES1 without FEAT_CSV2_2/_1p2.
     env->cp15.sctlr_el[2] = env->arm_core_config->reset_sctlr;
     env->cp15.sctlr_el[3] = env->arm_core_config->reset_sctlr;
     env->cp15.vmpidr_el2 = env->arm_core_config->mpidr;

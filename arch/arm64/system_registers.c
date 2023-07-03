@@ -1728,7 +1728,7 @@ ARMCPRegInfo cortex_a53_regs[] =
     ARM64_CP_REG_DEFINE(L2MERRSR_EL1,    3,   1,  15,   2,   3,  1, RW)
 };
 
-ARMCPRegInfo cortex_a75_a76_common_regs[] =
+ARMCPRegInfo cortex_a75_a76_a78_common_regs[] =
 {
     // Beware that register summaries in the manual have the 'op0' parameter
     // named 'copro' and the 'op1'-'crn' order is reversed.
@@ -1780,7 +1780,8 @@ ARMCPRegInfo cortex_a75_a76_common_regs[] =
     ARM64_CP_REG_DEFINE(CLUSTERTHREADSID_EL1,    3,   0,  15,   4,   0,  1, RW)
 };
 
-ARMCPRegInfo cortex_a76_regs[] = {
+// These are Cortex-A76 and Cortex-A78 registers that are an addition to the Cortex-A75 register set.
+ARMCPRegInfo cortex_a76_a78_regs[] = {
     // Beware that register summaries in the manual have the 'op0' parameter
     // named 'copro' and the 'op1'-'crn' order is reversed.
     //
@@ -1792,6 +1793,18 @@ ARMCPRegInfo cortex_a76_regs[] = {
     ARM64_CP_REG_DEFINE(AVTCR_EL2,               3,   4,  15,   7,   1,  2, RW)
     ARM64_CP_REG_DEFINE(CLUSTERTHREADSIDOVR_EL1, 3,   0,  15,   4,   7,  1, RW)
     ARM64_CP_REG_DEFINE(CPUACTLR3_EL1,           3,   0,  15,   1,   2,  1, RW)
+};
+
+// These are Cortex-A78 registers that are an addition to the Cortex-A76 register set.
+ARMCPRegInfo cortex_a78_regs[] = {
+    // Beware that register summaries in the manual have the 'op0' parameter
+    // named 'copro' and the 'op1'-'crn' order is reversed.
+    //
+    // The params are:   name                   op0, op1, crn, crm, op2, el, extra_type, ...
+    ARM64_CP_REG_DEFINE(CPUACTLR5_EL1,           3,   0,  15,   9,   0,  1, RW)
+    ARM64_CP_REG_DEFINE(CPUACTLR6_EL1,           3,   0,  15,   9,   1,  1, RW)
+    ARM64_CP_REG_DEFINE(CPUECTLR2_EL1,           3,   0,  15,   1,   5,  1, RW)
+    ARM64_CP_REG_DEFINE(CPUPPMCR_EL3,            3,   6,  15,   2,   0,  3, RW)
 };
 
 ARMCPRegInfo cortex_r52_regs[] =
@@ -1958,11 +1971,16 @@ void add_implementation_defined_registers(CPUState *env, uint32_t cpu_model_id)
         cp_regs_add(env, cortex_a53_regs, ARM_CP_ARRAY_COUNT(cortex_a53_regs));
         break;
     case ARM_CPUID_CORTEXA75:
-        cp_regs_add(env, cortex_a75_a76_common_regs, ARM_CP_ARRAY_COUNT(cortex_a75_a76_common_regs));
+        cp_regs_add(env, cortex_a75_a76_a78_common_regs, ARM_CP_ARRAY_COUNT(cortex_a75_a76_a78_common_regs));
         break;
     case ARM_CPUID_CORTEXA76:
-        cp_regs_add(env, cortex_a75_a76_common_regs, ARM_CP_ARRAY_COUNT(cortex_a75_a76_common_regs));
-        cp_regs_add(env, cortex_a76_regs, ARM_CP_ARRAY_COUNT(cortex_a76_regs));
+        cp_regs_add(env, cortex_a75_a76_a78_common_regs, ARM_CP_ARRAY_COUNT(cortex_a75_a76_a78_common_regs));
+        cp_regs_add(env, cortex_a76_a78_regs, ARM_CP_ARRAY_COUNT(cortex_a76_a78_regs));
+        break;
+    case ARM_CPUID_CORTEXA78:
+        cp_regs_add(env, cortex_a75_a76_a78_common_regs, ARM_CP_ARRAY_COUNT(cortex_a75_a76_a78_common_regs));
+        cp_regs_add(env, cortex_a76_a78_regs, ARM_CP_ARRAY_COUNT(cortex_a76_a78_regs));
+        cp_regs_add(env, cortex_a78_regs, ARM_CP_ARRAY_COUNT(cortex_a78_regs));
         break;
     case ARM_CPUID_CORTEXR52:
         cp_regs_add(env, cortex_r52_regs, ARM_CP_ARRAY_COUNT(cortex_r52_regs));
@@ -1978,9 +1996,11 @@ uint32_t get_implementation_defined_registers_count(uint32_t cpu_model_id)
     case ARM_CPUID_CORTEXA53:
         return ARM_CP_ARRAY_COUNT(cortex_a53_regs);
     case ARM_CPUID_CORTEXA75:
-        return ARM_CP_ARRAY_COUNT(cortex_a75_a76_common_regs);
+        return ARM_CP_ARRAY_COUNT(cortex_a75_a76_a78_common_regs);
     case ARM_CPUID_CORTEXA76:
-        return ARM_CP_ARRAY_COUNT(cortex_a75_a76_common_regs) + ARM_CP_ARRAY_COUNT(cortex_a76_regs);
+        return ARM_CP_ARRAY_COUNT(cortex_a75_a76_a78_common_regs) + ARM_CP_ARRAY_COUNT(cortex_a76_a78_regs);
+    case ARM_CPUID_CORTEXA78:
+        return ARM_CP_ARRAY_COUNT(cortex_a75_a76_a78_common_regs) + ARM_CP_ARRAY_COUNT(cortex_a76_a78_regs) + ARM_CP_ARRAY_COUNT(cortex_a78_regs);
     case ARM_CPUID_CORTEXR52:
         return ARM_CP_ARRAY_COUNT(cortex_r52_regs);
     default:

@@ -165,8 +165,8 @@ int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int m
     tlib_printf(LOG_LEVEL_NOISY, "%s: vaddr=0x%" PRIx64 " attbr=0x%" PRIx64 ", tsz=%d, tg=%d, page_size_shift=%d", __func__,
                 address, ttbr, tsz, tg, page_size_shift);
 
-    // Table address is low 48 bits of TTBR
-    uint64_t table_addr = extract64(ttbr, 0, 48);
+    // Table address is low 48 bits of TTBR. The CnP bit is currently ignored.
+    uint64_t table_addr = extract64(ttbr, 0, 48) & ~TTBR_CNP;
 
     int level;
     ISSFaultStatusCode fault_code = -1;

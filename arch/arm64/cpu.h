@@ -401,6 +401,17 @@ typedef struct ARMCoreConfig {
     TTable *cp_regs;
 } ARMCoreConfig;
 
+/* PMSAv8 MPU */
+typedef struct pmsav8_region {
+    uint32_t address_start;
+    uint32_t address_limit;
+    uint8_t access_permission_bits;
+    uint8_t shareability_attribute;  // Unused, kept just for readback
+    uint8_t mair_attribute;          // Unused, kept just for readback
+    bool enabled;
+    bool execute_never;
+} pmsav8_region; 
+
 typedef struct CPUState {
     /* Regs for current mode.  */
     uint32_t regs[16];
@@ -912,15 +923,13 @@ typedef struct CPUState {
         uint32_t prselr;
         uint32_t prbar;
         uint32_t prlar;
-        uint32_t prbarn[MAX_MPU_REGIONS];
-        uint32_t prlarn[MAX_MPU_REGIONS];
+        pmsav8_region regions[MAX_MPU_REGIONS];
 
         uint32_t hprselr;
         uint32_t hprbar;
         uint32_t hprlar;
+        pmsav8_region hregions[MAX_MPU_REGIONS];
         uint32_t hprenr;
-        uint32_t hprbarn[MAX_MPU_REGIONS];
-        uint32_t hprlarn[MAX_MPU_REGIONS];
     } pmsav8;
 
     /* v8M SAU */

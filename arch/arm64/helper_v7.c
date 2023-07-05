@@ -438,26 +438,20 @@ int get_phys_addr_pmsav8(CPUState *env, target_ulong address, int access_type, u
             goto do_fault;
         }
         // TODO: check if defined in many regions
-        for (int region = 0; region < num_regions; region++) {
-            uint32_t prbarn = env->pmsav8.prbarn[region];
-            uint32_t prlarn = env->pmsav8.prlarn[region];
-            target_ulong region_start = prbarn & ~0x3Flu;
-            target_ulong region_end = prlarn | 0x3Flu;
 
-            bool enabled = extract32(prlarn, 0, 1);
+        for (pmsav8_region *region = &env->pmsav8.regions[0]; region < &env->pmsav8.regions[num_regions]; region++) {
 
-            if (enabled && (address >= region_start) && (address <= region_end)) {
-                bool execute_never = extract32(prbarn, 0, 1);
-                uint8_t access_permissions_bits = extract32(prbarn, 1, 2);
+            if (region->enabled && (address >= region->address_start) && (address <= region->address_limit)) {
                 region_found = true;
 
-                if (!execute_never) {
+                if (!region->execute_never) {
                     *prot |= PAGE_EXEC;
                 }
 
-                if (!PMSA_ATTRIBUTE_ONLY_EL1(access_permissions_bits) || current_el == 1) {
+                uint8_t access_permission_bits = region->access_permission_bits;
+                if (!PMSA_ATTRIBUTE_ONLY_EL1(access_permission_bits) || current_el == 1) {
                     *prot |= PAGE_READ;
-                    if (!PMSA_ATTRIBUTE_IS_READONLY(access_permissions_bits)) {
+                    if (!PMSA_ATTRIBUTE_IS_READONLY(access_permission_bits)) {
                         *prot |= PAGE_WRITE;
                     }
                 }

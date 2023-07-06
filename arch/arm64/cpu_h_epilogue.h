@@ -189,6 +189,7 @@ int get_phys_addr(CPUState *env, target_ulong address, int access_type, int mmu_
 int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,
                      bool suppress_faults, target_ulong *phys_ptr, int *prot, target_ulong *page_size,
                      bool at_instruction_or_cache_maintenance);
+uint32_t pmsav8_number_of_regions(CPUState *env);
 int process_interrupt_v8a(int interrupt_request, CPUState *env);
 uint64_t tlib_crc32(uint64_t crc, const uint8_t *buf, uint32_t length);
 uint32_t calculate_crc32c(uint32_t crc32c, const unsigned char *buffer, unsigned int length);

@@ -380,7 +380,7 @@ void set_mmu_fault_registers(int access_type, target_ulong address, int fault_ty
 #define PMSA_ATTRIBUTE_ONLY_EL1(setting) ((setting & 0b1) == 0)
 #define PMSA_ATTRIBUTE_IS_READONLY(setting) ((setting & 0b10) != 0)
 
-static inline uint32_t pmsav8_number_of_regions(CPUState *env)
+inline uint32_t pmsav8_number_of_regions(CPUState *env)
 {
     return extract32(env->arm_core_config->mpuir, 8, 8);
 }

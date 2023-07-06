@@ -71,6 +71,46 @@ enum pmsav8_register_type {
     HYPER_LIMIT_ADDRESS,
 };
 
+static inline uint64_t pmsav8_mark_overlapping_regions(CPUState *env, int base_region_index, uint32_t address_start,
+                                                       uint32_t address_end, bool is_hyper)
+{
+    pmsav8_region *regions;
+    uint32_t base_region_mask = 1 << base_region_index;
+    uint64_t overlapping_mask = 0;
+
+    if (is_hyper) {
+        regions = env->pmsav8.hregions;
+    } else {
+        regions = env->pmsav8.regions;
+    }
+
+    for (int index = 0; index < pmsav8_number_of_regions(env); index++) {
+        if (!regions[index].enabled || index == base_region_index) {
+            continue;
+        }
+
+        if (((regions[index].address_start >= address_start) && (regions[index].address_start <= address_end)) ||
+            ((regions[index].address_limit >= address_start) && (regions[index].address_limit) <= address_end)) {
+            regions[index].overlapping_regions_mask |= base_region_mask;
+            overlapping_mask |= (1 << index);
+        }
+    }
+    return overlapping_mask;
+}
+
+static inline void pmsav8_unmark_overlapping_regions(CPUARMState *env, pmsav8_region *regions, uint64_t base_region_mask,
+                                                     uint64_t mask)
+{
+    int index = 0;
+    while (mask != 0) {
+        if (mask & 0b1) {
+            regions[index].overlapping_regions_mask ^= base_region_mask;
+        }
+        mask = mask << 1;
+        index++;
+    }
+}
+
 static inline void set_pmsav8_region(CPUState *env, enum pmsav8_register_type type, int region_index, uint32_t value)
 {
     bool is_hyper = (type == HYPER_BASE_ADDRESS) || (type == HYPER_LIMIT_ADDRESS);
@@ -92,7 +132,12 @@ static inline void set_pmsav8_region(CPUState *env, enum pmsav8_register_type ty
             region->address_limit = value | 0x3Flu;
             break;
     }
-    // TODO: check and mark region overlap
+
+    // Need to unset the mask in other regions
+    pmsav8_unmark_overlapping_regions(env, regions, 1 << region_index, region->overlapping_regions_mask);
+    // And mark the ones that now overlap
+    region->overlapping_regions_mask = pmsav8_mark_overlapping_regions(env, region_index, region->address_start,
+                                                                       region->address_limit, is_hyper);
 }
 
 static inline uint32_t get_pmsav8_region(CPUState *env, enum pmsav8_register_type type, int region_index)
@@ -1971,56 +2016,56 @@ ARMCPRegInfo mpu_registers[] = {
     ARM32_CP_REG_DEFINE(MPUIR,               15,   0,   0,   0,   4,  1, RO, READFN(mpuir)) // MPU Type Register
 
     // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
-    ARM32_CP_REG_DEFINE(PRBAR0,              15,   0,   6,   8,   0,  1, RW, READFN(prbarn0)) // Protection Region Base Address Register 0
-    ARM32_CP_REG_DEFINE(PRBAR1,              15,   0,   6,   8,   4,  1, RW, READFN(prbarn1)) // Protection Region Base Address Register 1
-    ARM32_CP_REG_DEFINE(PRBAR2,              15,   0,   6,   9,   0,  1, RW, READFN(prbarn2)) // Protection Region Base Address Register 2
-    ARM32_CP_REG_DEFINE(PRBAR3,              15,   0,   6,   9,   4,  1, RW, READFN(prbarn3)) // Protection Region Base Address Register 3
-    ARM32_CP_REG_DEFINE(PRBAR4,              15,   0,   6,  10,   0,  1, RW, READFN(prbarn4)) // Protection Region Base Address Register 4
-    ARM32_CP_REG_DEFINE(PRBAR5,              15,   0,   6,  10,   4,  1, RW, READFN(prbarn5)) // Protection Region Base Address Register 5
-    ARM32_CP_REG_DEFINE(PRBAR6,              15,   0,   6,  11,   0,  1, RW, READFN(prbarn6)) // Protection Region Base Address Register 6
-    ARM32_CP_REG_DEFINE(PRBAR7,              15,   0,   6,  11,   4,  1, RW, READFN(prbarn7)) // Protection Region Base Address Register 7
-    ARM32_CP_REG_DEFINE(PRBAR8,              15,   0,   6,  12,   0,  1, RW, READFN(prbarn8)) // Protection Region Base Address Register 8
-    ARM32_CP_REG_DEFINE(PRBAR9,              15,   0,   6,  12,   4,  1, RW, READFN(prbarn9)) // Protection Region Base Address Register 9
-    ARM32_CP_REG_DEFINE(PRBAR10,             15,   0,   6,  13,   0,  1, RW, READFN(prbarn10)) // Protection Region Base Address Register 10
-    ARM32_CP_REG_DEFINE(PRBAR11,             15,   0,   6,  13,   4,  1, RW, READFN(prbarn11)) // Protection Region Base Address Register 11
-    ARM32_CP_REG_DEFINE(PRBAR12,             15,   0,   6,  14,   0,  1, RW, READFN(prbarn12)) // Protection Region Base Address Register 12
-    ARM32_CP_REG_DEFINE(PRBAR13,             15,   0,   6,  14,   4,  1, RW, READFN(prbarn13)) // Protection Region Base Address Register 13
-    ARM32_CP_REG_DEFINE(PRBAR14,             15,   0,   6,  15,   0,  1, RW, READFN(prbarn14)) // Protection Region Base Address Register 14
-    ARM32_CP_REG_DEFINE(PRBAR15,             15,   0,   6,  15,   4,  1, RW, READFN(prbarn15)) // Protection Region Base Address Register 15
-    ARM32_CP_REG_DEFINE(PRBAR16,             15,   1,   6,   8,   0,  1, RW, READFN(prbarn16)) // Protection Region Base Address Register 16
-    ARM32_CP_REG_DEFINE(PRBAR17,             15,   1,   6,   8,   4,  1, RW, READFN(prbarn17)) // Protection Region Base Address Register 17
-    ARM32_CP_REG_DEFINE(PRBAR18,             15,   1,   6,   9,   0,  1, RW, READFN(prbarn18)) // Protection Region Base Address Register 18
-    ARM32_CP_REG_DEFINE(PRBAR19,             15,   1,   6,   9,   4,  1, RW, READFN(prbarn19)) // Protection Region Base Address Register 19
-    ARM32_CP_REG_DEFINE(PRBAR20,             15,   1,   6,  10,   0,  1, RW, READFN(prbarn20)) // Protection Region Base Address Register 20
-    ARM32_CP_REG_DEFINE(PRBAR21,             15,   1,   6,  10,   4,  1, RW, READFN(prbarn21)) // Protection Region Base Address Register 21
-    ARM32_CP_REG_DEFINE(PRBAR22,             15,   1,   6,  11,   0,  1, RW, READFN(prbarn22)) // Protection Region Base Address Register 22
-    ARM32_CP_REG_DEFINE(PRBAR23,             15,   1,   6,  11,   4,  1, RW, READFN(prbarn23)) // Protection Region Base Address Register 23
+    ARM32_CP_REG_DEFINE(PRBAR0,              15,   0,   6,   8,   0,  1, RW, RW_FNS(prbarn0)) // Protection Region Base Address Register 0
+    ARM32_CP_REG_DEFINE(PRBAR1,              15,   0,   6,   8,   4,  1, RW, RW_FNS(prbarn1)) // Protection Region Base Address Register 1
+    ARM32_CP_REG_DEFINE(PRBAR2,              15,   0,   6,   9,   0,  1, RW, RW_FNS(prbarn2)) // Protection Region Base Address Register 2
+    ARM32_CP_REG_DEFINE(PRBAR3,              15,   0,   6,   9,   4,  1, RW, RW_FNS(prbarn3)) // Protection Region Base Address Register 3
+    ARM32_CP_REG_DEFINE(PRBAR4,              15,   0,   6,  10,   0,  1, RW, RW_FNS(prbarn4)) // Protection Region Base Address Register 4
+    ARM32_CP_REG_DEFINE(PRBAR5,              15,   0,   6,  10,   4,  1, RW, RW_FNS(prbarn5)) // Protection Region Base Address Register 5
+    ARM32_CP_REG_DEFINE(PRBAR6,              15,   0,   6,  11,   0,  1, RW, RW_FNS(prbarn6)) // Protection Region Base Address Register 6
+    ARM32_CP_REG_DEFINE(PRBAR7,              15,   0,   6,  11,   4,  1, RW, RW_FNS(prbarn7)) // Protection Region Base Address Register 7
+    ARM32_CP_REG_DEFINE(PRBAR8,              15,   0,   6,  12,   0,  1, RW, RW_FNS(prbarn8)) // Protection Region Base Address Register 8
+    ARM32_CP_REG_DEFINE(PRBAR9,              15,   0,   6,  12,   4,  1, RW, RW_FNS(prbarn9)) // Protection Region Base Address Register 9
+    ARM32_CP_REG_DEFINE(PRBAR10,             15,   0,   6,  13,   0,  1, RW, RW_FNS(prbarn10)) // Protection Region Base Address Register 10
+    ARM32_CP_REG_DEFINE(PRBAR11,             15,   0,   6,  13,   4,  1, RW, RW_FNS(prbarn11)) // Protection Region Base Address Register 11
+    ARM32_CP_REG_DEFINE(PRBAR12,             15,   0,   6,  14,   0,  1, RW, RW_FNS(prbarn12)) // Protection Region Base Address Register 12
+    ARM32_CP_REG_DEFINE(PRBAR13,             15,   0,   6,  14,   4,  1, RW, RW_FNS(prbarn13)) // Protection Region Base Address Register 13
+    ARM32_CP_REG_DEFINE(PRBAR14,             15,   0,   6,  15,   0,  1, RW, RW_FNS(prbarn14)) // Protection Region Base Address Register 14
+    ARM32_CP_REG_DEFINE(PRBAR15,             15,   0,   6,  15,   4,  1, RW, RW_FNS(prbarn15)) // Protection Region Base Address Register 15
+    ARM32_CP_REG_DEFINE(PRBAR16,             15,   1,   6,   8,   0,  1, RW, RW_FNS(prbarn16)) // Protection Region Base Address Register 16
+    ARM32_CP_REG_DEFINE(PRBAR17,             15,   1,   6,   8,   4,  1, RW, RW_FNS(prbarn17)) // Protection Region Base Address Register 17
+    ARM32_CP_REG_DEFINE(PRBAR18,             15,   1,   6,   9,   0,  1, RW, RW_FNS(prbarn18)) // Protection Region Base Address Register 18
+    ARM32_CP_REG_DEFINE(PRBAR19,             15,   1,   6,   9,   4,  1, RW, RW_FNS(prbarn19)) // Protection Region Base Address Register 19
+    ARM32_CP_REG_DEFINE(PRBAR20,             15,   1,   6,  10,   0,  1, RW, RW_FNS(prbarn20)) // Protection Region Base Address Register 20
+    ARM32_CP_REG_DEFINE(PRBAR21,             15,   1,   6,  10,   4,  1, RW, RW_FNS(prbarn21)) // Protection Region Base Address Register 21
+    ARM32_CP_REG_DEFINE(PRBAR22,             15,   1,   6,  11,   0,  1, RW, RW_FNS(prbarn22)) // Protection Region Base Address Register 22
+    ARM32_CP_REG_DEFINE(PRBAR23,             15,   1,   6,  11,   4,  1, RW, RW_FNS(prbarn23)) // Protection Region Base Address Register 23
 
     // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
-    ARM32_CP_REG_DEFINE(PRLAR0,              15,   0,   6,   8,   1,  1, RW, READFN(prlarn0)) // Protection Region Limit Address Register 0
-    ARM32_CP_REG_DEFINE(PRLAR1,              15,   0,   6,   8,   5,  1, RW, READFN(prlarn1)) // Protection Region Limit Address Register 1
-    ARM32_CP_REG_DEFINE(PRLAR2,              15,   0,   6,   9,   1,  1, RW, READFN(prlarn2)) // Protection Region Limit Address Register 2
-    ARM32_CP_REG_DEFINE(PRLAR3,              15,   0,   6,   9,   5,  1, RW, READFN(prlarn3)) // Protection Region Limit Address Register 3
-    ARM32_CP_REG_DEFINE(PRLAR4,              15,   0,   6,  10,   1,  1, RW, READFN(prlarn4)) // Protection Region Limit Address Register 4
-    ARM32_CP_REG_DEFINE(PRLAR5,              15,   0,   6,  10,   5,  1, RW, READFN(prlarn5)) // Protection Region Limit Address Register 5
-    ARM32_CP_REG_DEFINE(PRLAR6,              15,   0,   6,  11,   1,  1, RW, READFN(prlarn6)) // Protection Region Limit Address Register 6
-    ARM32_CP_REG_DEFINE(PRLAR7,              15,   0,   6,  11,   5,  1, RW, READFN(prlarn7)) // Protection Region Limit Address Register 7
-    ARM32_CP_REG_DEFINE(PRLAR8,              15,   0,   6,  12,   1,  1, RW, READFN(prlarn8)) // Protection Region Limit Address Register 8
-    ARM32_CP_REG_DEFINE(PRLAR9,              15,   0,   6,  12,   5,  1, RW, READFN(prlarn9)) // Protection Region Limit Address Register 9
-    ARM32_CP_REG_DEFINE(PRLAR10,             15,   0,   6,  13,   1,  1, RW, READFN(prlarn10)) // Protection Region Limit Address Register 10
-    ARM32_CP_REG_DEFINE(PRLAR11,             15,   0,   6,  13,   5,  1, RW, READFN(prlarn11)) // Protection Region Limit Address Register 11
-    ARM32_CP_REG_DEFINE(PRLAR12,             15,   0,   6,  14,   1,  1, RW, READFN(prlarn12)) // Protection Region Limit Address Register 12
-    ARM32_CP_REG_DEFINE(PRLAR13,             15,   0,   6,  14,   5,  1, RW, READFN(prlarn13)) // Protection Region Limit Address Register 13
-    ARM32_CP_REG_DEFINE(PRLAR14,             15,   0,   6,  15,   1,  1, RW, READFN(prlarn14)) // Protection Region Limit Address Register 14
-    ARM32_CP_REG_DEFINE(PRLAR15,             15,   0,   6,  15,   5,  1, RW, READFN(prlarn15)) // Protection Region Limit Address Register 15
-    ARM32_CP_REG_DEFINE(PRLAR16,             15,   1,   6,   8,   1,  1, RW, READFN(prlarn16)) // Protection Region Limit Address Register 16
-    ARM32_CP_REG_DEFINE(PRLAR17,             15,   1,   6,   8,   5,  1, RW, READFN(prlarn17)) // Protection Region Limit Address Register 17
-    ARM32_CP_REG_DEFINE(PRLAR18,             15,   1,   6,   9,   1,  1, RW, READFN(prlarn18)) // Protection Region Limit Address Register 18
-    ARM32_CP_REG_DEFINE(PRLAR19,             15,   1,   6,   9,   5,  1, RW, READFN(prlarn19)) // Protection Region Limit Address Register 19
-    ARM32_CP_REG_DEFINE(PRLAR20,             15,   1,   6,  10,   1,  1, RW, READFN(prlarn20)) // Protection Region Limit Address Register 20
-    ARM32_CP_REG_DEFINE(PRLAR21,             15,   1,   6,  10,   5,  1, RW, READFN(prlarn21)) // Protection Region Limit Address Register 21
-    ARM32_CP_REG_DEFINE(PRLAR22,             15,   1,   6,  11,   1,  1, RW, READFN(prlarn22)) // Protection Region Limit Address Register 22
-    ARM32_CP_REG_DEFINE(PRLAR23,             15,   1,   6,  11,   5,  1, RW, READFN(prlarn23)) // Protection Region Limit Address Register 23
+    ARM32_CP_REG_DEFINE(PRLAR0,              15,   0,   6,   8,   1,  1, RW, RW_FNS(prlarn0)) // Protection Region Limit Address Register 0
+    ARM32_CP_REG_DEFINE(PRLAR1,              15,   0,   6,   8,   5,  1, RW, RW_FNS(prlarn1)) // Protection Region Limit Address Register 1
+    ARM32_CP_REG_DEFINE(PRLAR2,              15,   0,   6,   9,   1,  1, RW, RW_FNS(prlarn2)) // Protection Region Limit Address Register 2
+    ARM32_CP_REG_DEFINE(PRLAR3,              15,   0,   6,   9,   5,  1, RW, RW_FNS(prlarn3)) // Protection Region Limit Address Register 3
+    ARM32_CP_REG_DEFINE(PRLAR4,              15,   0,   6,  10,   1,  1, RW, RW_FNS(prlarn4)) // Protection Region Limit Address Register 4
+    ARM32_CP_REG_DEFINE(PRLAR5,              15,   0,   6,  10,   5,  1, RW, RW_FNS(prlarn5)) // Protection Region Limit Address Register 5
+    ARM32_CP_REG_DEFINE(PRLAR6,              15,   0,   6,  11,   1,  1, RW, RW_FNS(prlarn6)) // Protection Region Limit Address Register 6
+    ARM32_CP_REG_DEFINE(PRLAR7,              15,   0,   6,  11,   5,  1, RW, RW_FNS(prlarn7)) // Protection Region Limit Address Register 7
+    ARM32_CP_REG_DEFINE(PRLAR8,              15,   0,   6,  12,   1,  1, RW, RW_FNS(prlarn8)) // Protection Region Limit Address Register 8
+    ARM32_CP_REG_DEFINE(PRLAR9,              15,   0,   6,  12,   5,  1, RW, RW_FNS(prlarn9)) // Protection Region Limit Address Register 9
+    ARM32_CP_REG_DEFINE(PRLAR10,             15,   0,   6,  13,   1,  1, RW, RW_FNS(prlarn10)) // Protection Region Limit Address Register 10
+    ARM32_CP_REG_DEFINE(PRLAR11,             15,   0,   6,  13,   5,  1, RW, RW_FNS(prlarn11)) // Protection Region Limit Address Register 11
+    ARM32_CP_REG_DEFINE(PRLAR12,             15,   0,   6,  14,   1,  1, RW, RW_FNS(prlarn12)) // Protection Region Limit Address Register 12
+    ARM32_CP_REG_DEFINE(PRLAR13,             15,   0,   6,  14,   5,  1, RW, RW_FNS(prlarn13)) // Protection Region Limit Address Register 13
+    ARM32_CP_REG_DEFINE(PRLAR14,             15,   0,   6,  15,   1,  1, RW, RW_FNS(prlarn14)) // Protection Region Limit Address Register 14
+    ARM32_CP_REG_DEFINE(PRLAR15,             15,   0,   6,  15,   5,  1, RW, RW_FNS(prlarn15)) // Protection Region Limit Address Register 15
+    ARM32_CP_REG_DEFINE(PRLAR16,             15,   1,   6,   8,   1,  1, RW, RW_FNS(prlarn16)) // Protection Region Limit Address Register 16
+    ARM32_CP_REG_DEFINE(PRLAR17,             15,   1,   6,   8,   5,  1, RW, RW_FNS(prlarn17)) // Protection Region Limit Address Register 17
+    ARM32_CP_REG_DEFINE(PRLAR18,             15,   1,   6,   9,   1,  1, RW, RW_FNS(prlarn18)) // Protection Region Limit Address Register 18
+    ARM32_CP_REG_DEFINE(PRLAR19,             15,   1,   6,   9,   5,  1, RW, RW_FNS(prlarn19)) // Protection Region Limit Address Register 19
+    ARM32_CP_REG_DEFINE(PRLAR20,             15,   1,   6,  10,   1,  1, RW, RW_FNS(prlarn20)) // Protection Region Limit Address Register 20
+    ARM32_CP_REG_DEFINE(PRLAR21,             15,   1,   6,  10,   5,  1, RW, RW_FNS(prlarn21)) // Protection Region Limit Address Register 21
+    ARM32_CP_REG_DEFINE(PRLAR22,             15,   1,   6,  11,   1,  1, RW, RW_FNS(prlarn22)) // Protection Region Limit Address Register 22
+    ARM32_CP_REG_DEFINE(PRLAR23,             15,   1,   6,  11,   5,  1, RW, RW_FNS(prlarn23)) // Protection Region Limit Address Register 23
 
     // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
     ARM32_CP_REG_DEFINE(HPRBAR0,             15,   4,   6,   8,   0,  2, RW, RW_FNS(hprbarn0)) // Hyp Protection Region Base Address Register 0

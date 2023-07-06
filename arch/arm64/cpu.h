@@ -410,6 +410,7 @@ typedef struct pmsav8_region {
     uint8_t mair_attribute;          // Unused, kept just for readback
     bool enabled;
     bool execute_never;
+    uint64_t overlapping_regions_mask;
 } pmsav8_region; 
 
 typedef struct CPUState {
@@ -920,6 +921,10 @@ typedef struct CPUState {
         uint32_t mair1[M_REG_NUM_BANKS];
 
 #define MAX_MPU_REGIONS 24
+#if (MAX_MPU_REGIONS > 64)
+    #error Currently only 64 MPU regions are supported due to the width of the `pmsav8_region.overlapping_regions_mask`
+#endif
+
         uint32_t prselr;
         uint32_t prbar;
         uint32_t prlar;

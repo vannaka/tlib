@@ -53,6 +53,13 @@ static inline uint64_t get_id_aa64pfr0_value(CPUState *env)
         return_value = FIELD_DP64(return_value, ID_AA64PFR0, EL2, 0);
     }
 
+    // FP16 isn't currently supported so let's override FP field.
+    // FP and AdvSIMD fields have to be equal according to the manual.
+    if (FIELD_EX64(return_value, ID_AA64PFR0, FP) == 1) {
+        return_value = FIELD_DP64(return_value, ID_AA64PFR0, ADVSIMD, 0);
+        return_value = FIELD_DP64(return_value, ID_AA64PFR0, FP, 0);
+    }
+
     return return_value;
 }
 

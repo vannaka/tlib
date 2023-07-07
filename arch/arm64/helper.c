@@ -125,7 +125,7 @@ void cpu_init_a75_a76(CPUState *env, uint32_t id)
     env->arm_core_config->isar.id_aa64mmfr0 = 0x0000000000101122ull;
     env->arm_core_config->isar.id_aa64mmfr1 = 0x0000000010212122ull;
     env->arm_core_config->isar.id_aa64mmfr2 = 0x0000000000001011ull;
-    env->arm_core_config->isar.id_aa64pfr0  = 0x1100000010111112ull;
+    env->arm_core_config->isar.id_aa64pfr0  = 0x1100000011111112ull;  // Version with GIC CPU interface enabled.
     env->arm_core_config->isar.id_aa64pfr1  = 0x0000000000000010ull;
     env->arm_core_config->id_afr0       = 0x00000000;
     env->arm_core_config->isar.id_dfr0  = 0x04010088;
@@ -142,7 +142,7 @@ void cpu_init_a75_a76(CPUState *env, uint32_t id)
     env->arm_core_config->isar.id_mmfr3 = 0x02122211;
     env->arm_core_config->isar.id_mmfr4 = 0x00021110;
     env->arm_core_config->isar.id_pfr0  = 0x10010131;
-    env->arm_core_config->isar.id_pfr1  = 0x00010000;
+    env->arm_core_config->isar.id_pfr1  = 0x10010000;  // Version with GIC CPU interface enabled.
     env->arm_core_config->isar.id_pfr2  = 0x00000011;
 
     // TODO: MPIDR should depend on CPUID, CLUSTERIDAFF2 and CLUSTERIDAFF3 configuration signals.
@@ -203,7 +203,7 @@ void cpu_init_a53(CPUState *env, uint32_t id)
     env->arm_core_config->isar.id_aa64isar1 = 0x00000000ull;
     env->arm_core_config->isar.id_aa64mmfr0 = 0x00001122ull;
     env->arm_core_config->isar.id_aa64mmfr1 = 0x00000000ull;
-    env->arm_core_config->isar.id_aa64pfr0  = 0x00002222ull;
+    env->arm_core_config->isar.id_aa64pfr0  = 0x01002222ull;  // Version with GIC CPU interface enabled.
     env->arm_core_config->isar.id_aa64pfr1  = 0x00000000ull;
     env->arm_core_config->id_afr0       = 0x00000000;
     env->arm_core_config->isar.id_dfr0  = 0x03010066;
@@ -218,7 +218,7 @@ void cpu_init_a53(CPUState *env, uint32_t id)
     env->arm_core_config->isar.id_mmfr2 = 0x01260000;
     env->arm_core_config->isar.id_mmfr3 = 0x02102211;
     env->arm_core_config->isar.id_pfr0  = 0x00000131;
-    env->arm_core_config->isar.id_pfr1  = 0x10011011;
+    env->arm_core_config->isar.id_pfr1  = 0x10011011;  // Version with GIC CPU interface enabled.
 
     // TODO: MPIDR should depend on CPUID, CLUSTERIDAFF2 and CLUSTERIDAFF3 configuration signals.
     env->arm_core_config->mpidr = (1u << 31) /* RES1 */ | (0u << 30) /* U */ | (0u << 24) /* MT */;

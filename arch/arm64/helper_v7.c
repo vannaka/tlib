@@ -286,7 +286,9 @@ case_EXCP_PREFETCH_ABORT:
             }
         }
     }
-    if (env->exception_index != EXCP_IRQ && env->exception_index != EXCP_FIQ) {
+    if (env->exception_index != EXCP_IRQ && env->exception_index != EXCP_FIQ &&
+            // The [di]far/[di]fsr regiesters are set to proper values, they are kept in union with AA64 esr_el and this would overwrite them
+            env->exception_index != EXCP_DATA_ABORT && env->exception_index != EXCP_PREFETCH_ABORT) {
         env->cp15.esr_el[target_el] = env->exception.syndrome;
     }
     /* High vectors.  */
@@ -370,7 +372,8 @@ void set_mmu_fault_registers(int access_type, target_ulong address, int fault_ty
         env->cp15.ifar_ns = address;
         env->exception_index = EXCP_PREFETCH_ABORT;
     } else {
-        env->cp15.dfsr_ns = fault_type;
+        uint32_t isWriteBit = (access_type == ACCESS_DATA_STORE ? 1u : 0u) << 11;
+        env->cp15.dfsr_ns = fault_type | isWriteBit;
         env->cp15.dfar_ns = address;
         env->exception_index = EXCP_DATA_ABORT;
     }

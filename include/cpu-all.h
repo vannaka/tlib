@@ -674,7 +674,6 @@ extern uintptr_t translation_cache_size;
 #define TLB_MMIO          (1 << 5)
 
 #define CODE_DIRTY_FLAG   0x02
-void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end, int dirty_flags);
 
 bool is_interrupt_pending(CPUState *env, int mask);
 void clear_interrupt_pending(CPUState *env, int mask);

@@ -95,6 +95,7 @@ typedef struct PhysPageDesc {
     /* offset in host memory of the page + io_index in the low bits */
     ram_addr_t phys_offset;
     ram_addr_t region_offset;
+    uint8_t phys_dirty;
 } PhysPageDesc;
 
 target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t nofault);

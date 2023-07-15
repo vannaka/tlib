@@ -217,19 +217,11 @@ void tlib_atomic_memory_state_init(int id, uintptr_t atomic_memory_state_ptr)
 
 EXC_VOID_2(tlib_atomic_memory_state_init, int, id, uintptr_t, atomic_memory_state_ptr)
 
-static void free_phys_dirty()
-{
-    if (dirty_ram.phys_dirty) {
-        tlib_free(dirty_ram.phys_dirty);
-    }
-}
-
 void tlib_dispose()
 {
     tlib_arch_dispose();
     code_gen_free();
     free_all_page_descriptors();
-    free_phys_dirty();
     tlib_free(cpu);
     tcg_dispose();
 }
@@ -362,25 +354,6 @@ void tlib_map_range(uint64_t start_addr, uint64_t length)
 {
     ram_addr_t phys_offset = start_addr;
     ram_addr_t size = length;
-    //remember that phys_dirty covers the whole memory range from 0 to the end
-    //of the registered memory. Most offsets are probably unused. When a new
-    //region is registered before any already registered memory, the array
-    //does not need to be expanded.
-    uint8_t *phys_dirty;
-    size_t array_start_addr, array_size, new_size;
-    array_start_addr = start_addr >> TARGET_PAGE_BITS;
-    array_size = size >> TARGET_PAGE_BITS;
-    new_size = array_start_addr + array_size;
-    if (new_size > dirty_ram.current_size) {
-        phys_dirty = tlib_malloc(new_size);
-        memcpy(phys_dirty, dirty_ram.phys_dirty, dirty_ram.current_size);
-        if (dirty_ram.phys_dirty != NULL) {
-            tlib_free(dirty_ram.phys_dirty);
-        }
-        dirty_ram.phys_dirty = phys_dirty;
-        dirty_ram.current_size = new_size;
-    }
-    memset(dirty_ram.phys_dirty + array_start_addr, 0xff, array_size);
     cpu_register_physical_memory(start_addr, size, phys_offset | IO_MEM_RAM);
 }
 

@@ -47,8 +47,6 @@ static uintptr_t code_gen_buffer_size;
 static uintptr_t code_gen_buffer_max_size;
 static uint8_t *code_gen_ptr;
 
-dirty_ram_t dirty_ram = {0, 0};
-
 CPUState *cpu;
 
 typedef struct PageDesc {
@@ -1315,6 +1313,51 @@ void tlb_flush_page(CPUState *env, target_ulong addr, bool from_generated_code)
     tlb_flush_page_masked(env, addr, UINT32_MAX, from_generated_code);
 }
 
+/* read dirty bit (return 0 or 1) */
+static inline int cpu_physical_memory_is_dirty(ram_addr_t addr)
+{
+    PhysPageDesc *p = phys_page_find(addr >> TARGET_PAGE_BITS);
+    return p->phys_dirty == 0xff;
+}
+
+static inline int cpu_physical_memory_get_dirty_flags(ram_addr_t addr)
+{
+    PhysPageDesc *p = phys_page_find(addr >> TARGET_PAGE_BITS);
+    return p->phys_dirty;
+}
+
+static inline int cpu_physical_memory_get_dirty(ram_addr_t addr, int dirty_flags)
+{
+    PhysPageDesc *p = phys_page_find(addr >> TARGET_PAGE_BITS);
+    return p->phys_dirty & dirty_flags;
+}
+
+static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
+{
+    PhysPageDesc *p = phys_page_find(addr >> TARGET_PAGE_BITS);
+    p->phys_dirty = 0xff;
+}
+
+static inline int cpu_physical_memory_set_dirty_flags(ram_addr_t addr, int dirty_flags)
+{
+    PhysPageDesc *p = phys_page_find(addr >> TARGET_PAGE_BITS);
+    return p->phys_dirty |= dirty_flags;
+}
+
+static inline void cpu_physical_memory_mask_dirty_range(ram_addr_t start, int length, int dirty_flags)
+{
+    int i, mask, len;
+    PhysPageDesc *p;
+
+    len = length >> TARGET_PAGE_BITS;
+    mask = ~dirty_flags;
+    for (i = 0; i < len; i++) {
+        p = phys_page_find(start >> TARGET_PAGE_BITS);
+        p->phys_dirty &= mask;
+        start += TARGET_PAGE_SIZE;
+    }
+}
+
 /* update the TLBs so that writes to code in the virtual page 'addr'
    can be detected */
 static void tlb_protect_code(ram_addr_t ram_addr)
@@ -1568,6 +1611,7 @@ void cpu_register_physical_memory_log(target_phys_addr_t start_addr, ram_addr_t 
         p = phys_page_find(addr >> TARGET_PAGE_BITS);
         if (p && p->phys_offset != IO_MEM_UNASSIGNED) {
             p->phys_offset = phys_offset;
+            p->phys_dirty = 0xff;
             if ((phys_offset & ~TARGET_PAGE_MASK) <= IO_MEM_ROM || (phys_offset & IO_MEM_ROMD)) {
                 phys_offset += TARGET_PAGE_SIZE;
             }
@@ -1575,6 +1619,7 @@ void cpu_register_physical_memory_log(target_phys_addr_t start_addr, ram_addr_t 
             p = phys_page_find_alloc(addr >> TARGET_PAGE_BITS, 1);
             p->phys_offset = phys_offset;
             p->region_offset = region_offset;
+            p->phys_dirty = 0xff;
             if ((phys_offset & ~TARGET_PAGE_MASK) <= IO_MEM_ROM || (phys_offset & IO_MEM_ROMD)) {
                 phys_offset += TARGET_PAGE_SIZE;
             }

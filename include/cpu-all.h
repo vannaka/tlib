@@ -653,12 +653,6 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr);
 
 extern uintptr_t translation_cache_size;
 
-typedef struct dirty_ram_t {
-    uint8_t *phys_dirty;
-    size_t current_size;
-} dirty_ram_t;
-extern dirty_ram_t dirty_ram;
-
 /* physical memory access */
 
 /* MMIO pages are identified by a combination of an IO device index and
@@ -680,48 +674,6 @@ extern dirty_ram_t dirty_ram;
 #define TLB_MMIO          (1 << 5)
 
 #define CODE_DIRTY_FLAG   0x02
-
-/* read dirty bit (return 0 or 1) */
-static inline int cpu_physical_memory_is_dirty(ram_addr_t addr)
-{
-    return dirty_ram.phys_dirty[addr >> TARGET_PAGE_BITS] == 0xff;
-}
-
-static inline int cpu_physical_memory_get_dirty_flags(ram_addr_t addr)
-{
-    return dirty_ram.phys_dirty[addr >> TARGET_PAGE_BITS];
-}
-
-static inline int cpu_physical_memory_get_dirty(ram_addr_t addr, int dirty_flags)
-{
-    return dirty_ram.phys_dirty[addr >> TARGET_PAGE_BITS] & dirty_flags;
-}
-
-static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
-{
-    dirty_ram.phys_dirty[addr >> TARGET_PAGE_BITS] = 0xff;
-}
-
-static inline int cpu_physical_memory_set_dirty_flags(ram_addr_t addr, int dirty_flags)
-{
-    return dirty_ram.phys_dirty[addr >> TARGET_PAGE_BITS] |= dirty_flags;
-}
-
-static inline void cpu_physical_memory_mask_dirty_range(ram_addr_t start, int length, int dirty_flags)
-{
-    int i, mask, len;
-    uint8_t *p;
-
-    len = length >> TARGET_PAGE_BITS;
-    mask = ~dirty_flags;
-    p = dirty_ram.phys_dirty + (start >> TARGET_PAGE_BITS);
-    for (i = 0; i < len; i++) {
-        p[i] &= mask;
-    }
-}
-
-
-
 void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end, int dirty_flags);
 
 bool is_interrupt_pending(CPUState *env, int mask);

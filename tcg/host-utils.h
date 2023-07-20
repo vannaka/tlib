@@ -27,6 +27,7 @@
 #define __HOST_UTILS_H__
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -65,6 +66,10 @@
     // Supported since GCC v4.7 (commit SHA: 3801c801).
     #define _has__builtin_clrsb      ( _gcc_version >= 407 )
     #define _has__builtin_clrsbll    ( _gcc_version >= 407 )
+
+    // Supported since GCC v5.1 (commit SHA: 1304953e).
+    #define _has__builtin_add_overflow ( _gcc_version >= 501 )
+    #define _has__builtin_sub_overflow ( _gcc_version >= 501 )
 
     // Currently not supported by GCC.
     #define _has__builtin_bitreverse8  0
@@ -357,6 +362,154 @@ static inline uint64_t revbit64(uint64_t x)
       | ((x & 0x2222222222222222ull) << 1)
       | ((x & 0x1111111111111111ull) << 3);
     return x;
+#endif
+}
+
+/**
+ * sadd32_overflow - addition with overflow indication
+ * @x, @y: addends
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x + @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool sadd32_overflow(int32_t x, int32_t y, int32_t *ret)
+{
+#if __has_builtin(__builtin_add_overflow)
+    return __builtin_add_overflow(x, y, ret);
+#else
+    *ret = x + y;
+    return ((*ret ^ x) & ~(x ^ y)) < 0;
+#endif
+}
+
+/**
+ * sadd64_overflow - addition with overflow indication
+ * @x, @y: addends
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x + @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool sadd64_overflow(int64_t x, int64_t y, int64_t *ret)
+{
+#if __has_builtin(__builtin_add_overflow)
+    return __builtin_add_overflow(x, y, ret);
+#else
+    *ret = x + y;
+    return ((*ret ^ x) & ~(x ^ y)) < 0;
+#endif
+}
+
+/**
+ * uadd32_overflow - addition with overflow indication
+ * @x, @y: addends
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x + @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool uadd32_overflow(uint32_t x, uint32_t y, uint32_t *ret)
+{
+#if __has_builtin(__builtin_add_overflow)
+    return __builtin_add_overflow(x, y, ret);
+#else
+    *ret = x + y;
+    return *ret < x;
+#endif
+}
+
+/**
+ * uadd64_overflow - addition with overflow indication
+ * @x, @y: addends
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x + @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool uadd64_overflow(uint64_t x, uint64_t y, uint64_t *ret)
+{
+#if __has_builtin(__builtin_add_overflow)
+    return __builtin_add_overflow(x, y, ret);
+#else
+    *ret = x + y;
+    return *ret < x;
+#endif
+}
+
+/**
+ * ssub32_overflow - subtraction with overflow indication
+ * @x: Minuend
+ * @y: Subtrahend
+ * @ret: Output for difference
+ *
+ * Computes *@ret = @x - @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool ssub32_overflow(int32_t x, int32_t y, int32_t *ret)
+{
+#if __has_builtin(__builtin_sub_overflow)
+    return __builtin_sub_overflow(x, y, ret);
+#else
+    *ret = x - y;
+    return ((*ret ^ x) & (x ^ y)) < 0;
+#endif
+}
+
+/**
+ * ssub64_overflow - subtraction with overflow indication
+ * @x: Minuend
+ * @y: Subtrahend
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x - @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool ssub64_overflow(int64_t x, int64_t y, int64_t *ret)
+{
+#if __has_builtin(__builtin_sub_overflow)
+    return __builtin_sub_overflow(x, y, ret);
+#else
+    *ret = x - y;
+    return ((*ret ^ x) & (x ^ y)) < 0;
+#endif
+}
+
+/**
+ * usub32_overflow - subtraction with overflow indication
+ * @x: Minuend
+ * @y: Subtrahend
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x - @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool usub32_overflow(uint32_t x, uint32_t y, uint32_t *ret)
+{
+#if __has_builtin(__builtin_sub_overflow)
+    return __builtin_sub_overflow(x, y, ret);
+#else
+    *ret = x - y;
+    return x < y;
+#endif
+}
+
+/**
+ * usub64_overflow - subtraction with overflow indication
+ * @x: Minuend
+ * @y: Subtrahend
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x - @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool usub64_overflow(uint64_t x, uint64_t y, uint64_t *ret)
+{
+#if __has_builtin(__builtin_sub_overflow)
+    return __builtin_sub_overflow(x, y, ret);
+#else
+    *ret = x - y;
+    return x < y;
 #endif
 }
 

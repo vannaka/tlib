@@ -33,6 +33,7 @@ void tlib_abortf(char *fmt, ...);
     tlib_abortf("Should not reach here: %s %d", __FILE__, __LINE__); \
     __builtin_unreachable();                                         \
 }
+#define g_assert_not_reached tlib_assert_not_reached
 
 #include "callbacks.h"
 

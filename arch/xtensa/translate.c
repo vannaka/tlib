@@ -43,12 +43,6 @@
 // Therefore all 'dc->base.pc_next' really access 'dc->base.pc'.
 #define pc_next pc
 
-#define g_assert_not_reached()                                       \
-{                                                                    \
-    tlib_abortf("Should not reach here: %s %d", __FILE__, __LINE__); \
-    __builtin_unreachable();                                         \
-}
-
 #define semihosting_enabled() true
 
 static TCGv_i32 cpu_pc;

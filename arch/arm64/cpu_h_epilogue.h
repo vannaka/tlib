@@ -35,9 +35,6 @@
 #define float32_silence_nan(a, fpst) float32_maybe_silence_nan(a, fpst)
 #define float64_silence_nan(a, fpst) float64_maybe_silence_nan(a, fpst)
 
-// Adjust assertion calls.
-#define g_assert_not_reached() tlib_assert_not_reached()
-
 // The define is used to avoid replacing all the 'pc_next' uses.
 #define pc_next pc
 

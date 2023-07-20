@@ -23,6 +23,9 @@
 #include "vec_internal.h"
 #include "sve_ldst_internal.h"
 #include "int128.h"
+#include "tcg.h"
+#include "tcg-gvec-desc.h"
+#include "tcg-op-gvec.h"
 
 
 /* Return a value for NZCV as per the ARM PredTest pseudofunction.

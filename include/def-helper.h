@@ -18,6 +18,8 @@
 #ifndef DEF_HELPER_H
 #define DEF_HELPER_H         1
 
+#include "osdep.h"
+
 #define HELPER(name) glue(helper_, name)
 
 #define GET_TCGV_i32         GET_TCGV_I32

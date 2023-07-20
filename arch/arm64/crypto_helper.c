@@ -12,6 +12,7 @@
 #include "cpu.h"
 #include "helper.h"
 #include "osdep.h"
+#include "tcg-gvec-desc.h"
 #include "vec_internal.h"
 
 union CRYPTO_STATE {

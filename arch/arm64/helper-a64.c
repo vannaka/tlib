@@ -1143,8 +1143,8 @@ void HELPER(rebuild_hflags_a64)(CPUARMState *env, int el)
 
     // TODO: get correct EL, for now always 3
     DP_TBFLAG_A64(env->hflags, SVEEXC_EL, 3);
-    // TODO: get correct value
-    DP_TBFLAG_A64(env->hflags, VL, ARM_MAX_VQ);
+
+    DP_TBFLAG_A64(env->hflags, VL, 0);
     // TODO: assume not active
     DP_TBFLAG_A64(env->hflags, PAUTH_ACTIVE, 0);
 
@@ -1224,8 +1224,8 @@ void HELPER(rebuild_hflags_a64)(CPUARMState *env, int el)
     // for now always disabled
     DP_TBFLAG_A64(env->hflags, PSTATE_SM, 0);
     DP_TBFLAG_A64(env->hflags, PSTATE_ZA, 0);
-    // TODO: get correct value after implementation of 'SMCR_ELx'
-    DP_TBFLAG_A64(env->hflags, SVL, ARM_MAX_VQ);
+
+    DP_TBFLAG_A64(env->hflags, SVL, 0);
     // TODO: get correct value, for now disable
     DP_TBFLAG_A64(env->hflags, SME_TRAP_NONSTREAMING, 0);
 }

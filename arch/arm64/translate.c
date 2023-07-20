@@ -29,6 +29,8 @@
 #include "syndrome.h"
 #include "system_registers.h"
 
+#include "tcg-op-gvec.h"
+
 #define ENABLE_ARCH_4T    arm_dc_feature(s, ARM_FEATURE_V4T)
 #define ENABLE_ARCH_5     arm_dc_feature(s, ARM_FEATURE_V5)
 /* currently all emulated v5 cores are also v5TE, so don't bother */
@@ -3023,8 +3025,6 @@ void gen_gvec_sqrdmlsh_qc(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
     void gen_gvec_##NAME##0(unsigned vece, uint32_t d, uint32_t m,      \
                             uint32_t opr_sz, uint32_t max_sz)           \
     {                                                                   \
-        /* TODO: Remove after implementation of INDEX_op_cmp_vec */     \
-        unimplemented();                                                \
         const GVecGen2 op[4] = {                                        \
             { .fno = gen_helper_gvec_##NAME##0_b,                       \
               .fniv = gen_##NAME##0_vec,                                \
@@ -3092,9 +3092,6 @@ static void gen_ssra_vec(unsigned vece, TCGv_vec d, TCGv_vec a, int64_t sh)
 void gen_gvec_ssra(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
                    int64_t shift, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_sari_vec, INDEX_op_add_vec, 0
     };
@@ -3171,9 +3168,6 @@ static void gen_usra_vec(unsigned vece, TCGv_vec d, TCGv_vec a, int64_t sh)
 void gen_gvec_usra(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
                    int64_t shift, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_shri_vec, INDEX_op_add_vec, 0
     };
@@ -3217,7 +3211,7 @@ void gen_gvec_usra(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
         tcg_gen_gvec_2i(rd_ofs, rm_ofs, opr_sz, max_sz, shift, &ops[vece]);
     } else {
         /* Nop, but we do need to clear the tail. */
-        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz, cpu_env);
+        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz);
     }
 }
 
@@ -3293,9 +3287,6 @@ static void gen_srshr_vec(unsigned vece, TCGv_vec d, TCGv_vec a, int64_t sh)
 void gen_gvec_srshr(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
                     int64_t shift, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_shri_vec, INDEX_op_sari_vec, INDEX_op_add_vec, 0
     };
@@ -3334,7 +3325,7 @@ void gen_gvec_srshr(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
          *   (-1 + 1) >> 1 == 0, or (0 + 1) >> 1 == 0.
          * I.e. always zero.
          */
-        tcg_gen_gvec_dup_imm(vece, rd_ofs, opr_sz, max_sz, 0, cpu_env);
+        tcg_gen_gvec_dup_imm(vece, rd_ofs, opr_sz, max_sz, 0);
     } else {
         tcg_gen_gvec_2i(rd_ofs, rm_ofs, opr_sz, max_sz, shift, &ops[vece]);
     }
@@ -3388,9 +3379,6 @@ static void gen_srsra_vec(unsigned vece, TCGv_vec d, TCGv_vec a, int64_t sh)
 void gen_gvec_srsra(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
                     int64_t shift, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_shri_vec, INDEX_op_sari_vec, INDEX_op_add_vec, 0
     };
@@ -3434,7 +3422,7 @@ void gen_gvec_srsra(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
      */
     if (shift == (8 << vece)) {
         /* Nop, but we do need to clear the tail. */
-        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz, cpu_env);
+        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz);
     } else {
         tcg_gen_gvec_2i(rd_ofs, rm_ofs, opr_sz, max_sz, shift, &ops[vece]);
     }
@@ -3506,9 +3494,6 @@ static void gen_urshr_vec(unsigned vece, TCGv_vec d, TCGv_vec a, int64_t shift)
 void gen_gvec_urshr(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
                     int64_t shift, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_shri_vec, INDEX_op_add_vec, 0
     };
@@ -3620,9 +3605,6 @@ static void gen_ursra_vec(unsigned vece, TCGv_vec d, TCGv_vec a, int64_t sh)
 void gen_gvec_ursra(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
                     int64_t shift, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_shri_vec, INDEX_op_add_vec, 0
     };
@@ -3714,9 +3696,6 @@ static void gen_shr_ins_vec(unsigned vece, TCGv_vec d, TCGv_vec a, int64_t sh)
 void gen_gvec_sri(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
                   int64_t shift, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = { INDEX_op_shri_vec, 0 };
     const GVecGen2i ops[4] = {
         { .fni8 = gen_shr8_ins_i64,
@@ -3755,7 +3734,7 @@ void gen_gvec_sri(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
         tcg_gen_gvec_2i(rd_ofs, rm_ofs, opr_sz, max_sz, shift, &ops[vece]);
     } else {
         /* Nop, but we do need to clear the tail. */
-        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz, cpu_env);
+        tcg_gen_gvec_mov(vece, rd_ofs, rd_ofs, opr_sz, max_sz);
     }
 }
 
@@ -3810,9 +3789,6 @@ static void gen_shl_ins_vec(unsigned vece, TCGv_vec d, TCGv_vec a, int64_t sh)
 void gen_gvec_sli(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
                   int64_t shift, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = { INDEX_op_shli_vec, 0 };
     const GVecGen2i ops[4] = {
         { .fni8 = gen_shl8_ins_i64,
@@ -3847,7 +3823,7 @@ void gen_gvec_sli(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
     tcg_debug_assert(shift < (8 << vece));
 
     if (shift == 0) {
-        tcg_gen_gvec_mov(vece, rd_ofs, rm_ofs, opr_sz, max_sz, cpu_env);
+        tcg_gen_gvec_mov(vece, rd_ofs, rm_ofs, opr_sz, max_sz);
     } else {
         tcg_gen_gvec_2i(rd_ofs, rm_ofs, opr_sz, max_sz, shift, &ops[vece]);
     }
@@ -3919,9 +3895,6 @@ static void gen_mls_vec(unsigned vece, TCGv_vec d, TCGv_vec a, TCGv_vec b)
 void gen_gvec_mla(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                   uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_mul_vec, INDEX_op_add_vec, 0
     };
@@ -3954,9 +3927,6 @@ void gen_gvec_mla(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
 void gen_gvec_mls(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                   uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_mul_vec, INDEX_op_sub_vec, 0
     };
@@ -4011,9 +3981,6 @@ static void gen_cmtst_vec(unsigned vece, TCGv_vec d, TCGv_vec a, TCGv_vec b)
 void gen_gvec_cmtst(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                     uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = { INDEX_op_cmp_vec, 0 };
     static const GVecGen3 ops[4] = {
         { .fni4 = gen_helper_neon_tst_u8,
@@ -4152,9 +4119,6 @@ static void gen_ushl_vec(unsigned vece, TCGv_vec dst,
 void gen_gvec_ushl(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                    uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_neg_vec, INDEX_op_shlv_vec,
         INDEX_op_shrv_vec, INDEX_op_cmp_vec, 0
@@ -4289,9 +4253,6 @@ static void gen_sshl_vec(unsigned vece, TCGv_vec dst,
 void gen_gvec_sshl(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                    uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_neg_vec, INDEX_op_umin_vec, INDEX_op_shlv_vec,
         INDEX_op_sarv_vec, INDEX_op_cmp_vec, INDEX_op_cmpsel_vec, 0
@@ -4331,9 +4292,6 @@ static void gen_uqadd_vec(unsigned vece, TCGv_vec t, TCGv_vec sat,
 void gen_gvec_uqadd_qc(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                        uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_usadd_vec, INDEX_op_cmp_vec, INDEX_op_add_vec, 0
     };
@@ -4377,9 +4335,6 @@ static void gen_sqadd_vec(unsigned vece, TCGv_vec t, TCGv_vec sat,
 void gen_gvec_sqadd_qc(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                        uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_ssadd_vec, INDEX_op_cmp_vec, INDEX_op_add_vec, 0
     };
@@ -4423,9 +4378,6 @@ static void gen_uqsub_vec(unsigned vece, TCGv_vec t, TCGv_vec sat,
 void gen_gvec_uqsub_qc(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                        uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_ussub_vec, INDEX_op_cmp_vec, INDEX_op_sub_vec, 0
     };
@@ -4469,9 +4421,6 @@ static void gen_sqsub_vec(unsigned vece, TCGv_vec t, TCGv_vec sat,
 void gen_gvec_sqsub_qc(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                        uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_sssub_vec, INDEX_op_cmp_vec, INDEX_op_sub_vec, 0
     };
@@ -4534,9 +4483,6 @@ static void gen_sabd_vec(unsigned vece, TCGv_vec d, TCGv_vec a, TCGv_vec b)
 void gen_gvec_sabd(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                    uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_sub_vec, INDEX_op_smin_vec, INDEX_op_smax_vec, 0
     };
@@ -4597,9 +4543,6 @@ static void gen_uabd_vec(unsigned vece, TCGv_vec d, TCGv_vec a, TCGv_vec b)
 void gen_gvec_uabd(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                    uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_sub_vec, INDEX_op_umin_vec, INDEX_op_umax_vec, 0
     };
@@ -4654,9 +4597,6 @@ static void gen_saba_vec(unsigned vece, TCGv_vec d, TCGv_vec a, TCGv_vec b)
 void gen_gvec_saba(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                    uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_sub_vec, INDEX_op_add_vec,
         INDEX_op_smin_vec, INDEX_op_smax_vec, 0
@@ -4716,9 +4656,6 @@ static void gen_uaba_vec(unsigned vece, TCGv_vec d, TCGv_vec a, TCGv_vec b)
 void gen_gvec_uaba(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                    uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing missing INDEX_op
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = {
         INDEX_op_sub_vec, INDEX_op_add_vec,
         INDEX_op_umin_vec, INDEX_op_umax_vec, 0

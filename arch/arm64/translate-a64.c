@@ -23,6 +23,7 @@
 #include "syndrome.h"
 #include "system_registers.h"
 #include "tb-helper.h"
+#include "tcg-op-gvec.h"
 #include "translate-a64.h"
 #include "translate.h"
 #include "ttable.h"
@@ -553,7 +554,7 @@ static void clear_vec_high(DisasContext *s, bool is_q, int rd)
     unsigned ofs = fp_reg_offset(s, rd, MO_64);
     unsigned vsz = vec_full_reg_size(s);
 
-    tcg_gen_gvec_mov(MO_64, ofs, ofs, is_q ? 16 : 8, vsz, cpu_env);
+    tcg_gen_gvec_mov(MO_64, ofs, ofs, is_q ? 16 : 8, vsz);
 }
 
 void write_fp_dreg(DisasContext *s, int reg, TCGv_i64 v)
@@ -4009,7 +4010,7 @@ static void disas_ldst_single_struct(DisasContext *s, uint32_t insn)
             tcg_gen_qemu_ld_i64(tcg_tmp, clean_addr, get_mem_index(s), mop);
             tcg_gen_gvec_dup_i64(scale, vec_full_reg_offset(s, rt),
                                  (is_q + 1) * 8, vec_full_reg_size(s),
-                                 tcg_tmp, cpu_env);
+                                 tcg_tmp);
             tcg_temp_free_i64(tcg_tmp);
         } else {
             /* Load/store one element per register */
@@ -6412,7 +6413,7 @@ static void handle_fp_1src_double(DisasContext *s, int opcode, int rd, int rn)
 
     switch (opcode) {
     case 0x0: /* FMOV */
-        tcg_gen_gvec_mov(0, vec_full_reg_offset(s, rd), vec_full_reg_offset(s, rn), 8, vec_full_reg_size(s), cpu_env);
+        tcg_gen_gvec_mov(0, vec_full_reg_offset(s, rd), vec_full_reg_offset(s, rn), 8, vec_full_reg_size(s));
         return;
     }
 
@@ -8007,7 +8008,7 @@ static void handle_simd_dupe(DisasContext *s, int is_q, int rd, int rn,
     index = imm5 >> (size + 1);
     tcg_gen_gvec_dup_mem(size, vec_full_reg_offset(s, rd),
                          vec_reg_offset(s, rn, index, size),
-                         is_q ? 16 : 8, vec_full_reg_size(s), cpu_env);
+                         is_q ? 16 : 8, vec_full_reg_size(s));
 }
 
 /* DUP (element, scalar)
@@ -8071,7 +8072,7 @@ static void handle_simd_dupg(DisasContext *s, int is_q, int rd, int rn,
     oprsz = is_q ? 16 : 8;
     maxsz = vec_full_reg_size(s);
 
-    tcg_gen_gvec_dup_i64(size, dofs, oprsz, maxsz, cpu_reg(s, rn), cpu_env);
+    tcg_gen_gvec_dup_i64(size, dofs, oprsz, maxsz, cpu_reg(s, rn));
 }
 
 /* INS (Element)
@@ -8293,7 +8294,7 @@ static void disas_simd_mod_imm(DisasContext *s, uint32_t insn)
     if (!((cmode & 0x9) == 0x1 || (cmode & 0xd) == 0x9)) {
         /* MOVI or MVNI, with MVNI negation handled above.  */
         tcg_gen_gvec_dup_imm(MO_64, vec_full_reg_offset(s, rd), is_q ? 16 : 8,
-                             vec_full_reg_size(s), imm, cpu_env);
+                             vec_full_reg_size(s), imm);
     } else {
         /* ORR or BIC, with BIC negation to AND handled above.  */
         if (is_neg) {
@@ -10684,7 +10685,7 @@ static void handle_vec_simd_shri(DisasContext *s, bool is_q, bool is_u,
             if (shift == 8 << size) {
                 /* Shift count the same size as element size produces zero.  */
                 tcg_gen_gvec_dup_imm(size, vec_full_reg_offset(s, rd),
-                                     is_q ? 16 : 8, vec_full_reg_size(s), 0, cpu_env);
+                                     is_q ? 16 : 8, vec_full_reg_size(s), 0);
                 return;
             }
             gvec_fn = tcg_gen_gvec_shri;
@@ -14258,16 +14259,12 @@ static void disas_crypto_two_reg_sha(DisasContext *s, uint32_t insn)
     gen_gvec_op2_ool(s, true, rd, rn, 0, genfn);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_rax1_i64(TCGv_i64 d, TCGv_i64 n, TCGv_i64 m)
 {
     tcg_gen_rotli_i64(d, m, 1);
     tcg_gen_xor_i64(d, d, n);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_rax1_vec(unsigned vece, TCGv_vec d, TCGv_vec n, TCGv_vec m)
 {
     tcg_gen_rotli_vec(vece, d, m, 1);
@@ -14277,9 +14274,6 @@ static void gen_rax1_vec(unsigned vece, TCGv_vec d, TCGv_vec n, TCGv_vec m)
 void gen_gvec_rax1(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                    uint32_t rm_ofs, uint32_t opr_sz, uint32_t max_sz)
 {
-    // TODO: Remove after providing INDEX_op_rotli_vec and tcg_gen_gvec_3
-    unimplemented();
-
     static const TCGOpcode vecop_list[] = { INDEX_op_rotli_vec, 0 };
     static const GVecGen3 op = {
         .fni8 = gen_rax1_i64,

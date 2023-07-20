@@ -22,6 +22,7 @@
 #include "osdep.h"
 #include "vec_internal.h"
 #include "int128.h"
+#include "tcg-gvec-desc.h"
 
 /*
  * Data for expanding active predicate bits to bytes, for byte elements.

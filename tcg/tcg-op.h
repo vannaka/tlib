@@ -3680,130 +3680,62 @@ static inline void tcg_gen_clzi_i64(TCGv_i64 ret, TCGv_i64 arg1, uint64_t arg2)
     tcg_temp_free_i64(t0);
 }
 
-static inline void tcg_gen_gvec_mov(unsigned vece, uint32_t dofs, uint32_t aofs,
-                      uint32_t oprsz, uint32_t maxsz, TCGv_ptr cpu_env)
-{
-    tcg_debug_assert(oprsz <= maxsz);
+void tcg_gen_mov_vec(TCGv_vec, TCGv_vec);
+void tcg_gen_dup_i32_vec(unsigned vece, TCGv_vec, TCGv_i32);
+void tcg_gen_dup_i64_vec(unsigned vece, TCGv_vec, TCGv_i64);
+void tcg_gen_dup_mem_vec(unsigned vece, TCGv_vec, TCGv_ptr, tcg_target_long);
+void tcg_gen_dupi_vec(unsigned vece, TCGv_vec, uint64_t);
+void tcg_gen_add_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_sub_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_mul_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_and_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_or_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_xor_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_andc_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_orc_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_nand_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_nor_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_eqv_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_not_vec(unsigned vece, TCGv_vec r, TCGv_vec a);
+void tcg_gen_neg_vec(unsigned vece, TCGv_vec r, TCGv_vec a);
+void tcg_gen_abs_vec(unsigned vece, TCGv_vec r, TCGv_vec a);
+void tcg_gen_ssadd_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_usadd_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_sssub_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_ussub_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_smin_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_umin_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_smax_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_umax_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
 
-    if (dofs != aofs) {
-        TCGv value_tmp;
+void tcg_gen_shli_vec(unsigned vece, TCGv_vec r, TCGv_vec a, int64_t i);
+void tcg_gen_shri_vec(unsigned vece, TCGv_vec r, TCGv_vec a, int64_t i);
+void tcg_gen_sari_vec(unsigned vece, TCGv_vec r, TCGv_vec a, int64_t i);
+void tcg_gen_rotli_vec(unsigned vece, TCGv_vec r, TCGv_vec a, int64_t i);
+void tcg_gen_rotri_vec(unsigned vece, TCGv_vec r, TCGv_vec a, int64_t i);
 
-        switch (oprsz) {
-        case 4:
-            value_tmp = tcg_temp_new_i32();
-            tcg_gen_ld_i32(value_tmp, cpu_env, aofs);
-            tcg_gen_st_i32(value_tmp, cpu_env, dofs);
-            tcg_temp_free_i32(value_tmp);
-            break;
-        case 8:
-            value_tmp = tcg_temp_new_i64();
-            tcg_gen_ld_i64(value_tmp, cpu_env, aofs);
-            tcg_gen_st_i64(value_tmp, cpu_env, dofs);
-            tcg_temp_free_i64(value_tmp);
-            break;
-        default:
-            tcg_abortf("%s with size %" PRIu32 " isn't currently supported.", __func__, oprsz);
-        }
-    }
+void tcg_gen_shls_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_i32 s);
+void tcg_gen_shrs_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_i32 s);
+void tcg_gen_sars_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_i32 s);
+void tcg_gen_rotls_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_i32 s);
 
-    // Clear remaining memory.
-    uint32_t size_diff = maxsz - oprsz;
-    if (size_diff) {
-        uint32_t clear_offset = dofs + oprsz;
-        if (size_diff == 4) {
-            TCGv_i32 zero_tmp = tcg_const_i32(0);
-            tcg_gen_st_i32(zero_tmp, cpu_env, clear_offset);
-            tcg_temp_free_i32(zero_tmp);
-        } else if (size_diff % 8 == 0) {
-            TCGv_i64 zero_tmp = tcg_const_i64(0);
-            for (; size_diff > 0; size_diff -= 8, clear_offset += 8) {
-                tcg_gen_st_i64(zero_tmp, cpu_env, clear_offset);
-            }
-            tcg_temp_free_i64(zero_tmp);
-        } else {
-            tcg_abortf("%s with unsupported sizes: oprsz=%" PRIu32 ", maxsz=%" PRIu32, __func__, oprsz, maxsz);
-        }
-    }
-}
+void tcg_gen_shlv_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec s);
+void tcg_gen_shrv_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec s);
+void tcg_gen_sarv_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec s);
+void tcg_gen_rotlv_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec s);
+void tcg_gen_rotrv_vec(unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec s);
 
-static inline uint64_t dup_mask(unsigned vece)
-{
-    switch (vece) {
-    case MO_8:
-        return 0x0101010101010101ull;
-    case MO_16:
-        return 0x0001000100010001ull;
-    case MO_32:
-        return 0x0000000100000001ull;
-    case MO_64:
-        return 0x0000000000000001ull;
-    }
-    return 0;
-}
+void tcg_gen_cmp_vec(TCGCond cond, unsigned vece, TCGv_vec r,
+                     TCGv_vec a, TCGv_vec b);
 
-static inline uint64_t dup_const(unsigned vece, uint64_t c)
-{
-    return dup_mask(vece) * c;
-}
+void tcg_gen_bitsel_vec(unsigned vece, TCGv_vec r, TCGv_vec a,
+                        TCGv_vec b, TCGv_vec c);
+void tcg_gen_cmpsel_vec(TCGCond cond, unsigned vece, TCGv_vec r,
+                        TCGv_vec a, TCGv_vec b, TCGv_vec c, TCGv_vec d);
 
-static inline void tcg_gen_gvec_dup_i64(unsigned vece, uint32_t dofs, uint32_t oprsz,
-                          uint32_t maxsz, TCGv_i64 reg, TCGv_ptr cpu_env)
-{
-    TCGv reg_tmp = tcg_temp_new_i64();
-    TCGv mul_tmp = tcg_temp_new_i64();
-    uint32_t shift;
-    switch (vece) {
-    case MO_8:
-        shift = 8;
-        break;
-    case MO_16:
-        shift = 16;
-        break;
-    case MO_32:
-        shift = 32;
-        break;
-    default:
-        shift = 0;
-    }
-    TCGv mask_tmp = tcg_const_i64(((0x1ull << shift) - 1));
-
-    tcg_gen_movi_i64(mul_tmp, dup_mask(vece));
-    if (vece != MO_64) {
-        tcg_gen_and_i64(reg_tmp, reg, mask_tmp);
-    } else {
-        tcg_gen_mov_i64(reg_tmp, reg);
-    }
-    tcg_gen_mul_i64(reg_tmp, reg_tmp, mul_tmp);
-    tcg_gen_st_i64(reg_tmp, cpu_env, dofs);
-    if (oprsz == maxsz && oprsz > 8) {
-        tcg_gen_st_i64(reg_tmp, cpu_env, dofs + 8);
-    }
-
-    tcg_temp_free_i64(reg_tmp);
-}
-
-static inline void tcg_gen_gvec_dup_imm(unsigned vece, uint32_t dofs, uint32_t oprsz,
-                          uint32_t maxsz, uint64_t imm, TCGv_ptr cpu_env)
-{
-    TCGv imm_tmp = tcg_const_i64(dup_const(vece, imm));
-
-    tcg_gen_st_i64(imm_tmp, cpu_env, dofs);
-    if (oprsz == maxsz && oprsz > 8) {
-        tcg_gen_st_i64(imm_tmp, cpu_env, dofs + 8);
-    }
-    tcg_temp_free_i64(imm_tmp);
-}
-
-static inline void tcg_gen_gvec_dup_mem(unsigned vece, uint32_t dofs, uint32_t aofs,
-                      uint32_t oprsz, uint32_t maxsz, TCGv_ptr cpu_env)
-{
-    TCGv aofs_tmp = tcg_temp_new_i64();
-
-    tcg_gen_ld_i64(aofs_tmp, cpu_env, aofs);
-    tcg_gen_gvec_dup_i64(vece, dofs, oprsz, maxsz, aofs_tmp, cpu_env);
-
-    tcg_temp_free_i64(aofs_tmp);
-}
+void tcg_gen_ld_vec(TCGv_vec r, TCGv_ptr base, TCGArg offset);
+void tcg_gen_st_vec(TCGv_vec r, TCGv_ptr base, TCGArg offset);
+void tcg_gen_stl_vec(TCGv_vec r, TCGv_ptr base, TCGArg offset, TCGType t);
 
 #if TARGET_LONG_BITS == 64
 #define tcg_gen_movi_tl       tcg_gen_movi_i64

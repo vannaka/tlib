@@ -28,6 +28,8 @@
 #include "translate.h"
 #include "syndrome.h"
 
+#include "tcg-op-gvec.h"
+
 /* Include the generated VFP decoder */
 #include "decode-vfp.c.inc"
 #include "decode-vfp-uncond.c.inc"

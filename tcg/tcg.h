@@ -25,6 +25,8 @@
 #ifndef TCG_H
 #define TCG_H
 
+#include <stdint.h>
+
 /// INSTEAD OF QEMU-COMMON
 #ifndef TARGET_PAGE_BITS
 extern int TARGET_PAGE_BITS;
@@ -71,6 +73,7 @@ typedef uint64_t target_ulong __attribute__((aligned(TARGET_LONG_ALIGNMENT)));
 #include <stdio.h>
 #include <assert.h>
 
+#include "../include/infrastructure.h"
 #include "additional.h"
 #include "tcg-target.h"
 #include "tcg-runtime.h"
@@ -152,6 +155,42 @@ typedef uint64_t TCGRegSet;
 #define TCG_TARGET_HAS_div_i64  0
 #endif
 
+#if !defined(TCG_TARGET_HAS_v64) \
+    && !defined(TCG_TARGET_HAS_v128) \
+    && !defined(TCG_TARGET_HAS_v256)
+#define TCG_TARGET_MAYBE_vec            0
+#define TCG_TARGET_HAS_abs_vec          0
+#define TCG_TARGET_HAS_neg_vec          0
+#define TCG_TARGET_HAS_not_vec          0
+#define TCG_TARGET_HAS_andc_vec         0
+#define TCG_TARGET_HAS_orc_vec          0
+#define TCG_TARGET_HAS_nand_vec         0
+#define TCG_TARGET_HAS_nor_vec          0
+#define TCG_TARGET_HAS_eqv_vec          0
+#define TCG_TARGET_HAS_roti_vec         0
+#define TCG_TARGET_HAS_rots_vec         0
+#define TCG_TARGET_HAS_rotv_vec         0
+#define TCG_TARGET_HAS_shi_vec          0
+#define TCG_TARGET_HAS_shs_vec          0
+#define TCG_TARGET_HAS_shv_vec          0
+#define TCG_TARGET_HAS_mul_vec          0
+#define TCG_TARGET_HAS_sat_vec          0
+#define TCG_TARGET_HAS_minmax_vec       0
+#define TCG_TARGET_HAS_bitsel_vec       0
+#define TCG_TARGET_HAS_cmpsel_vec       0
+#else
+#define TCG_TARGET_MAYBE_vec            1
+#endif
+#ifndef TCG_TARGET_HAS_v64
+#define TCG_TARGET_HAS_v64              0
+#endif
+#ifndef TCG_TARGET_HAS_v128
+#define TCG_TARGET_HAS_v128             0
+#endif
+#ifndef TCG_TARGET_HAS_v256
+#define TCG_TARGET_HAS_v256             0
+#endif
+
 #ifndef TARGET_INSN_START_EXTRA_WORDS
 #define TARGET_INSN_START_WORDS 1
 #else
@@ -218,6 +257,11 @@ typedef struct TCGPool {
 typedef enum TCGType {
     TCG_TYPE_I32,
     TCG_TYPE_I64,
+
+    TCG_TYPE_V64,
+    TCG_TYPE_V128,
+    TCG_TYPE_V256,
+
     TCG_TYPE_COUNT, /* number of different types */
 
     /* An alias for the size of the host register.  */
@@ -261,6 +305,47 @@ typedef int TCGv_i64;
 #define TCGv_ptr TCGv_i64
 #endif
 typedef TCGv_ptr TCGv_env;
+
+/* Define type and accessor macros for TCG variables.
+
+   TCG variables are the inputs and outputs of TCG ops, as described
+   in tcg/README. Target CPU front-end code uses these types to deal
+   with TCG variables as it emits TCG code via the tcg_gen_* functions.
+   They come in several flavours:
+    * TCGv_i32 : 32 bit integer type
+    * TCGv_i64 : 64 bit integer type
+    * TCGv_ptr : a host pointer type
+    * TCGv_vec : a host vector type; the exact size is not exposed
+                 to the CPU front-end code.
+    * TCGv : an integer type the same size as target_ulong
+             (an alias for either TCGv_i32 or TCGv_i64)
+   The compiler's type checking will complain if you mix them
+   up and pass the wrong sized TCGv to a function.
+
+   Users of tcg_gen_* don't need to know about any of the internal
+   details of these, and should treat them as opaque types.
+   You won't be able to look inside them in a debugger either.
+
+   Internal implementation details follow:
+
+   Note that there is no definition of the structs TCGv_i32_d etc anywhere.
+   This is deliberate, because the values we store in variables of type
+   TCGv_i32 are not really pointers-to-structures. They're just small
+   integers, but keeping them in pointer types like this means that the
+   compiler will complain if you accidentally pass a TCGv_i32 to a
+   function which takes a TCGv_i64, and so on. Only the internals of
+   TCG need to care about the actual contents of the types.  */
+
+typedef int TCGv_vec;
+
+#if TARGET_LONG_BITS == 32
+#define TCGv TCGv_i32
+#elif TARGET_LONG_BITS == 64
+#define TCGv TCGv_i64
+#else
+#error Unhandled TARGET_LONG_BITS value
+#endif
+
 #define MAKE_TCGV_I32(x)     (x)
 #define MAKE_TCGV_I64(x)     (x)
 #define MAKE_TCGV_PTR(x)     (x)
@@ -474,6 +559,7 @@ typedef struct tcg_t {
 } tcg_t;
 
 extern tcg_t *tcg;
+extern TCGv_env cpu_env;
 
 void tcg_attach(tcg_t *con);
 
@@ -566,6 +652,8 @@ enum {
     TCG_OPF_64BIT        = 0x08,
     /* Instruction is optional and not implemented by the host.  */
     TCG_OPF_NOT_PRESENT  = 0x10,
+    /* Instruction operands are vectors.  */
+    TCG_OPF_VECTOR       = 0x40,
 };
 
 typedef struct TCGOpDef {
@@ -658,5 +746,64 @@ static inline size_t tcg_current_code_size(TCGContext *s)
 #endif
 
 #include "tcg-memop.h"
+
+#if TCG_TARGET_MAYBE_vec
+/* Return zero if the tuple (opc, type, vece) is unsupportable;
+   return > 0 if it is directly supportable;
+   return < 0 if we must call tcg_expand_vec_op.  */
+int tcg_can_emit_vec_op(TCGOpcode, TCGType, unsigned);
+#else
+static inline int tcg_can_emit_vec_op(TCGOpcode o, TCGType t, unsigned ve)
+{
+    return 0;
+}
+#endif
+
+/* Expand the tuple (opc, type, vece) on the given arguments.  */
+void tcg_expand_vec_op(TCGOpcode, TCGType, unsigned, TCGArg, ...);
+
+/* Replicate a constant C accoring to the log2 of the element size.  */
+uint64_t dup_const(unsigned vece, uint64_t c);
+
+bool tcg_can_emit_vecop_list(const TCGOpcode *, TCGType, unsigned);
+
+#ifdef CONFIG_DEBUG_TCG
+void tcg_assert_listed_vecop(TCGOpcode);
+#else
+static inline void tcg_assert_listed_vecop(TCGOpcode op) { }
+#endif
+
+static inline const TCGOpcode *tcg_swap_vecop_list(const TCGOpcode *n)
+{
+#ifdef CONFIG_DEBUG_TCG
+    const TCGOpcode *o = tcg_ctx->vecop_list;
+    tcg_ctx->vecop_list = n;
+    return o;
+#else
+    return NULL;
+#endif
+}
+
+// The functions below are only used for emitting host vector instructions which is currently unsupported.
+#if !TCG_TARGET_MAYBE_vec
+    #define vec_unsupported() tlib_abortf("%s: Emitting host vector instructions isn't currently supported.", __func__); __builtin_unreachable()
+
+    static inline TCGv_vec tcg_constant_vec(TCGType type, unsigned vece, uint64_t a) { vec_unsupported(); }
+    static inline TCGv_vec tcg_constant_vec_matching(TCGv_vec match, unsigned vece, int64_t val) { vec_unsupported(); }
+    static inline TCGv_vec tcg_temp_new_vec(TCGType type) { vec_unsupported(); }
+    static inline TCGv_vec tcg_temp_new_vec_matching(TCGv_vec match) { vec_unsupported(); }
+    static inline void tcg_temp_free_vec(TCGv_vec arg) { vec_unsupported(); }
+
+    static inline TCGTemp *tcgv_i32_temp(TCGv_i32 v) { vec_unsupported(); }
+    static inline TCGTemp *tcgv_i64_temp(TCGv_i64 v) { vec_unsupported(); }
+    static inline TCGTemp *tcgv_ptr_temp(TCGv_ptr v) { vec_unsupported(); }
+    static inline TCGTemp *tcgv_vec_temp(TCGv_vec v) { vec_unsupported(); }
+    static inline TCGArg temp_arg(TCGTemp *ts) { vec_unsupported(); }
+    static inline TCGTemp *arg_temp(TCGArg a) { vec_unsupported(); }
+    static inline TCGArg tcgv_i32_arg(TCGv_i32 v) { vec_unsupported(); }
+    static inline TCGArg tcgv_i64_arg(TCGv_i64 v) { vec_unsupported(); }
+    static inline TCGArg tcgv_ptr_arg(TCGv_ptr v) { vec_unsupported(); }
+    static inline TCGArg tcgv_vec_arg(TCGv_vec v) { vec_unsupported(); }
+#endif
 
 #endif //TCG_H

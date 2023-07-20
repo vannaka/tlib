@@ -25,6 +25,9 @@
 #include "translate-a64.h"
 #include "translate.h"
 
+#include "tcg-op-gvec.h"
+#include "tcg-gvec-desc.h"
+
 typedef void GVecGen2sFn(unsigned, uint32_t, uint32_t,
                          TCGv_i64, uint32_t, uint32_t);
 
@@ -447,7 +450,7 @@ static bool do_mov_z(DisasContext *s, int rd, int rn)
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         tcg_gen_gvec_mov(MO_8, vec_full_reg_offset(s, rd),
-                         vec_full_reg_offset(s, rn), vsz, vsz, cpu_env);
+                         vec_full_reg_offset(s, rn), vsz, vsz);
     }
     return true;
 }
@@ -456,7 +459,7 @@ static bool do_mov_z(DisasContext *s, int rd, int rn)
 static void do_dupi_z(DisasContext *s, int rd, uint64_t word)
 {
     unsigned vsz = vec_full_reg_size(s);
-    tcg_gen_gvec_dup_imm(MO_64, vec_full_reg_offset(s, rd), vsz, vsz, word, cpu_env);
+    tcg_gen_gvec_dup_imm(MO_64, vec_full_reg_offset(s, rd), vsz, vsz, word);
 }
 
 /* Invoke a vector expander on three Pregs.  */
@@ -478,7 +481,7 @@ static bool do_mov_p(DisasContext *s, int rd, int rn)
     if (sve_access_check(s)) {
         unsigned psz = pred_gvec_reg_size(s);
         tcg_gen_gvec_mov(MO_8, pred_full_reg_offset(s, rd),
-                         pred_full_reg_offset(s, rn), psz, psz, cpu_env);
+                         pred_full_reg_offset(s, rn), psz, psz);
     }
     return true;
 }
@@ -602,46 +605,43 @@ void gen_gvec_xar(unsigned vece, uint32_t rd_ofs, uint32_t rn_ofs,
                   uint32_t rm_ofs, int64_t shift,
                   uint32_t opr_sz, uint32_t max_sz)
 {
-    unimplemented();
+    static const TCGOpcode vecop[] = { INDEX_op_rotli_vec, 0 };
+    static const GVecGen3i ops[4] = {
+        { .fni8 = gen_xar8_i64,
+          .fniv = gen_xar_vec,
+          .fno = gen_helper_sve2_xar_b,
+          .opt_opc = vecop,
+          .vece = MO_8 },
+        { .fni8 = gen_xar16_i64,
+          .fniv = gen_xar_vec,
+          .fno = gen_helper_sve2_xar_h,
+          .opt_opc = vecop,
+          .vece = MO_16 },
+        { .fni4 = gen_xar_i32,
+          .fniv = gen_xar_vec,
+          .fno = gen_helper_sve2_xar_s,
+          .opt_opc = vecop,
+          .vece = MO_32 },
+        { .fni8 = gen_xar_i64,
+          .fniv = gen_xar_vec,
+          .fno = gen_helper_gvec_xar_d,
+          .opt_opc = vecop,
+          .vece = MO_64 }
+    };
+    int esize = 8 << vece;
 
-    // TODO: Restore after defining INDEX_*
-//    static const TCGOpcode vecop[] = { INDEX_op_rotli_vec, 0 };
-//    static const GVecGen3i ops[4] = {
-//        { .fni8 = gen_xar8_i64,
-//          .fniv = gen_xar_vec,
-//          .fno = gen_helper_sve2_xar_b,
-//          .opt_opc = vecop,
-//          .vece = MO_8 },
-//        { .fni8 = gen_xar16_i64,
-//          .fniv = gen_xar_vec,
-//          .fno = gen_helper_sve2_xar_h,
-//          .opt_opc = vecop,
-//          .vece = MO_16 },
-//        { .fni4 = gen_xar_i32,
-//          .fniv = gen_xar_vec,
-//          .fno = gen_helper_sve2_xar_s,
-//          .opt_opc = vecop,
-//          .vece = MO_32 },
-//        { .fni8 = gen_xar_i64,
-//          .fniv = gen_xar_vec,
-//          .fno = gen_helper_gvec_xar_d,
-//          .opt_opc = vecop,
-//          .vece = MO_64 }
-//    };
-//    int esize = 8 << vece;
-//
-//    /* The SVE2 range is 1 .. esize; the AdvSIMD range is 0 .. esize-1. */
-//    tcg_debug_assert(shift >= 0);
-//    tcg_debug_assert(shift <= esize);
-//    shift &= esize - 1;
-//
-//    if (shift == 0) {
-//        /* xar with no rotate devolves to xor. */
-//        tcg_gen_gvec_xor(vece, rd_ofs, rn_ofs, rm_ofs, opr_sz, max_sz);
-//    } else {
-//        tcg_gen_gvec_3i(rd_ofs, rn_ofs, rm_ofs, opr_sz, max_sz,
-//                        shift, &ops[vece]);
-//    }
+    /* The SVE2 range is 1 .. esize; the AdvSIMD range is 0 .. esize-1. */
+    tcg_debug_assert(shift >= 0);
+    tcg_debug_assert(shift <= esize);
+    shift &= esize - 1;
+
+    if (shift == 0) {
+        /* xar with no rotate devolves to xor. */
+        tcg_gen_gvec_xor(vece, rd_ofs, rn_ofs, rm_ofs, opr_sz, max_sz);
+    } else {
+        tcg_gen_gvec_3i(rd_ofs, rn_ofs, rm_ofs, opr_sz, max_sz,
+                        shift, &ops[vece]);
+    }
 }
 
 static bool trans_XAR(DisasContext *s, arg_rrri_esz *a)
@@ -1437,7 +1437,7 @@ static bool do_pppp_flags(DisasContext *s, arg_rprr_s *a,
         int tofs = gofs;
         if (a->rd == a->pg) {
             tofs = offsetof(CPUARMState, vfp.preg_tmp);
-            tcg_gen_gvec_mov(0, tofs, gofs, psz, psz, cpu_env);
+            tcg_gen_gvec_mov(0, tofs, gofs, psz, psz);
         }
 
         tcg_gen_gvec_4(dofs, nofs, mofs, gofs, psz, psz, gvec_op);
@@ -1789,7 +1789,7 @@ static bool do_predset(DisasContext *s, int esz, int rd, int pat, bool setflag)
         unsigned oprsz = size_for_gvec(setsz / 8);
 
         if (oprsz * 8 == setsz) {
-            tcg_gen_gvec_dup_imm(MO_64, ofs, oprsz, maxsz, word, cpu_env);
+            tcg_gen_gvec_dup_imm(MO_64, ofs, oprsz, maxsz, word);
             goto done;
         }
     }
@@ -2300,9 +2300,9 @@ static bool do_EXT(DisasContext *s, int rd, int rn, int rm, int imm)
         && n_ofs == size_for_gvec(n_ofs)
         && n_siz == size_for_gvec(n_siz)
         && (d != n || n_siz <= n_ofs)) {
-        tcg_gen_gvec_mov(0, d, n + n_ofs, n_siz, n_siz, cpu_env);
+        tcg_gen_gvec_mov(0, d, n + n_ofs, n_siz, n_siz);
         if (n_ofs != 0) {
-            tcg_gen_gvec_mov(0, d + n_siz, m, n_ofs, n_ofs, cpu_env);
+            tcg_gen_gvec_mov(0, d + n_siz, m, n_ofs, n_ofs);
         }
     } else {
         tcg_gen_gvec_3_ool(d, n, m, vsz, vsz, n_ofs, gen_helper_sve_ext);
@@ -2325,7 +2325,7 @@ static bool trans_DUP_s(DisasContext *s, arg_DUP_s *a)
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         tcg_gen_gvec_dup_i64(a->esz, vec_full_reg_offset(s, a->rd),
-                             vsz, vsz, cpu_reg_sp(s, a->rn), cpu_env);
+                             vsz, vsz, cpu_reg_sp(s, a->rn));
     }
     return true;
 }
@@ -2348,13 +2348,13 @@ static bool trans_DUP_x(DisasContext *s, arg_DUP_x *a)
 
         if ((index << esz) < vsz) {
             unsigned nofs = vec_reg_offset(s, a->rn, index, esz);
-            tcg_gen_gvec_dup_mem(esz, dofs, nofs, vsz, vsz, cpu_env);
+            tcg_gen_gvec_dup_mem(esz, dofs, nofs, vsz, vsz);
         } else {
             /*
              * While dup_mem handles 128-bit elements, dup_imm does not.
              * Thankfully element size doesn't matter for splatting zero.
              */
-            tcg_gen_gvec_dup_imm(MO_64, dofs, vsz, vsz, 0, cpu_env);
+            tcg_gen_gvec_dup_imm(MO_64, dofs, vsz, vsz, 0);
         }
     }
     return true;
@@ -2460,62 +2460,56 @@ static bool trans_UNPK(DisasContext *s, arg_UNPK *a)
 static bool do_perm_pred3(DisasContext *s, arg_rrr_esz *a, bool high_odd,
                           gen_helper_gvec_3 *fn)
 {
-    unimplemented();
+    if (!sve_access_check(s)) {
+        return true;
+    }
 
-    // TODO: Restore after properly defining gen_helper_gvec_3
-//    if (!sve_access_check(s)) {
-//        return true;
-//    }
-//
-//    unsigned vsz = pred_full_reg_size(s);
-//
-//    TCGv_ptr t_d = tcg_temp_new_ptr();
-//    TCGv_ptr t_n = tcg_temp_new_ptr();
-//    TCGv_ptr t_m = tcg_temp_new_ptr();
-//    uint32_t desc = 0;
-//
-//    desc = FIELD_DP32(desc, PREDDESC, OPRSZ, vsz);
-//    desc = FIELD_DP32(desc, PREDDESC, ESZ, a->esz);
-//    desc = FIELD_DP32(desc, PREDDESC, DATA, high_odd);
-//
-//    tcg_gen_addi_ptr(t_d, cpu_env, pred_full_reg_offset(s, a->rd));
-//    tcg_gen_addi_ptr(t_n, cpu_env, pred_full_reg_offset(s, a->rn));
-//    tcg_gen_addi_ptr(t_m, cpu_env, pred_full_reg_offset(s, a->rm));
-//
-//    fn(t_d, t_n, t_m, tcg_constant_i32(desc));
-//
-//    tcg_temp_free_ptr(t_d);
-//    tcg_temp_free_ptr(t_n);
-//    tcg_temp_free_ptr(t_m);
+    unsigned vsz = pred_full_reg_size(s);
+
+    TCGv_ptr t_d = tcg_temp_new_ptr();
+    TCGv_ptr t_n = tcg_temp_new_ptr();
+    TCGv_ptr t_m = tcg_temp_new_ptr();
+    uint32_t desc = 0;
+
+    desc = FIELD_DP32(desc, PREDDESC, OPRSZ, vsz);
+    desc = FIELD_DP32(desc, PREDDESC, ESZ, a->esz);
+    desc = FIELD_DP32(desc, PREDDESC, DATA, high_odd);
+
+    tcg_gen_addi_ptr(t_d, cpu_env, pred_full_reg_offset(s, a->rd));
+    tcg_gen_addi_ptr(t_n, cpu_env, pred_full_reg_offset(s, a->rn));
+    tcg_gen_addi_ptr(t_m, cpu_env, pred_full_reg_offset(s, a->rm));
+
+    fn(t_d, t_n, t_m, tcg_constant_i32(desc));
+
+    tcg_temp_free_ptr(t_d);
+    tcg_temp_free_ptr(t_n);
+    tcg_temp_free_ptr(t_m);
     return true;
 }
 
 static bool do_perm_pred2(DisasContext *s, arg_rr_esz *a, bool high_odd,
                           gen_helper_gvec_2 *fn)
 {
-    unimplemented();
+    if (!sve_access_check(s)) {
+        return true;
+    }
 
-    // TODO: Restore after properly defining gen_helper_gvec_2
-//    if (!sve_access_check(s)) {
-//        return true;
-//    }
-//
-//    unsigned vsz = pred_full_reg_size(s);
-//    TCGv_ptr t_d = tcg_temp_new_ptr();
-//    TCGv_ptr t_n = tcg_temp_new_ptr();
-//    uint32_t desc = 0;
-//
-//    tcg_gen_addi_ptr(t_d, cpu_env, pred_full_reg_offset(s, a->rd));
-//    tcg_gen_addi_ptr(t_n, cpu_env, pred_full_reg_offset(s, a->rn));
-//
-//    desc = FIELD_DP32(desc, PREDDESC, OPRSZ, vsz);
-//    desc = FIELD_DP32(desc, PREDDESC, ESZ, a->esz);
-//    desc = FIELD_DP32(desc, PREDDESC, DATA, high_odd);
-//
-//    fn(t_d, t_n, tcg_constant_i32(desc));
-//
-//    tcg_temp_free_ptr(t_d);
-//    tcg_temp_free_ptr(t_n);
+    unsigned vsz = pred_full_reg_size(s);
+    TCGv_ptr t_d = tcg_temp_new_ptr();
+    TCGv_ptr t_n = tcg_temp_new_ptr();
+    uint32_t desc = 0;
+
+    tcg_gen_addi_ptr(t_d, cpu_env, pred_full_reg_offset(s, a->rd));
+    tcg_gen_addi_ptr(t_n, cpu_env, pred_full_reg_offset(s, a->rn));
+
+    desc = FIELD_DP32(desc, PREDDESC, OPRSZ, vsz);
+    desc = FIELD_DP32(desc, PREDDESC, ESZ, a->esz);
+    desc = FIELD_DP32(desc, PREDDESC, DATA, high_odd);
+
+    fn(t_d, t_n, tcg_constant_i32(desc));
+
+    tcg_temp_free_ptr(t_d);
+    tcg_temp_free_ptr(t_n);
     return true;
 }
 
@@ -2722,7 +2716,7 @@ static bool do_clast_vector(DisasContext *s, arg_rprr_esz *a, bool before)
     tcg_temp_free_i32(last);
 
     vsz = vec_full_reg_size(s);
-    tcg_gen_gvec_dup_i64(esz, vec_full_reg_offset(s, a->rd), vsz, vsz, ele, cpu_env);
+    tcg_gen_gvec_dup_i64(esz, vec_full_reg_offset(s, a->rd), vsz, vsz, ele);
     tcg_temp_free_i64(ele);
 
     /* If this insn used MOVPRFX, we may need a second move.  */
@@ -3069,75 +3063,69 @@ DO_PPZI(CMPLS, cmpls)
 static bool do_brk3(DisasContext *s, arg_rprr_s *a,
                     gen_helper_gvec_4 *fn, gen_helper_gvec_flags_4 *fn_s)
 {
-    unimplemented();
+    if (!sve_access_check(s)) {
+        return true;
+    }
 
-    // TODO: Restore after properly defining gen_helper_gvec_4
-//    if (!sve_access_check(s)) {
-//        return true;
-//    }
-//
-//    unsigned vsz = pred_full_reg_size(s);
-//
-//    /* Predicate sizes may be smaller and cannot use simd_desc.  */
-//    TCGv_ptr d = tcg_temp_new_ptr();
-//    TCGv_ptr n = tcg_temp_new_ptr();
-//    TCGv_ptr m = tcg_temp_new_ptr();
-//    TCGv_ptr g = tcg_temp_new_ptr();
-//    TCGv_i32 desc = tcg_constant_i32(FIELD_DP32(0, PREDDESC, OPRSZ, vsz));
-//
-//    tcg_gen_addi_ptr(d, cpu_env, pred_full_reg_offset(s, a->rd));
-//    tcg_gen_addi_ptr(n, cpu_env, pred_full_reg_offset(s, a->rn));
-//    tcg_gen_addi_ptr(m, cpu_env, pred_full_reg_offset(s, a->rm));
-//    tcg_gen_addi_ptr(g, cpu_env, pred_full_reg_offset(s, a->pg));
-//
-//    if (a->s) {
-//        TCGv_i32 t = tcg_temp_new_i32();
-//        fn_s(t, d, n, m, g, desc);
-//        do_pred_flags(t);
-//        tcg_temp_free_i32(t);
-//    } else {
-//        fn(d, n, m, g, desc);
-//    }
-//    tcg_temp_free_ptr(d);
-//    tcg_temp_free_ptr(n);
-//    tcg_temp_free_ptr(m);
-//    tcg_temp_free_ptr(g);
+    unsigned vsz = pred_full_reg_size(s);
+
+    /* Predicate sizes may be smaller and cannot use simd_desc.  */
+    TCGv_ptr d = tcg_temp_new_ptr();
+    TCGv_ptr n = tcg_temp_new_ptr();
+    TCGv_ptr m = tcg_temp_new_ptr();
+    TCGv_ptr g = tcg_temp_new_ptr();
+    TCGv_i32 desc = tcg_constant_i32(FIELD_DP32(0, PREDDESC, OPRSZ, vsz));
+
+    tcg_gen_addi_ptr(d, cpu_env, pred_full_reg_offset(s, a->rd));
+    tcg_gen_addi_ptr(n, cpu_env, pred_full_reg_offset(s, a->rn));
+    tcg_gen_addi_ptr(m, cpu_env, pred_full_reg_offset(s, a->rm));
+    tcg_gen_addi_ptr(g, cpu_env, pred_full_reg_offset(s, a->pg));
+
+    if (a->s) {
+        TCGv_i32 t = tcg_temp_new_i32();
+        fn_s(t, d, n, m, g, desc);
+        do_pred_flags(t);
+        tcg_temp_free_i32(t);
+    } else {
+        fn(d, n, m, g, desc);
+    }
+    tcg_temp_free_ptr(d);
+    tcg_temp_free_ptr(n);
+    tcg_temp_free_ptr(m);
+    tcg_temp_free_ptr(g);
     return true;
 }
 
 static bool do_brk2(DisasContext *s, arg_rpr_s *a,
                     gen_helper_gvec_3 *fn, gen_helper_gvec_flags_3 *fn_s)
 {
-    unimplemented();
+    if (!sve_access_check(s)) {
+        return true;
+    }
 
-    // TODO: Restore after properly defining gen_helper_gvec_3
-//    if (!sve_access_check(s)) {
-//        return true;
-//    }
-//
-//    unsigned vsz = pred_full_reg_size(s);
-//
-//    /* Predicate sizes may be smaller and cannot use simd_desc.  */
-//    TCGv_ptr d = tcg_temp_new_ptr();
-//    TCGv_ptr n = tcg_temp_new_ptr();
-//    TCGv_ptr g = tcg_temp_new_ptr();
-//    TCGv_i32 desc = tcg_constant_i32(FIELD_DP32(0, PREDDESC, OPRSZ, vsz));
-//
-//    tcg_gen_addi_ptr(d, cpu_env, pred_full_reg_offset(s, a->rd));
-//    tcg_gen_addi_ptr(n, cpu_env, pred_full_reg_offset(s, a->rn));
-//    tcg_gen_addi_ptr(g, cpu_env, pred_full_reg_offset(s, a->pg));
-//
-//    if (a->s) {
-//        TCGv_i32 t = tcg_temp_new_i32();
-//        fn_s(t, d, n, g, desc);
-//        do_pred_flags(t);
-//        tcg_temp_free_i32(t);
-//    } else {
-//        fn(d, n, g, desc);
-//    }
-//    tcg_temp_free_ptr(d);
-//    tcg_temp_free_ptr(n);
-//    tcg_temp_free_ptr(g);
+    unsigned vsz = pred_full_reg_size(s);
+
+    /* Predicate sizes may be smaller and cannot use simd_desc.  */
+    TCGv_ptr d = tcg_temp_new_ptr();
+    TCGv_ptr n = tcg_temp_new_ptr();
+    TCGv_ptr g = tcg_temp_new_ptr();
+    TCGv_i32 desc = tcg_constant_i32(FIELD_DP32(0, PREDDESC, OPRSZ, vsz));
+
+    tcg_gen_addi_ptr(d, cpu_env, pred_full_reg_offset(s, a->rd));
+    tcg_gen_addi_ptr(n, cpu_env, pred_full_reg_offset(s, a->rn));
+    tcg_gen_addi_ptr(g, cpu_env, pred_full_reg_offset(s, a->pg));
+
+    if (a->s) {
+        TCGv_i32 t = tcg_temp_new_i32();
+        fn_s(t, d, n, g, desc);
+        do_pred_flags(t);
+        tcg_temp_free_i32(t);
+    } else {
+        fn(d, n, g, desc);
+    }
+    tcg_temp_free_ptr(d);
+    tcg_temp_free_ptr(n);
+    tcg_temp_free_ptr(g);
     return true;
 }
 
@@ -3518,7 +3506,7 @@ static bool trans_FDUP(DisasContext *s, arg_FDUP *a)
 
         /* Decode the VFP immediate.  */
         imm = vfp_expand_imm(a->esz, a->imm);
-        tcg_gen_gvec_dup_imm(a->esz, dofs, vsz, vsz, imm, cpu_env);
+        tcg_gen_gvec_dup_imm(a->esz, dofs, vsz, vsz, imm);
     }
     return true;
 }
@@ -3531,7 +3519,7 @@ static bool trans_DUP_i(DisasContext *s, arg_DUP_i *a)
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         int dofs = vec_full_reg_offset(s, a->rd);
-        tcg_gen_gvec_dup_imm(a->esz, dofs, vsz, vsz, a->imm, cpu_env);
+        tcg_gen_gvec_dup_imm(a->esz, dofs, vsz, vsz, a->imm);
     }
     return true;
 }
@@ -3546,47 +3534,44 @@ static bool trans_SUB_zzi(DisasContext *s, arg_rri_esz *a)
 
 static bool trans_SUBR_zzi(DisasContext *s, arg_rri_esz *a)
 {
-    unimplemented();
+    static const TCGOpcode vecop_list[] = { INDEX_op_sub_vec, 0 };
+    static const GVecGen2s op[4] = {
+        { .fni8 = tcg_gen_vec_sub8_i64,
+            .fniv = tcg_gen_sub_vec,
+            .fno = gen_helper_sve_subri_b,
+            .opt_opc = vecop_list,
+            .vece = MO_8,
+            .scalar_first = true },
+        { .fni8 = tcg_gen_vec_sub16_i64,
+            .fniv = tcg_gen_sub_vec,
+            .fno = gen_helper_sve_subri_h,
+            .opt_opc = vecop_list,
+            .vece = MO_16,
+            .scalar_first = true },
+        { .fni4 = tcg_gen_sub_i32,
+            .fniv = tcg_gen_sub_vec,
+            .fno = gen_helper_sve_subri_s,
+            .opt_opc = vecop_list,
+            .vece = MO_32,
+            .scalar_first = true },
+        { .fni8 = tcg_gen_sub_i64,
+            .fniv = tcg_gen_sub_vec,
+            .fno = gen_helper_sve_subri_d,
+            .opt_opc = vecop_list,
+            .prefer_i64 = TCG_TARGET_REG_BITS == 64,
+            .vece = MO_64,
+            .scalar_first = true }
+    };
 
-    // TODO: Restore after defining INDEX_*
-//    static const TCGOpcode vecop_list[] = { INDEX_op_sub_vec, 0 };
-//    static const GVecGen2s op[4] = {
-//        { .fni8 = tcg_gen_vec_sub8_i64,
-//          .fniv = tcg_gen_sub_vec,
-//          .fno = gen_helper_sve_subri_b,
-//          .opt_opc = vecop_list,
-//          .vece = MO_8,
-//          .scalar_first = true },
-//        { .fni8 = tcg_gen_vec_sub16_i64,
-//          .fniv = tcg_gen_sub_vec,
-//          .fno = gen_helper_sve_subri_h,
-//          .opt_opc = vecop_list,
-//          .vece = MO_16,
-//          .scalar_first = true },
-//        { .fni4 = tcg_gen_sub_i32,
-//          .fniv = tcg_gen_sub_vec,
-//          .fno = gen_helper_sve_subri_s,
-//          .opt_opc = vecop_list,
-//          .vece = MO_32,
-//          .scalar_first = true },
-//        { .fni8 = tcg_gen_sub_i64,
-//          .fniv = tcg_gen_sub_vec,
-//          .fno = gen_helper_sve_subri_d,
-//          .opt_opc = vecop_list,
-//          .prefer_i64 = TCG_TARGET_REG_BITS == 64,
-//          .vece = MO_64,
-//          .scalar_first = true }
-//    };
-//
-//    if (!dc_isar_feature(aa64_sve, s)) {
-//        return false;
-//    }
-//    if (sve_access_check(s)) {
-//        unsigned vsz = vec_full_reg_size(s);
-//        tcg_gen_gvec_2s(vec_full_reg_offset(s, a->rd),
-//                        vec_full_reg_offset(s, a->rn),
-//                        vsz, vsz, tcg_constant_i64(a->imm), &op[a->esz]);
-//    }
+    if (!dc_isar_feature(aa64_sve, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+        tcg_gen_gvec_2s(vec_full_reg_offset(s, a->rd),
+                        vec_full_reg_offset(s, a->rn),
+                        vsz, vsz, tcg_constant_i64(a->imm), &op[a->esz]);
+    }
     return true;
 }
 
@@ -5048,7 +5033,7 @@ static void do_ldrq(DisasContext *s, int zt, int pg, TCGv_i64 addr, int dtype)
     /* Replicate that first quadword.  */
     if (vsz > 16) {
         int doff = vec_full_reg_offset(s, zt);
-        tcg_gen_gvec_dup_mem(4, doff + 16, doff, vsz - 16, vsz - 16, cpu_env);
+        tcg_gen_gvec_dup_mem(4, doff + 16, doff, vsz - 16, vsz - 16);
     }
 }
 
@@ -5135,11 +5120,11 @@ static void do_ldro(DisasContext *s, int zt, int pg, TCGv_i64 addr, int dtype)
     doff = vec_full_reg_offset(s, zt);
     vsz_r32 = ALIGN_DOWN(vsz, 32);
     if (vsz >= 64) {
-        tcg_gen_gvec_dup_mem(5, doff + 32, doff, vsz_r32 - 32, vsz_r32 - 32, cpu_env);
+        tcg_gen_gvec_dup_mem(5, doff + 32, doff, vsz_r32 - 32, vsz_r32 - 32);
     }
     vsz -= vsz_r32;
     if (vsz) {
-        tcg_gen_gvec_dup_imm(MO_64, doff + vsz_r32, vsz, vsz, 0, cpu_env);
+        tcg_gen_gvec_dup_imm(MO_64, doff + vsz_r32, vsz, vsz, 0);
     }
 }
 
@@ -5222,7 +5207,7 @@ static bool trans_LD1R_zpri(DisasContext *s, arg_rpri_load *a)
 
     /* Broadcast to *all* elements.  */
     tcg_gen_gvec_dup_i64(esz, vec_full_reg_offset(s, a->rd),
-                         vsz, vsz, temp, cpu_env);
+                         vsz, vsz, temp);
     tcg_temp_free_i64(temp);
 
     /* Zero the inactive elements.  */
@@ -6462,49 +6447,48 @@ static bool do_shll_tb(DisasContext *s, arg_rri_esz *a,
     return true;
 }
 
-// TODO: Restore after definition of INDEX_*
-//static const TCGOpcode sshll_list[] = {
-//    INDEX_op_shli_vec, INDEX_op_sari_vec, 0
-//};
-//static const GVecGen2i sshll_ops[3] = {
-//    { .fniv = gen_sshll_vec,
-//      .opt_opc = sshll_list,
-//      .fno = gen_helper_sve2_sshll_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_sshll_vec,
-//      .opt_opc = sshll_list,
-//      .fno = gen_helper_sve2_sshll_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_sshll_vec,
-//      .opt_opc = sshll_list,
-//      .fno = gen_helper_sve2_sshll_d,
-//      .vece = MO_64 }
-//};
-//TRANS_FEAT(SSHLLB, aa64_sve2, do_shll_tb, a, sshll_ops, false)
-//TRANS_FEAT(SSHLLT, aa64_sve2, do_shll_tb, a, sshll_ops, true)
-//
-//static const TCGOpcode ushll_list[] = {
-//    INDEX_op_shli_vec, INDEX_op_shri_vec, 0
-//};
-//static const GVecGen2i ushll_ops[3] = {
-//    { .fni8 = gen_ushll16_i64,
-//      .fniv = gen_ushll_vec,
-//      .opt_opc = ushll_list,
-//      .fno = gen_helper_sve2_ushll_h,
-//      .vece = MO_16 },
-//    { .fni8 = gen_ushll32_i64,
-//      .fniv = gen_ushll_vec,
-//      .opt_opc = ushll_list,
-//      .fno = gen_helper_sve2_ushll_s,
-//      .vece = MO_32 },
-//    { .fni8 = gen_ushll64_i64,
-//      .fniv = gen_ushll_vec,
-//      .opt_opc = ushll_list,
-//      .fno = gen_helper_sve2_ushll_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(USHLLB, aa64_sve2, do_shll_tb, a, ushll_ops, false)
-//TRANS_FEAT(USHLLT, aa64_sve2, do_shll_tb, a, ushll_ops, true)
+static const TCGOpcode sshll_list[] = {
+    INDEX_op_shli_vec, INDEX_op_sari_vec, 0
+};
+static const GVecGen2i sshll_ops[3] = {
+    { .fniv = gen_sshll_vec,
+      .opt_opc = sshll_list,
+      .fno = gen_helper_sve2_sshll_h,
+      .vece = MO_16 },
+    { .fniv = gen_sshll_vec,
+      .opt_opc = sshll_list,
+      .fno = gen_helper_sve2_sshll_s,
+      .vece = MO_32 },
+    { .fniv = gen_sshll_vec,
+      .opt_opc = sshll_list,
+      .fno = gen_helper_sve2_sshll_d,
+      .vece = MO_64 }
+};
+TRANS_FEAT(SSHLLB, aa64_sve2, do_shll_tb, a, sshll_ops, false)
+TRANS_FEAT(SSHLLT, aa64_sve2, do_shll_tb, a, sshll_ops, true)
+
+static const TCGOpcode ushll_list[] = {
+    INDEX_op_shli_vec, INDEX_op_shri_vec, 0
+};
+static const GVecGen2i ushll_ops[3] = {
+    { .fni8 = gen_ushll16_i64,
+      .fniv = gen_ushll_vec,
+      .opt_opc = ushll_list,
+      .fno = gen_helper_sve2_ushll_h,
+      .vece = MO_16 },
+    { .fni8 = gen_ushll32_i64,
+      .fniv = gen_ushll_vec,
+      .opt_opc = ushll_list,
+      .fno = gen_helper_sve2_ushll_s,
+      .vece = MO_32 },
+    { .fni8 = gen_ushll64_i64,
+      .fniv = gen_ushll_vec,
+      .opt_opc = ushll_list,
+      .fno = gen_helper_sve2_ushll_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(USHLLB, aa64_sve2, do_shll_tb, a, ushll_ops, false)
+TRANS_FEAT(USHLLT, aa64_sve2, do_shll_tb, a, ushll_ops, true)
 
 static gen_helper_gvec_3 * const bext_fns[4] = {
     gen_helper_sve2_bext_b, gen_helper_sve2_bext_h,
@@ -6602,13 +6586,11 @@ static bool do_narrow_extract(DisasContext *s, arg_rri_esz *a,
     return true;
 }
 
-//TODO: Restore after definition of INDEX_*
-//static const TCGOpcode sqxtn_list[] = {
-//    INDEX_op_shli_vec, INDEX_op_smin_vec, INDEX_op_smax_vec, 0
-//};
+static const TCGOpcode sqxtn_list[] = {
+    INDEX_op_shli_vec, INDEX_op_smin_vec, INDEX_op_smax_vec, 0
+};
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
+
 static void gen_sqxtnb_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
 {
     TCGv_vec t = tcg_temp_new_vec_matching(d);
@@ -6626,25 +6608,22 @@ static void gen_sqxtnb_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
     tcg_temp_free_vec(t);
 }
 
-// TODO: Restore after definition of INDEX_*
-//static const GVecGen2 sqxtnb_ops[3] = {
-//    { .fniv = gen_sqxtnb_vec,
-//      .opt_opc = sqxtn_list,
-//      .fno = gen_helper_sve2_sqxtnb_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_sqxtnb_vec,
-//      .opt_opc = sqxtn_list,
-//      .fno = gen_helper_sve2_sqxtnb_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_sqxtnb_vec,
-//      .opt_opc = sqxtn_list,
-//      .fno = gen_helper_sve2_sqxtnb_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(SQXTNB, aa64_sve2, do_narrow_extract, a, sqxtnb_ops)
+static const GVecGen2 sqxtnb_ops[3] = {
+    { .fniv = gen_sqxtnb_vec,
+      .opt_opc = sqxtn_list,
+      .fno = gen_helper_sve2_sqxtnb_h,
+      .vece = MO_16 },
+    { .fniv = gen_sqxtnb_vec,
+      .opt_opc = sqxtn_list,
+      .fno = gen_helper_sve2_sqxtnb_s,
+      .vece = MO_32 },
+    { .fniv = gen_sqxtnb_vec,
+      .opt_opc = sqxtn_list,
+      .fno = gen_helper_sve2_sqxtnb_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(SQXTNB, aa64_sve2, do_narrow_extract, a, sqxtnb_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_sqxtnt_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
 {
     TCGv_vec t = tcg_temp_new_vec_matching(d);
@@ -6663,32 +6642,29 @@ static void gen_sqxtnt_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
     tcg_temp_free_vec(t);
 }
 
-// TODO: Restore after definition of INDEX_*
-//static const GVecGen2 sqxtnt_ops[3] = {
-//    { .fniv = gen_sqxtnt_vec,
-//      .opt_opc = sqxtn_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqxtnt_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_sqxtnt_vec,
-//      .opt_opc = sqxtn_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqxtnt_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_sqxtnt_vec,
-//      .opt_opc = sqxtn_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqxtnt_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(SQXTNT, aa64_sve2, do_narrow_extract, a, sqxtnt_ops)
-//
-//static const TCGOpcode uqxtn_list[] = {
-//    INDEX_op_shli_vec, INDEX_op_umin_vec, 0
-//};
+static const GVecGen2 sqxtnt_ops[3] = {
+    { .fniv = gen_sqxtnt_vec,
+      .opt_opc = sqxtn_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqxtnt_h,
+      .vece = MO_16 },
+    { .fniv = gen_sqxtnt_vec,
+      .opt_opc = sqxtn_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqxtnt_s,
+      .vece = MO_32 },
+    { .fniv = gen_sqxtnt_vec,
+      .opt_opc = sqxtn_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqxtnt_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(SQXTNT, aa64_sve2, do_narrow_extract, a, sqxtnt_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
+static const TCGOpcode uqxtn_list[] = {
+    INDEX_op_shli_vec, INDEX_op_umin_vec, 0
+};
+
 static void gen_uqxtnb_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
 {
     TCGv_vec t = tcg_temp_new_vec_matching(d);
@@ -6700,25 +6676,22 @@ static void gen_uqxtnb_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
     tcg_temp_free_vec(t);
 }
 
-// TODO: Restore after defining INDEX_*
-//static const GVecGen2 uqxtnb_ops[3] = {
-//    { .fniv = gen_uqxtnb_vec,
-//      .opt_opc = uqxtn_list,
-//      .fno = gen_helper_sve2_uqxtnb_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_uqxtnb_vec,
-//      .opt_opc = uqxtn_list,
-//      .fno = gen_helper_sve2_uqxtnb_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_uqxtnb_vec,
-//      .opt_opc = uqxtn_list,
-//      .fno = gen_helper_sve2_uqxtnb_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(UQXTNB, aa64_sve2, do_narrow_extract, a, uqxtnb_ops)
+static const GVecGen2 uqxtnb_ops[3] = {
+    { .fniv = gen_uqxtnb_vec,
+      .opt_opc = uqxtn_list,
+      .fno = gen_helper_sve2_uqxtnb_h,
+      .vece = MO_16 },
+    { .fniv = gen_uqxtnb_vec,
+      .opt_opc = uqxtn_list,
+      .fno = gen_helper_sve2_uqxtnb_s,
+      .vece = MO_32 },
+    { .fniv = gen_uqxtnb_vec,
+      .opt_opc = uqxtn_list,
+      .fno = gen_helper_sve2_uqxtnb_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(UQXTNB, aa64_sve2, do_narrow_extract, a, uqxtnb_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_uqxtnt_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
 {
     TCGv_vec t = tcg_temp_new_vec_matching(d);
@@ -6732,32 +6705,29 @@ static void gen_uqxtnt_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
     tcg_temp_free_vec(t);
 }
 
-// TODO: Restore after defining INDEX_*
-//static const GVecGen2 uqxtnt_ops[3] = {
-//    { .fniv = gen_uqxtnt_vec,
-//      .opt_opc = uqxtn_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_uqxtnt_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_uqxtnt_vec,
-//      .opt_opc = uqxtn_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_uqxtnt_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_uqxtnt_vec,
-//      .opt_opc = uqxtn_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_uqxtnt_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(UQXTNT, aa64_sve2, do_narrow_extract, a, uqxtnt_ops)
-//
-//static const TCGOpcode sqxtun_list[] = {
-//    INDEX_op_shli_vec, INDEX_op_umin_vec, INDEX_op_smax_vec, 0
-//};
+static const GVecGen2 uqxtnt_ops[3] = {
+    { .fniv = gen_uqxtnt_vec,
+      .opt_opc = uqxtn_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_uqxtnt_h,
+      .vece = MO_16 },
+    { .fniv = gen_uqxtnt_vec,
+      .opt_opc = uqxtn_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_uqxtnt_s,
+      .vece = MO_32 },
+    { .fniv = gen_uqxtnt_vec,
+      .opt_opc = uqxtn_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_uqxtnt_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(UQXTNT, aa64_sve2, do_narrow_extract, a, uqxtnt_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
+static const TCGOpcode sqxtun_list[] = {
+    INDEX_op_shli_vec, INDEX_op_umin_vec, INDEX_op_smax_vec, 0
+};
+
 static void gen_sqxtunb_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
 {
     TCGv_vec t = tcg_temp_new_vec_matching(d);
@@ -6771,25 +6741,22 @@ static void gen_sqxtunb_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
     tcg_temp_free_vec(t);
 }
 
-// TODO: Restore after defining INDEX_*
-//static const GVecGen2 sqxtunb_ops[3] = {
-//    { .fniv = gen_sqxtunb_vec,
-//      .opt_opc = sqxtun_list,
-//      .fno = gen_helper_sve2_sqxtunb_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_sqxtunb_vec,
-//      .opt_opc = sqxtun_list,
-//      .fno = gen_helper_sve2_sqxtunb_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_sqxtunb_vec,
-//      .opt_opc = sqxtun_list,
-//      .fno = gen_helper_sve2_sqxtunb_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(SQXTUNB, aa64_sve2, do_narrow_extract, a, sqxtunb_ops)
+static const GVecGen2 sqxtunb_ops[3] = {
+    { .fniv = gen_sqxtunb_vec,
+      .opt_opc = sqxtun_list,
+      .fno = gen_helper_sve2_sqxtunb_h,
+      .vece = MO_16 },
+    { .fniv = gen_sqxtunb_vec,
+      .opt_opc = sqxtun_list,
+      .fno = gen_helper_sve2_sqxtunb_s,
+      .vece = MO_32 },
+    { .fniv = gen_sqxtunb_vec,
+      .opt_opc = sqxtun_list,
+      .fno = gen_helper_sve2_sqxtunb_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(SQXTUNB, aa64_sve2, do_narrow_extract, a, sqxtunb_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_sqxtunt_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
 {
     TCGv_vec t = tcg_temp_new_vec_matching(d);
@@ -6805,25 +6772,24 @@ static void gen_sqxtunt_vec(unsigned vece, TCGv_vec d, TCGv_vec n)
     tcg_temp_free_vec(t);
 }
 
-// TODO: Restore after defining INDEX_*
-//static const GVecGen2 sqxtunt_ops[3] = {
-//    { .fniv = gen_sqxtunt_vec,
-//      .opt_opc = sqxtun_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqxtunt_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_sqxtunt_vec,
-//      .opt_opc = sqxtun_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqxtunt_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_sqxtunt_vec,
-//      .opt_opc = sqxtun_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqxtunt_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(SQXTUNT, aa64_sve2, do_narrow_extract, a, sqxtunt_ops)
+static const GVecGen2 sqxtunt_ops[3] = {
+    { .fniv = gen_sqxtunt_vec,
+      .opt_opc = sqxtun_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqxtunt_h,
+      .vece = MO_16 },
+    { .fniv = gen_sqxtunt_vec,
+      .opt_opc = sqxtun_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqxtunt_s,
+      .vece = MO_32 },
+    { .fniv = gen_sqxtunt_vec,
+      .opt_opc = sqxtun_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqxtunt_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(SQXTUNT, aa64_sve2, do_narrow_extract, a, sqxtunt_ops)
 
 static bool do_shr_narrow(DisasContext *s, arg_rri_esz *a,
                           const GVecGen2i ops[3])
@@ -6850,29 +6816,21 @@ static void gen_shrnb_i64(unsigned vece, TCGv_i64 d, TCGv_i64 n, int shr)
     tcg_gen_andi_i64(d, d, mask);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_shrnb16_i64(TCGv_i64 d, TCGv_i64 n, int64_t shr)
 {
     gen_shrnb_i64(MO_16, d, n, shr);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_shrnb32_i64(TCGv_i64 d, TCGv_i64 n, int64_t shr)
 {
     gen_shrnb_i64(MO_32, d, n, shr);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_shrnb64_i64(TCGv_i64 d, TCGv_i64 n, int64_t shr)
 {
     gen_shrnb_i64(MO_64, d, n, shr);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_shrnb_vec(unsigned vece, TCGv_vec d, TCGv_vec n, int64_t shr)
 {
     TCGv_vec t = tcg_temp_new_vec_matching(d);
@@ -6885,26 +6843,25 @@ static void gen_shrnb_vec(unsigned vece, TCGv_vec d, TCGv_vec n, int64_t shr)
     tcg_temp_free_vec(t);
 }
 
-// TODO: Restore after defining INDEX_*
-//static const TCGOpcode shrnb_vec_list[] = { INDEX_op_shri_vec, 0 };
-//static const GVecGen2i shrnb_ops[3] = {
-//    { .fni8 = gen_shrnb16_i64,
-//      .fniv = gen_shrnb_vec,
-//      .opt_opc = shrnb_vec_list,
-//      .fno = gen_helper_sve2_shrnb_h,
-//      .vece = MO_16 },
-//    { .fni8 = gen_shrnb32_i64,
-//      .fniv = gen_shrnb_vec,
-//      .opt_opc = shrnb_vec_list,
-//      .fno = gen_helper_sve2_shrnb_s,
-//      .vece = MO_32 },
-//    { .fni8 = gen_shrnb64_i64,
-//      .fniv = gen_shrnb_vec,
-//      .opt_opc = shrnb_vec_list,
-//      .fno = gen_helper_sve2_shrnb_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(SHRNB, aa64_sve2, do_shr_narrow, a, shrnb_ops)
+static const TCGOpcode shrnb_vec_list[] = { INDEX_op_shri_vec, 0 };
+static const GVecGen2i shrnb_ops[3] = {
+    { .fni8 = gen_shrnb16_i64,
+      .fniv = gen_shrnb_vec,
+      .opt_opc = shrnb_vec_list,
+      .fno = gen_helper_sve2_shrnb_h,
+      .vece = MO_16 },
+    { .fni8 = gen_shrnb32_i64,
+      .fniv = gen_shrnb_vec,
+      .opt_opc = shrnb_vec_list,
+      .fno = gen_helper_sve2_shrnb_s,
+      .vece = MO_32 },
+    { .fni8 = gen_shrnb64_i64,
+      .fniv = gen_shrnb_vec,
+      .opt_opc = shrnb_vec_list,
+      .fno = gen_helper_sve2_shrnb_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(SHRNB, aa64_sve2, do_shr_narrow, a, shrnb_ops)
 
 static void gen_shrnt_i64(unsigned vece, TCGv_i64 d, TCGv_i64 n, int shr)
 {
@@ -6917,30 +6874,22 @@ static void gen_shrnt_i64(unsigned vece, TCGv_i64 d, TCGv_i64 n, int shr)
     tcg_gen_or_i64(d, d, n);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_shrnt16_i64(TCGv_i64 d, TCGv_i64 n, int64_t shr)
 {
     gen_shrnt_i64(MO_16, d, n, shr);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_shrnt32_i64(TCGv_i64 d, TCGv_i64 n, int64_t shr)
 {
     gen_shrnt_i64(MO_32, d, n, shr);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_shrnt64_i64(TCGv_i64 d, TCGv_i64 n, int64_t shr)
 {
     tcg_gen_shri_i64(n, n, shr);
     tcg_gen_deposit_i64(d, d, n, 32, 32);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_shrnt_vec(unsigned vece, TCGv_vec d, TCGv_vec n, int64_t shr)
 {
     TCGv_vec t = tcg_temp_new_vec_matching(d);
@@ -6953,29 +6902,28 @@ static void gen_shrnt_vec(unsigned vece, TCGv_vec d, TCGv_vec n, int64_t shr)
     tcg_temp_free_vec(t);
 }
 
-//TODO: Restore after defining INDEX_*
-//static const TCGOpcode shrnt_vec_list[] = { INDEX_op_shli_vec, 0 };
-//static const GVecGen2i shrnt_ops[3] = {
-//    { .fni8 = gen_shrnt16_i64,
-//      .fniv = gen_shrnt_vec,
-//      .opt_opc = shrnt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_shrnt_h,
-//      .vece = MO_16 },
-//    { .fni8 = gen_shrnt32_i64,
-//      .fniv = gen_shrnt_vec,
-//      .opt_opc = shrnt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_shrnt_s,
-//      .vece = MO_32 },
-//    { .fni8 = gen_shrnt64_i64,
-//      .fniv = gen_shrnt_vec,
-//      .opt_opc = shrnt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_shrnt_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(SHRNT, aa64_sve2, do_shr_narrow, a, shrnt_ops)
+static const TCGOpcode shrnt_vec_list[] = { INDEX_op_shli_vec, 0 };
+static const GVecGen2i shrnt_ops[3] = {
+    { .fni8 = gen_shrnt16_i64,
+      .fniv = gen_shrnt_vec,
+      .opt_opc = shrnt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_shrnt_h,
+      .vece = MO_16 },
+    { .fni8 = gen_shrnt32_i64,
+      .fniv = gen_shrnt_vec,
+      .opt_opc = shrnt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_shrnt_s,
+      .vece = MO_32 },
+    { .fni8 = gen_shrnt64_i64,
+      .fniv = gen_shrnt_vec,
+      .opt_opc = shrnt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_shrnt_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(SHRNT, aa64_sve2, do_shr_narrow, a, shrnt_ops)
 
 static const GVecGen2i rshrnb_ops[3] = {
     { .fno = gen_helper_sve2_rshrnb_h },
@@ -6991,8 +6939,6 @@ static const GVecGen2i rshrnt_ops[3] = {
 };
 TRANS_FEAT(RSHRNT, aa64_sve2, do_shr_narrow, a, rshrnt_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_sqshrunb_vec(unsigned vece, TCGv_vec d,
                              TCGv_vec n, int64_t shr)
 {
@@ -7007,28 +6953,25 @@ static void gen_sqshrunb_vec(unsigned vece, TCGv_vec d,
     tcg_temp_free_vec(t);
 }
 
-// TODO: Restore after defining INDEX_
-//static const TCGOpcode sqshrunb_vec_list[] = {
-//    INDEX_op_sari_vec, INDEX_op_smax_vec, INDEX_op_umin_vec, 0
-//};
-//static const GVecGen2i sqshrunb_ops[3] = {
-//    { .fniv = gen_sqshrunb_vec,
-//      .opt_opc = sqshrunb_vec_list,
-//      .fno = gen_helper_sve2_sqshrunb_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_sqshrunb_vec,
-//      .opt_opc = sqshrunb_vec_list,
-//      .fno = gen_helper_sve2_sqshrunb_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_sqshrunb_vec,
-//      .opt_opc = sqshrunb_vec_list,
-//      .fno = gen_helper_sve2_sqshrunb_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(SQSHRUNB, aa64_sve2, do_shr_narrow, a, sqshrunb_ops)
+static const TCGOpcode sqshrunb_vec_list[] = {
+    INDEX_op_sari_vec, INDEX_op_smax_vec, INDEX_op_umin_vec, 0
+};
+static const GVecGen2i sqshrunb_ops[3] = {
+    { .fniv = gen_sqshrunb_vec,
+      .opt_opc = sqshrunb_vec_list,
+      .fno = gen_helper_sve2_sqshrunb_h,
+      .vece = MO_16 },
+    { .fniv = gen_sqshrunb_vec,
+      .opt_opc = sqshrunb_vec_list,
+      .fno = gen_helper_sve2_sqshrunb_s,
+      .vece = MO_32 },
+    { .fniv = gen_sqshrunb_vec,
+      .opt_opc = sqshrunb_vec_list,
+      .fno = gen_helper_sve2_sqshrunb_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(SQSHRUNB, aa64_sve2, do_shr_narrow, a, sqshrunb_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_sqshrunt_vec(unsigned vece, TCGv_vec d,
                              TCGv_vec n, int64_t shr)
 {
@@ -7045,29 +6988,28 @@ static void gen_sqshrunt_vec(unsigned vece, TCGv_vec d,
     tcg_temp_free_vec(t);
 }
 
-//TODO: Restore after defining INDEX_*
-//static const TCGOpcode sqshrunt_vec_list[] = {
-//    INDEX_op_shli_vec, INDEX_op_sari_vec,
-//    INDEX_op_smax_vec, INDEX_op_umin_vec, 0
-//};
-//static const GVecGen2i sqshrunt_ops[3] = {
-//    { .fniv = gen_sqshrunt_vec,
-//      .opt_opc = sqshrunt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqshrunt_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_sqshrunt_vec,
-//      .opt_opc = sqshrunt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqshrunt_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_sqshrunt_vec,
-//      .opt_opc = sqshrunt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqshrunt_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(SQSHRUNT, aa64_sve2, do_shr_narrow, a, sqshrunt_ops)
+static const TCGOpcode sqshrunt_vec_list[] = {
+    INDEX_op_shli_vec, INDEX_op_sari_vec,
+    INDEX_op_smax_vec, INDEX_op_umin_vec, 0
+};
+static const GVecGen2i sqshrunt_ops[3] = {
+    { .fniv = gen_sqshrunt_vec,
+      .opt_opc = sqshrunt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqshrunt_h,
+      .vece = MO_16 },
+    { .fniv = gen_sqshrunt_vec,
+      .opt_opc = sqshrunt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqshrunt_s,
+      .vece = MO_32 },
+    { .fniv = gen_sqshrunt_vec,
+      .opt_opc = sqshrunt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqshrunt_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(SQSHRUNT, aa64_sve2, do_shr_narrow, a, sqshrunt_ops)
 
 static const GVecGen2i sqrshrunb_ops[3] = {
     { .fno = gen_helper_sve2_sqrshrunb_h },
@@ -7083,8 +7025,6 @@ static const GVecGen2i sqrshrunt_ops[3] = {
 };
 TRANS_FEAT(SQRSHRUNT, aa64_sve2, do_shr_narrow, a, sqrshrunt_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_sqshrnb_vec(unsigned vece, TCGv_vec d,
                             TCGv_vec n, int64_t shr)
 {
@@ -7103,28 +7043,25 @@ static void gen_sqshrnb_vec(unsigned vece, TCGv_vec d,
     tcg_temp_free_vec(t);
 }
 
-//TODO: Restore after defining INDEX_*
-//static const TCGOpcode sqshrnb_vec_list[] = {
-//    INDEX_op_sari_vec, INDEX_op_smax_vec, INDEX_op_smin_vec, 0
-//};
-//static const GVecGen2i sqshrnb_ops[3] = {
-//    { .fniv = gen_sqshrnb_vec,
-//      .opt_opc = sqshrnb_vec_list,
-//      .fno = gen_helper_sve2_sqshrnb_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_sqshrnb_vec,
-//      .opt_opc = sqshrnb_vec_list,
-//      .fno = gen_helper_sve2_sqshrnb_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_sqshrnb_vec,
-//      .opt_opc = sqshrnb_vec_list,
-//      .fno = gen_helper_sve2_sqshrnb_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(SQSHRNB, aa64_sve2, do_shr_narrow, a, sqshrnb_ops)
+static const TCGOpcode sqshrnb_vec_list[] = {
+    INDEX_op_sari_vec, INDEX_op_smax_vec, INDEX_op_smin_vec, 0
+};
+static const GVecGen2i sqshrnb_ops[3] = {
+    { .fniv = gen_sqshrnb_vec,
+      .opt_opc = sqshrnb_vec_list,
+      .fno = gen_helper_sve2_sqshrnb_h,
+      .vece = MO_16 },
+    { .fniv = gen_sqshrnb_vec,
+      .opt_opc = sqshrnb_vec_list,
+      .fno = gen_helper_sve2_sqshrnb_s,
+      .vece = MO_32 },
+    { .fniv = gen_sqshrnb_vec,
+      .opt_opc = sqshrnb_vec_list,
+      .fno = gen_helper_sve2_sqshrnb_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(SQSHRNB, aa64_sve2, do_shr_narrow, a, sqshrnb_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_sqshrnt_vec(unsigned vece, TCGv_vec d,
                              TCGv_vec n, int64_t shr)
 {
@@ -7144,29 +7081,28 @@ static void gen_sqshrnt_vec(unsigned vece, TCGv_vec d,
     tcg_temp_free_vec(t);
 }
 
-//TODO: Restore after defining INDEX_*
-//static const TCGOpcode sqshrnt_vec_list[] = {
-//    INDEX_op_shli_vec, INDEX_op_sari_vec,
-//    INDEX_op_smax_vec, INDEX_op_smin_vec, 0
-//};
-//static const GVecGen2i sqshrnt_ops[3] = {
-//    { .fniv = gen_sqshrnt_vec,
-//      .opt_opc = sqshrnt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqshrnt_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_sqshrnt_vec,
-//      .opt_opc = sqshrnt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqshrnt_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_sqshrnt_vec,
-//      .opt_opc = sqshrnt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_sqshrnt_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(SQSHRNT, aa64_sve2, do_shr_narrow, a, sqshrnt_ops)
+static const TCGOpcode sqshrnt_vec_list[] = {
+    INDEX_op_shli_vec, INDEX_op_sari_vec,
+    INDEX_op_smax_vec, INDEX_op_smin_vec, 0
+};
+static const GVecGen2i sqshrnt_ops[3] = {
+    { .fniv = gen_sqshrnt_vec,
+      .opt_opc = sqshrnt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqshrnt_h,
+      .vece = MO_16 },
+    { .fniv = gen_sqshrnt_vec,
+      .opt_opc = sqshrnt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqshrnt_s,
+      .vece = MO_32 },
+    { .fniv = gen_sqshrnt_vec,
+      .opt_opc = sqshrnt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_sqshrnt_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(SQSHRNT, aa64_sve2, do_shr_narrow, a, sqshrnt_ops)
 
 static const GVecGen2i sqrshrnb_ops[3] = {
     { .fno = gen_helper_sve2_sqrshrnb_h },
@@ -7182,8 +7118,6 @@ static const GVecGen2i sqrshrnt_ops[3] = {
 };
 TRANS_FEAT(SQRSHRNT, aa64_sve2, do_shr_narrow, a, sqrshrnt_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_uqshrnb_vec(unsigned vece, TCGv_vec d,
                             TCGv_vec n, int64_t shr)
 {
@@ -7196,28 +7130,25 @@ static void gen_uqshrnb_vec(unsigned vece, TCGv_vec d,
     tcg_temp_free_vec(t);
 }
 
-//TODO: Restore after defining INDEX_*
-//static const TCGOpcode uqshrnb_vec_list[] = {
-//    INDEX_op_shri_vec, INDEX_op_umin_vec, 0
-//};
-//static const GVecGen2i uqshrnb_ops[3] = {
-//    { .fniv = gen_uqshrnb_vec,
-//      .opt_opc = uqshrnb_vec_list,
-//      .fno = gen_helper_sve2_uqshrnb_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_uqshrnb_vec,
-//      .opt_opc = uqshrnb_vec_list,
-//      .fno = gen_helper_sve2_uqshrnb_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_uqshrnb_vec,
-//      .opt_opc = uqshrnb_vec_list,
-//      .fno = gen_helper_sve2_uqshrnb_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(UQSHRNB, aa64_sve2, do_shr_narrow, a, uqshrnb_ops)
+static const TCGOpcode uqshrnb_vec_list[] = {
+    INDEX_op_shri_vec, INDEX_op_umin_vec, 0
+};
+static const GVecGen2i uqshrnb_ops[3] = {
+    { .fniv = gen_uqshrnb_vec,
+      .opt_opc = uqshrnb_vec_list,
+      .fno = gen_helper_sve2_uqshrnb_h,
+      .vece = MO_16 },
+    { .fniv = gen_uqshrnb_vec,
+      .opt_opc = uqshrnb_vec_list,
+      .fno = gen_helper_sve2_uqshrnb_s,
+      .vece = MO_32 },
+    { .fniv = gen_uqshrnb_vec,
+      .opt_opc = uqshrnb_vec_list,
+      .fno = gen_helper_sve2_uqshrnb_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(UQSHRNB, aa64_sve2, do_shr_narrow, a, uqshrnb_ops)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_uqshrnt_vec(unsigned vece, TCGv_vec d,
                             TCGv_vec n, int64_t shr)
 {
@@ -7232,28 +7163,27 @@ static void gen_uqshrnt_vec(unsigned vece, TCGv_vec d,
     tcg_temp_free_vec(t);
 }
 
-//TODO: Restore after defining INDEX_
-//static const TCGOpcode uqshrnt_vec_list[] = {
-//    INDEX_op_shli_vec, INDEX_op_shri_vec, INDEX_op_umin_vec, 0
-//};
-//static const GVecGen2i uqshrnt_ops[3] = {
-//    { .fniv = gen_uqshrnt_vec,
-//      .opt_opc = uqshrnt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_uqshrnt_h,
-//      .vece = MO_16 },
-//    { .fniv = gen_uqshrnt_vec,
-//      .opt_opc = uqshrnt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_uqshrnt_s,
-//      .vece = MO_32 },
-//    { .fniv = gen_uqshrnt_vec,
-//      .opt_opc = uqshrnt_vec_list,
-//      .load_dest = true,
-//      .fno = gen_helper_sve2_uqshrnt_d,
-//      .vece = MO_64 },
-//};
-//TRANS_FEAT(UQSHRNT, aa64_sve2, do_shr_narrow, a, uqshrnt_ops)
+static const TCGOpcode uqshrnt_vec_list[] = {
+    INDEX_op_shli_vec, INDEX_op_shri_vec, INDEX_op_umin_vec, 0
+};
+static const GVecGen2i uqshrnt_ops[3] = {
+    { .fniv = gen_uqshrnt_vec,
+      .opt_opc = uqshrnt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_uqshrnt_h,
+      .vece = MO_16 },
+    { .fniv = gen_uqshrnt_vec,
+      .opt_opc = uqshrnt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_uqshrnt_s,
+      .vece = MO_32 },
+    { .fniv = gen_uqshrnt_vec,
+      .opt_opc = uqshrnt_vec_list,
+      .load_dest = true,
+      .fno = gen_helper_sve2_uqshrnt_d,
+      .vece = MO_64 },
+};
+TRANS_FEAT(UQSHRNT, aa64_sve2, do_shr_narrow, a, uqshrnt_ops)
 
 static const GVecGen2i uqrshrnb_ops[3] = {
     { .fno = gen_helper_sve2_uqrshrnb_h },
@@ -7602,56 +7532,47 @@ static void gen_sclamp_vec(unsigned vece, TCGv_vec d, TCGv_vec n,
 static void gen_sclamp(unsigned vece, uint32_t d, uint32_t n, uint32_t m,
                        uint32_t a, uint32_t oprsz, uint32_t maxsz)
 {
-    unimplemented();
-
-    // TODO: Restore after defining INDEX_*
-//    static const TCGOpcode vecop[] = {
-//        INDEX_op_smin_vec, INDEX_op_smax_vec, 0
-//    };
-//    static const GVecGen4 ops[4] = {
-//        { .fniv = gen_sclamp_vec,
-//          .fno  = gen_helper_gvec_sclamp_b,
-//          .opt_opc = vecop,
-//          .vece = MO_8 },
-//        { .fniv = gen_sclamp_vec,
-//          .fno  = gen_helper_gvec_sclamp_h,
-//          .opt_opc = vecop,
-//          .vece = MO_16 },
-//        { .fni4 = gen_sclamp_i32,
-//          .fniv = gen_sclamp_vec,
-//          .fno  = gen_helper_gvec_sclamp_s,
-//          .opt_opc = vecop,
-//          .vece = MO_32 },
-//        { .fni8 = gen_sclamp_i64,
-//          .fniv = gen_sclamp_vec,
-//          .fno  = gen_helper_gvec_sclamp_d,
-//          .opt_opc = vecop,
-//          .vece = MO_64,
-//          .prefer_i64 = TCG_TARGET_REG_BITS == 64 }
-//    };
-//    tcg_gen_gvec_4(d, n, m, a, oprsz, maxsz, &ops[vece]);
+    static const TCGOpcode vecop[] = {
+        INDEX_op_smin_vec, INDEX_op_smax_vec, 0
+    };
+    static const GVecGen4 ops[4] = {
+        { .fniv = gen_sclamp_vec,
+          .fno  = gen_helper_gvec_sclamp_b,
+          .opt_opc = vecop,
+          .vece = MO_8 },
+        { .fniv = gen_sclamp_vec,
+          .fno  = gen_helper_gvec_sclamp_h,
+          .opt_opc = vecop,
+          .vece = MO_16 },
+        { .fni4 = gen_sclamp_i32,
+          .fniv = gen_sclamp_vec,
+          .fno  = gen_helper_gvec_sclamp_s,
+          .opt_opc = vecop,
+          .vece = MO_32 },
+        { .fni8 = gen_sclamp_i64,
+          .fniv = gen_sclamp_vec,
+          .fno  = gen_helper_gvec_sclamp_d,
+          .opt_opc = vecop,
+          .vece = MO_64,
+          .prefer_i64 = TCG_TARGET_REG_BITS == 64 }
+    };
+    tcg_gen_gvec_4(d, n, m, a, oprsz, maxsz, &ops[vece]);
 }
 
 TRANS_FEAT(SCLAMP, aa64_sme, gen_gvec_fn_arg_zzzz, gen_sclamp, a)
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_uclamp_i32(TCGv_i32 d, TCGv_i32 n, TCGv_i32 m, TCGv_i32 a)
 {
     tcg_gen_umax_i32(d, a, n);
     tcg_gen_umin_i32(d, d, m);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_uclamp_i64(TCGv_i64 d, TCGv_i64 n, TCGv_i64 m, TCGv_i64 a)
 {
     tcg_gen_umax_i64(d, a, n);
     tcg_gen_umin_i64(d, d, m);
 }
 
-// TODO: Remove the attribute after restoring code using the function.
-__attribute__((unused))
 static void gen_uclamp_vec(unsigned vece, TCGv_vec d, TCGv_vec n,
                            TCGv_vec m, TCGv_vec a)
 {
@@ -7662,34 +7583,31 @@ static void gen_uclamp_vec(unsigned vece, TCGv_vec d, TCGv_vec n,
 static void gen_uclamp(unsigned vece, uint32_t d, uint32_t n, uint32_t m,
                        uint32_t a, uint32_t oprsz, uint32_t maxsz)
 {
-    unimplemented();
-
-    // TODO: Restore after defining INDEX_*
-//    static const TCGOpcode vecop[] = {
-//        INDEX_op_umin_vec, INDEX_op_umax_vec, 0
-//    };
-//    static const GVecGen4 ops[4] = {
-//        { .fniv = gen_uclamp_vec,
-//          .fno  = gen_helper_gvec_uclamp_b,
-//          .opt_opc = vecop,
-//          .vece = MO_8 },
-//        { .fniv = gen_uclamp_vec,
-//          .fno  = gen_helper_gvec_uclamp_h,
-//          .opt_opc = vecop,
-//          .vece = MO_16 },
-//        { .fni4 = gen_uclamp_i32,
-//          .fniv = gen_uclamp_vec,
-//          .fno  = gen_helper_gvec_uclamp_s,
-//          .opt_opc = vecop,
-//          .vece = MO_32 },
-//        { .fni8 = gen_uclamp_i64,
-//          .fniv = gen_uclamp_vec,
-//          .fno  = gen_helper_gvec_uclamp_d,
-//          .opt_opc = vecop,
-//          .vece = MO_64,
-//          .prefer_i64 = TCG_TARGET_REG_BITS == 64 }
-//    };
-//    tcg_gen_gvec_4(d, n, m, a, oprsz, maxsz, &ops[vece]);
+    static const TCGOpcode vecop[] = {
+        INDEX_op_umin_vec, INDEX_op_umax_vec, 0
+    };
+    static const GVecGen4 ops[4] = {
+        { .fniv = gen_uclamp_vec,
+          .fno  = gen_helper_gvec_uclamp_b,
+          .opt_opc = vecop,
+          .vece = MO_8 },
+        { .fniv = gen_uclamp_vec,
+          .fno  = gen_helper_gvec_uclamp_h,
+          .opt_opc = vecop,
+          .vece = MO_16 },
+        { .fni4 = gen_uclamp_i32,
+          .fniv = gen_uclamp_vec,
+          .fno  = gen_helper_gvec_uclamp_s,
+          .opt_opc = vecop,
+          .vece = MO_32 },
+        { .fni8 = gen_uclamp_i64,
+          .fniv = gen_uclamp_vec,
+          .fno  = gen_helper_gvec_uclamp_d,
+          .opt_opc = vecop,
+          .vece = MO_64,
+          .prefer_i64 = TCG_TARGET_REG_BITS == 64 }
+    };
+    tcg_gen_gvec_4(d, n, m, a, oprsz, maxsz, &ops[vece]);
 }
 
 TRANS_FEAT(UCLAMP, aa64_sme, gen_gvec_fn_arg_zzzz, gen_uclamp, a)

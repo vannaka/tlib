@@ -27,6 +27,9 @@
 #include "translate.h"
 #include "translate-a32.h"
 
+#include "tcg-gvec-desc.h"
+#include "tcg-op-gvec.h"
+
 /* Include the generated Neon decoder */
 #include "decode-neon-dp.c.inc"
 #include "decode-neon-ls.c.inc"
@@ -618,7 +621,7 @@ static bool trans_VLD_all_lanes(DisasContext *s, arg_VLD_all_lanes *a)
             tcg_gen_gvec_dup_i32(size, neon_full_reg_offset(vd),
                                  8, 8, tmp);
             tcg_gen_gvec_mov(0, neon_full_reg_offset(vd + 1),
-                             neon_full_reg_offset(vd), 8, 8, cpu_env);
+                             neon_full_reg_offset(vd), 8, 8);
         } else {
             tcg_gen_gvec_dup_i32(size, neon_full_reg_offset(vd),
                                  vec_size, vec_size, tmp);
@@ -1304,7 +1307,7 @@ static bool trans_VSHR_S_2sh(DisasContext *s, arg_2reg_shift *a)
 static void gen_zero_rd_2sh(unsigned vece, uint32_t rd_ofs, uint32_t rm_ofs,
                             int64_t shift, uint32_t oprsz, uint32_t maxsz)
 {
-    tcg_gen_gvec_dup_imm(vece, rd_ofs, oprsz, maxsz, 0, cpu_env);
+    tcg_gen_gvec_dup_imm(vece, rd_ofs, oprsz, maxsz, 0);
 }
 
 static bool trans_VSHR_U_2sh(DisasContext *s, arg_2reg_shift *a)
@@ -1786,7 +1789,7 @@ static bool do_1reg_imm(DisasContext *s, arg_1reg_imm *a,
 static void gen_VMOV_1r(unsigned vece, uint32_t dofs, uint32_t aofs,
                         int64_t c, uint32_t oprsz, uint32_t maxsz)
 {
-    tcg_gen_gvec_dup_imm(MO_64, dofs, oprsz, maxsz, c, cpu_env);
+    tcg_gen_gvec_dup_imm(MO_64, dofs, oprsz, maxsz, c);
 }
 
 static bool trans_Vimm_1r(DisasContext *s, arg_1reg_imm *a)
@@ -2948,7 +2951,7 @@ static bool trans_VDUP_scalar(DisasContext *s, arg_VDUP_scalar *a)
 
     tcg_gen_gvec_dup_mem(a->size, neon_full_reg_offset(a->vd),
                          neon_element_offset(a->vm, a->index, a->size),
-                         a->q ? 16 : 8, a->q ? 16 : 8, cpu_env);
+                         a->q ? 16 : 8, a->q ? 16 : 8);
     return true;
 }
 

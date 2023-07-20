@@ -70,6 +70,9 @@ add_library (tcg STATIC
     host-utils.c
     optimize.c
     tcg.c
+    tcg-op-gvec.c
+    tcg-op-vec.c
     tcg-runtime.c
+    tcg-runtime-gvec.c
     )
 

@@ -183,9 +183,6 @@ FUNC_STUB(v7m_sp_limit)
 static const uint8_t AES_sbox[] = {}, AES_isbox[] = {}, AES_shifts[] = {}, AES_ishifts[] = {};
 
 FUNC_STUB(MAKE_64BIT_MASK)
-FUNC_STUB(simd_data)
-FUNC_STUB(simd_maxsz)
-FUNC_STUB(simd_oprsz)
 
 /* vfp_helper.c */
 
@@ -224,7 +221,6 @@ typedef int bfloat16;
 
 #define  float16_zero            stub_abort("float16_zero")
 #define  float_round_to_odd_inf  stub_abort("float_round_to_odd_inf")
-#define  SIMD_DATA_SHIFT         stub_abort("SIMD_DATA_SHIFT")
 
 FUNC_STUB(float16_eq_quiet)
 FUNC_STUB(float16_le)
@@ -273,25 +269,8 @@ FUNC_STUB(wswap64)
 
 /* translate-a64.c */
 
-typedef void gen_helper_gvec_2;
-typedef void gen_helper_gvec_3;
-typedef void gen_helper_gvec_3_ptr;
-typedef void gen_helper_gvec_4;
-typedef void gen_helper_gvec_4_ptr;
-typedef struct
-{
-    void *fni4;
-    void *fni8;
-    void *fniv;
-    const void *opt_opc;
-    void *fno;
-    bool prefer_i64;
-    int vece;
-    bool load_dest;
-} GVecGen3;
 typedef int TCGBar;
 typedef int TCGOp;
-typedef int TCGv_vec;
 typedef struct
 {
     void *init_disas_context;
@@ -302,34 +281,12 @@ typedef struct
     void *disas_log;
 } TranslatorOps;
 
-#define  INDEX_op_rotli_vec                     0
 #define  R_SVCR_SM_MASK                         stub_abort("R_SVCR_SM_MASK")
 #define  R_SVCR_ZA_MASK                         stub_abort("R_SVCR_ZA_MASK")
 #define  SME_ET_AccessTrap                      stub_abort("SME_ET_AccessTrap")
 #define  SME_ET_InactiveZA                      stub_abort("SME_ET_InactiveZA")
 #define  SME_ET_NotStreaming                    stub_abort("SME_ET_NotStreaming")
 #define  SME_ET_Streaming                       stub_abort("SME_ET_Streaming")
-FUNC_STUB_GENERIC(tcg_gen_gvec_abs, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_add, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_andc, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_and, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_bitsel, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_mul, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_neg, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_not, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_orc, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_or, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_sari, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_shli, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_shri, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_smax, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_smin, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_sub, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_umax, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_umin, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_xor, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_ori, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_andi, void)
 FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_add_i64, void)
 FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_and_i64, void)
 FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_or_i64, void)
@@ -343,16 +300,6 @@ FUNC_STUB(arm_cpreg_encoding_in_idspace)
 FUNC_STUB(gen_io_start)
 FUNC_STUB_GENERIC(get_arm_cp_reginfo, void*)
 FUNC_STUB(target_disas)
-FUNC_STUB(tcg_gen_gvec_2_ool)
-FUNC_STUB(tcg_gen_gvec_2_ptr)
-FUNC_STUB(tcg_gen_gvec_3)
-FUNC_STUB(tcg_gen_gvec_3_ool)
-FUNC_STUB(tcg_gen_gvec_3_ptr)
-FUNC_STUB(tcg_gen_gvec_4_ool)
-FUNC_STUB(tcg_gen_gvec_4_ptr)
-FUNC_STUB(tcg_gen_gvec_cmp)
-FUNC_STUB(tcg_gen_rotli_vec)
-FUNC_STUB(tcg_gen_xor_vec)
 FUNC_STUB_GENERIC(tcg_last_op, void *)
 FUNC_STUB(tcg_set_insn_start_param)
 FUNC_STUB_GENERIC(tlb_entry, void *)
@@ -395,61 +342,9 @@ FUNC_STUB(disas_m_nocp)
 
 /* translate.c */
 
-typedef struct
-{
-    void *fno;
-    void *fni4;
-    void *fni8;
-    void *fniv;
-    const void *opt_opc;
-    bool prefer_i64;
-    int vece;
-} GVecGen2;
-typedef struct
-{
-    void *fno;
-    void *fni4;
-    void (*fni8)();
-    void *fniv;
-    const void *opt_opc;
-    bool load_dest;
-    bool prefer_i64;
-    int vece;
-} GVecGen2i;
-typedef struct
-{
-    void *fno;
-    void *fni4;
-    void (*fni8)();
-    void *fniv;
-    const void *opt_opc;
-    bool prefer_i64;
-    int vece;
-    bool write_aofs;
-} GVecGen4;
-
 #define  EXC_RETURN_MIN_MAGIC         stub_abort("EXC_RETURN_MIN_MAGIC")
 #define  FNC_RETURN_MIN_MAGIC         stub_abort("FNC_RETURN_MIN_MAGIC")
-#define  INDEX_op_add_vec             0
-#define  INDEX_op_cmpsel_vec          0
-#define  INDEX_op_cmp_vec             0
-#define  INDEX_op_mul_vec             0
-#define  INDEX_op_neg_vec             0
-#define  INDEX_op_sari_vec            0
-#define  INDEX_op_sarv_vec            0
-#define  INDEX_op_shli_vec            0
-#define  INDEX_op_shlv_vec            0
-#define  INDEX_op_shri_vec            0
-#define  INDEX_op_shrv_vec            0
-#define  INDEX_op_smax_vec            0
-#define  INDEX_op_smin_vec            0
-#define  INDEX_op_ssadd_vec           0
-#define  INDEX_op_sssub_vec           0
-#define  INDEX_op_sub_vec             0
-#define  INDEX_op_umax_vec            0
-#define  INDEX_op_umin_vec            0
-#define  INDEX_op_usadd_vec           0
-#define  INDEX_op_ussub_vec           0
+
 #define  TCG_TARGET_HAS_add2_i32      0  // TODO: Port add2_i32 from TCG
 
 FUNC_STUB(regime_is_secure)
@@ -457,45 +352,8 @@ FUNC_STUB(syn_cp14_rrt_trap) // aarch32
 FUNC_STUB(syn_cp14_rt_trap) // aarch32
 FUNC_STUB(syn_cp15_rrt_trap) // aarch32
 FUNC_STUB(syn_cp15_rt_trap) // aarch32
-FUNC_STUB(tcg_constant_vec_matching)
-FUNC_STUB(tcg_gen_add_vec)
-FUNC_STUB(tcg_gen_andc_vec)
-FUNC_STUB(tcg_gen_and_vec)
 FUNC_STUB(tcg_gen_atomic_xchg_i32)
-FUNC_STUB(tcg_gen_cmpsel_vec)
-FUNC_STUB(tcg_gen_cmp_vec)
-FUNC_STUB(tcg_gen_dupi_vec)
-FUNC_STUB(tcg_gen_gvec_2)
-FUNC_STUB(tcg_gen_gvec_2i)
-FUNC_STUB(tcg_gen_gvec_4)
-FUNC_STUB(tcg_gen_mov_vec)
-FUNC_STUB(tcg_gen_mul_vec)
-FUNC_STUB(tcg_gen_neg_vec)
-FUNC_STUB(tcg_gen_or_vec)
-FUNC_STUB(tcg_gen_sari_vec)
-FUNC_STUB(tcg_gen_sarv_vec)
-FUNC_STUB(tcg_gen_shli_vec)
-FUNC_STUB(tcg_gen_shlv_vec)
-FUNC_STUB(tcg_gen_shri_vec)
-FUNC_STUB(tcg_gen_shrv_vec)
-FUNC_STUB(tcg_gen_smax_vec)
-FUNC_STUB(tcg_gen_smin_vec)
-FUNC_STUB(tcg_gen_ssadd_vec)
-FUNC_STUB(tcg_gen_sssub_vec)
-FUNC_STUB(tcg_gen_sub_vec)
-FUNC_STUB(tcg_gen_umax_vec)
-FUNC_STUB(tcg_gen_umin_vec)
-FUNC_STUB(tcg_gen_usadd_vec)
-FUNC_STUB(tcg_gen_ussub_vec)
-FUNC_STUB(tcg_gen_vec_add16_i64)
-FUNC_STUB(tcg_gen_vec_add8_i64)
-FUNC_STUB(tcg_gen_vec_sar16i_i64)
-FUNC_STUB(tcg_gen_vec_sar8i_i64)
-FUNC_STUB(tcg_gen_vec_shr16i_i64)
-FUNC_STUB(tcg_gen_vec_shr8i_i64)
 FUNC_STUB(tcg_remove_ops_after)
-FUNC_STUB(tcg_temp_free_vec)
-FUNC_STUB(tcg_temp_new_vec_matching)
 FUNC_STUB(translator_loop)
 
 /* translate.c */
@@ -564,56 +422,24 @@ FUNC_STUB(gen_helper_v7m_tt)
 
 /* translate-neon.c */
 
-typedef void gen_helper_gvec_2_ptr;
-
 FUNC_STUB_GENERIC(gen_helper_gvec_fceq0_h, void)
 FUNC_STUB_GENERIC(gen_helper_gvec_fcge0_h, void)
 FUNC_STUB_GENERIC(gen_helper_gvec_fcgt0_h, void)
 FUNC_STUB_GENERIC(gen_helper_gvec_fcle0_h, void)
 FUNC_STUB_GENERIC(gen_helper_gvec_fclt0_h, void)
 
-FUNC_STUB(tcg_gen_gvec_dup_i32)
-FUNC_STUB_GENERIC(tcg_gen_gvec_xori, void)
-
 /* translate-sve.c */
-
-typedef void gen_helper_gvec_2i;
-typedef void gen_helper_gvec_5;
-typedef void gen_helper_gvec_5_ptr;
-typedef int GVecGen2s;
-typedef int GVecGen3i;
 
 #define  float16_half               stub_abort("float16_half")
 #define  float_round_to_odd         stub_abort("float_round_to_odd")
-FUNC_STUB_GENERIC(tcg_gen_gvec_addi, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_adds, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_muli, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_ssadd, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_sssub, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_subs, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_usadd, void)
-FUNC_STUB_GENERIC(tcg_gen_gvec_ussub, void)
-FUNC_STUB_GENERIC(tcg_gen_vec_sub16_i64, void)
-FUNC_STUB_GENERIC(tcg_gen_vec_sub8_i64, void)
 #define  TCG_TARGET_HAS_bitsel_vec  0  // TODO: Port bitsel_vec from TCG
 
 FUNC_STUB(is_power_of_2)
 FUNC_STUB(pow2ceil)
-FUNC_STUB(simd_desc)
 FUNC_STUB(tcg_const_local_ptr)
-FUNC_STUB(tcg_gen_bitsel_vec)
 FUNC_STUB(tcg_gen_brcondi_ptr)
 FUNC_STUB(tcg_gen_ctpop_i64)
-FUNC_STUB(tcg_gen_gvec_2i_ool)
-FUNC_STUB(tcg_gen_gvec_2s)
-FUNC_STUB(tcg_gen_gvec_3i)
-FUNC_STUB(tcg_gen_gvec_5_ool)
-FUNC_STUB(tcg_gen_gvec_5_ptr)
-FUNC_STUB(tcg_gen_gvec_ands)
 FUNC_STUB(tcg_gen_mov_ptr)
-FUNC_STUB(tcg_gen_not_vec)
-FUNC_STUB(tcg_gen_orc_vec)
-FUNC_STUB(tcg_gen_rotri_vec)
 FUNC_STUB(tcg_gen_trunc_i64_ptr)
 FUNC_STUB(tcg_temp_local_new_ptr)
 
@@ -642,24 +468,6 @@ FUNC_STUB(trans_FMAXNM_zpzi)
 FUNC_STUB(trans_FMINNM_zpzi)
 FUNC_STUB(trans_FMAX_zpzi)
 FUNC_STUB(trans_FMIN_zpzi)
-FUNC_STUB(trans_SSHLLB)
-FUNC_STUB(trans_SSHLLT)
-FUNC_STUB(trans_USHLLB)
-FUNC_STUB(trans_USHLLT)
-FUNC_STUB(trans_SQXTNB)
-FUNC_STUB(trans_SQXTNT)
-FUNC_STUB(trans_UQXTNB)
-FUNC_STUB(trans_UQXTNT)
-FUNC_STUB(trans_SQXTUNB)
-FUNC_STUB(trans_SQXTUNT)
-FUNC_STUB(trans_SQSHRUNB)
-FUNC_STUB(trans_SQSHRUNT)
-FUNC_STUB(trans_SHRNB)
-FUNC_STUB(trans_SHRNT)
-FUNC_STUB(trans_SQSHRNB)
-FUNC_STUB(trans_SQSHRNT)
-FUNC_STUB(trans_UQSHRNB)
-FUNC_STUB(trans_UQSHRNT)
 
 /* mte_helper.c */
 

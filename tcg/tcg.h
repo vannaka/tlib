@@ -344,8 +344,9 @@ static inline TCGCond tcg_invert_cond(TCGCond c)
 /* Swap the operands in a comparison.  */
 static inline TCGCond tcg_swap_cond(TCGCond c)
 {
-    int mask = (c < TCG_COND_LT ? 0 : c < TCG_COND_LTU ? 7 : 15);
-    return (TCGCond)(c ^ mask);
+    // TCG_COND_: NEVER, ALWAYS, EQ, NE don't require swapping.
+    // The remaining conditions can be swapped by XORing bits 0 and 3.
+    return c & 6 ? (TCGCond)(c ^ 9) : c;
 }
 
 static inline TCGCond tcg_unsigned_cond(TCGCond c)

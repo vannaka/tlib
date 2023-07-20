@@ -1095,8 +1095,9 @@ void HELPER(dc_zva)(CPUARMState *env, uint64_t vaddr_in)
     int prot;
     target_ulong page_size;
 
-    if (get_phys_addr(env, vaddr, ACCESS_DATA_STORE, mmu_idx, 0, true, &phys_addr, &prot, &page_size) != TRANSLATE_SUCCESS) {
-        tlib_abortf("Incorrect virtual address in DC ZVA: 0x%" PRIx64, vaddr_in);
+    if (get_phys_addr(env, vaddr, ACCESS_DATA_STORE, mmu_idx, 0, false, &phys_addr, &prot, &page_size) != TRANSLATE_SUCCESS) {
+        tlib_printf(LOG_LEVEL_DEBUG, "Incorrect virtual address in DC ZVA: 0x%" PRIx64, vaddr_in);
+        return;
     }
 
     uint8_t* buf = calloc(blocklen, sizeof(uint8_t));

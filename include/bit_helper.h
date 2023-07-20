@@ -73,6 +73,16 @@ static inline int64_t sextract64(uint64_t value, uint8_t start, uint8_t length)
     return result;
 }
 
+static inline uint8_t rol8(uint8_t word, unsigned int shift)
+{
+    return (word << shift) | (word >> ((8 - shift) & 7));
+}
+
+static inline uint16_t rol16(uint16_t word, unsigned int shift)
+{
+    return (word << shift) | (word >> ((16 - shift) & 15));
+}
+
 static inline uint32_t rol32(uint32_t word, unsigned int shift)
 {
     return (word << shift) | (word >> ((32 - shift) & 31));
@@ -81,6 +91,16 @@ static inline uint32_t rol32(uint32_t word, unsigned int shift)
 static inline uint64_t rol64(uint64_t word, unsigned int shift)
 {
     return (word << shift) | (word >> ((64 - shift) & 63));
+}
+
+static inline uint8_t ror8(uint8_t word, unsigned int shift)
+{
+    return (word >> shift) | (word << ((8 - shift) & 7));
+}
+
+static inline uint16_t ror16(uint16_t word, unsigned int shift)
+{
+    return (word >> shift) | (word << ((16 - shift) & 15));
 }
 
 static inline uint32_t ror32(uint32_t word, unsigned int shift)

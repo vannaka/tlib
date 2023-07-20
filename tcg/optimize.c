@@ -103,11 +103,9 @@ static TCGOpcode op_to_movi(TCGOpcode op)
     case 64:
         return INDEX_op_movi_i64;
     default:
-        fprintf(stderr, "op_to_movi: unexpected return value of "
+        tcg_abortf("op_to_movi: unexpected return value of "
                 "function op_bits.\n");
-        tcg_abort();
-        /* Never reached */
-        return 0;
+        tlib_assert_not_reached();
     }
 }
 
@@ -152,11 +150,9 @@ static TCGOpcode op_to_mov(TCGOpcode op)
     case 64:
         return INDEX_op_mov_i64;
     default:
-        fprintf(stderr, "op_to_mov: unexpected return value of "
+        tcg_abortf("op_to_mov: unexpected return value of "
                 "function op_bits.\n");
-        tcg_abort();
-        /* Never reached */
-        return 0;
+        tlib_assert_not_reached();
     }
 }
 
@@ -255,10 +251,8 @@ static TCGArg do_constant_folding_2(TCGOpcode op, TCGArg x, TCGArg y)
         return (uint32_t)x;
 
     default:
-        fprintf(stderr, "Unrecognized operation %d in do_constant_folding.\n", op);
-        tcg_abort();
-        /* Never reached */
-        return 0;
+        tcg_abortf("Unrecognized operation %d in do_constant_folding.\n", op);
+        tlib_assert_not_reached();
     }
 }
 

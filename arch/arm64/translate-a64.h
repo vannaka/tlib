@@ -67,9 +67,9 @@ static inline void assert_fp_access_checked(DisasContext *s)
 {
 #ifdef DEBUG
     if (unlikely(!s->fp_access_checked || s->fp_excp_el)) {
-        fprintf(stderr, "target-arm: FP access check missing for "
+        tlib_abortf("target-arm: FP access check missing for "
                 "instruction 0x%08x\n", s->insn);
-        abort();
+        tlib_assert_not_reached();
     }
 #endif
 }

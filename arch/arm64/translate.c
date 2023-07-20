@@ -734,8 +734,8 @@ void arm_test_cc(DisasCompare *cmp, int cc)
         goto no_invert;
 
     default:
-        fprintf(stderr, "Bad condition code 0x%x\n", cc);
-        abort();
+        tlib_abortf("Bad condition code 0x%x\n", cc);
+        tlib_assert_not_reached();
     }
 
     if (cc & 1) {

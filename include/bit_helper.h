@@ -134,4 +134,98 @@ static inline uint32_t ctpop32(uint32_t val) {
     return (uint32_t)ctpop(val);
 }
 
+static inline uint32_t brev32(uint32_t val) {
+    return
+      ((val >> 24) & 0x000000FF) | 
+      ((val >>  8) & 0x0000FF00) | 
+      ((val <<  8) & 0x00FF0000) | 
+      ((val << 24) & 0xFF000000);
+}
+
+// Source: https://stackoverflow.com/a/21507710
+static inline uint64_t brev64(uint64_t val) {
+    val = (val & 0x00000000FFFFFFFF) << 32 | (val & 0xFFFFFFFF00000000) >> 32;
+    val = (val & 0x0000FFFF0000FFFF) << 16 | (val & 0xFFFF0000FFFF0000) >> 16;
+    val = (val & 0x00FF00FF00FF00FF) << 8 | (val & 0xFF00FF00FF00FF00) >> 8;
+    return val;
+}
+
+static inline uint32_t clmul32(uint32_t val1, uint32_t val2) {
+    uint32_t result = 0u;
+    int i;
+    for (i = 0; i < 32; ++i) {
+        if ((val2 >> i) & 1) {
+            result ^= (uint32_t)val1 << i;
+        }
+    }
+    return result;
+}
+
+static inline uint64_t clmul64(uint64_t val1, uint64_t val2) {
+    uint64_t result = 0u;
+    int i;
+    for (i = 0; i < 64; ++i) {
+        if ((val2 >> i) & 1) {
+            result ^= (uint64_t)val1 << i;
+        }
+    }
+    return result;
+}
+
+static inline uint32_t clmulh32(uint32_t val1, uint32_t val2) {
+    uint32_t result = 0u;
+    int i;
+    for (i = 1; i < 32; ++i) {
+        if ((val2 >> i) & 1) {
+            result ^= (uint32_t)val1 >> (32 - i);
+        }
+    }
+    return result;
+}
+
+static inline uint64_t clmulh64(uint64_t val1, uint64_t val2) {
+    uint64_t result = 0u;
+    int i;
+    for (i = 1; i < 64; ++i) {
+        if ((val2 >> i) & 1) {
+            result ^= (uint64_t)val1 >> (64 - i);
+        }
+    }
+    return result;
+}
+
+static inline uint32_t clmulr32(uint32_t val1, uint32_t val2) {
+    uint32_t result = 0u;
+    int i;
+    for (i = 0; i < 31; ++i) {
+        if ((val2 >> i) & 1) {
+            result ^= (uint64_t)val1 >> (31 - i);
+        }
+    }
+    return result;
+}
+
+static inline uint64_t clmulr64(uint64_t val1, uint64_t val2) {
+    uint64_t result = 0u;
+    int i;
+    for (i = 0; i < 63; ++i) {
+        if ((val2 >> i) & 1) {
+            result ^= (uint64_t)val1 >> (63 - i);
+        }
+    }
+    return result;
+}
+
+static inline uint32_t orcb32(uint32_t val) {
+    return
+      ((uint8_t)(val >> 24) > 0 ? 0xFF000000 : 0x00000000) | 
+      ((uint8_t)(val >> 16) > 0 ? 0x00FF0000 : 0x00000000) | 
+      ((uint8_t)(val >> 8)  > 0 ? 0x0000FF00 : 0x00000000) | 
+      ((uint8_t)(val)       > 0 ? 0x000000FF : 0x00000000);
+}
+
+static inline uint64_t orcb64(uint64_t val) {
+    return (uint64_t)orcb32((uint32_t)(val >> 32)) << 32 | orcb32((uint32_t)val);
+}
+
 #endif  // BIT_HELPER_H_

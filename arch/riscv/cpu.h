@@ -278,6 +278,7 @@ enum riscv_features {
     RISCV_FEATURE_RVS = RV('S'),
     RISCV_FEATURE_RVU = RV('U'),
     RISCV_FEATURE_RVV = RV('V'),
+    RISCV_FEATURE_RVB = RV('B'),
 };
 
 enum privilege_architecture {

@@ -71,8 +71,10 @@ static inline void kill_unknown(DisasContext *dc, int excp);
 
 #ifdef TARGET_RISCV64
 #define CASE_OP_32_64(X) case X: case glue(X, W)
+#define BITMANIP_SHAMT_MASK 0x3F
 #else
 #define CASE_OP_32_64(X) case X
+#define BITMANIP_SHAMT_MASK 0x1F
 #endif
 
 // RISC-V User ISA, Release 2.2, section 1.2 Instruction Length Encoding
@@ -211,6 +213,15 @@ static inline void gen_get_gpr(TCGv t, int reg_num)
     } else {
         tcg_gen_mov_tl(t, cpu_gpr[reg_num]);
     }
+}
+
+#if defined(TARGET_RISCV32)
+static inline uint32_t get_gpr_raw(int reg_num)
+#elif defined(TARGET_RISCV64)
+static inline uint64_t get_gpr_raw(int reg_num)
+#endif
+{
+    return cpu->gpr[reg_num];
 }
 
 static inline void gen_get_fpr(TCGv_i64 t, int reg_num)
@@ -518,6 +529,274 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         tcg_temp_free(zeroreg);
         tcg_temp_free(resultopt1);
         break;
+    case OPC_RISC_ADD_UW:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_andi_tl(source1, source1, 0xFFFFFFFF);
+        tcg_gen_add_tl(source1, source1, source2);
+        break;
+    case OPC_RISC_SH1ADD:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_shli_tl(source1, source1, 1);
+        tcg_gen_add_tl(source1, source1, source2);
+        break;
+    case OPC_RISC_SH1ADD_UW:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_andi_tl(source1, source1, 0xFFFFFFFF);
+        tcg_gen_shli_tl(source1, source1, 1);
+        tcg_gen_add_tl(source1, source1, source2);
+        break;
+    case OPC_RISC_SH2ADD:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_shli_tl(source1, source1, 2);
+        tcg_gen_add_tl(source1, source1, source2);
+        break;
+    case OPC_RISC_SH2ADD_UW:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_andi_tl(source1, source1, 0xFFFFFFFF);
+        tcg_gen_shli_tl(source1, source1, 2);
+        tcg_gen_add_tl(source1, source1, source2);
+        break;
+    case OPC_RISC_SH3ADD:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_shli_tl(source1, source1, 3);
+        tcg_gen_add_tl(source1, source1, source2);
+        break;
+    case OPC_RISC_SH3ADD_UW:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_andi_tl(source1, source1, 0xFFFFFFFF);
+        tcg_gen_shli_tl(source1, source1, 3);
+        tcg_gen_add_tl(source1, source1, source2);
+        break;
+     case OPC_RISC_ANDN:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_not_tl(source2, source2);
+        tcg_gen_and_tl(source1, source1, source2);
+        break;
+    case OPC_RISC_ORN:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_not_tl(source2, source2);
+        tcg_gen_or_tl(source1, source1, source2);
+        break;
+    case OPC_RISC_XNOR:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_xor_tl(source1, source1, source2);
+        tcg_gen_not_tl(source1, source1);
+        break;
+    case OPC_RISC_MAX:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        tcg_gen_smax_i32(source1, source1, source2);
+#elif defined(TARGET_RISCV64)
+        tcg_gen_smax_i64(source1, source1, source2);
+#endif
+        break;
+    case OPC_RISC_MAXU:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        tcg_gen_umax_i32(source1, source1, source2);
+#elif defined(TARGET_RISCV64)
+        tcg_gen_umax_i64(source1, source1, source2);
+#endif
+        break;
+    case OPC_RISC_MIN:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        tcg_gen_smin_i32(source1, source1, source2);
+#elif defined(TARGET_RISCV64)
+        tcg_gen_smin_i64(source1, source1, source2);
+#endif
+        break;
+    case OPC_RISC_MINU:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        tcg_gen_umin_i32(source1, source1, source2);
+#elif defined(TARGET_RISCV64)
+        tcg_gen_umin_i64(source1, source1, source2);
+#endif
+        break;
+    case OPC_RISC_ZEXT_H_32:
+    case OPC_RISC_ZEXT_H_64:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_andi_tl(source1, source1, 0xFFFF);
+        break;
+    case OPC_RISC_ROL:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        TCGv left = tcg_temp_new_internal_i32(0);
+        TCGv right = tcg_temp_new_internal_i32(0);
+        TCGv xlen = tcg_temp_new_internal_i32(0);
+        tcg_gen_movi_tl(xlen, 32);
+        tcg_gen_andi_tl(source2, source2, BITMANIP_SHAMT_MASK);
+#elif defined(TARGET_RISCV64)
+        TCGv left = tcg_temp_new_internal_i64(0);
+        TCGv right = tcg_temp_new_internal_i64(0);
+        TCGv xlen = tcg_temp_new_internal_i64(0);
+        tcg_gen_movi_tl(xlen, 64);
+        tcg_gen_andi_tl(source2, source2, BITMANIP_SHAMT_MASK);
+#endif
+        tcg_gen_movi_tl(left, 0UL);
+        tcg_gen_movi_tl(right, 0UL);
+        
+        tcg_gen_shl_tl(left, source1, source2);
+        tcg_gen_sub_tl(source2, xlen, source2);
+        tcg_gen_shr_tl(right, source1, source1);
+        tcg_gen_or_tl(source1, left, right);
+        
+        tcg_temp_free(left);
+        tcg_temp_free(right);
+        tcg_temp_free(xlen);
+        break;
+    case OPC_RISC_ROLW:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_movi_tl(source1, sextract64(rol32(get_gpr_raw(rs1), get_gpr_raw(rs2) & BITMANIP_SHAMT_MASK), 0, 32));
+        break;
+    case OPC_RISC_ROR:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        tcg_gen_movi_tl(source1, ror32(get_gpr_raw(rs1), get_gpr_raw(rs2) & BITMANIP_SHAMT_MASK));
+#elif defined(TARGET_RISCV64)
+        tcg_gen_movi_tl(source1, ror64(get_gpr_raw(rs1), get_gpr_raw(rs2) & BITMANIP_SHAMT_MASK));
+#endif
+        break;
+    case OPC_RISC_RORW:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_movi_tl(source1, sextract64(ror32(get_gpr_raw(rs1), get_gpr_raw(rs2) & BITMANIP_SHAMT_MASK), 0, 32));
+        break;
+    case OPC_RISC_BCLR:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        TCGv bclr_t = tcg_temp_new_internal_i32(0);
+        tcg_gen_andi_tl(source2, source2, BITMANIP_SHAMT_MASK);
+#elif defined(TARGET_RISCV64)
+        TCGv bclr_t = tcg_temp_new_internal_i64(0);
+        tcg_gen_andi_tl(source2, source2, BITMANIP_SHAMT_MASK);
+#endif
+        tcg_gen_movi_tl(bclr_t, 1);
+        tcg_gen_shl_tl(bclr_t, bclr_t, source2);
+#if defined(TARGET_RISCV32)
+        tcg_gen_not_i32(bclr_t, bclr_t);
+#elif defined(TARGET_RISCV64)
+        tcg_gen_not_i64(bclr_t, bclr_t);
+#endif
+        tcg_gen_and_tl(source1, source1, bclr_t);
+        tcg_temp_free(bclr_t);
+        break;
+    case OPC_RISC_BEXT:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        tcg_gen_andi_tl(source2, source2, BITMANIP_SHAMT_MASK);
+#elif defined(TARGET_RISCV64)
+        tcg_gen_andi_tl(source2, source2, BITMANIP_SHAMT_MASK);
+#endif
+        tcg_gen_andi_tl(source2, source2, 1);
+        tcg_gen_shr_tl(source1, source1, source2);
+        break;
+    case OPC_RISC_BINV:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        TCGv binv_t = tcg_temp_new_internal_i32(0);
+        tcg_gen_andi_tl(source2, source2, BITMANIP_SHAMT_MASK);
+#elif defined(TARGET_RISCV64)
+        TCGv binv_t = tcg_temp_new_internal_i64(0);
+        tcg_gen_andi_tl(source2, source2, BITMANIP_SHAMT_MASK);
+#endif
+        tcg_gen_movi_tl(binv_t, 1);
+        tcg_gen_shl_tl(binv_t, binv_t, source2);
+        tcg_gen_xor_tl(source1, source1, binv_t);
+
+        tcg_temp_free(binv_t);
+        break;
+    case OPC_RISC_BSET:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        TCGv test = tcg_temp_new_internal_i32(0);
+        tcg_gen_andi_tl(source2, source2, BITMANIP_SHAMT_MASK);
+#elif defined(TARGET_RISCV64)
+        TCGv test = tcg_temp_new_internal_i64(0);
+        tcg_gen_andi_tl(source2, source2, BITMANIP_SHAMT_MASK);
+#endif
+        tcg_gen_movi_tl(test, 1UL);
+        tcg_gen_shl_tl(test, test, source2);
+        tcg_gen_or_tl(source1, source1, test);
+
+        tcg_temp_free(test);
+        break;
+    case OPC_RISC_CLMUL:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        tcg_gen_movi_tl(source1, clmul32(get_gpr_raw(rs1), get_gpr_raw(rs2)));
+#elif defined(TARGET_RISCV64)
+        tcg_gen_movi_tl(source1, clmul64(get_gpr_raw(rs1), get_gpr_raw(rs2)));
+#endif
+        break;
+    case OPC_RISC_CLMULR:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        tcg_gen_movi_tl(source1, clmulr32(get_gpr_raw(rs1), get_gpr_raw(rs2)));
+#elif defined(TARGET_RISCV64)
+        tcg_gen_movi_tl(source1, clmulr64(get_gpr_raw(rs1), get_gpr_raw(rs2)));
+#endif
+        break;
+    case OPC_RISC_CLMULH:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        tcg_gen_movi_tl(source1, clmulh32(get_gpr_raw(rs1), get_gpr_raw(rs2)));
+#elif defined(TARGET_RISCV64)
+        tcg_gen_movi_tl(source1, clmulh64(get_gpr_raw(rs1), get_gpr_raw(rs2)));
+#endif
+        break;
     default:
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
@@ -544,6 +823,130 @@ static void gen_synch(DisasContext *dc, uint32_t opc)
         gen_exit_tb_no_chaining(dc->base.tb);
         dc->base.is_jmp = DISAS_BRANCH;
         break;
+    default:
+        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        break;
+    }
+}
+
+static void gen_arith_bitmanip(DisasContext *dc, int rd, int rs1, target_long imm, TCGv source1)
+{
+    if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        return;
+    }
+
+    uint32_t opc = 0;
+    switch ((dc->opcode >> 12) & 0x7) {
+    case 0x1:
+        switch ((dc->opcode >> 26) & BITMANIP_SHAMT_MASK) {
+        case 0b011000:
+            opc = MASK_OP_ARITH_IMM_ZB_1_12(dc->opcode);
+            break;
+        case 0b010010:
+        case 0b011010:
+        case 0b001010:
+            opc = MASK_OP_ARITH_IMM_ZB_1_12_SHAMT(dc->opcode);
+            break;
+        }
+        break;
+    case 0x5:
+        switch ((dc->opcode >> 26) & BITMANIP_SHAMT_MASK) {
+        case 0b001010:
+        case 0b011010:
+            opc = MASK_OP_ARITH_IMM_ZB_5_12(dc->opcode);
+            break;
+        case 0b010010:
+        case 0b011000:
+            opc = MASK_OP_ARITH_IMM_ZB_5_12_SHAMT(dc->opcode);
+            break;
+        }
+        break;
+    default:
+        kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+        break;
+    }
+
+    switch (opc) {
+    case OPC_RISC_CLZW:
+        tcg_gen_clzi_i32(source1, source1, 32);
+        break;
+    case OPC_RISC_CTZW:
+        tcg_gen_movi_tl(source1, ctz32(get_gpr_raw(rs1)));
+        break;
+    case OPC_RISC_CPOPW:
+        tcg_gen_movi_tl(source1, ctpop32(get_gpr_raw(rs1)));
+        break;
+    case OPC_RISC_REV8_32:
+        tcg_gen_movi_tl(source1, brev32(get_gpr_raw(rs1)));
+        break;
+    case OPC_RISC_REV8_64:
+        tcg_gen_movi_tl(source1, brev64(get_gpr_raw(rs1)));
+        break;
+#if defined(TARGET_RISCV32)
+    case OPC_RISC_CLZ:
+        tcg_gen_clzi_i32(source1, source1, 32);
+        break;
+    case OPC_RISC_CTZ:
+        tcg_gen_movi_tl(source1, ctz32(get_gpr_raw(rs1)));
+        break;
+    case OPC_RISC_CPOP:
+        tcg_gen_movi_tl(source1, ctpop32(get_gpr_raw(rs1)));
+        break;
+    case OPC_RISC_SEXT_B:
+        tcg_gen_sextract_i32(source1, source1, 0, 8);
+        break;
+    case OPC_RISC_SEXT_H:
+        tcg_gen_sextract_i32(source1, source1, 0, 16);
+        break;
+    case OPC_RISC_ORC_B:
+        tcg_gen_movi_tl(source1, orcb32(get_gpr_raw(rs1)));
+        break;
+    case OPC_RISC_BCLRI:
+        tcg_gen_andi_tl(source1, source1, ~(1UL << (imm & BITMANIP_SHAMT_MASK)));
+        break;
+    case OPC_RISC_BEXTI:
+        tcg_gen_shri_tl(source1, source1, imm & BITMANIP_SHAMT_MASK);
+        tcg_gen_andi_tl(source1, source1, 1UL);
+        break;
+    case OPC_RISC_BINVI:
+        tcg_gen_xori_tl(source1, source1, 1UL << (imm & BITMANIP_SHAMT_MASK));
+        break;
+    case OPC_RISC_BSETI:
+        tcg_gen_ori_tl(source1, source1, 1UL << (imm & BITMANIP_SHAMT_MASK));
+        break;
+#elif defined(TARGET_RISCV64)
+    case OPC_RISC_CLZ:
+        tcg_gen_clzi_i64(source1, source1, 64);
+        break;
+    case OPC_RISC_CTZ:
+        tcg_gen_movi_tl(source1, ctz64(get_gpr_raw(rs1)));
+        break;
+    case OPC_RISC_CPOP:
+        tcg_gen_movi_tl(source1, ctpop64(get_gpr_raw(rs1)));
+        break;
+    case OPC_RISC_SEXT_B:
+        tcg_gen_sextract_i64(source1, source1, 0, 8);
+        break;
+    case OPC_RISC_SEXT_H:
+        tcg_gen_sextract_i64(source1, source1, 0, 16);
+        break;
+    case OPC_RISC_ORC_B:
+        tcg_gen_movi_tl(source1, orcb64(get_gpr_raw(rs1)));
+        break;
+    case OPC_RISC_BCLRI:
+        tcg_gen_andi_tl(source1, source1, ~(1UL << (imm & BITMANIP_SHAMT_MASK)));
+        break;
+    case OPC_RISC_BEXTI:
+        tcg_gen_shri_tl(source1, source1, imm & BITMANIP_SHAMT_MASK);
+        tcg_gen_andi_tl(source1, source1, 1UL);
+        break;
+    case OPC_RISC_BINVI:
+        tcg_gen_xori_tl(source1, source1, 1UL << (imm & BITMANIP_SHAMT_MASK));
+        break;
+    case OPC_RISC_BSETI:
+        tcg_gen_ori_tl(source1, source1, 1UL << (imm & BITMANIP_SHAMT_MASK));
+        break;
+#endif
     default:
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
         break;
@@ -589,10 +992,14 @@ static void gen_arith_imm(DisasContext *dc, uint32_t opc, int rd, int rs1, targe
 #endif
     /* fallthrough */
     case OPC_RISC_SLLI:
-        if (imm < TARGET_LONG_BITS) {
-            tcg_gen_shli_tl(source1, source1, imm);
+#if defined(TARGET_RISCV32)
+        if (imm >> 5) {
+#elif defined(TARGET_RISCV64)
+        if (imm >> 6) {
+#endif
+            gen_arith_bitmanip(dc, rd, rs1, imm, source1);
         } else {
-            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+            tcg_gen_shli_tl(source1, source1, imm);
         }
         break;
 #if defined(TARGET_RISCV64)
@@ -607,17 +1014,44 @@ static void gen_arith_imm(DisasContext *dc, uint32_t opc, int rd, int rs1, targe
     /* fallthrough */
     case OPC_RISC_SHIFT_RIGHT_I:
         /* differentiate on IMM */
-        if ((imm & 0x3ff) < TARGET_LONG_BITS) {
-            if (imm & 0x400) {
+#if defined(TARGET_RISCV32)
+        if (imm >> 5) {
+            if ((imm >> 5) == 0x20) {
+#elif defined(TARGET_RISCV64)
+        if (imm >> 6) {
+            if ((imm >> 6) == 0x10) {
+#endif
                 /* SRAI[W] */
                 tcg_gen_sari_tl(source1, source1, (imm ^ 0x400) + extra_shamt);
             } else {
-                /* SRLI[W] */
-                tcg_gen_shri_tl(source1, source1, imm + extra_shamt);
+                gen_arith_bitmanip(dc, rd, rs1, imm, source1);
             }
         } else {
-            kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+            /* SRLI[W] */
+            tcg_gen_shri_tl(source1, source1, imm + extra_shamt);
         }
+        break;
+    case OPC_RISC_SLLI_UW:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_shli_tl(rd, source1, imm);
+        break;
+    case OPC_RISC_RORI:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+#if defined(TARGET_RISCV32)
+        tcg_gen_movi_tl(source1, ror32(source1, (imm & BITMANIP_SHAMT_MASK)));
+#elif defined(TARGET_RISCV64)
+        tcg_gen_movi_tl(source1, ror64(source1, (imm & BITMANIP_SHAMT_MASK)));
+#endif
+        break;
+    case OPC_RISC_RORIW:
+        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+            return;
+        }
+        tcg_gen_movi_tl(source1, sextract64(ror32(source1, imm), 0, 32));
         break;
     default:
         kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);

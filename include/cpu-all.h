@@ -673,8 +673,6 @@ extern uintptr_t translation_cache_size;
 /* Set if TLB entry is an IO callback.  */
 #define TLB_MMIO          (1 << 5)
 
-#define CODE_DIRTY_FLAG   0x02
-
 bool is_interrupt_pending(CPUState *env, int mask);
 void clear_interrupt_pending(CPUState *env, int mask);
 void set_interrupt_pending(CPUState *env, int mask);

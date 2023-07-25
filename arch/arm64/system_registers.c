@@ -41,6 +41,12 @@ static inline uint64_t *spsr_el1_register_pointer(CPUState *env)
 
 /* Other helpers */
 
+static inline uint64_t get_id_aa64isar0_value(CPUState *env)
+{
+    // Atomics aren't currently supported so let's override the ATOMIC field.
+    return FIELD_DP64(env->arm_core_config->isar.id_aa64isar0, ID_AA64ISAR0, ATOMIC, 0);
+}
+
 static inline uint64_t get_id_aa64pfr0_value(CPUState *env)
 {
     uint64_t return_value = env->arm_core_config->isar.id_aa64pfr0;
@@ -193,7 +199,7 @@ READ_CONFIG(dczid,             dcz_blocksize)
 READ_CONFIG(id_aa64afr0_el1,   id_aa64afr0)
 READ_CONFIG(id_aa64afr1_el1,   id_aa64afr1)
 READ_CONFIG(id_aa64dfr0_el1,   isar.id_aa64dfr0)
-READ_CONFIG(id_aa64isar0_el1,  isar.id_aa64isar0)
+READ_FUNCTION(64, id_aa64isar0_el1,  get_id_aa64isar0_value(env))
 READ_CONFIG(id_aa64isar1_el1,  isar.id_aa64isar1)
 READ_CONFIG(id_aa64mmfr0_el1,  isar.id_aa64mmfr0)
 READ_CONFIG(id_aa64mmfr1_el1,  isar.id_aa64mmfr1)

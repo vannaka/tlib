@@ -503,9 +503,9 @@ static inline ARMMMUIdx el_to_arm_mmu_idx(CPUState *env, int el)
         break;
     case 2:
         if (arm_hcr_el2_eff(env) & HCR_E2H) {
-            idx = ARMMMUIdx_SE2;
+            idx = pstate_read(env) & PSTATE_PAN ? ARMMMUIdx_SE20_2_PAN : ARMMMUIdx_SE20_2;
         } else {
-            idx = pstate_read(env) & PSTATE_PAN ? ARMMMUIdx_E20_2_PAN : ARMMMUIdx_SE20_2;
+            idx = ARMMMUIdx_SE2;
         }
         break;
     case 3:
@@ -515,6 +515,7 @@ static inline ARMMMUIdx el_to_arm_mmu_idx(CPUState *env, int el)
         tlib_assert_not_reached();
     }
 
+    // ARMMMUIdx_SE* | ARM_MMU_IDX_A_NS is equivalent to ARMMMUIdx_E*.
     if (!arm_is_secure(env)) {
         idx |= ARM_MMU_IDX_A_NS;
     }

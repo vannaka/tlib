@@ -41,35 +41,4 @@ enum
 
 ARMMMUIdx get_current_arm_mmu_idx(CPUState *env);
 
-static inline uint32_t address_translation_el(CPUState *env, uint32_t el)
-{
-    if (el != 0) {
-        return el;
-    }
-
-    if (arm_is_el2_enabled(env) && are_hcr_e2h_and_tge_set(arm_hcr_el2_eff(env))) {
-        return 2;
-    } else {
-        return 1;
-    }
-}
-
-static inline uint64_t arm_ttbr0(CPUState *env, int el)
-{
-    tlib_assert(el >= 0 && el <= 3);
-    return env->cp15.ttbr0_el[address_translation_el(env, el)];
-}
-
-static inline uint64_t arm_ttbr1(CPUState *env, int el)
-{
-    tlib_assert(el >= 0 && el <= 3);
-    return env->cp15.ttbr1_el[address_translation_el(env, el)];
-}
-
-static inline uint64_t arm_tcr(CPUState *env, int el)
-{
-    tlib_assert(el >= 0 && el <= 3);
-    return env->cp15.tcr_el[address_translation_el(env, el)];
-}
-
 #endif /* MMU_H_ */

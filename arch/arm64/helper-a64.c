@@ -1107,7 +1107,9 @@ void HELPER(dc_zva)(CPUARMState *env, uint64_t vaddr_in)
 // TODO: Move to a separate file with our license header.
 void HELPER(rebuild_hflags_a64)(CPUARMState *env, int el)
 {
+    const ARMISARegisters *isar = &env->arm_core_config->isar;
     uint64_t sctlr = arm_sctlr(env, el);
+    uint64_t tcr = arm_tcr(env, el);
 
     // we are rebuilding AAarch64 flags so always 1
     DP_TBFLAG_ANY(env->hflags, AARCH64_STATE, 1);
@@ -1130,18 +1132,11 @@ void HELPER(rebuild_hflags_a64)(CPUARMState *env, int el)
     DP_TBFLAG_ANY(env->hflags, PSTATE__IL, env->pstate & PSTATE_IL);
 
     uint8_t tbii = 0;
-    switch (el) {
-    case 3:
-    case 2:
-        tbii = extract64(env->cp15.tcr_el[el], 20, 1);
-        break;
-    case 1:
-        tbii = extract64(env->cp15.tcr_el[el], 37, 2);
-        break;
-    case 0:
-        break;
-    default:
-        tlib_abortf("Unreachable: %d", el);
+    if (regime_has_2_ranges(mmuidx)) {
+        tbii = extract64(tcr, 37, 2);
+    } else {
+        // Two bits are expected from single-range regimes too.
+        tbii = extract64(tcr, 20, 1) ? 0b11 : 0;
     }
     DP_TBFLAG_A64(env->hflags, TBII, tbii);
 
@@ -1169,20 +1164,17 @@ void HELPER(rebuild_hflags_a64)(CPUARMState *env, int el)
     DP_TBFLAG_A64(env->hflags, BT, bt);
 
     uint8_t tbid = 0;
-    switch (el) {
-    case 3:
-    case 2:
-        tbid = extract64(env->cp15.tcr_el[el], 29, 1);
-        break;
-    case 1:
-        tbid = extract64(env->cp15.tcr_el[el], 50, 2);
-        break;
-    case 0:
-        break;
-    default:
-        tlib_abortf("Unreachable: %d", el);
+    // TBID requires ARMv8.3-PAuth feature.
+    if (isar_feature_aa64_pauth(isar)) {
+        if (regime_has_2_ranges(mmuidx)) {
+            tbid = extract64(tcr, 50, 2);
+        } else {
+            // Two bits are expected from single-range regimes too.
+            tbid = extract64(tcr, 29, 1) ? 0b11 : 0;
+        }
     }
     DP_TBFLAG_A64(env->hflags, TBID, tbid);
+
     // D1.1
     if (el != 0)
         DP_TBFLAG_A64(env->hflags, UNPRIV, 0);

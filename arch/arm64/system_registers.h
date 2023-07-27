@@ -131,13 +131,13 @@ static inline bool cp_access_ok(int current_el, const ARMCPRegInfo *reg_info, bo
     uint32_t ri_type = reg_info->type;
 
     if (current_el < ARM_CP_GET_MIN_EL(ri_type)) {
-        tlib_printf(LOG_LEVEL_ERROR, "The '%s' register shouldn't be accessed on EL%d", reg_info->name, current_el);
+        tlib_printf(LOG_LEVEL_DEBUG, "The '%s' register shouldn't be accessed on EL%d", reg_info->name, current_el);
         return false;
     }
 
     // Rule IWCXDT
     if ((isread && !ARM_CP_READABLE(ri_type)) || (!isread && !ARM_CP_WRITABLE(ri_type))) {
-        tlib_printf(LOG_LEVEL_ERROR, "The '%s' register shouldn't be %s", reg_info->name, isread ? "read from" : "written to");
+        tlib_printf(LOG_LEVEL_DEBUG, "The '%s' register shouldn't be %s", reg_info->name, isread ? "read from" : "written to");
         return false;
     }
     return true;

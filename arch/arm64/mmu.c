@@ -54,7 +54,9 @@ static inline void parse_desc(uint32_t va_size_shift, uint64_t desc, uint32_t ip
     *phys_ptr = extract64(desc, va_size_shift, ips_bits[ips] - va_size_shift) << va_size_shift | extract64(address, 0,
                                                                                                            va_size_shift);
 
+#if DEBUG
     tlib_printf(LOG_LEVEL_NOISY, "%s: phys_addr=0x%" PRIx64, __func__, *phys_ptr);
+#endif
 
     ap = extract64(desc, 6, 2);
     uxn = extract64(desc, 54, 1);
@@ -162,8 +164,10 @@ int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int m
 
     ips = (tcr >> 32) & 0x7;
 
+#if DEBUG
     tlib_printf(LOG_LEVEL_NOISY, "%s: vaddr=0x%" PRIx64 " attbr=0x%" PRIx64 ", tsz=%d, tg=%d, page_size_shift=%d", __func__,
                 address, ttbr, tsz, tg, page_size_shift);
+#endif
 
     // Table address is low 48 bits of TTBR. The CnP bit is currently ignored.
     uint64_t table_addr = extract64(ttbr, 0, 48) & ~TTBR_CNP;
@@ -176,7 +180,9 @@ int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int m
         desc_addr = get_table_address(env, address, table_addr, page_size_shift, level);
         desc = ldq_phys(desc_addr);
 
+#if DEBUG
         tlib_printf(LOG_LEVEL_NOISY, "%s: level=%d, desc=0x%" PRIx64 " (addr: 0x%" PRIx64 ")", __func__, level, desc, desc_addr);
+#endif
 
         uint32_t desc_type = extract64(desc, 0, 2);
         switch (desc_type) {

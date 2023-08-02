@@ -188,7 +188,9 @@ void tlib_set_mpu_region_base_address(uint32_t value)
         cpu->cp15.c6_region_number = value & 0xF;
     }
     cpu->cp15.c6_base_address[cpu->cp15.c6_region_number] = value & 0xFFFFFFE0;
+#if DEBUG
     tlib_printf(LOG_LEVEL_DEBUG, "MPU: Set base address 0x%x, for region %lld", value & 0xFFFFFFE0, cpu->cp15.c6_region_number);
+#endif
     tlb_flush(cpu, 1, false);
 }
 
@@ -201,7 +203,9 @@ void tlib_set_mpu_region_size_and_enable(uint32_t value)
     cpu->cp15.c6_size_and_enable[index] = value & MPU_SIZE_AND_ENABLE_FIELD_MASK;
     cpu->cp15.c6_subregion_disable[index] = (value & MPU_SUBREGION_DISABLE_FIELD_MASK) >> 8;
     cpu->cp15.c6_access_control[index] = value >> 16;
+#if DEBUG
     tlib_printf(LOG_LEVEL_DEBUG, "MPU: Set access control 0x%x, permissions 0x%x, size 0x%x, enable 0x%x, for region %lld", value >> 16, ((value >> 16) & MPU_PERMISSION_FIELD_MASK) >> 8 , (value & MPU_SIZE_FIELD_MASK) >> 1, value & MPU_REGION_ENABLED_BIT, index);
+#endif
     tlb_flush(cpu, 1, false);
 }
 

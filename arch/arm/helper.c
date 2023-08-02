@@ -1251,7 +1251,9 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, i
     *phys_ptr = address;
     *prot = 0;
 
+#if DEBUG
     tlib_printf(LOG_LEVEL_DEBUG, "MPU: Trying to access address 0x%X", address);
+#endif
 
     for (n = MAX_MPU_REGIONS - 1; n >= 0; n--) {
         if (!(env->cp15.c6_size_and_enable[n] & MPU_REGION_ENABLED_BIT)) {

@@ -94,8 +94,6 @@ FUNC_STUB(float16_sub)
 FUNC_STUB(float16_to_int16)
 FUNC_STUB(float16_to_uint16)
 
-FUNC_STUB(crc32c)
-
 FUNC_STUB(cpu_stb_mmuidx_ra)
 
 /* mte_helper.c */

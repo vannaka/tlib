@@ -475,6 +475,9 @@ int get_phys_addr_pmsav8(CPUState *env, target_ulong address, int access_type, u
                     fault_type = PERMISSION_FAULT;
                     goto do_fault;
                 }
+                else {
+                    return TRANSLATE_SUCCESS;
+                }
             }
         }
 

@@ -176,10 +176,6 @@ FUNC_STUB(r14_bank_number)
 FUNC_STUB(syn_bxjtrap)
 FUNC_STUB(v7m_sp_limit)
 
-/* crypto_helper.c */
-
-static const uint8_t AES_sbox[] = {}, AES_isbox[] = {}, AES_shifts[] = {}, AES_ishifts[] = {};
-
 /* vfp_helper.c */
 
 typedef int FloatRelation;

@@ -39,7 +39,7 @@ void HELPER(update_ccount)(CPUState *env)
     env->ccount_time = now;
     env->sregs[CCOUNT] = env->ccount_base +
         (uint32_t)((now - env->time_base) *
-                   env->config->clock_freq_khz / 1000000);
+                   env->config->clock_freq_khz / 1000);
 }
 
 void HELPER(wsr_ccount)(CPUState *env, uint32_t v)

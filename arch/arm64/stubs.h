@@ -180,8 +180,6 @@ FUNC_STUB(v7m_sp_limit)
 
 static const uint8_t AES_sbox[] = {}, AES_isbox[] = {}, AES_shifts[] = {}, AES_ishifts[] = {};
 
-FUNC_STUB(MAKE_64BIT_MASK)
-
 /* vfp_helper.c */
 
 typedef int FloatRelation;

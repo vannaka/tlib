@@ -17,6 +17,7 @@
 #define ALIGN_UP(a, b)           (IS_MULTIPLE_OF(a,b) ? (a) : (ALIGN_DOWN(a,b) + (b)))
 #define DIV_ROUND_UP(a, b)       ((a) / (b) + (IS_MULTIPLE_OF(a,b) ? 0 : 1))
 #define IS_MULTIPLE_OF(a, b)     (((a) % (b)) == 0)
+#define MAKE_64BIT_MASK(pos,len) (extract64(UINT64_MAX, pos, len))
 #define MAX(x, y)                (x > y ? x : y)
 #define MIN(a, b)                (a > b ? b : a)
 

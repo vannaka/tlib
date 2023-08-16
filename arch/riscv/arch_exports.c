@@ -70,6 +70,30 @@ void tlib_allow_feature(uint32_t feature_bit)
 
 EXC_VOID_1(tlib_allow_feature, uint32_t, feature_bit)
 
+void tlib_allow_additional_feature(uint32_t feature_encoding)
+{
+    switch(feature_encoding >> RISCV_ADDITIONAL_FEATURE_OFFSET)
+    {
+    case 0x1:
+        cpu->instruction_extensions.enable_Zba = 1;
+        break;
+    case 0x2:
+        cpu->instruction_extensions.enable_Zbb = 1;
+        break;
+    case 0x3:
+        cpu->instruction_extensions.enable_Zbc = 1;
+        break;
+    case 0x4:
+        cpu->instruction_extensions.enable_Zbs = 1;
+        break;
+    default:
+        tlib_abort("Invalid architecture set extension.");
+        break;
+    }
+}
+
+EXC_VOID_1(tlib_allow_additional_feature, uint32_t, feature_bit)
+
 void tlib_mark_feature_silent(uint32_t feature_bit, uint32_t value)
 {
     if (value) {

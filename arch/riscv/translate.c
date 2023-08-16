@@ -121,6 +121,39 @@ static int ensure_extension(DisasContext *dc, target_ulong ext)
     return 0;
 }
 
+static int ensure_additional_extension(DisasContext *dc, target_ulong ext)
+{
+    if (riscv_has_additional_ext(cpu, ext)) {
+        return 1;
+    }
+
+    char letter = 0;
+    switch(ext >> 26) {
+    case 0x1:
+        letter = 'a';
+        break;
+    case 0x2:
+        letter = 'b';
+        break;
+    case 0x3:
+        letter = 'c';
+        break;
+    case 0x4:
+        letter = 's';
+        break;
+    default:
+        tlib_printf(LOG_LEVEL_ERROR, "Unexpected additional extension encoding: %d", ext >> 26);
+        break;
+    }
+
+    int instruction_length = decode_instruction_length(dc->opcode);
+    tlib_printf(LOG_LEVEL_ERROR, "RISC-V Zb%c instruction set is not enabled for this CPU! PC: 0x%llx, opcode: 0x%0*llx",
+            letter, dc->base.pc, /* padding */ 2 * instruction_length, format_opcode(dc->opcode, instruction_length));
+    
+    kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
+    return 0;
+}
+
 static int ensure_fp_extension(DisasContext *dc, int precision_bit)
 {
     /* distinguish between F/D (i.e., single/double precision) classes
@@ -530,21 +563,21 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         tcg_temp_free(resultopt1);
         break;
     case OPC_RISC_ADD_UW:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBA)) {
             return;
         }
         tcg_gen_andi_tl(source1, source1, 0xFFFFFFFF);
         tcg_gen_add_tl(source1, source1, source2);
         break;
     case OPC_RISC_SH1ADD:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBA)) {
             return;
         }
         tcg_gen_shli_tl(source1, source1, 1);
         tcg_gen_add_tl(source1, source1, source2);
         break;
     case OPC_RISC_SH1ADD_UW:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBA)) {
             return;
         }
         tcg_gen_andi_tl(source1, source1, 0xFFFFFFFF);
@@ -552,14 +585,14 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         tcg_gen_add_tl(source1, source1, source2);
         break;
     case OPC_RISC_SH2ADD:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBA)) {
             return;
         }
         tcg_gen_shli_tl(source1, source1, 2);
         tcg_gen_add_tl(source1, source1, source2);
         break;
     case OPC_RISC_SH2ADD_UW:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBA)) {
             return;
         }
         tcg_gen_andi_tl(source1, source1, 0xFFFFFFFF);
@@ -567,14 +600,14 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         tcg_gen_add_tl(source1, source1, source2);
         break;
     case OPC_RISC_SH3ADD:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBA)) {
             return;
         }
         tcg_gen_shli_tl(source1, source1, 3);
         tcg_gen_add_tl(source1, source1, source2);
         break;
     case OPC_RISC_SH3ADD_UW:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBA)) {
             return;
         }
         tcg_gen_andi_tl(source1, source1, 0xFFFFFFFF);
@@ -582,28 +615,28 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         tcg_gen_add_tl(source1, source1, source2);
         break;
      case OPC_RISC_ANDN:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
         tcg_gen_not_tl(source2, source2);
         tcg_gen_and_tl(source1, source1, source2);
         break;
     case OPC_RISC_ORN:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
         tcg_gen_not_tl(source2, source2);
         tcg_gen_or_tl(source1, source1, source2);
         break;
     case OPC_RISC_XNOR:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
         tcg_gen_xor_tl(source1, source1, source2);
         tcg_gen_not_tl(source1, source1);
         break;
     case OPC_RISC_MAX:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -613,7 +646,7 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
 #endif
         break;
     case OPC_RISC_MAXU:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -623,7 +656,7 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
 #endif
         break;
     case OPC_RISC_MIN:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -633,7 +666,7 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
 #endif
         break;
     case OPC_RISC_MINU:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -644,13 +677,13 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         break;
     case OPC_RISC_ZEXT_H_32:
     case OPC_RISC_ZEXT_H_64:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
         tcg_gen_andi_tl(source1, source1, 0xFFFF);
         break;
     case OPC_RISC_ROL:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -679,13 +712,13 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         tcg_temp_free(xlen);
         break;
     case OPC_RISC_ROLW:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
         tcg_gen_movi_tl(source1, sextract64(rol32(get_gpr_raw(rs1), get_gpr_raw(rs2) & BITMANIP_SHAMT_MASK), 0, 32));
         break;
     case OPC_RISC_ROR:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -695,13 +728,13 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
 #endif
         break;
     case OPC_RISC_RORW:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
         tcg_gen_movi_tl(source1, sextract64(ror32(get_gpr_raw(rs1), get_gpr_raw(rs2) & BITMANIP_SHAMT_MASK), 0, 32));
         break;
     case OPC_RISC_BCLR:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -722,7 +755,7 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         tcg_temp_free(bclr_t);
         break;
     case OPC_RISC_BEXT:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -734,7 +767,7 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         tcg_gen_shr_tl(source1, source1, source2);
         break;
     case OPC_RISC_BINV:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -751,7 +784,7 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         tcg_temp_free(binv_t);
         break;
     case OPC_RISC_BSET:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -768,7 +801,7 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
         tcg_temp_free(test);
         break;
     case OPC_RISC_CLMUL:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBC)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -778,7 +811,7 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
 #endif
         break;
     case OPC_RISC_CLMULR:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBC)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -788,7 +821,7 @@ static void gen_arith(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2)
 #endif
         break;
     case OPC_RISC_CLMULH:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBC)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -831,10 +864,6 @@ static void gen_synch(DisasContext *dc, uint32_t opc)
 
 static void gen_arith_bitmanip(DisasContext *dc, int rd, int rs1, target_long imm, TCGv source1)
 {
-    if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
-        return;
-    }
-
     uint32_t opc = 0;
     switch ((dc->opcode >> 12) & 0x7) {
     case 0x1:
@@ -868,82 +897,157 @@ static void gen_arith_bitmanip(DisasContext *dc, int rd, int rs1, target_long im
 
     switch (opc) {
     case OPC_RISC_CLZW:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_clzi_i32(source1, source1, 32);
         break;
     case OPC_RISC_CTZW:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_movi_tl(source1, ctz32(get_gpr_raw(rs1)));
         break;
     case OPC_RISC_CPOPW:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_movi_tl(source1, ctpop32(get_gpr_raw(rs1)));
         break;
     case OPC_RISC_REV8_32:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_movi_tl(source1, brev32(get_gpr_raw(rs1)));
         break;
     case OPC_RISC_REV8_64:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_movi_tl(source1, brev64(get_gpr_raw(rs1)));
         break;
 #if defined(TARGET_RISCV32)
     case OPC_RISC_CLZ:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_clzi_i32(source1, source1, 32);
         break;
     case OPC_RISC_CTZ:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_movi_tl(source1, ctz32(get_gpr_raw(rs1)));
         break;
     case OPC_RISC_CPOP:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_movi_tl(source1, ctpop32(get_gpr_raw(rs1)));
         break;
     case OPC_RISC_SEXT_B:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_sextract_i32(source1, source1, 0, 8);
         break;
     case OPC_RISC_SEXT_H:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_sextract_i32(source1, source1, 0, 16);
         break;
     case OPC_RISC_ORC_B:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_movi_tl(source1, orcb32(get_gpr_raw(rs1)));
         break;
     case OPC_RISC_BCLRI:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
+            return;
+        }
         tcg_gen_andi_tl(source1, source1, ~(1UL << (imm & BITMANIP_SHAMT_MASK)));
         break;
     case OPC_RISC_BEXTI:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
+            return;
+        }
         tcg_gen_shri_tl(source1, source1, imm & BITMANIP_SHAMT_MASK);
         tcg_gen_andi_tl(source1, source1, 1UL);
         break;
     case OPC_RISC_BINVI:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
+            return;
+        }
         tcg_gen_xori_tl(source1, source1, 1UL << (imm & BITMANIP_SHAMT_MASK));
         break;
     case OPC_RISC_BSETI:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
+            return;
+        }
         tcg_gen_ori_tl(source1, source1, 1UL << (imm & BITMANIP_SHAMT_MASK));
         break;
 #elif defined(TARGET_RISCV64)
     case OPC_RISC_CLZ:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_clzi_i64(source1, source1, 64);
         break;
     case OPC_RISC_CTZ:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_movi_tl(source1, ctz64(get_gpr_raw(rs1)));
         break;
     case OPC_RISC_CPOP:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_movi_tl(source1, ctpop64(get_gpr_raw(rs1)));
         break;
     case OPC_RISC_SEXT_B:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_sextract_i64(source1, source1, 0, 8);
         break;
     case OPC_RISC_SEXT_H:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_sextract_i64(source1, source1, 0, 16);
         break;
     case OPC_RISC_ORC_B:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBB)) {
+            return;
+        }
         tcg_gen_movi_tl(source1, orcb64(get_gpr_raw(rs1)));
         break;
     case OPC_RISC_BCLRI:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
+            return;
+        }
         tcg_gen_andi_tl(source1, source1, ~(1UL << (imm & BITMANIP_SHAMT_MASK)));
         break;
     case OPC_RISC_BEXTI:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
+            return;
+        }
         tcg_gen_shri_tl(source1, source1, imm & BITMANIP_SHAMT_MASK);
         tcg_gen_andi_tl(source1, source1, 1UL);
         break;
     case OPC_RISC_BINVI:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
+            return;
+        }
         tcg_gen_xori_tl(source1, source1, 1UL << (imm & BITMANIP_SHAMT_MASK));
         break;
     case OPC_RISC_BSETI:
+        if (!ensure_additional_extension(dc, RISCV_FEATURE_ZBS)) {
+            return;
+        }
         tcg_gen_ori_tl(source1, source1, 1UL << (imm & BITMANIP_SHAMT_MASK));
         break;
 #endif
@@ -1032,13 +1136,13 @@ static void gen_arith_imm(DisasContext *dc, uint32_t opc, int rd, int rs1, targe
         }
         break;
     case OPC_RISC_SLLI_UW:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_extension(dc, RISCV_FEATURE_ZBA)) {
             return;
         }
         tcg_gen_shli_tl(rd, source1, imm);
         break;
     case OPC_RISC_RORI:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
 #if defined(TARGET_RISCV32)
@@ -1048,7 +1152,7 @@ static void gen_arith_imm(DisasContext *dc, uint32_t opc, int rd, int rs1, targe
 #endif
         break;
     case OPC_RISC_RORIW:
-        if (!ensure_extension(dc, RISCV_FEATURE_RVB)) {
+        if (!ensure_extension(dc, RISCV_FEATURE_ZBB)) {
             return;
         }
         tcg_gen_movi_tl(source1, sextract64(ror32(source1, imm), 0, 32));

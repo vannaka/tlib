@@ -30,6 +30,10 @@
 
 #define MAX_RISCV_PMPS    (16)
 
+// In MISA register the extensions are encoded on bits [25:0] (see: https://five-embeddev.com/riscv-isa-manual/latest/machine.html),
+// but because these additional features are not there RISCV_ADDITIONAL_FEATURE_OFFSET allows to show that they are unrelated to MISA.
+#define RISCV_ADDITIONAL_FEATURE_OFFSET     26
+
 #define get_field(reg, mask) (((reg) & (target_ulong)(mask)) / ((mask) & ~((mask) << 1)))
 #define set_field(reg, mask, val) \
                              (((reg) & ~(target_ulong)(mask)) | (((target_ulong)(val) * ((mask) & ~((mask) << 1))) & (target_ulong)(mask)))
@@ -62,6 +66,13 @@ typedef struct DisasContext {
     uint64_t opcode;
     target_ulong npc;
 } DisasContext;
+
+typedef struct instruction_extensions_t {
+    uint8_t enable_Zba;
+    uint8_t enable_Zbb;
+    uint8_t enable_Zbc;
+    uint8_t enable_Zbs;
+} instruction_extensions_t;
 
 typedef struct CPUState CPUState;
 
@@ -191,6 +202,8 @@ struct CPUState {
        i.e., the ILLEGAL INSTRUCTION exception is generated and handled by the software */
     target_ulong silenced_extensions;
 
+    instruction_extensions_t instruction_extensions;
+
     /* since priv-1.11.0 pmp grain size must be the same across all pmp regions */
     int32_t pmp_napot_grain;
 
@@ -278,7 +291,13 @@ enum riscv_features {
     RISCV_FEATURE_RVS = RV('S'),
     RISCV_FEATURE_RVU = RV('U'),
     RISCV_FEATURE_RVV = RV('V'),
-    RISCV_FEATURE_RVB = RV('B'),
+};
+
+enum riscv_additional_features {
+    RISCV_FEATURE_ZBA = ((target_ulong)1 << RISCV_ADDITIONAL_FEATURE_OFFSET),
+    RISCV_FEATURE_ZBB = ((target_ulong)2 << RISCV_ADDITIONAL_FEATURE_OFFSET),
+    RISCV_FEATURE_ZBC = ((target_ulong)3 << RISCV_ADDITIONAL_FEATURE_OFFSET),
+    RISCV_FEATURE_ZBS = ((target_ulong)4 << RISCV_ADDITIONAL_FEATURE_OFFSET),
 };
 
 enum privilege_architecture {
@@ -290,6 +309,22 @@ enum privilege_architecture {
 static inline int riscv_has_ext(CPUState *env, target_ulong ext)
 {
     return (env->misa & ext) != 0;
+}
+
+static inline int riscv_has_additional_ext(CPUState *env, target_ulong ext)
+{
+    switch (ext >> RISCV_ADDITIONAL_FEATURE_OFFSET) {
+    case 0x1:
+        return env->instruction_extensions.enable_Zba;
+    case 0x2:
+        return env->instruction_extensions.enable_Zbb;
+    case 0x3:
+        return env->instruction_extensions.enable_Zbc;
+    case 0x4:
+        return env->instruction_extensions.enable_Zbs;
+    default:
+        return 0;
+    }
 }
 
 static inline int riscv_silent_ext(CPUState *env, target_ulong ext)

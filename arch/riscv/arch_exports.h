@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 void tlib_allow_feature(uint32_t feature_bit);
+void tlib_allow_additional_feature(uint32_t feature_bit);
 
 uint32_t tlib_is_feature_enabled(uint32_t feature_bit);
 

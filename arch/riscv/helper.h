@@ -76,11 +76,6 @@ DEF_HELPER_2(mret, tl, env, tl)
 DEF_HELPER_1(wfi, void, env)
 DEF_HELPER_1(fence_i, void, env)
 
-DEF_HELPER_1(acquire_global_memory_lock, void, env)
-DEF_HELPER_1(release_global_memory_lock, void, env)
-DEF_HELPER_2(reserve_address, void, env, uintptr)
-DEF_HELPER_2(check_address_reservation, tl, env, uintptr)
-
 // Vector helpers require 128-bit ints which aren't supported on 32-bit hosts.
 #if HOST_LONG_BITS != 32
 

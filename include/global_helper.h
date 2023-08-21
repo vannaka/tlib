@@ -14,4 +14,9 @@ DEF_HELPER_4(mark_tbs_as_dirty, void, env, tl, i32, i32)
 DEF_HELPER_1(count_opcode_inner, void, i32)
 DEF_HELPER_1(tlb_flush, void, env)
 
+DEF_HELPER_1(acquire_global_memory_lock, void, env)
+DEF_HELPER_1(release_global_memory_lock, void, env)
+DEF_HELPER_2(reserve_address, void, env, uintptr)
+DEF_HELPER_2(check_address_reservation, tl, env, uintptr)
+
 #include "def-helper.h"

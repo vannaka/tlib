@@ -250,7 +250,8 @@ case_EXCP_PREFETCH_ABORT:
         new_mode = ARM_CPU_MODE_ABT;
         addr += 0x10;
         mask = CPSR_A | CPSR_I;
-        offset = 8;
+        // Manual says we should add 8 here, but our PC is in fact a next_pc so we need to adjust to that
+        offset = 4;
         break;
     case EXCP_IRQ:
         new_mode = ARM_CPU_MODE_IRQ;

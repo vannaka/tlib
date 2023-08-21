@@ -6761,6 +6761,9 @@ static bool trans_LDRD_rr(DisasContext *s, arg_ldst_rr *a)
     int mem_idx = get_mem_index(s);
     TCGv_i32 addr, tmp;
 
+    /* This may cause exceptions, we need to sync the state */
+    gen_set_pc_im(s->base.pc);
+
     if (!ENABLE_ARCH_5TE) {
         return false;
     }
@@ -6789,6 +6792,9 @@ static bool trans_STRD_rr(DisasContext *s, arg_ldst_rr *a)
 {
     int mem_idx = get_mem_index(s);
     TCGv_i32 addr, tmp;
+
+    /* This may cause exceptions, we need to sync the state */
+    gen_set_pc_im(s->base.pc);
 
     if (!ENABLE_ARCH_5TE) {
         return false;
@@ -6868,6 +6874,9 @@ static bool op_load_ri(DisasContext *s, arg_ldst_ri *a,
     ISSInfo issinfo = make_issinfo(s, a->rt, a->p, a->w);
     TCGv_i32 addr, tmp;
 
+    /* This may cause exceptions, we need to sync the state */
+    gen_set_pc_im(s->base.pc);
+
     addr = op_addr_ri_pre(s, a);
 
     tmp = tcg_temp_new_i32();
@@ -6897,6 +6906,9 @@ static bool op_store_ri(DisasContext *s, arg_ldst_ri *a,
         return false;
     }
 
+    /* This may cause exceptions, we need to sync the state */
+    gen_set_pc_im(s->base.pc);
+
     addr = op_addr_ri_pre(s, a);
 
     tmp = load_reg(s, a->rt);
@@ -6912,6 +6924,9 @@ static bool op_ldrd_ri(DisasContext *s, arg_ldst_ri *a, int rt2)
 {
     int mem_idx = get_mem_index(s);
     TCGv_i32 addr, tmp;
+
+    /* This may cause exceptions, we need to sync the state */
+    gen_set_pc_im(s->base.pc);
 
     addr = op_addr_ri_pre(s, a);
 
@@ -6953,6 +6968,9 @@ static bool op_strd_ri(DisasContext *s, arg_ldst_ri *a, int rt2)
     TCGv_i32 addr, tmp;
 
     addr = op_addr_ri_pre(s, a);
+
+    /* This may cause exceptions, we need to sync the state */
+    gen_set_pc_im(s->base.pc);
 
     tmp = load_reg(s, a->rt);
     gen_aa32_st_i32(s, tmp, addr, mem_idx, MO_UL | MO_ALIGN);

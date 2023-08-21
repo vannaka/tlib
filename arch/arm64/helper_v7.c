@@ -383,13 +383,6 @@ void set_mmu_fault_registers(int access_type, target_ulong address, int fault_ty
 #define PMSA_ATTRIBUTE_ONLY_EL1(setting) ((setting & 0b1) == 0)
 #define PMSA_ATTRIBUTE_IS_READONLY(setting) ((setting & 0b10) != 0)
 
-enum PMSA_FAULT_TYPE {
-    ALIGNMENT_FAULT  = 0b100001, // Access unaligned
-    BACKGROUND_FAULT = 0b000000, // Not in any region && background not allowed
-    PERMISSION_FAULT = 0b001100, // Unsufficient permissions
-    TRANSLATION_FAIL = 0b000100, // Occurs when more than one region contains requested address
-};
-
 static inline uint32_t pmsav8_number_of_regions(CPUState *env)
 {
     return extract32(env->arm_core_config->mpuir, 8, 8);

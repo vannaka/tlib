@@ -128,6 +128,14 @@ enum {
     SPSR_UND,
 };
 
+enum PMSAv8_FAULT_TYPE {
+    ALIGNMENT_FAULT  = 0b100001, // Access unaligned
+    BACKGROUND_FAULT = 0b000000, // Not in any region && background not allowed
+    PERMISSION_FAULT = 0b001100, // Unsufficient permissions
+    TRANSLATION_FAIL = 0b000100, // Occurs when more than one region contains requested address
+    DEBUG_FAULT      = 0b100010, // BKPT instruction, handled with the same flow as prefetch aborts
+};
+
 #define FLOAT_TO_INT_FUNC(from_type, to_type)                                                                 \
 static inline to_type from_type ## _to_ ## to_type ## _scalbn(from_type a, int rmode, int scale STATUS_PARAM) \
 {                                                                                                             \

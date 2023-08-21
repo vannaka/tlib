@@ -29,6 +29,7 @@
 #include "syndrome.h"
 #include "system_registers.h"
 
+#include "tcg-op-atomic.h"
 #include "tcg-op-gvec.h"
 
 #define ENABLE_ARCH_4T    arm_dc_feature(s, ARM_FEATURE_V4T)

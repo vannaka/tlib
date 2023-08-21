@@ -32,6 +32,7 @@
 #include "exec-all.h"
 #include "osdep.h"
 #include "tb-helper.h"
+#include "tcg-op-atomic.h"
 #include "tcg-op.h"
 
 // Upstream Xtensa code expected DisasContextBase to contain:

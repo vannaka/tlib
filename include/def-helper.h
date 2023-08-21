@@ -44,6 +44,11 @@
 #define dh_alias_void        void
 #define dh_alias_noreturn    noreturn
 #define dh_alias_env         ptr
+#if HOST_LONG_BITS == 32
+#define dh_alias_uintptr     i32
+#else
+#define dh_alias_uintptr     i64
+#endif
 #define dh_alias(t) glue(dh_alias_, t)
 
 #define dh_ctype_i32         uint32_t
@@ -56,6 +61,7 @@
 #define dh_ctype_f64         float64
 #define dh_ctype_tl          target_ulong
 #define dh_ctype_ptr         void *
+#define dh_ctype_uintptr     uintptr_t
 #define dh_ctype_void        void
 #define dh_ctype_noreturn    void __attribute__((noreturn))
 #define dh_ctype_env         CPUState *
@@ -106,6 +112,7 @@
    extension instructions that may be required, e.g. ia64's addp4.  But
    for now we don't support any 64-bit targets with 32-bit pointers.  */
 #define dh_is_signed_ptr     0
+#define dh_is_signed_uintptr 0
 #define dh_is_signed_env     dh_is_signed_ptr
 #define dh_is_signed(t) dh_is_signed_##t
 

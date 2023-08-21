@@ -237,10 +237,7 @@ case_EXCP_SWI_SVC:
         offset = 0;
         break;
     case EXCP_BKPT:
-        env->cp15.ifsr_ns = 2;
-        goto case_EXCP_PREFETCH_ABORT;
     case EXCP_PREFETCH_ABORT:
-case_EXCP_PREFETCH_ABORT:
         new_mode = ARM_CPU_MODE_ABT;
         addr += 0x0c;
         mask = CPSR_A | CPSR_I;

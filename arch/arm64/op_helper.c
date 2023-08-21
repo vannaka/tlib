@@ -71,7 +71,15 @@ void raise_exception(CPUARMState *env, uint32_t excp,
     }
 
     tlib_assert(!excp_is_internal(excp));
-    cs->exception_index = excp;
+
+    if(excp == EXCP_BKPT)
+    {
+        // As per the manual, the bkpt raises the EXCP_PREFETCH_ABORT with IFSR set to DEBUG_FAULT
+        set_mmu_fault_registers(ACCESS_INST_FETCH, env->regs[15], DEBUG_FAULT);
+    } else {
+        cs->exception_index = excp;
+    }
+
     env->exception.syndrome = syndrome;
     env->exception.target_el = target_el;
     cpu_loop_exit(cs);

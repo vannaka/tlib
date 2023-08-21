@@ -6563,6 +6563,7 @@ static bool trans_BKPT(DisasContext *s, arg_BKPT *a)
         (a->imm == 0xab)) {
         gen_exception_internal_insn(s, s->pc_curr, EXCP_SEMIHOST);
     } else {
+        gen_set_pc_im(s->pc_curr);
         gen_exception_bkpt_insn(s, syn_aa32_bkpt(a->imm, false));
     }
     return true;

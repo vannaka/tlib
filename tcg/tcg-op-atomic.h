@@ -24,8 +24,13 @@
 #ifndef __TCG_OP_ATOMIC_H__
 #define __TCG_OP_ATOMIC_H__
 
+#include "tb-helper.h"
+
 #include "tcg.h"
 #include "tcg-op.h"
+
+// These are based on TCG's 'nonatomic' functions.
+// tlib global memory locking makes them atomic.
 
 static inline void tcg_gen_atomic_cmpxchg_i32(TCGv_i32 retv, TCGv addr, TCGv_i32 cmpv,
                                               TCGv_i32 newv, TCGArg idx, TCGMemOp memop)
@@ -37,9 +42,12 @@ static inline void tcg_gen_atomic_cmpxchg_i32(TCGv_i32 retv, TCGv addr, TCGv_i32
 
     tcg_gen_ext_i32(t2, cmpv, memop & MO_SIZE);
 
+    gen_helper_acquire_global_memory_lock(cpu_env);
     tcg_gen_qemu_ld_i32(t1, addr, idx, memop & ~MO_SIGN);
     tcg_gen_movcond_i32(TCG_COND_EQ, t2, t1, t2, newv, t1);
     tcg_gen_qemu_st_i32(t2, addr, idx, memop);
+    gen_helper_release_global_memory_lock(cpu_env);
+
     tcg_temp_free_i32(t2);
 
     if (memop & MO_SIGN) {
@@ -55,26 +63,25 @@ static inline void tcg_gen_atomic_cmpxchg_i64(TCGv_i64 retv, TCGv addr, TCGv_i64
 {
     memop = tcg_canonicalize_memop(memop, 1, 0);
 
-    // Left mostly for the comparison sake. Our TCG context doesn't have the 'tb_cflags' field.
-    // The 'else' branches haven't been ported.
-    // if (!(tcg->ctx->tb_cflags & CF_PARALLEL)) {
-        TCGv_i64 t1 = tcg_temp_new_i64();
-        TCGv_i64 t2 = tcg_temp_new_i64();
+    TCGv_i64 t1 = tcg_temp_new_i64();
+    TCGv_i64 t2 = tcg_temp_new_i64();
 
-        tcg_gen_ext_i64(t2, cmpv, memop & MO_SIZE);
+    tcg_gen_ext_i64(t2, cmpv, memop & MO_SIZE);
 
-        tcg_gen_qemu_ld_i64(t1, addr, idx, memop & ~MO_SIGN);
-        tcg_gen_movcond_i64(TCG_COND_EQ, t2, t1, t2, newv, t1);
-        tcg_gen_qemu_st_i64(t2, addr, idx, memop);
-        tcg_temp_free_i64(t2);
+    gen_helper_acquire_global_memory_lock(cpu_env);
+    tcg_gen_qemu_ld_i64(t1, addr, idx, memop & ~MO_SIGN);
+    tcg_gen_movcond_i64(TCG_COND_EQ, t2, t1, t2, newv, t1);
+    tcg_gen_qemu_st_i64(t2, addr, idx, memop);
+    gen_helper_release_global_memory_lock(cpu_env);
 
-        if (memop & MO_SIGN) {
-            tcg_gen_ext_i64(retv, t1, memop);
-        } else {
-            tcg_gen_mov_i64(retv, t1);
-        }
-        tcg_temp_free_i64(t1);
-    // }
+    tcg_temp_free_i64(t2);
+
+    if (memop & MO_SIGN) {
+        tcg_gen_ext_i64(retv, t1, memop);
+    } else {
+        tcg_gen_mov_i64(retv, t1);
+    }
+    tcg_temp_free_i64(t1);
 }
 
 #endif

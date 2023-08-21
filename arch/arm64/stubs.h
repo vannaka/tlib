@@ -279,15 +279,6 @@ typedef struct
 #define  SME_ET_InactiveZA                      stub_abort("SME_ET_InactiveZA")
 #define  SME_ET_NotStreaming                    stub_abort("SME_ET_NotStreaming")
 #define  SME_ET_Streaming                       stub_abort("SME_ET_Streaming")
-FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_add_i64, void)
-FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_and_i64, void)
-FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_or_i64, void)
-FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_smax_i64, void)
-FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_smin_i64, void)
-FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_umax_i64, void)
-FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_umin_i64, void)
-FUNC_STUB_GENERIC(tcg_gen_atomic_fetch_xor_i64, void)
-FUNC_STUB_GENERIC(tcg_gen_atomic_xchg_i64, void)
 FUNC_STUB(arm_cpreg_encoding_in_idspace)
 FUNC_STUB(gen_io_start)
 FUNC_STUB_GENERIC(get_arm_cp_reginfo, void*)
@@ -344,7 +335,6 @@ FUNC_STUB(syn_cp14_rrt_trap) // aarch32
 FUNC_STUB(syn_cp14_rt_trap) // aarch32
 FUNC_STUB(syn_cp15_rrt_trap) // aarch32
 FUNC_STUB(syn_cp15_rt_trap) // aarch32
-FUNC_STUB(tcg_gen_atomic_xchg_i32)
 FUNC_STUB(tcg_remove_ops_after)
 FUNC_STUB(translator_loop)
 

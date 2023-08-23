@@ -14,8 +14,25 @@ static uint32_t cortexa15_cp15_c0_c1[8] = {
     0x00001131, 0x00011011, 0x02010555, 0x00000000, 0x10201105, 0x20000000, 0x01240000, 0x02102211
 };
 
+static uint32_t cortexr5_cp15_c0_c1[8] = {
+    0x00000131, 0x00000001, 0x00010400, 0x00000000, 0x00110130, 0x00000000, 0x01200000, 0x00000211
+};
+
+static uint32_t cortexr8_cp15_c0_c1[8] = {
+    0x00000131, 0x00000001, 0x00010404, 0x00000000, 0x00210030, 0x00000000, 0x01200000, 0x00002111
+};
+
 static uint32_t cortexa15_cp15_c0_c2[8] = {
     0x02101110, 0x13112111, 0x21232041, 0x11112131, 0x10011142, 0, 0, 0
+};
+
+// since Cortex-R5, r1p0
+static uint32_t cortexr5_cp15_c0_c2[8] = {
+    0x02101111, 0x13112111, 0x21232141, 0x01112131, 0x00010142, 0, 0, 0
+};
+
+static uint32_t cortexr8_cp15_c0_c2[8] = {
+    0x02101111, 0x13112111, 0x21232141, 0x01112131, 0x00010142, 0, 0, 0
 };
 
 static uint32_t cortexa9_cp15_c0_c1[8] =
@@ -302,6 +319,74 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_STRONGARM);
         env->cp15.c1_sys = 0x00000070;
         break;
+    case ARM_CPUID_CORTEXR5:
+        set_feature(env, ARM_FEATURE_V4T);
+        set_feature(env, ARM_FEATURE_V5);
+        set_feature(env, ARM_FEATURE_V6);
+        set_feature(env, ARM_FEATURE_V7);
+        set_feature(env, ARM_FEATURE_V7MP);
+        set_feature(env, ARM_FEATURE_ARM_DIV); // not for rp0p0
+
+        set_feature(env, ARM_FEATURE_VFP);
+        set_feature(env, ARM_FEATURE_VFP3);
+        set_feature(env, ARM_FEATURE_VFP_FP16);
+        set_feature(env, ARM_FEATURE_NEON);
+
+        set_feature(env, ARM_FEATURE_THUMB2);
+        set_feature(env, ARM_FEATURE_THUMB_DIV);
+
+        set_feature(env, ARM_FEATURE_AUXCR);
+        set_feature(env, ARM_FEATURE_GENERIC_TIMER);
+
+        env->vfp.xregs[ARM_VFP_FPSID] = 0x41023150;
+        env->vfp.xregs[ARM_VFP_MVFR0] = 0x10110221;
+        env->vfp.xregs[ARM_VFP_MVFR1] = 0x00000011;
+
+        memcpy(env->cp15.c0_c1, cortexr5_cp15_c0_c1, 8 * sizeof(uint32_t));
+        memcpy(env->cp15.c0_c2, cortexr5_cp15_c0_c2, 8 * sizeof(uint32_t));
+
+        env->cp15.c0_cachetype = 0x80030003; // CTR
+        env->cp15.c0_clid = 0x09200003; // CLIDR, for all caches implemented
+        env->cp15.c0_ccsid[0] = 0xf01fe019; /* 32K L1 dcache */
+        env->cp15.c0_ccsid[1] = 0xf01fe019; /* 32K L1 icache */
+        env->cp15.c0_ccsid[2] = 0xf03fe019; /* 64K L2 unified cache */
+
+        env->cp15.c1_sys = 0x2000; // SCTLR
+        env->cp15.c1_coproc |= (1 << 30 /* D32DIS */) | (1 << 31 /* ASEDIS */); // CPACR
+        break;
+    case ARM_CPUID_CORTEXR8:
+        set_feature(env, ARM_FEATURE_V4T);
+        set_feature(env, ARM_FEATURE_V5);
+        set_feature(env, ARM_FEATURE_V6);
+        set_feature(env, ARM_FEATURE_V7);
+        set_feature(env, ARM_FEATURE_V7MP);
+        set_feature(env, ARM_FEATURE_ARM_DIV);
+
+        set_feature(env, ARM_FEATURE_VFP);
+        set_feature(env, ARM_FEATURE_VFP3);
+        set_feature(env, ARM_FEATURE_VFP_FP16);
+        set_feature(env, ARM_FEATURE_NEON);
+
+        set_feature(env, ARM_FEATURE_THUMB2);
+        set_feature(env, ARM_FEATURE_THUMB_DIV);
+
+        set_feature(env, ARM_FEATURE_AUXCR);
+        set_feature(env, ARM_FEATURE_GENERIC_TIMER);
+
+        env->vfp.xregs[ARM_VFP_FPSID] = 0x41023180;
+        env->vfp.xregs[ARM_VFP_MVFR0] = 0x10110021 | /* if f64 supported */ 0x00000200;
+        env->vfp.xregs[ARM_VFP_MVFR1] = 0x01000011;
+
+        memcpy(env->cp15.c0_c1, cortexr8_cp15_c0_c1, 8 * sizeof(uint32_t));
+        memcpy(env->cp15.c0_c2, cortexr8_cp15_c0_c2, 8 * sizeof(uint32_t));
+
+        env->cp15.c0_cachetype = 0x8333C003; // CTR
+        env->cp15.c0_clid = 0x09200003; // CLIDR, for cache implemented
+        env->cp15.c0_ccsid[0] = 0x201fe019; /* 32K L1 dcache */
+        env->cp15.c0_ccsid[1] = 0x201fe019; /* 32K L1 icache */
+        env->cp15.c0_ccsid[2] = 0x203fe019; /* 64K L2 unified cache */
+        env->cp15.c1_coproc = 0xC0000000; // CPACR
+        break;
     default:
         cpu_abort(env, "Bad CPU ID: %x\n", id);
         break;
@@ -379,7 +464,7 @@ static const struct arm_cpu_t arm_cpu_names[] = {
     { ARM_CPUID_PXA262, "pxa262" }, { ARM_CPUID_PXA270, "pxa270" }, { ARM_CPUID_PXA270_A0, "pxa270-a0" },
     { ARM_CPUID_PXA270_A1, "pxa270-a1" }, { ARM_CPUID_PXA270_B0, "pxa270-b0" }, { ARM_CPUID_PXA270_B1, "pxa270-b1" },
     { ARM_CPUID_PXA270_C0, "pxa270-c0" }, { ARM_CPUID_PXA270_C5, "pxa270-c5" }, { ARM_CPUID_CORTEXM33, "cortex-m33" },
-    { ARM_CPUID_ANY, "any" }, { 0, NULL }
+    { ARM_CPUID_CORTEXR5, "cortex-r5" }, { ARM_CPUID_CORTEXR8, "cortex-r8" }, { ARM_CPUID_ANY, "any" }, { 0, NULL }
 };
 
 /* return 0 if not found */

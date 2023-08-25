@@ -457,8 +457,7 @@ int get_phys_addr_pmsav8(CPUState *env, target_ulong address, int access_type, u
         *page_size = 0x40;
         *phys_ptr = address;
 
-        if ((access_type == ACCESS_INST_FETCH) && ((address & 0x1) != 0))
-        {
+        if ((access_type == ACCESS_INST_FETCH) && ((address & 0x1) != 0)) {
             fault_type = ALIGNMENT_FAULT;
             goto do_fault;
         }

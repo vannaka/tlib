@@ -100,6 +100,10 @@ EXC_VOID_2(tlib_set_system_register, const char *, name, uint64_t, value)
 
 void tlib_set_mpu_regions_count(uint32_t count)
 {
+    if (count > MAX_MPU_REGIONS) {
+        tlib_abortf("Unable to set MPU regions count to %d. Maximum value for this core is %d", count, MAX_MPU_REGIONS);
+    }
+    
     set_pmsav8_region_count(cpu, count);
 }
 EXC_VOID_1(tlib_set_mpu_regions_count, uint32_t, count)

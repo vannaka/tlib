@@ -385,6 +385,7 @@ READ_CONFIG(midr,              midr)
 READ_CONFIG(mvfr0_el1,         isar.mvfr0)
 READ_CONFIG(mvfr1_el1,         isar.mvfr1)
 READ_CONFIG(mvfr2_el1,         isar.mvfr2)
+READ_CONFIG(dbgdidr,           isar.dbgdidr)
 READ_CONFIG(revidr_el1,        revidr)
 READ_CONFIG(mpuir,             mpuir)
 READ_CONFIG(hmpuir,            hmpuir)
@@ -542,7 +543,7 @@ ARMCPRegInfo aarch32_registers[] = {
     ARM32_CP_REG_DEFINE(DBGDEVID,         14,   0,   7,   2,   7,   1, RW)  // Debug Device ID register 0
     ARM32_CP_REG_DEFINE(DBGDEVID1,        14,   0,   7,   1,   7,   1, RW)  // Debug Device ID register 1
     ARM32_CP_REG_DEFINE(DBGDEVID2,        14,   0,   7,   0,   7,   1, RW)  // Debug Device ID register 2
-    ARM32_CP_REG_DEFINE(DBGDIDR,          14,   0,   0,   0,   0,   0, RW)  // Debug ID Register
+    ARM32_CP_REG_DEFINE(DBGDIDR,          14,   0,   0,   0,   0,   0, RO, READFN(dbgdidr))  // Debug ID Register
     ARM32_CP_REG_DEFINE(DBGDRAR,          14,   0,   1,   0,   0,   0, RW)  // Debug ROM Address Register
     ARM32_CP_REG_DEFINE(DBGDSAR,          14,   0,   2,   0,   0,   0, RW)  // Debug Self Address Register
     ARM32_CP_REG_DEFINE(DBGDSCRext,       14,   0,   0,   2,   2,   1, RW, FIELD(cp15.mdscr_el1))  // Debug Status and Control Register, External View

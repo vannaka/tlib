@@ -408,7 +408,6 @@ void cpu_init_r52(CPUState *env, uint32_t id)
 
     env->arm_core_config->gt_cntfrq_hz = 0; // from 3.2.16
 
-    // TODO: Make amount of MPU regions configurable from CPU class in C#
     env->arm_core_config->mpuir = // from 3.3.76
         (16 << 8); // DREGION, here 16 EL1-controlled MPU regions
     env->arm_core_config->hmpuir =

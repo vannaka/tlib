@@ -481,6 +481,7 @@ void cpu_arm_set_cp_io(CPUState *env, int cpnum, ARMReadCPFunc *cp_read, ARMWrit
 
 #define ARM_CPUID(env) (env->cp15.c0_cpuid)
 
+// MIDR, Main ID Register value
 #define ARM_CPUID_ARM1026           0x4106a262
 #define ARM_CPUID_ARM926            0x41069265
 #define ARM_CPUID_ARM946            0x41059461

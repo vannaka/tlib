@@ -422,6 +422,8 @@ void cpu_init_r52(CPUState *env, uint32_t id)
         (16 << 8); // DREGION, here 16 EL1-controlled MPU regions
     env->arm_core_config->hmpuir =
         (16 << 0); // REGION, here 16 EL2-controlled MPU regions
+    // Main ID register from Arm Cortex-R52 Processor Technical Reference Manual rev. r1p3 (100026_0103_00_en)
+    env->arm_core_config->midr = 0x411FD132;
 
     // TODO: Add missing ones: reset_cbar, reset_auxcr, reset_hivecs
 }

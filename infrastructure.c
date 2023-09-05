@@ -20,6 +20,9 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
+#ifndef _WIN32 // This header is not available on MinGW
+#include <execinfo.h>
+#endif
 #include "callbacks.h"
 #include "infrastructure.h"
 
@@ -66,6 +69,24 @@ void tlib_abortf(char *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
     vsnprintf(result, 1024, fmt, ap);
+    #if DEBUG && !defined(_WIN32)
+    #define TRACE_MAX_SIZE 20
+    void *array[TRACE_MAX_SIZE];
+    char **strings;
+    int size, i;
+    size = backtrace(array, TRACE_MAX_SIZE);
+    strings = backtrace_symbols(array, size);
+    if (strings != NULL)
+    {
+        tlib_printf(LOG_LEVEL_ERROR, "Stack: [%d frames]", size);
+        // The last frame is meaningless, and the first one is the tlib_abort itself
+        for (i = 1; i < size - 1; i++)
+        {
+            tlib_printf(LOG_LEVEL_ERROR, "%s\n", strings[i]);
+        }
+    }
+    free(strings);
+    #endif
     tlib_abort(result);
     va_end(ap);
 }

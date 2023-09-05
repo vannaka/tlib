@@ -455,69 +455,69 @@ with all the necessary restrictions and precautions. */
 int get_phys_addr_pmsav8(CPUState *env, target_ulong address, int access_type, uint32_t current_el, uintptr_t return_address, bool suppress_faults, 
                          target_ulong *phys_ptr, int *prot, target_ulong *page_size, bool at_instruction_or_cache_maintenance)
 {
-        // default fault type when no region, or more than one region, contains this addr
-        int fault_type = TRANSLATION_FAULT;
-        int num_regions = pmsav8_number_of_regions(env);
+    // default fault type when no region, or more than one region, contains this addr
+    int fault_type = TRANSLATION_FAULT;
+    int num_regions = pmsav8_number_of_regions(env);
 
-        // Fixed for now to the minimum size to avoid adding to tlb
-        *page_size = 0x40;
-        *phys_ptr = address;
+    // Fixed for now to the minimum size to avoid adding to tlb
+    *page_size = 0x40;
+    *phys_ptr = address;
 
-        if ((access_type == ACCESS_INST_FETCH) && ((address & 0x1) != 0)) {
-            fault_type = ALIGNMENT_FAULT;
-            goto do_fault;
+    if ((access_type == ACCESS_INST_FETCH) && ((address & 0x1) != 0)) {
+        fault_type = ALIGNMENT_FAULT;
+        goto do_fault;
+    }
+
+    int found_region_index = find_first_matching_region_for_addr(env->pmsav8.regions, address, num_regions);
+    if (found_region_index != -1) {
+        pmsav8_region region = env->pmsav8.regions[found_region_index];
+        if (unlikely(region.overlapping_regions_mask)) {
+            // Only need to check regions that follow that one
+            if (find_first_matching_region_for_addr_masked(env->pmsav8.regions, address, found_region_index + 1, num_regions, region.overlapping_regions_mask) != -1) {
+                goto do_fault;
+            }
         }
 
-        int found_region_index = find_first_matching_region_for_addr(env->pmsav8.regions, address, num_regions);
-        if (found_region_index != -1) {
-            pmsav8_region region = env->pmsav8.regions[found_region_index];
-            if (unlikely(region.overlapping_regions_mask)) {
-                // Only need to check regions that follow that one
-                if (find_first_matching_region_for_addr_masked(env->pmsav8.regions, address, found_region_index + 1, num_regions, region.overlapping_regions_mask) != -1) {
-                    goto do_fault;
-                }
-            }
+        if (!region.execute_never) {
+            *prot |= PAGE_EXEC;
+        }
 
-            if (!region.execute_never) {
-                *prot |= PAGE_EXEC;
-            }
-
-            uint8_t access_permission_bits = region.access_permission_bits;
-            if (!PMSA_ATTRIBUTE_ONLY_EL1(access_permission_bits) || current_el == 1) {
-                *prot |= PAGE_READ;
-                if (!PMSA_ATTRIBUTE_IS_READONLY(access_permission_bits)) {
-                    *prot |= PAGE_WRITE;
-                }
-            }
-
-            if (!is_page_access_valid(*prot, access_type)) {
-                fault_type = PERMISSION_FAULT;
-                goto do_fault;
-            }
-            else {
-                return TRANSLATE_SUCCESS;
-            }
-        } else {
-            // Not found in regions: figure c1-2 page 42 of ARM DDI 0568A.c (ID110520)
-            if (current_el == 1) {
-                *prot = pmsav8_default_cacheability_enabled(env) ? get_default_memory_map_access(current_el, address) : PAGE_READ | PAGE_WRITE | PAGE_EXEC;
-            } else {
-                goto do_fault;
+        uint8_t access_permission_bits = region.access_permission_bits;
+        if (!PMSA_ATTRIBUTE_ONLY_EL1(access_permission_bits) || current_el == 1) {
+            *prot |= PAGE_READ;
+            if (!PMSA_ATTRIBUTE_IS_READONLY(access_permission_bits)) {
+                *prot |= PAGE_WRITE;
             }
         }
 
         if (!is_page_access_valid(*prot, access_type)) {
             fault_type = PERMISSION_FAULT;
             goto do_fault;
-        }   
+        }
+        else {
+            return TRANSLATE_SUCCESS;
+        }
+    } else {
+        // Not found in regions: figure c1-2 page 42 of ARM DDI 0568A.c (ID110520)
+        if (current_el == 1) {
+            *prot = pmsav8_default_cacheability_enabled(env) ? get_default_memory_map_access(current_el, address) : PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+        } else {
+            goto do_fault;
+        }
+    }
 
-        return TRANSLATE_SUCCESS;
-     do_fault:
-         set_mmu_fault_registers(access_type, address, fault_type);
-         if (return_address) {
-             cpu_restore_state_and_restore_instructions_count(env,env->current_tb, return_address);
-         }
-         return TRANSLATE_FAIL;
+    if (!is_page_access_valid(*prot, access_type)) {
+        fault_type = PERMISSION_FAULT;
+        goto do_fault;
+    }   
+
+    return TRANSLATE_SUCCESS;
+ do_fault:
+     set_mmu_fault_registers(access_type, address, fault_type);
+     if (return_address) {
+         cpu_restore_state_and_restore_instructions_count(env,env->current_tb, return_address);
+     }
+     return TRANSLATE_FAIL;
 }
 
 inline int get_phys_addr(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,

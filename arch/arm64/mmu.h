@@ -29,7 +29,7 @@
     (page_size_shift + (MMU_Ln_XLAT_VA_SIZE_SHIFT(page_size_shift) *  \
     (MMU_XLAT_LAST_LEVEL - (level))))
 
-#define TTBR_CNP 1u
+#define TTBR_CNP 1ULL
 
 enum
 {

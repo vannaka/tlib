@@ -170,7 +170,7 @@ int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int m
 #endif
 
     // Table address is low 48 bits of TTBR. The CnP bit is currently ignored.
-    uint64_t table_addr = extract64(ttbr, 0, 48) & ~TTBR_CNP;
+    uint64_t table_addr = extract64(ttbr, 0, 48) & (UINT64_MAX ^ TTBR_CNP);
 
     int level;
     ISSFaultStatusCode fault_code = -1;

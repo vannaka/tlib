@@ -383,42 +383,49 @@ void set_mmu_fault_registers(int access_type, target_ulong address, int fault_ty
     }
 }
 
-#define PMSA_ATTRIBUTE_ONLY_EL1(setting) ((setting & 0b1) == 0)
+#define PMSA_ATTRIBUTE_ONLY_SAME_LEVEL(setting) ((setting & 0b1) == 0)
 #define PMSA_ATTRIBUTE_IS_READONLY(setting) ((setting & 0b10) != 0)
 
-inline uint32_t pmsav8_number_of_regions(CPUState *env)
+inline uint32_t pmsav8_number_of_el1_regions(CPUState *env)
 {
     return extract32(env->arm_core_config->mpuir, 8, 8);
 }
 
-void set_pmsav8_region_count(CPUState *env, uint32_t count)
+inline uint32_t pmsav8_number_of_el2_regions(CPUState *env)
 {
-    env->arm_core_config->mpuir = deposit32(env->arm_core_config->mpuir, 8, 8, count);
+    return extract32(env->arm_core_config->hmpuir, 0, 8);
 }
 
+void set_pmsav8_regions_count(CPUState *env, uint32_t el1_regionscount, uint32_t el2_regions_count)
+{
+    env->arm_core_config->mpuir = deposit32(env->arm_core_config->mpuir, 8, 8, el1_regionscount);
+    env->arm_core_config->hmpuir = deposit32(env->arm_core_config->hmpuir, 0, 8, el2_regions_count);
+}
 
 static inline int get_default_memory_map_access(uint32_t current_el, target_ulong address)
 {
     int prot = 0; 
-    if (current_el > 1)
-    {
-        tlib_abortf("The EL > 1 is not supported yet");
-    }
-
-    /* This should take the access type under consideration as well, but it would influence only the cacheability and sherability.
-       Neither of this have any influence on our simulation - the memory is always treated in the same way. */
-    switch(address)
-    {
-        case 0x00000000 ... 0x7FFFFFFF:
-            prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
-        break;
-        // Devices
-        case 0x80000000 ... 0xFFFFFFFF:
-            prot = PAGE_READ | PAGE_WRITE;
+    switch(current_el) {
+        case 0 ... 2:
+            switch(address)
+            {
+                case 0x00000000 ... 0x7FFFFFFF:
+                    prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+                break;
+                // Devices
+                case 0x80000000 ... 0xFFFFFFFF:
+                    prot = PAGE_READ | PAGE_WRITE;
+                    break;
+                default:
+                    tlib_abortf("Address out of range. This should never happen");
+            }
             break;
         default:
-            tlib_abortf("Address out of range. This should never happen");
+            tlib_abortf("The EL == %d is not supported yet", current_el);
+            break;
     }
+    /* This should take the access type under consideration as well, but it would influence only the cacheability and sherability.
+       Neither of this have any influence on our simulation - the memory is always treated in the same way. */
     return prot;
 }
 
@@ -446,7 +453,7 @@ static inline int find_first_matching_region_for_addr(pmsav8_region *regions, ta
     return find_first_matching_region_for_addr_masked(regions, address, 0, regions_count, UINT64_MAX);
 }
 
-static inline int get_region_prot(pmsav8_region *region, int current_el)
+static inline int get_region_prot(pmsav8_region *region, int current_el, bool is_el2_translation)
 {
     int prot = 0;
     if (region == NULL)
@@ -455,7 +462,7 @@ static inline int get_region_prot(pmsav8_region *region, int current_el)
     }
     uint8_t access_permission_bits = region->access_permission_bits;
     prot |= (region->execute_never ? 0 : PAGE_EXEC);   
-    if (!PMSA_ATTRIBUTE_ONLY_EL1(access_permission_bits) || current_el == 1) {
+    if (!PMSA_ATTRIBUTE_ONLY_SAME_LEVEL(access_permission_bits) || current_el == (is_el2_translation ? 2 : 1)) {
         prot |= PAGE_READ;
         if (!PMSA_ATTRIBUTE_IS_READONLY(access_permission_bits)) {
             prot |= PAGE_WRITE;
@@ -463,6 +470,7 @@ static inline int get_region_prot(pmsav8_region *region, int current_el)
     }
     return prot;
 }
+
 enum mpu_result {
     FOUND,
     NOT_FOUND,
@@ -486,8 +494,7 @@ static int pmsav8_mpu_find_matching_region(pmsav8_region *regions, target_ulong 
     return FOUND;
 }
 
-/* This supports only EL0 and EL1 acesses - no dual stage for now.
-All addresses are flat mapped -> (virtual address == physical address), all we do is figure out the access permissions and memory attributes.
+/* All addresses are flat mapped -> (virtual address == physical address), all we do is figure out the access permissions and memory attributes.
 There is no distinction between reads from data/instruction fetch paths, hence the execute_never attribute.
 ACCESS_TYPE_READ and ACCESS_TYPE_INSN_FETCH are both cosidered reads access.
 There is no need to respect the cacheability and shareability settings - we handle it all as shareable and cacheable anyway,
@@ -507,37 +514,44 @@ int get_phys_addr_pmsav8(CPUState *env, target_ulong address, int access_type, u
         goto do_fault;
     }
 
-    int num_regions = pmsav8_number_of_regions(env);
+
+    int num_el1_regions = pmsav8_number_of_el1_regions(env);
+    int num_el2_regions = pmsav8_number_of_el2_regions(env);
     pmsav8_region region;
     pmsav8_region *found_region = &region;
 
+    bool first_stage_as_el2 = (current_el == 2) || (env->cp15.hcr_el2 & HCR_TGE);
+    bool has_second_stage = (current_el < 2) && (env->cp15.hcr_el2 & HCR_TGE) && (env->cp15.hcr_el2 & HCR_VM);
+    bool is_second_stage = false;
+
     // Stage one 
-    enum mpu_result result = (current_el < 2) && (env->cp15.hcr_el2 & HCR_TGE) ?
-                                 pmsav8_mpu_find_matching_region(env->pmsav8.hregions, address, num_regions, found_region) :
-                                 pmsav8_mpu_find_matching_region(env->pmsav8.regions, address, num_regions, found_region);
+    enum mpu_result result =
+        first_stage_as_el2 ?
+                                 pmsav8_mpu_find_matching_region(env->pmsav8.hregions, address, num_el2_regions, found_region) :
+                                 pmsav8_mpu_find_matching_region(env->pmsav8.regions, address, num_el1_regions, found_region);
     if (result == FOUND) {
-        *prot = get_region_prot(found_region, current_el);   
-    } else if (found_region != NULL) {
-        // found region, but still the match failed - must be overlap
-        goto do_fault;
-    }
-    /* If the stage 1 access permissions indicate that an access is not permitted, a stage 1 Permission fault is
-       generated regardless of the stage 2 permissions */
-    if (!is_page_access_valid(*prot, access_type)) {
-        fault_type = PERMISSION_FAULT;
-        goto do_fault;
-    }   
-
-
-
-    if (!region_found) {
+        *prot = get_region_prot(found_region, current_el, first_stage_as_el2);   
         if (!is_page_access_valid(*prot, access_type)) {
             fault_type = PERMISSION_FAULT;
             goto do_fault;
         }
-    } else if (result == NOT_FOUND) {
-        // Not found in regions: figure c1-2 page 42 of ARM DDI 0568A.c (ID110520)
-        if (current_el == 1 && (env->cp15.sctlr_ns & 0b1)) {
+    } else if (result == OVERLAP) {
+        fault_type = TRANSLATION_FAULT;
+        goto do_fault;
+    } else if (result == NOT_FOUND){
+        if (first_stage_as_el2 && current_el < 2) {
+            // Default mapping does not apply
+            fault_type = PERMISSION_FAULT;
+            goto do_fault;
+        }
+        goto default_mapping;
+    }
+
+ default_mapping:
+    // Not found in regions: figure c1-2 page 42 of ARM DDI 0568A.c (ID110520)
+    if (result != FOUND)
+    {
+        if (is_second_stage || ((env->cp15.sctlr_el[current_el] & 0b1))) {
             *prot = pmsav8_default_cacheability_enabled(env) ? get_default_memory_map_access(current_el, address) : PAGE_READ | PAGE_WRITE | PAGE_EXEC;
             if (!is_page_access_valid(*prot, access_type)) {
                 fault_type = PERMISSION_FAULT;
@@ -546,10 +560,31 @@ int get_phys_addr_pmsav8(CPUState *env, target_ulong address, int access_type, u
         } else {
             goto do_fault;
         }
-    } else if (result == OVERLAP) {
-        goto do_fault;
+        if (is_second_stage) {
+            return TRANSLATE_SUCCESS;
+        }
     }
 
+    if (has_second_stage) {
+        if (is_second_stage) {
+            goto default_mapping;
+        }
+        enum mpu_result result = pmsav8_mpu_find_matching_region(env->pmsav8.hregions, address, num_el2_regions, found_region);
+        if (result == FOUND) {
+            *prot = get_region_prot(found_region, current_el, is_second_stage || first_stage_as_el2);   
+            if (!is_page_access_valid(*prot, access_type)) {
+                fault_type = PERMISSION_FAULT;
+                goto do_fault;
+            }
+        } else if (result == OVERLAP) {
+            fault_type = TRANSLATION_FAULT;
+            goto do_fault;
+        } else if (result == NOT_FOUND){
+            goto default_mapping;
+        }
+    }
+
+    
     return TRANSLATE_SUCCESS;
  do_fault:
      set_mmu_fault_registers(access_type, address, fault_type);

@@ -98,12 +98,13 @@ void tlib_set_system_register(const char *name, uint64_t value)
 }
 EXC_VOID_2(tlib_set_system_register, const char *, name, uint64_t, value)
 
-void tlib_set_mpu_regions_count(uint32_t count)
+void tlib_set_mpu_regions_count(uint32_t el1_regions_count, uint32_t el2_regions_count)
 {
-    if (count > MAX_MPU_REGIONS) {
-        tlib_abortf("Unable to set MPU regions count to %d. Maximum value for this core is %d", count, MAX_MPU_REGIONS);
+    if (el1_regions_count > MAX_MPU_REGIONS || el2_regions_count > MAX_MPU_REGIONS) {
+        tlib_abortf("Unable to set MPU regions count to %d. Maximum value for this core is %d",
+                    el1_regions_count > el2_regions_count ? el1_regions_count : el2_regions_count, MAX_MPU_REGIONS);
     }
     
-    set_pmsav8_region_count(cpu, count);
+    set_pmsav8_regions_count(cpu, el1_regions_count, el2_regions_count);
 }
-EXC_VOID_1(tlib_set_mpu_regions_count, uint32_t, count)
+EXC_VOID_2(tlib_set_mpu_regions_count, uint32_t, count, uint32_t, hyp_count)

@@ -75,16 +75,19 @@ static inline uint64_t pmsav8_mark_overlapping_regions(CPUState *env, int base_r
                                                        uint32_t address_end, bool is_hyper)
 {
     pmsav8_region *regions;
+    int regions_count;
     uint32_t base_region_mask = 1 << base_region_index;
     uint64_t overlapping_mask = 0;
 
     if (is_hyper) {
         regions = env->pmsav8.hregions;
+        regions_count = pmsav8_number_of_el2_regions(env);
     } else {
         regions = env->pmsav8.regions;
+        regions_count = pmsav8_number_of_el1_regions(env);
     }
 
-    for (int index = 0; index < pmsav8_number_of_regions(env); index++) {
+    for (int index = 0; index < regions_count; index++) {
         if (!regions[index].enabled || index == base_region_index) {
             continue;
         }

@@ -509,8 +509,8 @@ static void msr_mrs_banked_exc_checks(CPUARMState *env, uint32_t tgtmode,
      */
     int curmode = env->uncached_cpsr & CPSR_M;
 
-    if (regno == 17) {
-        /* ELR_Hyp: a special case because access from tgtmode is OK */
+    /* ELR_Hyp, SPSR_Hyp on some cores: special cases because access from tgtmode is OK */
+    if (regno == 17 || (regno == 16 && env->arm_core_config->spsr_hyp_accessible_from_hyp_mode)) {
         if (curmode != ARM_CPU_MODE_HYP && curmode != ARM_CPU_MODE_MON) {
             goto undef;
         }
@@ -565,6 +565,14 @@ void HELPER(msr_banked)(CPUARMState *env, uint32_t value, uint32_t tgtmode,
     switch (regno) {
     case 16: /* SPSRs */
         env->banked_spsr[bank_number(tgtmode)] = value;
+
+        // For certain cores writing banked SPSR is possible from the target
+        // mode. Let's also write SPSR in such a situation. Whether that's
+        // allowed has been already tested in msr_mrs_banked_exc_checks.
+        int curmode = env->uncached_cpsr & CPSR_M;
+        if (tgtmode == curmode) {
+            env->spsr = value;
+        }
         break;
     case 17: /* ELR_Hyp */
         env->elr_el[2] = value;

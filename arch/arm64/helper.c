@@ -273,6 +273,10 @@ void cpu_init_r52(CPUState *env, uint32_t id)
 
     env->arm_core_config->has_el2 = true;        // EL2 virtualization, from 1.2
 
+    // SPSR_hyp accesses from Hypervisor mode are UNPREDICTABLE. However, a common Cortex-R52 initialization
+    // procedure, that works correctly in hardware and FVP, sets it so let's also allow such accesses.
+    env->arm_core_config->spsr_hyp_accessible_from_hyp_mode = true;
+
     env->arm_core_config->isar.id_isar0 = 0x02101110; // from 3.2.1
     env->arm_core_config->isar.id_isar1 = 0x13112111; // from 3.2.1
     env->arm_core_config->isar.id_isar2 = 0x21232142; // from 3.2.1

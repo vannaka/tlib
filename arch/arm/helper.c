@@ -242,6 +242,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         env->cp15.c0_ccsid[2] = 0x711fe07a; /* 4096K L2 unified cache */
         env->cp15.c1_sys = 0x00c50078;
         break;
+#ifdef TARGET_PROTO_ARM_M
     case ARM_CPUID_CORTEXM33:
         set_feature(env, ARM_FEATURE_V8);
         /* fallthrough */
@@ -263,6 +264,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_VFP4);
 
         break;
+#endif
     case ARM_CPUID_ANY: /* For userspace emulation.  */
         set_feature(env, ARM_FEATURE_V4T);
         set_feature(env, ARM_FEATURE_V5);

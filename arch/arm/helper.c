@@ -791,11 +791,34 @@ static void do_interrupt_v7m(CPUState *env)
     int nr;
     int stack_status = 0;
 
-    lr = 0xfffffff1;
-    if (env->v7m.exception == 0) {
-        lr |= 0x8;
-        lr |= (env->v7m.current_sp != 0) << 2;
+    if (arm_feature(env, ARM_FEATURE_V8)) {
+        /* [31:7] PREFIX and RES1. 
+         *
+         * All SecureExtensions bits are set to their disabled state:
+         * [6]: 0
+         * [5]: 1
+         * [0]: 0
+         */
+        lr = 0xffffffb0;
+
+        /* Mode */
+        if (env->v7m.handler_mode == 0 ) {
+            lr |= 1<<3;
+        }
+
+        /* SPSEL */
+        if (env->v7m.current_sp != 0) {
+            lr |= 1<<2;
+        }
+    } else {
+        lr = 0xfffffff1;
+        if (env->v7m.exception == 0) {
+            lr |= 0x8;
+            lr |= (env->v7m.current_sp != 0) << 2;
+        }
     }
+
+    /* v7-M and v8-M share FP stack FP context active fields */
     if (env->v7m.control & ARM_CONTROL_FPCA_MASK) {
         lr ^= ARM_EXC_RETURN_NFPCA_MASK;
     }

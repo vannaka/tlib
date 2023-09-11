@@ -265,4 +265,9 @@ void tlib_set_fpu_interrupt_number(int32_t irq_number)
 
 EXC_VOID_1(tlib_set_fpu_interrupt_number, int32_t, irq_number)
 
+uint32_t tlib_is_v8()
+{
+    return arm_feature(env, ARM_FEATURE_V8);
+}
+EXC_INT_0(uint32_t, tlib_is_v8)
 #endif

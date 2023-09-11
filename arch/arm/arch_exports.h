@@ -32,6 +32,9 @@ uint32_t tlib_get_mpu_region_base_address();
 uint32_t tlib_get_mpu_region_size_and_enable();
 uint32_t tlib_get_mpu_region_access_control();
 uint32_t tlib_get_mpu_region_number();
+
+uint32_t tlib_is_v8();
+
 #endif
 
 #endif

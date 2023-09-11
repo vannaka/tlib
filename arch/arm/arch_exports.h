@@ -35,6 +35,18 @@ uint32_t tlib_get_mpu_region_number();
 
 uint32_t tlib_is_v8();
 
+void tlib_set_pmsav8_ctrl(uint32_t value);
+void tlib_set_pmsav8_rnr(uint32_t value);
+void tlib_set_pmsav8_rbar(uint32_t value);
+void tlib_set_pmsav8_rlar(uint32_t value);
+void tlib_set_pmsav8_mair(uint32_t index, uint32_t value);
+uint32_t tlib_get_pmsav8_type(void);
+uint32_t tlib_get_pmsav8_ctrl(void);
+uint32_t tlib_get_pmsav8_rnr(void);
+uint32_t tlib_get_pmsav8_rbar(void);
+uint32_t tlib_get_pmsav8_rlar(void);
+uint32_t tlib_get_pmsav8_mair(uint32_t index);
+
 #endif
 
 #endif

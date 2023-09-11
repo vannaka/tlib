@@ -270,4 +270,101 @@ uint32_t tlib_is_v8()
     return arm_feature(env, ARM_FEATURE_V8);
 }
 EXC_INT_0(uint32_t, tlib_is_v8)
+
+/* PMSAv8 */
+
+static void guard_pmsav8()
+{
+    if (!arm_feature(env, ARM_FEATURE_V8))
+    {
+        tlib_abort("This feature is only supported on ARM v8-M architecture");
+    }
+}
+
+void tlib_set_pmsav8_ctrl(uint32_t value)
+{
+    guard_pmsav8();
+    cpu->pmsav8.ctrl = value;
+}
+EXC_VOID_1(tlib_set_pmsav8_ctrl, uint32_t, value)
+
+void tlib_set_pmsav8_rnr(uint32_t value)
+{
+    guard_pmsav8();
+    if (value > MAX_MPU_REGIONS) {
+        tlib_printf(LOG_LEVEL_ERROR, "Requested RNR value is greater than the maximum MPU regions");
+        return;
+    }
+    cpu->pmsav8.rnr = value;
+}
+EXC_VOID_1(tlib_set_pmsav8_rnr, uint32_t, value)
+
+void tlib_set_pmsav8_rbar(uint32_t value)
+{
+    guard_pmsav8();
+    uint32_t index = cpu->pmsav8.rnr;
+    cpu->pmsav8.rbar[index] = value;
+}
+EXC_VOID_1(tlib_set_pmsav8_rbar, uint32_t, value)
+
+void tlib_set_pmsav8_rlar(uint32_t value)
+{
+    guard_pmsav8();
+    uint32_t index = cpu->pmsav8.rnr;
+    cpu->pmsav8.rlar[index] = value;
+}
+EXC_VOID_1(tlib_set_pmsav8_rlar, uint32_t, value)
+
+void tlib_set_pmsav8_mair(uint32_t index, uint32_t value)
+{
+    guard_pmsav8();
+    if (index > 1) {
+        tlib_printf(LOG_LEVEL_ERROR, "Only indexes {0,1} are supported by MAIR registers");
+        return;
+    }
+    cpu->pmsav8.mair[index] = value;
+}
+EXC_VOID_2(tlib_set_pmsav8_mair, uint32_t, index, uint32_t, value)
+
+uint32_t tlib_get_pmsav8_ctrl()
+{
+    guard_pmsav8();
+    return cpu->pmsav8.ctrl;
+}
+EXC_INT_0(uint32_t, tlib_get_pmsav8_ctrl)
+
+uint32_t tlib_get_pmsav8_rnr()
+{
+    guard_pmsav8();
+    return cpu->pmsav8.rnr;
+}
+EXC_INT_0(uint32_t, tlib_get_pmsav8_rnr)
+
+uint32_t tlib_get_pmsav8_rbar()
+{
+    guard_pmsav8();
+    uint32_t index = cpu->pmsav8.rnr;
+    return cpu->pmsav8.rbar[index];
+}
+EXC_INT_0(uint32_t, tlib_get_pmsav8_rbar)
+
+uint32_t tlib_get_pmsav8_rlar()
+{
+    guard_pmsav8();
+    uint32_t index = cpu->pmsav8.rnr;
+    return cpu->pmsav8.rlar[index];
+}
+EXC_INT_0(uint32_t, tlib_get_pmsav8_rlar)
+
+uint32_t tlib_get_pmsav8_mair(uint32_t index)
+{
+    guard_pmsav8();
+    if (index > 1) {
+        tlib_printf(LOG_LEVEL_ERROR, "Only indexes {0,1} are supported by MAIR registers");
+        return 0;
+    }
+    return cpu->pmsav8.mair[index];
+}
+EXC_INT_1(uint32_t, tlib_get_pmsav8_mair, uint32_t, index)
+
 #endif

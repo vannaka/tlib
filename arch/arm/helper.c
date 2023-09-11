@@ -1626,6 +1626,14 @@ static inline int get_phys_addr(CPUState *env, uint32_t address, int access_type
         address += env->cp15.c13_fcse;
     }
 
+    /* Handle v8M specific MPU */
+#ifdef TARGET_PROTO_ARM_M
+    if(arm_feature(env, ARM_FEATURE_V8)) {
+        *page_size = TARGET_PAGE_SIZE;
+        return pmsav8_get_phys_addr(env, address, access_type, is_user, phys_ptr, prot);
+    }
+#endif
+
     if ((env->cp15.c1_sys & 1) == 0) {
         /* MMU/MPU disabled.  */
         *phys_ptr = address;

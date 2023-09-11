@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "cpu-defs.h"
+#include "bit_helper.h" // extract32
 
 #include "softfloat.h"
 #include "arch_callbacks.h"
@@ -483,7 +484,7 @@ enum arm_features {
     ARM_FEATURE_ARM_DIV, /* divide supported in ARM encoding */
     ARM_FEATURE_VFP4,    /* VFPv4 (implies that NEON is v2) */
     ARM_FEATURE_GENERIC_TIMER,
-    ARM_FEATURE_V8,
+    ARM_FEATURE_V8,      /* implies PMSAv8 MPU */
     ARM_FEATURE_PMSA,
 };
 

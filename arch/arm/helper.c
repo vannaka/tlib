@@ -1493,6 +1493,126 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, i
     return MPU_PERMISSION_FAULT;
 }
 
+#ifdef TARGET_PROTO_ARM_M
+
+static int cortexm_check_default_mapping_v8(uint32 address)
+{
+    switch(address) {
+    case 0x00000000 ... 0x7FFFFFFF:
+        return PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+        break;
+    // Devices
+    case 0x80000000 ... 0xFFFFFFFF:
+        return PAGE_READ | PAGE_WRITE;
+        break;
+    default:
+        tlib_abortf("Address out of range. This should never happen");
+        return 0;  /* Never happens.  Keep compiler happy.  */
+    }
+}
+
+static inline bool pmsav8_get_region(CPUState *env, uint32_t address, int *region_index, bool *multiple_regions)
+{
+    int n;
+    bool hit = false;
+    *multiple_regions = false;
+    *region_index = -1;
+
+    for (n = MAX_MPU_REGIONS - 1; n >= 0; n--) {
+
+        if(!(env->pmsav8.rlar[n] & 0x1)) {
+            /* Region disabled */
+            continue;
+        }
+
+        uint32_t base = env->pmsav8.rbar[n] & ~0x1f;
+        uint32_t limit = env->pmsav8.rlar[n] | 0x1f;
+        if(address < base || address > limit) {
+            /* Addr not in this region */
+            continue;
+        }
+
+        /* region matched */
+        if (hit) {
+            /* multiple regions always return a failure
+             * in this case region_index _must not_ be used
+             */
+            *multiple_regions = true;
+            *region_index = -1;
+            break;
+        }
+
+        hit = true;
+        *region_index = n;
+    }
+    return hit;
+}
+
+#define PMSA_ENABLED(ctrl) (( ctrl & 0b100 ))
+#define PMSA_PRIVDEFENA(ctrl) (( ctrl & 0b1 ))
+#define PMSA_AP_PRIVONLY(ap) (( ap & 0b01 ) == 0)
+#define PMSA_AP_READONLY(ap) (( ap & 0b10 ) != 0)
+
+static inline int pmsav8_get_phys_addr(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot)
+{
+    bool hit;
+    int resolved_region;
+    bool multiple_regions = false;
+    bool mpu_enabled = PMSA_ENABLED(env->pmsav8.ctrl);
+
+    /* flat memory mapping */
+    *phys_ptr = address;
+    *prot = 0;
+
+    if (!mpu_enabled) {
+        hit = false;
+    } else {
+        hit = pmsav8_get_region(env, address, &resolved_region, &multiple_regions);
+
+        /* Overlapping regions generate MemManage Fault
+         * R_LLLP in Arm® v8-M Architecture Reference Manual DDI0553B.l ID30062020 */
+        if (multiple_regions) {
+            goto do_fault;
+        }
+    }
+
+    if (hit) {
+        int rbar = env->pmsav8.rbar[resolved_region];
+        int xn = extract32(rbar, 0, 1);
+        int ap = extract32(rbar, 1, 2);
+
+        if (!PMSA_AP_PRIVONLY(ap) || !is_user) {
+            *prot |= PAGE_READ;
+            if(!PMSA_AP_READONLY(ap)) {
+                *prot |= PAGE_WRITE;
+            }
+        }
+
+        if (!xn) {
+            *prot |= PAGE_EXEC;
+        }
+
+    } else {
+        /* No region hit, use background region if:
+         * - MPU disabled: for all accesses
+         * - MPU enabled: for privileged accesses if default memory map is enabled (PRIVDEFENA)
+         */
+        if (!mpu_enabled || (!is_user && PMSA_PRIVDEFENA(env->pmsav8.ctrl))) {
+            *prot = cortexm_check_default_mapping_v8(address);
+        } else {
+            goto do_fault;
+        }
+    }
+    
+    if (is_page_access_valid(*prot, access_type)) {
+        return TRANSLATE_SUCCESS;
+    }
+
+do_fault:
+    return TRANSLATE_FAIL;
+}
+#endif
+
 static inline int get_phys_addr(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
                                 target_ulong *page_size, int no_page_fault)
 {

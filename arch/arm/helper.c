@@ -3501,6 +3501,84 @@ void HELPER(set_teecr)(CPUState * env, uint32_t val)
     }
 }
 
+#ifdef TARGET_PROTO_ARM_M
+uint32_t HELPER(v8m_tt)(CPUState *env, uint32_t addr, uint32_t op)
+{
+    int prot;
+    bool priv_access;
+    uint32_t phys_ptr; /* Not used, but needed for get_phys_addr_mpu */
+    bool a,t;
+    int resolved_region;
+    bool multiple_regions;
+
+    if (!PMSA_ENABLED(env->pmsav8.ctrl)) {
+        goto invalid;
+    }
+
+    /* From "Armv8-M Architecture Reference Manual"
+     * The padding is a placeholder for fields that 
+     * are only used in Secure Mode (currently unsupported)
+     */
+    union {
+        struct {
+            unsigned mpu_region : 8;
+            unsigned : 8;
+            unsigned mpu_region_valid : 1;
+            unsigned : 1;
+            unsigned read_ok : 1;
+            unsigned readwrite_ok : 1;
+            unsigned : 12;
+        } flags;
+        uint32_t value;
+    } addr_info;
+
+    /* Decode instruction variant
+     * TT:    a == 0 && t == 0
+     * TTA:   a == 1 && t == 0 *unimpl*
+     * TTT:   a == 0 && t == 1
+     * TTAT:  a == 1 && t == 1 *unimpl*
+     */
+    a = op & 0b10;
+    t = op & 0b01;
+
+    /* Alternate Domain (A) variants are not supported */
+    if (a) {
+        cpu_abort(env, "TTA and TTAT instructions are not supported");
+    }
+
+    if (t) {
+        /* Force user access */
+        priv_access = false;
+    } else {
+        /* Check privilege level for the M profile, return true otherwise */
+        priv_access = in_privileged_mode(env);
+    }
+
+    if (!pmsav8_get_region(env, addr, &resolved_region, &multiple_regions) || multiple_regions) {
+        /* No region hit or multiple regions */
+        goto invalid;
+    }
+    addr_info.flags.mpu_region = resolved_region;
+    addr_info.flags.mpu_region_valid = true;
+
+    pmsav8_get_phys_addr(env, addr, PAGE_READ, !priv_access, &phys_ptr, &prot);
+    addr_info.flags.read_ok = (prot & (1 << PAGE_READ)) != 0;
+    addr_info.flags.readwrite_ok = addr_info.flags.read_ok && (prot & (1 << PAGE_WRITE)) != 0;
+
+    return addr_info.value;
+
+invalid:
+    /* The Arm® v8-M Architecture Reference Manual specifies that if MREGION content is not valid if:
+     * - The MPU is not implemented or MPU_CTRL.ENABLE is set to zero,
+     * - The address specified by the TT instruction variant does not match any enabled MPU regions,
+     * - The address matched multiple MPU regions,
+     * - The TT or TTT instruction variants, without the A flag specified, were executed from an unprivileged mode. *unimpl*
+     * In this case R and RW fields are RAZ
+     */
+    return 0;
+}
+#endif
+
 void tlib_arch_dispose()
 {
 }

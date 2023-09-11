@@ -483,4 +483,8 @@ DEF_HELPER_3(neon_qzip32, void, env, i32, i32)
 
 DEF_HELPER_0(set_system_event, void)
 
+#ifdef TARGET_PROTO_ARM_M
+DEF_HELPER_3(v8m_tt, i32, env, i32, i32)
+#endif
+
 #include "def-helper.h"

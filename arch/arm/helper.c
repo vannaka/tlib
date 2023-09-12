@@ -1631,7 +1631,7 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
         if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
             break;
         }
-        if (arm_feature(env, ARM_FEATURE_V7) && op1 == 2 && crm == 0 && op2 == 0) {
+        if (arm_feature(env, ARM_FEATURE_V7) && op1 == 2 && crm == 0 && op2 == 0) { // CSSELR
             env->cp15.c0_cssel = val & 0xf;
             break;
         }
@@ -1641,7 +1641,7 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
             op2 = 0;
         }
         switch (op2) {
-        case 0:
+        case 0: // SCTLR
             if (!arm_feature(env, ARM_FEATURE_XSCALE) || crm == 0) {
                 env->cp15.c1_sys = val;
             }
@@ -1661,7 +1661,7 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
             if (arm_feature(env, ARM_FEATURE_XSCALE)) {
                 goto bad_reg;
             }
-            if (env->cp15.c1_coproc != val) {
+            if (op1 == 0 && crm == 0 && env->cp15.c1_coproc != val) { // CPACR
                 env->cp15.c1_coproc = val;
                 /* ??? Is this safe when called from within a TB?  */
                 tb_flush(env);
@@ -2087,7 +2087,7 @@ uint32_t HELPER(get_cp15)(CPUState * env, uint32_t insn)
                 switch (op2) {
                 case 0:       /* Device ID.  */
                     return env->cp15.c0_cpuid;
-                case 1:       /* Cache Type.  */
+                case 1:       /* Cache Type.  */ // CCSIDR
                     return env->cp15.c0_cachetype;
                 case 2:       /* TCM status.  */
                     return 0;

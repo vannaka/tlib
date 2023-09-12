@@ -121,6 +121,16 @@ void tlib_set_thumb(int value)
 
 EXC_VOID_1(tlib_set_thumb, int, value)
 
+void tlib_set_number_of_mpu_regions(uint32_t value)
+{
+    if (value >= MAX_MPU_REGIONS) {
+        tlib_abortf("Failed to set number of unified MPU regions to %u, maximal supported value is %u.", value, MAX_MPU_REGIONS);
+    }
+    cpu->number_of_mpu_regions = value;
+}
+
+EXC_VOID_1(tlib_set_number_of_mpu_regions, uint32_t, value)
+
 #ifdef TARGET_PROTO_ARM_M
 
 void tlib_set_interrupt_vector_base(uint32_t address)
@@ -180,12 +190,23 @@ void tlib_enable_mpu(int32_t enabled)
 
 EXC_VOID_1(tlib_enable_mpu, int32_t, enabled)
 
+void tlib_set_mpu_region_number(uint32_t value)
+{
+    if (value >= cpu->number_of_mpu_regions) {
+        tlib_abortf("MPU: Trying to use non-existent MPU region. Number of regions: %d, faulting region number: %d", cpu->number_of_mpu_regions, value);
+    }
+    cpu->cp15.c6_region_number = value;
+    tlb_flush(cpu, 1, false);
+}
+
+EXC_VOID_1(tlib_set_mpu_region_number, uint32_t, value)
+
 // This function mimics mpu configuration through the "Region Base Address" register
 void tlib_set_mpu_region_base_address(uint32_t value)
 {
     if (value & 0x10) {
         /* If VALID (0x10) bit is set, we change the region number to zero-extended value of youngest 4 bits */
-        cpu->cp15.c6_region_number = value & 0xF;
+        tlib_set_mpu_region_number(value & 0xF);
     }
     cpu->cp15.c6_base_address[cpu->cp15.c6_region_number] = value & 0xFFFFFFE0;
 #if DEBUG
@@ -210,18 +231,6 @@ void tlib_set_mpu_region_size_and_enable(uint32_t value)
 }
 
 EXC_VOID_1(tlib_set_mpu_region_size_and_enable, uint32_t, value)
-
-void tlib_set_mpu_region_number(uint32_t value)
-{
-    if (value >= MAX_MPU_REGIONS) {
-        tlib_printf(LOG_LEVEL_ERROR, "MPU: Trying to use non-existent MPU region. Number of regions: %d, faulting region number: %d", MAX_MPU_REGIONS, value);
-        return;
-    }
-    cpu->cp15.c6_region_number = value;
-    tlb_flush(cpu, 1, false);
-}
-
-EXC_VOID_1(tlib_set_mpu_region_number, uint32_t, value)
 
 // This function mimics mpu configuration through the "Region Base Address" register
 uint32_t tlib_get_mpu_region_base_address()

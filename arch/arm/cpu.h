@@ -78,7 +78,7 @@
 
 #define in_privileged_mode(ENV) (((ENV)->v7m.control & 0x1) == 0 || (ENV)->v7m.handler_mode)
 
-#define MAX_MPU_REGIONS                 16
+#define MAX_MPU_REGIONS                 32
 #define MPU_SIZE_FIELD_MASK             0x3E
 #define MPU_REGION_ENABLED_BIT          0x1
 #define MPU_SIZE_AND_ENABLE_FIELD_MASK  (MPU_SIZE_FIELD_MASK | MPU_REGION_ENABLED_BIT)
@@ -297,6 +297,8 @@ typedef struct CPUState {
     CPU_COMMON
 
     /* These fields after the common ones so they are preserved on reset.  */
+
+    uint32_t number_of_mpu_regions;
 
     /* Coprocessor IO used by peripherals */
     struct {

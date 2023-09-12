@@ -92,6 +92,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_V4T);
         set_feature(env, ARM_FEATURE_V5);
         set_feature(env, ARM_FEATURE_MPU);
+        env->number_of_mpu_regions = 16;
         env->cp15.c0_cachetype = 0x0f004006;
         env->cp15.c1_sys = 0x00000078;
         break;
@@ -252,6 +253,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_V7);
         set_feature(env, ARM_FEATURE_THUMB_DIV);
         set_feature(env, ARM_FEATURE_MPU);
+        env->number_of_mpu_regions = 16;
 
         // TODO cortex-m4, check if all should be on
         set_feature(env, ARM_FEATURE_VFP);
@@ -337,6 +339,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
 
         set_feature(env, ARM_FEATURE_AUXCR);
         set_feature(env, ARM_FEATURE_GENERIC_TIMER);
+        env->number_of_mpu_regions = 16;
 
         env->vfp.xregs[ARM_VFP_FPSID] = 0x41023150;
         env->vfp.xregs[ARM_VFP_MVFR0] = 0x10110221;
@@ -372,6 +375,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
 
         set_feature(env, ARM_FEATURE_AUXCR);
         set_feature(env, ARM_FEATURE_GENERIC_TIMER);
+        env->number_of_mpu_regions = 24;
 
         env->vfp.xregs[ARM_VFP_FPSID] = 0x41023180;
         env->vfp.xregs[ARM_VFP_MVFR0] = 0x10110021 | /* if f64 supported */ 0x00000200;
@@ -1340,7 +1344,7 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, i
     tlib_printf(LOG_LEVEL_DEBUG, "MPU: Trying to access address 0x%X", address);
 #endif
 
-    for (n = MAX_MPU_REGIONS - 1; n >= 0; n--) {
+    for (n = env->number_of_mpu_regions - 1; n >= 0; n--) {
         if (!(env->cp15.c6_size_and_enable[n] & MPU_REGION_ENABLED_BIT)) {
             continue;
         }

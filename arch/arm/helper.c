@@ -1617,11 +1617,13 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
     int op1;
     int op2;
     int crm;
+    int crn;
 
     op1 = (insn >> 21) & 7;
     op2 = (insn >> 5) & 7;
     crm = insn & 0xf;
-    switch ((insn >> 16) & 0xf) {
+    crn = (insn >> 16) & 0xf;
+    switch (crn) {
     case 0:
         /* ID codes.  */
         if (arm_feature(env, ARM_FEATURE_XSCALE)) {
@@ -2071,11 +2073,13 @@ uint32_t HELPER(get_cp15)(CPUState * env, uint32_t insn)
     int op1;
     int op2;
     int crm;
+    int crn;
 
     op1 = (insn >> 21) & 7;
     op2 = (insn >> 5) & 7;
     crm = insn & 0xf;
-    switch ((insn >> 16) & 0xf) {
+    crn = (insn >> 16) & 0xf;
+    switch (crn) {
     case 0: /* ID codes.  */
         switch (op1) {
         case 0:

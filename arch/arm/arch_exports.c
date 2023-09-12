@@ -184,8 +184,10 @@ EXC_INT_0(uint32_t, tlib_is_mpu_enabled)
 
 void tlib_enable_mpu(int32_t enabled)
 {
-    cpu->cp15.c1_sys |= enabled ? 1 : 0;
-    tlb_flush(cpu, 1, false);
+    if (!!enabled != (cpu->cp15.c1_sys & 1)) {
+        cpu->cp15.c1_sys ^= 1;
+        tlb_flush(cpu, 1, false);
+    }
 }
 
 EXC_VOID_1(tlib_enable_mpu, int32_t, enabled)

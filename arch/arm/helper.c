@@ -339,6 +339,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
 
         set_feature(env, ARM_FEATURE_AUXCR);
         set_feature(env, ARM_FEATURE_GENERIC_TIMER);
+        set_feature(env, ARM_FEATURE_PMSA);
         env->number_of_mpu_regions = 16;
 
         env->vfp.xregs[ARM_VFP_FPSID] = 0x41023150;
@@ -354,7 +355,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         env->cp15.c0_ccsid[1] = 0xf01fe019; /* 32K L1 icache */
         env->cp15.c0_ccsid[2] = 0xf03fe019; /* 64K L2 unified cache */
 
-        env->cp15.c1_sys = 0x2000; // SCTLR
+        env->cp15.c1_sys = 0xc72078; // SCTLR
         env->cp15.c1_coproc |= (1 << 30 /* D32DIS */) | (1 << 31 /* ASEDIS */); // CPACR
         break;
     case ARM_CPUID_CORTEXR8:
@@ -375,6 +376,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
 
         set_feature(env, ARM_FEATURE_AUXCR);
         set_feature(env, ARM_FEATURE_GENERIC_TIMER);
+        set_feature(env, ARM_FEATURE_PMSA);
         env->number_of_mpu_regions = 24;
 
         env->vfp.xregs[ARM_VFP_FPSID] = 0x41023180;
@@ -402,6 +404,9 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
     }
     if (arm_feature(env, ARM_FEATURE_ARM_DIV)) {
         set_feature(env, ARM_FEATURE_THUMB_DIV);
+    }
+    if (arm_feature(env, ARM_FEATURE_PMSA)) {
+        set_feature(env, ARM_FEATURE_MPU);
     }
 }
 
@@ -1322,6 +1327,24 @@ static int cortexm_check_default_mapping(uint32_t address, int *prot, int access
     return !(*prot & (1 << access_type));
 }
 
+static int pmsav7_check_default_mapping(uint32_t address, int *prot, int access_type)
+{
+    *prot = PAGE_READ | PAGE_WRITE;
+    switch (address) {
+    case 0xF0000000 ... 0xFFFFFFFF:
+        // executable if high exception vectors are selected
+        if (!(env->cp15.c1_sys & (1 << 13))) {
+            break;
+        }
+        /* fallthrough */
+    case 0x00000000 ... 0x7FFFFFFF:
+        *prot |= PAGE_EXEC;
+    default:
+        break;
+    }
+    return (*prot & (1 << access_type)) ? MPU_SUCCESS : MPU_PERMISSION_FAULT;
+}
+
 static int get_mpu_subregion_number(uint32_t region_base_address, uint32_t region_size, uint32_t address)
 {
     /* Subregion size is 2^(region_size - 3) */
@@ -1376,18 +1399,27 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, i
         }
     }
 
-    if (n < 0) {
-        return !is_user ? cortexm_check_default_mapping(address, prot, access_type) : TRANSLATE_FAIL;
+    if (n < 0) { // background fault
+        if (arm_feature(env, ARM_FEATURE_PMSA)) {
+            if (is_user || (env->cp15.c1_sys & (1 << 17 /* BR, Background Region */))) {
+                return MPU_BACKGROUND_FAULT;
+            }
+            return pmsav7_check_default_mapping(address, prot, access_type);
+        }
+        if (!is_user) {
+            return cortexm_check_default_mapping(address, prot, access_type);
+        }
+        return TRANSLATE_FAIL;
     }
 
     perms = (env->cp15.c6_access_control[n] & MPU_PERMISSION_FIELD_MASK) >> 8;
 
     switch (perms) {
     case 0:
-        return TRANSLATE_FAIL;
+        return MPU_PERMISSION_FAULT;
     case 1:
         if (is_user) {
-            return TRANSLATE_FAIL;
+            return MPU_PERMISSION_FAULT;
         }
         *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
         break;
@@ -1402,7 +1434,7 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, i
         break;
     case 5:
         if (is_user) {
-            return TRANSLATE_FAIL;
+            return MPU_PERMISSION_FAULT;
         }
         *prot = PAGE_READ | PAGE_EXEC;
         break;
@@ -1429,7 +1461,10 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, i
      * PAGE_WRITE = 2 ; ACCESS_TYPE = 1
      * PAGE_EXEC  = 3 ; ACCESS_TYPE = 2
      */
-    return !(*prot & (1 << access_type));
+    if (*prot & (1 << access_type)) {
+        return TRANSLATE_SUCCESS;
+    }
+    return MPU_PERMISSION_FAULT;
 }
 
 static inline int get_phys_addr(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
@@ -1470,6 +1505,9 @@ int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, 
 
     is_user = mmu_idx == MMU_USER_IDX;
     ret = get_phys_addr(env, address, access_type, is_user, &phys_addr, &prot, &page_size, no_page_fault);
+    // returns TRANSLATE_SUCCESS (0x0) on success
+    // for no PMSA returns c5_data/insn value
+    // for PMSA returns enum mpu_result
 
     if (ret == TRANSLATE_SUCCESS) {
         /* Map a single [sub]page.  */
@@ -1483,13 +1521,18 @@ int cpu_handle_mmu_fault (CPUState *env, target_ulong address, int access_type, 
         return TRANSLATE_FAIL;
     }
 
+    uint32_t c5_value = ret;
+    if (arm_feature(env, ARM_FEATURE_PMSA)) {
+        c5_value = (ret == MPU_PERMISSION_FAULT) ? PERMISSION_FAULT_STATUS_BITS : BACKGROUND_FAULT_STATUS_BITS;
+    }
+
     if (access_type == ACCESS_INST_FETCH) {
-        env->cp15.c5_insn = ret;
+        env->cp15.c5_insn = c5_value;
         env->cp15.c6_insn = address;
         env->exception_index = EXCP_PREFETCH_ABORT;
     } else {
-        env->cp15.c5_data = ret;
-        if (access_type == ACCESS_DATA_STORE && arm_feature(env, ARM_FEATURE_V6)) {
+        env->cp15.c5_data = c5_value;
+        if (access_type == ACCESS_DATA_STORE && (arm_feature(env, ARM_FEATURE_PMSA) || arm_feature(env, ARM_FEATURE_V6))) {
             env->cp15.c5_data |= (1 << 11);
         }
         env->cp15.c6_data = address;
@@ -1698,6 +1741,46 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
         }
         break;
     case 6: /* MMU Fault address / MPU base/size.  */
+        if (arm_feature(env, ARM_FEATURE_PMSA)) {
+            if (op1 != 0) {
+                goto bad_reg;
+            }
+            if (crm == 0 && op2 == 0) {
+                env->cp15.c6_data = val;
+                return;
+            }
+            if (crm == 2 && op2 == 0) { // RGNR, MPU Region Number Register
+                if (val >= env->number_of_mpu_regions) {
+                    tlib_abortf("Region number %u doesn't point to a valid region.", val);
+                }
+                env->cp15.c6_region_number = val;
+                return;
+            }
+            if (crm == 1) {
+                uint32_t index = env->cp15.c6_region_number;
+                switch (op2) {
+                case 0: // DRBAR, Data Region Base Address Register
+                    if (val & 0b11111) {
+                        // ISA requires address to be divisible by 4, but due to current MPU implementation it also has to be divisible by 32
+                        tlib_abortf("Region size smaller than 32bytes is not supported. Region base address must be divisible by 32.");
+                    }
+                    env->cp15.c6_base_address[index] = val;
+                    tlb_flush(env, 1, false);
+                    return;
+                case 2: // DRSR, Data Region Size and Enable Register
+                    env->cp15.c6_size_and_enable[index] = val & MPU_SIZE_AND_ENABLE_FIELD_MASK;
+                    env->cp15.c6_subregion_disable[index] = (val & MPU_SUBREGION_DISABLE_FIELD_MASK) >> MPU_SUBREGION_DISABLE_FIELD_OFFSET;
+                    tlb_flush(env, 1, false);
+                    return;
+                case 4: // DRACR, Data Region Access Control Register
+                    env->cp15.c6_access_control[index] = val;
+                    tlb_flush(env, 1, false);
+                    return;
+                default:
+                    goto bad_reg;
+                }
+            }
+        }
         if (arm_feature(env, ARM_FEATURE_MPU)) {
             if (crm >= 8) {
                 goto bad_reg;
@@ -2007,6 +2090,11 @@ uint32_t HELPER(get_cp15)(CPUState * env, uint32_t insn)
                     return 0;
                 case 3:       /* TLB type register.  */
                     return 0; /* No lockable TLB entries.  */
+                case 4:
+                    if (arm_feature(env, ARM_FEATURE_PMSA)) { /* MPUIR, MPU Type Register */
+                        return (env->number_of_mpu_regions << MPU_TYPE_DREGION_FIELD_OFFSET) & MPU_TYPE_DREGION_FIELD_MASK;
+                    }
+                    goto bad_reg;
                 case 5:       /* MPIDR */
                     /* The MPIDR was standardised in v7; prior to
                      * this it was implemented only in the 11MPCore.
@@ -2153,11 +2241,17 @@ case_6:
         }
         switch (op2) {
         case 0:
+            if (arm_feature(env, ARM_FEATURE_PMSA)) { // DFSR
+                return (env->cp15.c5_data & (MPU_FAULT_STATUS_BITS_FIELD_MASK | MPU_FAULT_STATUS_WRITE_FIELD_MASK));
+            }
             if (arm_feature(env, ARM_FEATURE_MPU)) {
                 return simple_mpu_ap_bits(env->cp15.c5_data);
             }
             return env->cp15.c5_data;
         case 1:
+            if (arm_feature(env, ARM_FEATURE_PMSA)) { // IFSR
+                return (env->cp15.c5_insn & MPU_FAULT_STATUS_BITS_FIELD_MASK);
+            }
             if (arm_feature(env, ARM_FEATURE_MPU)) {
                 return simple_mpu_ap_bits(env->cp15.c5_data);
             }
@@ -2176,6 +2270,27 @@ case_6:
             goto bad_reg;
         }
     case 6: /* MMU Fault address.  */
+        if (arm_feature(env, ARM_FEATURE_PMSA)) {
+            if (op1 == 0 && crm == 0 && op2 == 0) { // DFAR, Data Fault Address Register
+                return env->cp15.c6_data;
+            }
+            if (op1 == 0 && crm == 2 && op2 == 0) { // RGNR, MPU Region Number Register
+                return env->cp15.c6_region_number;
+            }
+            if (op1 == 0 && crm == 1) {
+                uint32_t index = env->cp15.c6_region_number;
+                switch (op2) {
+                case 0: // DRBAR, Data Region Base Address Register
+                    return env->cp15.c6_base_address[index];
+                case 2: // DRSR, Data Region Size and Enable Register
+                    return env->cp15.c6_size_and_enable[index] | (env->cp15.c6_subregion_disable[index] << 8);
+                case 4: // DRACR, Data Region Access Control Register
+                    return env->cp15.c6_access_control[index];
+                default:
+                    goto bad_reg;
+                }
+            }
+        }
         if (arm_feature(env, ARM_FEATURE_MPU)) {
             if (crm >= 8) {
                 goto bad_reg;

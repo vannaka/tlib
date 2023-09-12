@@ -78,13 +78,22 @@
 
 #define in_privileged_mode(ENV) (((ENV)->v7m.control & 0x1) == 0 || (ENV)->v7m.handler_mode)
 
-#define MAX_MPU_REGIONS                 32
-#define MPU_SIZE_FIELD_MASK             0x3E
-#define MPU_REGION_ENABLED_BIT          0x1
-#define MPU_SIZE_AND_ENABLE_FIELD_MASK  (MPU_SIZE_FIELD_MASK | MPU_REGION_ENABLED_BIT)
-#define MPU_NEVER_EXECUTE_BIT           0x1000
-#define MPU_PERMISSION_FIELD_MASK       0x700
-#define MPU_SUBREGION_DISABLE_FIELD_MASK 0xFF00
+#define MAX_MPU_REGIONS                     32
+#define MPU_SIZE_FIELD_MASK                 0x3E
+#define MPU_REGION_ENABLED_BIT              0x1
+#define MPU_SIZE_AND_ENABLE_FIELD_MASK      (MPU_SIZE_FIELD_MASK | MPU_REGION_ENABLED_BIT)
+#define MPU_NEVER_EXECUTE_BIT               0x1000
+#define MPU_PERMISSION_FIELD_MASK           0x700
+#define MPU_SUBREGION_DISABLE_FIELD_MASK    0xFF00
+#define MPU_TYPE_DREGION_FIELD_OFFSET       8
+#define MPU_TYPE_DREGION_FIELD_MASK         (0xFF << MPU_TYPE_DREGION_FIELD_OFFSET)
+#define MPU_SUBREGION_DISABLE_FIELD_OFFSET  8
+#define MPU_FAULT_STATUS_BITS_FIELD_MASK    0x40f
+#define MPU_FAULT_STATUS_WRITE_FIELD_OFFSET 11
+#define MPU_FAULT_STATUS_WRITE_FIELD_MASK   (1 << 11)
+
+#define BACKGROUND_FAULT_STATUS_BITS        0b0000
+#define PERMISSION_FAULT_STATUS_BITS        0b1101
 
 typedef struct DisasContext {
     DisasContextBase base;
@@ -466,6 +475,7 @@ enum arm_features {
     ARM_FEATURE_VFP4,    /* VFPv4 (implies that NEON is v2) */
     ARM_FEATURE_GENERIC_TIMER,
     ARM_FEATURE_V8,
+    ARM_FEATURE_PMSA,
 };
 
 static inline int arm_feature(CPUState *env, int feature)
@@ -534,6 +544,12 @@ static inline int cpu_mmu_index (CPUState *env)
 }
 
 #include "cpu-all.h"
+
+enum mpu_result {
+    MPU_SUCCESS = TRANSLATE_SUCCESS,
+    MPU_PERMISSION_FAULT = TRANSLATE_FAIL,
+    MPU_BACKGROUND_FAULT,
+};
 
 /* Bit usage in the TB flags field: */
 #define ARM_TBFLAG_THUMB_SHIFT     0

@@ -138,6 +138,8 @@ static inline void set_pmsav8_region(CPUState *env, enum pmsav8_register_type ty
     // And mark the ones that now overlap
     region->overlapping_regions_mask = pmsav8_mark_overlapping_regions(env, region_index, region->address_start,
                                                                        region->address_limit, is_hyper);
+
+    tlb_flush(env, 1, true);
 }
 
 static inline uint32_t get_pmsav8_region(CPUState *env, enum pmsav8_register_type type, int region_index)

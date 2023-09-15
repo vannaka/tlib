@@ -89,8 +89,15 @@ static inline uint64_t pmsav8_mark_overlapping_regions(CPUState *env, int base_r
             continue;
         }
 
-        if (((regions[index].address_start >= address_start) && (regions[index].address_start <= address_end)) ||
-            ((regions[index].address_limit >= address_start) && (regions[index].address_limit) <= address_end)) {
+        uint32_t i_address_start = regions[index].address_start;
+        uint32_t i_address_end = regions[index].address_limit;
+
+        // The first two check if the 'regions[index]' region starts or ends in the region being added.
+        // The third one checks the only remaining overlapping option: whether the region being added
+        // is completely contained within the 'regions[index]' region.
+        if (((i_address_start >= address_start) && (i_address_start <= address_end)) ||
+                ((i_address_end >= address_start) && (i_address_end <= address_end)) ||
+                ((address_start > i_address_start) && (address_start < i_address_end))) {
             regions[index].overlapping_regions_mask |= base_region_mask;
             overlapping_mask |= (1 << index);
         }

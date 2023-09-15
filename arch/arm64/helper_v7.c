@@ -420,7 +420,7 @@ static inline int find_first_matching_region_for_addr_masked(pmsav8_region *regi
 {
     pmsav8_region region;
     int index  = start_index;
-    mask = mask << start_index;
+    mask = mask >> start_index;
     while (mask && (index < regions_count)) {
         if (mask & 0x1) {
             region = regions[index];

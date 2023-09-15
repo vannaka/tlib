@@ -523,6 +523,7 @@ void cpu_arm_set_cp_io(CPUState *env, int cpnum, ARMReadCPFunc *cp_read, ARMWrit
 #define ARM_CPUID_CORTEXM3          0x410fc231
 #define ARM_CPUID_CORTEXM33         0x411fd210
 #define ARM_CPUID_CORTEXR5          0x410fc150
+#define ARM_CPUID_CORTEXR5F         0x410fc151
 #define ARM_CPUID_CORTEXR8          0x410fc183
 #define ARM_CPUID_ANY               0xffffffff
 

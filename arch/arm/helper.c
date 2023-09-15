@@ -321,6 +321,18 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_STRONGARM);
         env->cp15.c1_sys = 0x00000070;
         break;
+    case ARM_CPUID_CORTEXR5F:
+        env->cp15.c0_cpuid = ARM_CPUID_CORTEXR5;
+
+        set_feature(env, ARM_FEATURE_VFP);
+        set_feature(env, ARM_FEATURE_VFP3);
+        set_feature(env, ARM_FEATURE_VFP_FP16);
+        set_feature(env, ARM_FEATURE_NEON);
+
+        env->vfp.xregs[ARM_VFP_FPSID] = 0x41023150;
+        env->vfp.xregs[ARM_VFP_MVFR0] = 0x10110221;
+        env->vfp.xregs[ARM_VFP_MVFR1] = 0x00000011;
+        /* fallthrough */
     case ARM_CPUID_CORTEXR5:
         set_feature(env, ARM_FEATURE_V4T);
         set_feature(env, ARM_FEATURE_V5);
@@ -329,11 +341,6 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_V7MP);
         set_feature(env, ARM_FEATURE_ARM_DIV); // not for rp0p0
 
-        set_feature(env, ARM_FEATURE_VFP);
-        set_feature(env, ARM_FEATURE_VFP3);
-        set_feature(env, ARM_FEATURE_VFP_FP16);
-        set_feature(env, ARM_FEATURE_NEON);
-
         set_feature(env, ARM_FEATURE_THUMB2);
         set_feature(env, ARM_FEATURE_THUMB_DIV);
 
@@ -341,10 +348,6 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_GENERIC_TIMER);
         set_feature(env, ARM_FEATURE_PMSA);
         env->number_of_mpu_regions = 16;
-
-        env->vfp.xregs[ARM_VFP_FPSID] = 0x41023150;
-        env->vfp.xregs[ARM_VFP_MVFR0] = 0x10110221;
-        env->vfp.xregs[ARM_VFP_MVFR1] = 0x00000011;
 
         memcpy(env->cp15.c0_c1, cortexr5_cp15_c0_c1, 8 * sizeof(uint32_t));
         memcpy(env->cp15.c0_c2, cortexr5_cp15_c0_c2, 8 * sizeof(uint32_t));
@@ -472,7 +475,8 @@ static const struct arm_cpu_t arm_cpu_names[] = {
     { ARM_CPUID_PXA262, "pxa262" }, { ARM_CPUID_PXA270, "pxa270" }, { ARM_CPUID_PXA270_A0, "pxa270-a0" },
     { ARM_CPUID_PXA270_A1, "pxa270-a1" }, { ARM_CPUID_PXA270_B0, "pxa270-b0" }, { ARM_CPUID_PXA270_B1, "pxa270-b1" },
     { ARM_CPUID_PXA270_C0, "pxa270-c0" }, { ARM_CPUID_PXA270_C5, "pxa270-c5" }, { ARM_CPUID_CORTEXM33, "cortex-m33" },
-    { ARM_CPUID_CORTEXR5, "cortex-r5" }, { ARM_CPUID_CORTEXR8, "cortex-r8" }, { ARM_CPUID_ANY, "any" }, { 0, NULL }
+    { ARM_CPUID_CORTEXR5, "cortex-r5" }, { ARM_CPUID_CORTEXR5F, "cortex-r5f" }, { ARM_CPUID_CORTEXR8, "cortex-r8" },
+    { ARM_CPUID_ANY, "any" }, { 0, NULL }
 };
 
 /* return 0 if not found */

@@ -270,6 +270,7 @@ void cpu_init_r52(CPUState *env, uint32_t id)
     set_feature(env, ARM_FEATURE_PMU); // from 1.1.1
     set_feature(env, ARM_FEATURE_THUMB2); // from 3.3.83
     set_feature(env, ARM_FEATURE_MVFR); // from 15.5
+    set_feature(env, ARM_FEATURE_THUMB_DSP);
 
     env->arm_core_config->has_el2 = true;        // EL2 virtualization, from 1.2
 

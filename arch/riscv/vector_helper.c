@@ -20,7 +20,7 @@
 
 static inline void require_vec(CPUState *env)
 {
-    if (!(env->mstatus & MSTATUS_VS)) {
+    if (!riscv_has_ext(env, RISCV_FEATURE_RVV)) {
         raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
 }

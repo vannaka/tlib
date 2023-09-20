@@ -92,7 +92,6 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_V4T);
         set_feature(env, ARM_FEATURE_V5);
         set_feature(env, ARM_FEATURE_MPU);
-        env->number_of_mpu_regions = 16;
         env->cp15.c0_cachetype = 0x0f004006;
         env->cp15.c1_sys = 0x00000078;
         break;
@@ -254,7 +253,6 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_V7);
         set_feature(env, ARM_FEATURE_THUMB_DIV);
         set_feature(env, ARM_FEATURE_MPU);
-        env->number_of_mpu_regions = 16;
 
         // TODO cortex-m4, check if all should be on
         set_feature(env, ARM_FEATURE_VFP);
@@ -347,7 +345,6 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_AUXCR);
         set_feature(env, ARM_FEATURE_GENERIC_TIMER);
         set_feature(env, ARM_FEATURE_PMSA);
-        env->number_of_mpu_regions = 16;
 
         memcpy(env->cp15.c0_c1, cortexr5_cp15_c0_c1, 8 * sizeof(uint32_t));
         memcpy(env->cp15.c0_c2, cortexr5_cp15_c0_c2, 8 * sizeof(uint32_t));
@@ -379,7 +376,6 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_AUXCR);
         set_feature(env, ARM_FEATURE_GENERIC_TIMER);
         set_feature(env, ARM_FEATURE_PMSA);
-        env->number_of_mpu_regions = 24;
 
         env->vfp.xregs[ARM_VFP_FPSID] = 0x41023180;
         env->vfp.xregs[ARM_VFP_MVFR0] = 0x10110021 | /* if f64 supported */ 0x00000200;

@@ -131,6 +131,13 @@ void tlib_set_number_of_mpu_regions(uint32_t value)
 
 EXC_VOID_1(tlib_set_number_of_mpu_regions, uint32_t, value)
 
+uint32_t tlib_get_number_of_mpu_regions()
+{
+    return cpu->number_of_mpu_regions;
+}
+
+EXC_INT_0(uint32_t, tlib_get_number_of_mpu_regions)
+
 #ifdef TARGET_PROTO_ARM_M
 
 void tlib_set_interrupt_vector_base(uint32_t address)

@@ -1630,6 +1630,12 @@ static inline int get_phys_addr(CPUState *env, uint32_t address, int access_type
 #ifdef TARGET_PROTO_ARM_M
     if(arm_feature(env, ARM_FEATURE_V8)) {
         *page_size = TARGET_PAGE_SIZE;
+        if (env->number_of_mpu_regions == 0) {
+            /* MPU disabled */
+            *phys_ptr = address;
+            *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+            return TRANSLATE_SUCCESS;
+        }
         return pmsav8_get_phys_addr(env, address, access_type, is_user, phys_ptr, prot);
     }
 #endif

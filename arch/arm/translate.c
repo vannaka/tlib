@@ -7035,10 +7035,12 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
                 }
             }
         } else if ((insn & 0x0fe00000) == 0x0c400000) {
-            /* Coprocessor double register transfer.  */
+            /* Coprocessor double register transfer. (MCRR2, MRRC2)  */
             ARCH(5TE);
+            goto do_coproc_transfer;
         } else if ((insn & 0x0f000010) == 0x0e000010) {
-            /* Additional coprocessor register transfer.  */
+            /* MCR2/MRC2 Encoding A2 */
+            goto do_coproc_transfer;
         } else if ((insn & 0x0ff10020) == 0x01000000) {
             uint32_t mask;
             uint32_t val;
@@ -8165,7 +8167,10 @@ do_ldst:
         case 0xd:
         case 0xe:
             /* Coprocessor.  */
+            // MCR/MRC Encoding A1
+do_coproc_transfer:
             gen_sync_pc(current_pc);
+
             if (disas_coproc_insn(env, s, insn)) {
                 goto illegal_op;
             }
@@ -8923,6 +8928,10 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
         break;
     case 6: case 7: case 14: case 15:
         /* Coprocessor.  */
+        /*
+           6, 14 are MRRC/MCRR T1,T2
+           7, 15 are MCR/MRC T1,T2
+         */
         if (((insn >> 24) & 3) == 3) {
             /* Translate into the equivalent ARM encoding.  */
             insn = (insn & 0xe2ffffff) | ((insn & (1 << 28)) >> 4) | (1 << 28);
@@ -8933,6 +8942,10 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
             if (insn & (1 << 28)) {
                 goto illegal_op;
             }
+
+            gen_sync_pc(current_pc);
+
+            /* MCR/MRC/MRRC/MCRR (Thumb) encoding  */
             if (disas_coproc_insn(env, s, insn)) {
                 goto illegal_op;
             }

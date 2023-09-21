@@ -173,27 +173,6 @@ static inline uint32_t get_pmsav8_region(CPUState *env, enum pmsav8_register_typ
     return return_value;
 }
 
-/* Read/write functions. */
-
-#define READ_FUNCTION(width, mnemonic, value)                                      \
-    uint ## width ## _t read_ ## mnemonic(CPUState *env, const ARMCPRegInfo *info) \
-    {                                                                              \
-        return value;                                                              \
-    }
-
-#define WRITE_FUNCTION(width, mnemonic, write_statement)                                        \
-    void write_ ## mnemonic(CPUState *env, const ARMCPRegInfo *info, uint ## width ## _t value) \
-    {                                                                                           \
-        write_statement;                                                                        \
-    }
-
-#define RW_FUNCTIONS(width, mnemonic, read_value, write_statement) \
-    READ_FUNCTION(width, mnemonic, read_value)                     \
-    WRITE_FUNCTION(width, mnemonic, write_statement)
-
-#define RW_FUNCTIONS_PTR(width, mnemonic, pointer) \
-    RW_FUNCTIONS(width, mnemonic, *(pointer), *(pointer) = value)
-
 // Many 'MRS/MSR *_EL1' instructions access '*_EL2' registers if EL is 2 and HCR_EL2's E2H bit is set.
 #define RW_FUNCTIONS_EL1_ACCESSING_EL2_IF_E2H_SET(width, mnemonic, field_base) \
     RW_FUNCTIONS_PTR(width, mnemonic, &field_base[el2_and_hcr_el2_e2h_set(env) ? 2 : 1])
@@ -398,61 +377,6 @@ READ_CONFIG(dbgdidr,           isar.dbgdidr)
 READ_CONFIG(revidr_el1,        revidr)
 READ_CONFIG(mpuir,             mpuir)
 READ_CONFIG(hmpuir,            hmpuir)
-
-/* Macros creating ARMCPRegInfo entries. */
-
-// The parameters have to start with an underscore because preprocessing replaces '.PARAMETER' too.
-// The 'extra_type' parameter is any type besides 'ARM_CP_64BIT' and 'ARM_CP_EL*' since those are set automatically.
-#define ARM_CP_REG_DEFINE(_name, _cp, _op0, _op1, _crn, _crm, _op2, width, el, extra_type, ...) \
-    {                                                           \
-        .name        = #_name,                                  \
-        .cp          = _cp,                                     \
-        .op0         = _op0,                                    \
-        .op1         = _op1,                                    \
-        .crn         = _crn,                                    \
-        .crm         = _crm,                                    \
-        .op2         = _op2,                                    \
-        .type        = (extra_type                              \
-                | (el << ARM_CP_EL_SHIFT)                       \
-                | (width == 64 ? ARM_CP_64BIT : 0x0)            \
-                ),                                              \
-        __VA_ARGS__                                             \
-    },
-
-// All ARM64 (AArch64) registers use the same CP value. Width can always be 64 since ARM_CP_64BIT only matters for AArch32 registers.
-#define ARM64_CP_REG_DEFINE(name, op0, op1, crn, crm, op2, el, extra_type, ...) \
-    ARM_CP_REG_DEFINE(name, CP_REG_ARM64_SYSREG_CP, op0, op1, crn, crm, op2, 64, el, extra_type, __VA_ARGS__)
-
-#define ARM32_CP_REG_DEFINE(name, cp, op1, crn, crm, op2, el, extra_type, ...) \
-    ARM_CP_REG_DEFINE(name, cp, 0, op1, crn, crm, op2, 32, el, extra_type, __VA_ARGS__)
-
-#define ARM32_CP_64BIT_REG_DEFINE(name, cp, op1, crm, el, extra_type, ...) \
-    ARM_CP_REG_DEFINE(name, cp, 0, op1, 0, crm, 0, 32, el, extra_type | ARM_CP_64BIT, __VA_ARGS__)
-
-/* Macros for the most common types used in 'extra_type'.
- *
- * Reading/writing the register specified as WO/RO (respectively) will trigger the 'Undefined instruction' exception.
- * Therefore CONST can be used with RO if the instruction to write the given register doesn't exist.
- * Writes to a CONST register are simply ignored unless RO is used too.
- *
- * CONST has to be used as the last one in 'extra_type', e.g., 'RW | CONST(0xCAFE)'.
- * IGNORED silences the unhandled warning.
- */
-
-#define CONST(resetvalue)  ARM_CP_CONST, RESETVALUE(resetvalue)
-#define IGNORED            ARM_CP_NOP
-#define RO                 ARM_CP_RO
-#define RW                 0x0
-#define WO                 ARM_CP_WO
-
-// Optional macro arguments.
-#define ACCESSFN(name)         .accessfn = access_ ## name
-#define FIELD(cpu_state_field) .fieldoffset = offsetof(CPUState, cpu_state_field)
-#define READFN(name)           .readfn = read_ ## name
-#define RESETVALUE(value)      .resetvalue = value
-#define RW_FNS(name)           READFN(name), WRITEFN(name)
-#define WRITEFN(name)          .writefn = write_ ## name
-
 
 ARMCPRegInfo aarch32_registers[] = {
     // The params are:  name              cp, op1, crn, crm, op2, el, extra_type, ...

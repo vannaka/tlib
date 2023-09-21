@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include "cpu-defs.h"
 #include "bit_helper.h" // extract32
+#include "ttable.h"
 
 #include "softfloat.h"
 #include "arch_callbacks.h"
@@ -36,6 +37,17 @@
 #else
 #error "Target arch can be only 32-bit or 64-bit"
 #endif
+
+/* To enable banking of coprocessor registers depending on ns-bit we
+ * add a bit to distinguish between secure and non-secure cpregs in the
+ * hashtable.
+ */
+#define CP_REG_NS_SHIFT 29
+#define CP_REG_NS_MASK  (1 << CP_REG_NS_SHIFT)
+
+#define ENCODE_CP_REG(cp, is64, ns, crn, crm, opc1, opc2)   \
+    ((ns) << CP_REG_NS_SHIFT | ((cp) << 16) | ((is64) << 15) |   \
+     ((crn) << 11) | ((crm) << 7) | ((opc1) << 3) | (opc2))
 
 #include "cpu_registers.h"
 
@@ -108,6 +120,7 @@ typedef struct DisasContext {
     int condexec_mask;
     int condexec_cond;
     int thumb;
+    TTable *cp_regs;
     int user;
     int vfp_enabled;
     int vec_len;
@@ -323,6 +336,8 @@ typedef struct CPUState {
     CPU_COMMON
 
     /* These fields after the common ones so they are preserved on reset.  */
+
+    TTable *cp_regs;
 
     /* Coprocessor IO used by peripherals */
     struct {

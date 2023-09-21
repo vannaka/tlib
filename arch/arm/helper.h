@@ -72,6 +72,9 @@ DEF_HELPER_2(get_cp15, i32, env, i32)
 DEF_HELPER_4(set_cp15_64bit, void, env, i32, i32, i32)
 DEF_HELPER_2(get_cp15_64bit, i64, env, i32)
 
+DEF_HELPER_3(set_cp15_32bit, void, env, i32, i32)
+DEF_HELPER_2(get_cp15_32bit, i32, env, i32)
+
 DEF_HELPER_3(set_cp, void, env, i32, i32)
 DEF_HELPER_2(get_cp, i32, env, i32)
 
@@ -486,5 +489,9 @@ DEF_HELPER_0(set_system_event, void)
 #ifdef TARGET_PROTO_ARM_M
 DEF_HELPER_3(v8m_tt, i32, env, i32, i32)
 #endif
+DEF_HELPER_3(set_cp_reg, void, env, ptr, i32)
+DEF_HELPER_3(set_cp_reg64, void, env, ptr, i64)
+DEF_HELPER_2(get_cp_reg, i32, env, ptr)
+DEF_HELPER_2(get_cp_reg64, i64, env, ptr)
 
 #include "def-helper.h"

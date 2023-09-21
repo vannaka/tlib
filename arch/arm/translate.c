@@ -26,6 +26,9 @@
 #include <inttypes.h>
 
 #include "cpu.h"
+#include "../arm64/system_registers_common.h"
+#include "ttable.h"
+#include "bit_helper.h"
 
 #include "tb-helper.h"
 
@@ -6608,11 +6611,177 @@ static int disas_cp14_write(CPUState *env, DisasContext *s, uint32_t insn)
     return 1;
 }
 
+// This code has been taken from a fuction of the same name in `arm64` and modified to suit this library
+static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpnum, int is64, int opc1, int crn, int crm,
+                          int opc2, bool isread, int rt, int rt2)
+{
+    /* M profile cores use memory mapped registers instead of cp15.  */
+#ifdef TARGET_PROTO_ARM_M
+    if (cpnum == 15) {
+        return 1;
+    }
+#endif
+    const ARMCPRegInfo *ri;
+
+    // XXX: We don't support banked cp15 registers with Security Extension, so set `ns` to true
+    uint32_t key = ENCODE_CP_REG(cpnum, is64, true, crn, crm, opc1, opc2);
+    ri = ttable_lookup_value_eq(s->cp_regs, &key);
+    if (ri) {
+        bool need_exit_tb = false;
+
+        /* Check access permissions */
+        if (!cp_access_ok(s->user ? 0 : 1, ri, isread)) {
+            return 1;
+        }
+
+        // We don't have trapping or hypervisor implemented so let's abort if we try to use this in the future
+        if (ri->accessfn || (arm_feature(env, ARM_FEATURE_XSCALE) && cpnum < 14)) {
+
+            tlib_abort("Trapping CP instruction is unimplemented");
+            /* Look into our aarch64 impl for how it should be done */
+
+        } else if (ri->type & ARM_CP_RAISES_EXC) {
+            /*
+             * The readfn or writefn might raise an exception;
+             * synchronize the CPU state in case it does.
+             */
+            gen_set_condexec(s);
+            // We have synced the PC before
+        }
+
+        /* Handle special cases first */
+        switch (ri->type & ARM_CP_SPECIAL_MASK) {
+        case 0:
+            break;
+        case ARM_CP_NOP:
+            return 0;
+        case ARM_CP_WFI:
+            if (isread) {
+                return 1;
+            }
+            if (!tlib_is_wfi_as_nop()) {
+                /* Wait for interrupt */
+                gen_set_pc_im(s->base.pc);
+                s->base.is_jmp = DISAS_WFI;
+            }
+            return 0;
+        default:
+            g_assert_not_reached();
+        }
+
+        if (ri->type & ARM_CP_IO) {
+            tlib_abortf("gen_io_start not implemented");
+            // gen_io_start();
+        }
+
+        if (isread) {
+            /* Read */
+            if (is64) {
+                TCGv_i64 tmp64;
+                TCGv_i32 tmp;
+                if (ri->type & ARM_CP_CONST) {
+                    tmp64 = tcg_const_i64(ri->resetvalue);
+                } else if (ri->readfn) {
+                    tmp64 = tcg_temp_new_i64();
+                    gen_helper_get_cp_reg64(tmp64, cpu_env, tcg_const_ptr((int64_t)ri));
+                } else {
+                    tmp64 = tcg_temp_new_i64();
+                    tcg_gen_ld_i64(tmp64, cpu_env, ri->fieldoffset);
+                }
+                tmp = tcg_temp_new_i32();
+                tcg_gen_extrl_i64_i32(tmp, tmp64);
+                store_reg(s, rt, tmp);
+                tmp = tcg_temp_new_i32();
+                tcg_gen_extrh_i64_i32(tmp, tmp64);
+                tcg_temp_free_i64(tmp64);
+                store_reg(s, rt2, tmp);
+            } else {
+                TCGv_i32 tmp;
+                if (ri->type & ARM_CP_CONST) {
+                    tmp = tcg_const_i32(ri->resetvalue);
+                } else if (ri->readfn) {
+                    tmp = tcg_temp_new_i32();
+                    gen_helper_get_cp_reg(tmp, cpu_env, tcg_const_ptr((int64_t)ri));
+                } else {
+                    tmp = load_cpu_offset(ri->fieldoffset);
+                }
+                if (rt == 15) {
+                    /* Destination register of r15 for 32 bit loads sets
+                     * the condition codes from the high 4 bits of the value
+                     */
+                    gen_set_nzcv(tmp);
+                    tcg_temp_free_i32(tmp);
+                } else {
+                    store_reg(s, rt, tmp);
+                }
+            }
+        } else {
+            /* Write */
+            if (ri->type & ARM_CP_CONST) {
+                /* If not forbidden by access permissions, treat as WI */
+                return 0;
+            }
+
+            /* 64-bit wide access reads/writes from two registers */
+            if (is64) {
+                TCGv_i32 tmplo, tmphi;
+                TCGv_i64 tmp64 = tcg_temp_new_i64();
+                tmplo = load_reg(s, rt);
+                tmphi = load_reg(s, rt2);
+                tcg_gen_concat_i32_i64(tmp64, tmplo, tmphi);
+                tcg_temp_free_i32(tmplo);
+                tcg_temp_free_i32(tmphi);
+                if (ri->writefn) {
+                    gen_helper_set_cp_reg64(cpu_env, tcg_const_ptr((int64_t)ri), tmp64);
+                } else {
+                    tcg_gen_st_i64(tmp64, cpu_env, ri->fieldoffset);
+                }
+                tcg_temp_free_i64(tmp64);
+            } else {
+                TCGv_i32 tmp = load_reg(s, rt);
+                if (ri->writefn) {
+                    gen_helper_set_cp_reg(cpu_env, tcg_const_ptr((int64_t)ri), tmp);
+                    tcg_temp_free_i32(tmp);
+                } else {
+                    store_cpu_offset(tmp, ri->fieldoffset);
+                }
+            }
+        }
+
+        /* I/O operations must end the TB here (whether read or write) */
+        need_exit_tb = (ri->type & ARM_CP_IO);
+
+        if (!isread && !(ri->type & ARM_CP_SUPPRESS_TB_END)) {
+            /*
+             * A write to any coprocessor register that ends a TB
+             * must rebuild the hflags for the next TB.
+             */
+
+            // We should rebuild hflags here, if we had any in this impl.
+            // gen_rebuild_hflags(s, ri->type & ARM_CP_NEWEL);
+
+            /*
+             * We default to ending the TB on a coprocessor register write,
+             * but allow this to be suppressed by the register definition
+             * (usually only necessary to work around guest bugs).
+             */
+            need_exit_tb = true;
+        }
+        if (need_exit_tb) {
+            gen_lookup_tb(s);
+        }
+
+        return 0;
+    }
+
+    return disas_cp15_insn(env, s, insn);
+}
+
 static int disas_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn)
 {
-    int cpnum;
+    int cpnum = extract32(insn, 8, 4);
+    int crn; // This is declared here to work around known limitations in older gcc
 
-    cpnum = (insn >> 8) & 0xf;
     if (arm_feature(env, ARM_FEATURE_XSCALE) && ((env->cp15.c15_cpar ^ 0x3fff) & (1 << cpnum))) {
         return 1;
     }
@@ -6635,13 +6804,36 @@ static int disas_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn)
         if (arm_feature(env, ARM_FEATURE_XSCALE)) {
             goto board;
         }
+
         if (insn & (1 << 20)) {
             return disas_cp14_read(env, s, insn);
         } else {
             return disas_cp14_write(env, s, insn);
         }
     case 15:
-        return disas_cp15_insn(env, s, insn);
+        crn = extract32(insn, 16, 4);
+        int crm = extract32(insn, 0, 4);
+        int direction = extract32(insn, 20, 1);
+        int rt = extract32(insn, 12, 4);
+
+        int opc1, opc2;
+        /* Whether we transfer one register (MCR/MRC)
+           or two (MRRC/MCRR)  */
+        int is64 = ((insn & (1 << 25)) == 0);
+        if (is64) {
+            opc1 = extract32(insn, 4, 4);
+            opc2 = 0;
+        } else {
+            opc1 = extract32(insn, 21, 3);
+            opc2 = extract32(insn, 5, 3);
+        }
+
+        /*
+         * For 64 bit access crn is the same as rt2 (same place in insn), so we just pass it to do_coproc_insn
+         * It only makes sense for double R instructions
+         */
+        return do_coproc_insn(env, s, insn, cpnum, is64, opc1, crn, crm, opc2, direction == 1, rt, crn);
+
     default:
 board:
         /* Unknown coprocessor.  See if the board has hooked it.  */
@@ -10204,6 +10396,7 @@ void setup_disas_context(DisasContextBase *base, CPUState *env)
     dc->vfp_enabled = ARM_TBFLAG_VFPEN(dc->base.tb->flags);
     dc->vec_len = ARM_TBFLAG_VECLEN(dc->base.tb->flags);
     dc->vec_stride = ARM_TBFLAG_VECSTRIDE(dc->base.tb->flags);
+    dc->cp_regs = env->cp_regs;
     cpu_F0s = tcg_temp_new_i32();
     cpu_F1s = tcg_temp_new_i32();
     cpu_F0d = tcg_temp_new_i64();

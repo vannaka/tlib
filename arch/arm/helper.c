@@ -7,6 +7,7 @@
 #include "host-utils.h"
 #include "infrastructure.h"
 #include "arch_callbacks.h"
+#include "../arm64/system_registers_common.h"
 
 #define ARM_ARCHITECTURE_MASK (0xFF00FFF0)
 
@@ -411,6 +412,9 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
     }
 }
 
+void system_instructions_and_registers_reset(CPUState *env);
+void system_instructions_and_registers_init(CPUState *env);
+
 void cpu_reset(CPUState *env)
 {
     uint32_t id;
@@ -444,6 +448,8 @@ void cpu_reset(CPUState *env)
     set_default_nan_mode(1, &env->vfp.standard_fp_status);
     set_float_detect_tininess(float_tininess_before_rounding, &env->vfp.fp_status);
     set_float_detect_tininess(float_tininess_before_rounding, &env->vfp.standard_fp_status);
+
+    system_instructions_and_registers_reset(env);
 }
 
 int cpu_init(const char *cpu_model)
@@ -456,6 +462,14 @@ int cpu_init(const char *cpu_model)
     }
 
     cpu->cp15.c0_cpuid = id;
+
+    // We need this to set CPU feature flags, before calling `system_instructions_and_registers_init`
+    if (id) {
+        cpu_reset_model_id(env, id);
+    }
+
+    system_instructions_and_registers_init(env);
+
     cpu_reset(cpu);
     return 0;
 }
@@ -2249,10 +2263,20 @@ uint64_t HELPER(get_cp15_64bit)(CPUState * env, uint32_t insn)
     return tlib_read_cp15_64(insn);
 }
 
+uint32_t HELPER(get_cp15_32bit)(CPUState * env, uint32_t insn)
+{
+    return tlib_read_cp15_32(insn);
+}
+
 void HELPER(set_cp15_64bit)(CPUState * env, uint32_t insn, uint32_t val_1, uint32_t val_2)
 {
     uint64_t val = ((uint64_t)val_2 << 32) | val_1;
     tlib_write_cp15_64(insn, val);
+}
+
+void HELPER(set_cp15_32bit)(CPUState * env, uint32_t insn, uint32_t val)
+{
+    tlib_write_cp15_32(insn, val);
 }
 
 uint32_t HELPER(get_cp15)(CPUState * env, uint32_t insn)
@@ -3631,6 +3655,7 @@ invalid:
 
 void tlib_arch_dispose()
 {
+    ttable_remove(cpu->cp_regs);
 }
 
 void HELPER(set_system_event)(void)

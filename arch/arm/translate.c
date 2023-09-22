@@ -6683,7 +6683,9 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
                     tmp64 = tcg_const_i64(ri->resetvalue);
                 } else if (ri->readfn) {
                     tmp64 = tcg_temp_new_i64();
-                    gen_helper_get_cp_reg64(tmp64, cpu_env, tcg_const_ptr((int64_t)ri));
+                    TCGv_ptr ptr = tcg_const_ptr((int64_t)ri);
+                    gen_helper_get_cp_reg64(tmp64, cpu_env, ptr);
+                    tcg_temp_free_ptr(ptr);
                 } else {
                     tmp64 = tcg_temp_new_i64();
                     tcg_gen_ld_i64(tmp64, cpu_env, ri->fieldoffset);
@@ -6701,7 +6703,9 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
                     tmp = tcg_const_i32(ri->resetvalue);
                 } else if (ri->readfn) {
                     tmp = tcg_temp_new_i32();
-                    gen_helper_get_cp_reg(tmp, cpu_env, tcg_const_ptr((int64_t)ri));
+                    TCGv_ptr ptr = tcg_const_ptr((int64_t)ri);
+                    gen_helper_get_cp_reg(tmp, cpu_env, ptr);
+                    tcg_temp_free_ptr(ptr);
                 } else {
                     tmp = load_cpu_offset(ri->fieldoffset);
                 }
@@ -6732,7 +6736,9 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
                 tcg_temp_free_i32(tmplo);
                 tcg_temp_free_i32(tmphi);
                 if (ri->writefn) {
-                    gen_helper_set_cp_reg64(cpu_env, tcg_const_ptr((int64_t)ri), tmp64);
+                    TCGv_ptr ptr = tcg_const_ptr((int64_t)ri);
+                    gen_helper_set_cp_reg64(cpu_env, ptr, tmp64);
+                    tcg_temp_free_ptr(ptr);
                 } else {
                     tcg_gen_st_i64(tmp64, cpu_env, ri->fieldoffset);
                 }
@@ -6740,7 +6746,9 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
             } else {
                 TCGv_i32 tmp = load_reg(s, rt);
                 if (ri->writefn) {
-                    gen_helper_set_cp_reg(cpu_env, tcg_const_ptr((int64_t)ri), tmp);
+                    TCGv_ptr ptr = tcg_const_ptr((int64_t)ri);
+                    gen_helper_set_cp_reg(cpu_env, ptr, tmp);
+                    tcg_temp_free_ptr(ptr);
                     tcg_temp_free_i32(tmp);
                 } else {
                     store_cpu_offset(tmp, ri->fieldoffset);

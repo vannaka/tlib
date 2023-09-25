@@ -96,6 +96,8 @@
 #define BACKGROUND_FAULT_STATUS_BITS        0b0000
 #define PERMISSION_FAULT_STATUS_BITS        0b1101
 
+#define MAX_TCM_REGIONS 4
+
 typedef struct DisasContext {
     DisasContextBase base;
     /* Nonzero if this instruction has been conditionally skipped.  */
@@ -183,6 +185,7 @@ typedef struct CPUState {
     struct {
         uint32_t c0_cpuid;
         uint32_t c0_cachetype;
+        uint32_t c0_tcmtype;     /* TCM type. */
         uint32_t c0_ccsid[16];   /* Cache size.  */
         uint32_t c0_clid;        /* Cache level.  */
         uint32_t c0_cssel;       /* Cache size selection.  */
@@ -212,6 +215,8 @@ typedef struct CPUState {
         uint32_t c6_region_number;
         uint32_t c7_par;         /* Translation result. */
         uint32_t c9_insn;        /* Cache lockdown registers.  */
+        uint32_t c9_tcmregion[2][MAX_TCM_REGIONS]; /* TCM Region Registers */
+        uint32_t c9_tcmsel;      /* TCM Selection Registers */
         uint32_t c9_data;
         uint32_t c9_pmcr;        /* performance monitor control register */
         uint32_t c9_pmcnten;     /* perf monitor counter enables */

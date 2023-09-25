@@ -350,6 +350,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         memcpy(env->cp15.c0_c2, cortexr5_cp15_c0_c2, 8 * sizeof(uint32_t));
 
         env->cp15.c0_cachetype = 0x80030003; // CTR
+        env->cp15.c0_tcmtype = 0x00010001; // TCMTR
         env->cp15.c0_clid = 0x09200003; // CLIDR, for all caches implemented
         env->cp15.c0_ccsid[0] = 0xf01fe019; /* 32K L1 dcache */
         env->cp15.c0_ccsid[1] = 0xf01fe019; /* 32K L1 icache */
@@ -385,6 +386,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         memcpy(env->cp15.c0_c2, cortexr8_cp15_c0_c2, 8 * sizeof(uint32_t));
 
         env->cp15.c0_cachetype = 0x8333C003; // CTR
+        env->cp15.c0_tcmtype = 0x80010001; // TCMTR
         env->cp15.c0_clid = 0x09200003; // CLIDR, for cache implemented
         env->cp15.c0_ccsid[0] = 0x201fe019; /* 32K L1 dcache */
         env->cp15.c0_ccsid[1] = 0x201fe019; /* 32K L1 icache */
@@ -2056,8 +2058,33 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
                 goto bad_reg;
             }
             break;
-        case 1:  /* TCM memory region registers.  */
-            tlib_write_cp15_32(insn, val);
+        case 1: /*  branch predictor, cache, and TCM operations */
+            switch (op2) {
+            case 0:
+            case 1:
+            {
+                uint32_t tcm_region_index = env->cp15.c9_tcmsel;
+                uint32_t tcm_region_value = env->cp15.c9_tcmregion[op2][tcm_region_index];
+                if (val != tcm_region_value) {
+                    tlib_abortf("Attempted to change TCM region #%u for interface #%u from 0x%08x to 0x%08x, reconfiguration at runtime is currently not supported", tcm_region_index, op2, tcm_region_value, val);
+                }
+                break;
+            }
+            default:
+                goto bad_reg;
+            }
+            break;
+        case 2: /*  branch predictor, cache, and TCM operations */
+            switch (op2) {
+            case 0:
+                if (val >= MAX_TCM_REGIONS) {
+                    tlib_abortf("Attempted access to TCM region #%u, maximal supported value is %u", val, MAX_TCM_REGIONS);
+                }
+                env->cp15.c9_tcmsel = val;
+                break;
+            default:
+                goto bad_reg;
+            }
             break;
         case 12: /* Performance monitor control */
             /* Performance monitors are implementation defined in v7,
@@ -2250,8 +2277,8 @@ uint32_t HELPER(get_cp15)(CPUState * env, uint32_t insn)
                     return env->cp15.c0_cpuid;
                 case 1:       /* Cache Type.  */ // CCSIDR
                     return env->cp15.c0_cachetype;
-                case 2:       /* TCM status.  */
-                    return 0;
+                case 2: // TCMTR, TCM Type Register
+                    return env->cp15.c0_tcmtype;
                 case 3:       /* TLB type register.  */
                     return 0; /* No lockable TLB entries.  */
                 case 4:
@@ -2535,6 +2562,23 @@ case_6:
                 default:
                     goto bad_reg;
                 }
+            default:
+                goto bad_reg;
+            }
+            break;
+        case 1: /*  branch predictor, cache, and TCM operations */
+            switch (op2) {
+            case 0:
+            case 1:
+                return env->cp15.c9_tcmregion[op2][env->cp15.c9_tcmsel];
+            default:
+                goto bad_reg;
+            }
+            break;
+        case 2: /*  branch predictor, cache, and TCM operations */
+            switch (op2) {
+            case 0:
+                return env->cp15.c9_tcmsel;
             default:
                 goto bad_reg;
             }

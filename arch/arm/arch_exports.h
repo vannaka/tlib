@@ -13,6 +13,7 @@ void tlib_set_sev_on_pending(int32_t);
 void tlib_set_event_flag(int value);
 void tlib_set_number_of_mpu_regions(uint32_t value);
 uint32_t tlib_get_number_of_mpu_regions();
+void tlib_register_tcm_region(uint32_t address, uint64_t size, uint64_t index);
 
 #ifdef TARGET_PROTO_ARM_M
 void tlib_set_interrupt_vector_base(uint32_t address);

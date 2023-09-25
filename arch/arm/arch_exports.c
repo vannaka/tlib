@@ -20,6 +20,8 @@
 #include <stdint.h>
 #include "cpu.h"
 #include "../../unwind.h"
+#include "bit_helper.h"
+#include "host-utils.h"
 
 uint32_t tlib_get_cpu_id()
 {
@@ -137,6 +139,36 @@ uint32_t tlib_get_number_of_mpu_regions()
 }
 
 EXC_INT_0(uint32_t, tlib_get_number_of_mpu_regions)
+
+void tlib_register_tcm_region(uint32_t address, uint64_t size, uint64_t index)
+{
+    // interface index is the opc2 value when addressing region register via MRC/MCR
+    // region index is the selection register value
+    uint32_t interface_index = index >> 32;
+    uint32_t region_index = index;
+    if (interface_index >= 2) {
+        tlib_abortf("Attempted to register TCM region for interface #%u. Only 2 TCM interfaces are supported", interface_index);
+    }
+    if (region_index >= MAX_TCM_REGIONS) {
+        tlib_abortf("Attempted to register TCM region #%u, maximal supported value is %u", region_index, MAX_TCM_REGIONS);
+    }
+    if (size == 0) {
+        cpu->cp15.c9_tcmregion[interface_index][region_index] = 0;
+        return;
+    }
+    uint64_t size_unit = 0x200; // unit * 2 ^ exp == size
+    uint32_t min_size_exp = 0b00001;
+    uint32_t max_size_exp = 0b11111;
+    if (size < (size_unit << min_size_exp) || size > (size_unit << max_size_exp) || !is_power_of_2(size)) {
+        tlib_abortf("Attempted to register TCM region #%u, maximal supported value is %u", region_index, MAX_TCM_REGIONS);
+    }
+    if ((address % TARGET_PAGE_SIZE) != 0 || (address & ((1 << 7) - 1)) || (address % size) != 0) {
+        tlib_abortf("Attempted to set illegal TCM region base address (0x%llx)", address);
+    }
+    cpu->cp15.c9_tcmregion[interface_index][region_index] = address | (ctz64(size / size_unit) << 2) | 1; // always enable
+}
+
+EXC_VOID_3(tlib_register_tcm_region, uint32_t, address, uint64_t, size, uint64_t, index)
 
 #ifdef TARGET_PROTO_ARM_M
 

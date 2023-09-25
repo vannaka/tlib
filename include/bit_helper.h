@@ -228,4 +228,8 @@ static inline uint64_t orcb64(uint64_t val) {
     return (uint64_t)orcb32((uint32_t)(val >> 32)) << 32 | orcb32((uint32_t)val);
 }
 
+static inline int is_power_of_2(uint64_t val) {
+    return ((val - 1) & val) == 0;
+}
+
 #endif  // BIT_HELPER_H_

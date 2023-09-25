@@ -380,7 +380,6 @@ FUNC_STUB_GENERIC(gen_helper_gvec_fclt0_h, void)
 #define  float_round_to_odd         stub_abort("float_round_to_odd")
 #define  TCG_TARGET_HAS_bitsel_vec  0  // TODO: Port bitsel_vec from TCG
 
-FUNC_STUB(is_power_of_2)
 FUNC_STUB(pow2ceil)
 FUNC_STUB(tcg_const_local_ptr)
 FUNC_STUB(tcg_gen_brcondi_ptr)

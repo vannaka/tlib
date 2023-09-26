@@ -60,6 +60,10 @@ uint64_t HELPER(get_cp_reg64)(CPUState * env, void *rip)
     return res;
 }
 
+ARMCPRegInfo general_coprocessor_registers[] = {
+    // Empty for now
+};
+
 // The keys are dynamically allocated so let's make TTable free them when removing the entry.
 static void entry_remove_callback(TTable_entry *entry)
 {
@@ -119,6 +123,8 @@ void system_instructions_and_registers_reset(CPUState *env)
 
 void system_instructions_and_registers_init(CPUState *env)
 {
-    uint32_t ttable_size = 0;
+    uint32_t ttable_size = ARM_CP_ARRAY_COUNT(general_coprocessor_registers);
     env->cp_regs = ttable_create(ttable_size, entry_remove_callback, ttable_compare_key_uint32);
+
+    cp_regs_add(env, general_coprocessor_registers, ARM_CP_ARRAY_COUNT(general_coprocessor_registers));
 }

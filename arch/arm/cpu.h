@@ -313,11 +313,11 @@ typedef struct CPUState {
         uint32_t cregs[16];
     } iwmmxt;
 
+    uint32_t number_of_mpu_regions;
+
     CPU_COMMON
 
     /* These fields after the common ones so they are preserved on reset.  */
-
-    uint32_t number_of_mpu_regions;
 
     /* Coprocessor IO used by peripherals */
     struct {

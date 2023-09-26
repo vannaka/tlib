@@ -411,12 +411,15 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
 void cpu_reset(CPUState *env)
 {
     uint32_t id;
+    uint32_t number_of_mpu_regions;
 
     id = env->cp15.c0_cpuid;
+    number_of_mpu_regions = env->number_of_mpu_regions;
     memset(env, 0, offsetof(CPUState, breakpoints));
     if (id) {
         cpu_reset_model_id(env, id);
     }
+    env->number_of_mpu_regions = number_of_mpu_regions;
     /* SVC mode with interrupts disabled.  */
     env->uncached_cpsr = ARM_CPU_MODE_SVC | CPSR_A | CPSR_F | CPSR_I;
 

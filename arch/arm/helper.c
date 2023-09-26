@@ -7,7 +7,6 @@
 #include "host-utils.h"
 #include "infrastructure.h"
 #include "arch_callbacks.h"
-#include "../arm64/system_registers_common.h"
 
 #define ARM_ARCHITECTURE_MASK (0xFF00FFF0)
 

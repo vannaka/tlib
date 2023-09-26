@@ -189,4 +189,32 @@ static inline bool cp_access_ok(int current_el, const ARMCPRegInfo *reg_info, bo
 #define RW_FUNCTIONS_PTR(width, mnemonic, pointer) \
     RW_FUNCTIONS(width, mnemonic, *(pointer), *(pointer) = value)
 
+void cp_reg_add(CPUState *env, ARMCPRegInfo *reg_info);
+
+// These need to be marked as unused, so the compiler doesn't complain when including the header outside `system_registers`
+__attribute__((unused))
+static void cp_regs_add(CPUState *env, ARMCPRegInfo *reg_info_array, uint32_t array_count)
+{
+    for (int i = 0; i < array_count; i++) {
+        ARMCPRegInfo *reg_info = &reg_info_array[i];
+        cp_reg_add(env, reg_info);
+    }
+}
+
+__attribute__((unused))
+static void cp_reg_add_with_key(CPUState *env, TTable *cp_regs, uint32_t *key, ARMCPRegInfo *reg_info)
+{
+    if (!ttable_insert_check(cp_regs, key, reg_info)) {
+        tlib_printf(LOG_LEVEL_ERROR,
+                    "Duplicated system_register definition!: name: %s, cp: %d, crn: %d, op1: %d, crm: %d, op2: %d, op0: %d",
+                    reg_info->name, reg_info->cp, reg_info->crn, reg_info->op1, reg_info->crm, reg_info->op2, reg_info->op0);
+
+        const char * const name = reg_info->name;
+        reg_info = ttable_lookup_value_eq(cp_regs, key);
+        tlib_printf(LOG_LEVEL_ERROR, "Previously defined as!: name: %s, cp: %d, crn: %d, op1: %d, crm: %d, op2: %d, op0: %d",
+                    reg_info->name, reg_info->cp, reg_info->crn, reg_info->op1, reg_info->crm, reg_info->op2, reg_info->op0);
+        tlib_abortf("Redefinition of register %s by %s", name, reg_info->name);
+    }
+}
+
 #endif

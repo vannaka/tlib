@@ -70,25 +70,15 @@ static void entry_remove_callback(TTable_entry *entry)
     tlib_free(entry->key);
 }
 
-void cp_regs_add(CPUState *env, ARMCPRegInfo *reg_info_array, uint32_t array_count)
+void cp_reg_add(CPUState *env, ARMCPRegInfo *reg_info)
 {
-    for (int i = 0; i < array_count; i++) {
-        ARMCPRegInfo *reg_info = &reg_info_array[i];
-        uint32_t *key = tlib_malloc(sizeof(uint32_t));
+    const bool ns = true; // TODO: Handle secure state banking in a correct way, when we add Secure Mode to this lib
+    const bool is64 = reg_info->type & ARM_CP_64BIT;
 
-        bool ns = true; // TODO: Handle secure state banking in a correct way, when we add Secure Mode to this lib
-        bool is64 = reg_info->type & ARM_CP_64BIT;
-        *key = ENCODE_CP_REG(reg_info->cp, is64, ns, reg_info->crn, reg_info->crm, reg_info->op1, reg_info->op2);
+    uint32_t *key = tlib_malloc(sizeof(uint32_t));
+    *key = ENCODE_CP_REG(reg_info->cp, is64, ns, reg_info->crn, reg_info->crm, reg_info->op1, reg_info->op2);
 
-        if (!ttable_insert_check(env->cp_regs, key, reg_info)) {
-            tlib_abortf("Duplicated system_register definition!: name: %s, cp: %d, crn: %d, op1: %d, crm: %d, op2: %d, op0: %d",
-                        reg_info->name, reg_info->cp, reg_info->crn, reg_info->op1, reg_info->crm, reg_info->op2, reg_info->op0);
-
-            reg_info = ttable_lookup_value_eq(env->cp_regs, key);
-            tlib_abortf("Previously defined as!:                 name: %s, cp: %d, crn: %d, op1: %d, crm: %d, op2: %d, op0: %d",
-                        reg_info->name, reg_info->cp, reg_info->crn, reg_info->op1, reg_info->crm, reg_info->op2, reg_info->op0);
-        }
-    }
+    cp_reg_add_with_key(env, env->cp_regs, key, reg_info);
 }
 
 void system_instructions_and_registers_reset(CPUState *env)

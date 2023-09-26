@@ -1779,29 +1779,19 @@ ARMCPRegInfo aarch64_instructions[] = {
     ARM64_CP_REG_DEFINE(TLBI VMALLS12E1OSNXS,    1,   4,   9,   1,   6,  1, WO, WRITEFN(tlbi_vmall))
 };
 
-void cp_regs_add(CPUState *env, ARMCPRegInfo *reg_info_array, uint32_t array_count)
+void cp_reg_add(CPUState *env, ARMCPRegInfo *reg_info)
 {
-    for (int i = 0; i < array_count; i++) {
-        ARMCPRegInfo *reg_info = &reg_info_array[i];
-        uint32_t *key = tlib_malloc(sizeof(uint32_t));
+    uint32_t *key = tlib_malloc(sizeof(uint32_t));
 
-        if (arm_feature(env, ARM_FEATURE_AARCH64)) {
-            *key = ENCODE_AA64_CP_REG(reg_info->cp, reg_info->crn, reg_info->crm, reg_info->op0, reg_info->op1, reg_info->op2);
-        } else {
-            bool ns = true; // TODO: Handle secure state banking in a correct way
-            bool is64 = reg_info->type & ARM_CP_64BIT;
-            *key = ENCODE_CP_REG(reg_info->cp, is64, ns, reg_info->crn, reg_info->crm, reg_info->op1, reg_info->op2);
-        }
-
-        if (!ttable_insert_check(env->arm_core_config->cp_regs, key, reg_info)) {
-            tlib_abortf("Duplicated system_register definition!: name: %s, cp: %d, crn: %d, op1: %d, crm: %d, op2: %d, op0: %d",
-                        reg_info->name, reg_info->cp, reg_info->crn, reg_info->op1, reg_info->crm, reg_info->op2, reg_info->op0);
-
-            reg_info = ttable_lookup_value_eq(env->arm_core_config->cp_regs, key);
-            tlib_abortf("Previously defined as!:                 name: %s, cp: %d, crn: %d, op1: %d, crm: %d, op2: %d, op0: %d",
-                        reg_info->name, reg_info->cp, reg_info->crn, reg_info->op1, reg_info->crm, reg_info->op2, reg_info->op0);
-        }
+    if (arm_feature(env, ARM_FEATURE_AARCH64)) {
+        *key = ENCODE_AA64_CP_REG(reg_info->cp, reg_info->crn, reg_info->crm, reg_info->op0, reg_info->op1, reg_info->op2);
+    } else {
+        bool ns = true; // TODO: Handle secure state banking in a correct way
+        bool is64 = reg_info->type & ARM_CP_64BIT;
+        *key = ENCODE_CP_REG(reg_info->cp, is64, ns, reg_info->crn, reg_info->crm, reg_info->op1, reg_info->op2);
     }
+
+    cp_reg_add_with_key(env, env->arm_core_config->cp_regs, key, reg_info);
 }
 
 /* Implementation defined registers.

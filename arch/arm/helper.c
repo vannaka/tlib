@@ -417,11 +417,8 @@ void system_instructions_and_registers_init(CPUState *env);
 
 void cpu_reset(CPUState *env)
 {
-    uint32_t id;
-    uint32_t number_of_mpu_regions;
-
-    id = env->cp15.c0_cpuid;
-    number_of_mpu_regions = env->number_of_mpu_regions;
+    uint32_t id = env->cp15.c0_cpuid;
+    uint32_t number_of_mpu_regions = env->number_of_mpu_regions;
     memset(env, 0, offsetof(CPUState, breakpoints));
     if (id) {
         cpu_reset_model_id(env, id);
@@ -442,7 +439,8 @@ void cpu_reset(CPUState *env)
     /* v7 performance monitor control register: same implementor
      * field as main ID register, and we implement no event counters.
      */
-    env->cp15.c9_pmcr = (id & 0xff000000);
+    env->cp15.c9_pmcr = (env->cp15.c0_cpuid & 0xff000000);
+
     set_flush_to_zero(1, &env->vfp.standard_fp_status);
     set_flush_inputs_to_zero(1, &env->vfp.standard_fp_status);
     set_default_nan_mode(1, &env->vfp.standard_fp_status);
@@ -454,19 +452,14 @@ void cpu_reset(CPUState *env)
 
 int cpu_init(const char *cpu_model)
 {
-    uint32_t id;
-
-    id = cpu_arm_find_by_name(cpu_model);
+    uint32_t id = cpu_arm_find_by_name(cpu_model);
     if (id == 0) {
         return -1;
     }
-
     cpu->cp15.c0_cpuid = id;
 
     // We need this to set CPU feature flags, before calling `system_instructions_and_registers_init`
-    if (id) {
-        cpu_reset_model_id(env, id);
-    }
+    cpu_reset_model_id(env, id);
 
     system_instructions_and_registers_init(env);
 

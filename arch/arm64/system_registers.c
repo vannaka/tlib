@@ -287,16 +287,16 @@ RW_FUNCTIONS_EL1_ACCESSING_EL2_IF_E2H_SET(64, vbar_el1,         env->cp15.vbar_e
 RW_FUNCTIONS_EL1_ACCESSING_EL2_IF_E2H_SET(64, zcr_el1,          env->vfp.zcr_el)
 
 /* PMSAv8 accessors */
-
+#define PRSELR_REGION_MASK 0xFF
 #define RW_FUNCTIONS_PMSAv8(width) \
-    READ_FUNCTION(width,  prbar,  get_pmsav8_region(env, BASE_ADDRESS,        env->pmsav8.prselr & 0xF)) \
-    READ_FUNCTION(width,  prlar,  get_pmsav8_region(env, LIMIT_ADDRESS,       env->pmsav8.prselr & 0xF)) \
-    READ_FUNCTION(width,  hprbar, get_pmsav8_region(env, HYPER_BASE_ADDRESS,  env->pmsav8.hprselr & 0xF)) \
-    READ_FUNCTION(width,  hprlar, get_pmsav8_region(env, HYPER_LIMIT_ADDRESS, env->pmsav8.hprselr & 0xF)) \
-    WRITE_FUNCTION(width, prbar,  set_pmsav8_region(env, BASE_ADDRESS,        env->pmsav8.prselr & 0xF,  value)) \
-    WRITE_FUNCTION(width, prlar,  set_pmsav8_region(env, LIMIT_ADDRESS,       env->pmsav8.prselr & 0xF,  value)) \
-    WRITE_FUNCTION(width, hprbar, set_pmsav8_region(env, HYPER_BASE_ADDRESS,  env->pmsav8.hprselr & 0xF, value)) \
-    WRITE_FUNCTION(width, hprlar, set_pmsav8_region(env, HYPER_LIMIT_ADDRESS, env->pmsav8.hprselr & 0xF, value))
+    READ_FUNCTION(width,  prbar,  get_pmsav8_region(env, BASE_ADDRESS,        env->pmsav8.prselr & PRSELR_REGION_MASK)) \
+    READ_FUNCTION(width,  prlar,  get_pmsav8_region(env, LIMIT_ADDRESS,       env->pmsav8.prselr & PRSELR_REGION_MASK)) \
+    READ_FUNCTION(width,  hprbar, get_pmsav8_region(env, HYPER_BASE_ADDRESS,  env->pmsav8.hprselr & PRSELR_REGION_MASK)) \
+    READ_FUNCTION(width,  hprlar, get_pmsav8_region(env, HYPER_LIMIT_ADDRESS, env->pmsav8.hprselr & PRSELR_REGION_MASK)) \
+    WRITE_FUNCTION(width, prbar,  set_pmsav8_region(env, BASE_ADDRESS,        env->pmsav8.prselr & PRSELR_REGION_MASK,  value)) \
+    WRITE_FUNCTION(width, prlar,  set_pmsav8_region(env, LIMIT_ADDRESS,       env->pmsav8.prselr & PRSELR_REGION_MASK,  value)) \
+    WRITE_FUNCTION(width, hprbar, set_pmsav8_region(env, HYPER_BASE_ADDRESS,  env->pmsav8.hprselr & PRSELR_REGION_MASK, value)) \
+    WRITE_FUNCTION(width, hprlar, set_pmsav8_region(env, HYPER_LIMIT_ADDRESS, env->pmsav8.hprselr & PRSELR_REGION_MASK, value))
 
 #define RW_FUNCTIONS_PMSAv8_REGISTERS(width, index) \
     READ_FUNCTION(width, prbarn ## index,   get_pmsav8_region(env, BASE_ADDRESS,        index)) \

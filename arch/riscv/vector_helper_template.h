@@ -2198,7 +2198,7 @@ void glue(helper_vrgather_ivi, POSTFIX)(CPUState *env, uint32_t vd, uint32_t vs2
 
 void glue(helper_vrgatherei16_ivv, POSTFIX)(CPUState *env, uint32_t vd, int32_t vs2, int32_t vs1)
 {
-    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID(vs1)) {
+    if (V_IDX_INVALID(vd) || V_IDX_INVALID(vs2) || V_IDX_INVALID_EEW(vs1, 16)) {
         raise_exception_and_sync_pc(env, RISCV_EXCP_ILLEGAL_INST);
     }
     const target_ulong eew = env->vsew;

@@ -126,7 +126,7 @@ EXC_VOID_1(tlib_set_thumb, int, value)
 void tlib_set_number_of_mpu_regions(uint32_t value)
 {
     if (value >= MAX_MPU_REGIONS) {
-        tlib_abortf("Failed to set number of unified MPU regions to %u, maximal supported value is %u.", value, MAX_MPU_REGIONS);
+        tlib_abortf("Failed to set number of unified MPU regions to %u, maximal supported value is %u", value, MAX_MPU_REGIONS);
     }
     cpu->number_of_mpu_regions = value;
 }

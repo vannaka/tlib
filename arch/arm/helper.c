@@ -1915,7 +1915,7 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
             }
             if (crm == 2 && op2 == 0) { // RGNR, MPU Region Number Register
                 if (val >= env->number_of_mpu_regions) {
-                    tlib_abortf("Region number %u doesn't point to a valid region.", val);
+                    tlib_abortf("Region number %u doesn't point to a valid region", val);
                 }
                 env->cp15.c6_region_number = val;
                 return;
@@ -1926,7 +1926,7 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
                 case 0: // DRBAR, Data Region Base Address Register
                     if (val & 0b11111) {
                         // ISA requires address to be divisible by 4, but due to current MPU implementation it also has to be divisible by 32
-                        tlib_abortf("Region size smaller than 32bytes is not supported. Region base address must be divisible by 32.");
+                        tlib_abortf("Region size smaller than 32bytes is not supported. Region base address must be divisible by 32");
                     }
                     env->cp15.c6_base_address[index] = val;
                     tlb_flush(env, 1, false);

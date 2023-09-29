@@ -355,7 +355,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         env->cp15.c0_ccsid[1] = 0xf01fe019; /* 32K L1 icache */
         env->cp15.c0_ccsid[2] = 0xf03fe019; /* 64K L2 unified cache */
 
-        env->cp15.c1_sys = 0xc72078; // SCTLR
+        env->cp15.c1_sys = 0xc52078; // SCTLR
         env->cp15.c1_coproc |= (1 << 30 /* D32DIS */) | (1 << 31 /* ASEDIS */); // CPACR
         break;
     case ARM_CPUID_CORTEXR8:
@@ -1426,7 +1426,7 @@ static int get_phys_addr_mpu(CPUState *env, uint32_t address, int access_type, i
 
     if (n < 0) { // background fault
         if (arm_feature(env, ARM_FEATURE_PMSA)) {
-            if (is_user || (env->cp15.c1_sys & (1 << 17 /* BR, Background Region */))) {
+            if (is_user || !(env->cp15.c1_sys & (1 << 17 /* BR, Background Region */))) {
                 return MPU_BACKGROUND_FAULT;
             }
             return pmsav7_check_default_mapping(address, prot, access_type);

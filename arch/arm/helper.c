@@ -355,7 +355,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         env->cp15.c0_ccsid[1] = 0xf01fe019; /* 32K L1 icache */
         env->cp15.c0_ccsid[2] = 0xf03fe019; /* 64K L2 unified cache */
 
-        env->cp15.c1_sys = 0xc52078; // SCTLR
+        env->cp15.c1_sys = 0xe50878; // SCTLR
         env->cp15.c1_coproc |= (1 << 30 /* D32DIS */) | (1 << 31 /* ASEDIS */); // CPACR
         break;
     case ARM_CPUID_CORTEXR8:
@@ -389,6 +389,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         env->cp15.c0_ccsid[0] = 0x201fe019; /* 32K L1 dcache */
         env->cp15.c0_ccsid[1] = 0x201fe019; /* 32K L1 icache */
         env->cp15.c0_ccsid[2] = 0x203fe019; /* 64K L2 unified cache */
+        env->cp15.c1_sys = 0xc50078; // SCTLR
         env->cp15.c1_coproc = 0xC0000000; // CPACR
         break;
     default:

@@ -1509,10 +1509,10 @@ void HELPER(rebuild_hflags_a32)(CPUState * env, int el)
     DP_TBFLAG_ANY(env->hflags, FPEXC_EL, get_fp_exc_el(env, el));
 
     // ALIGN_MEM - Aligment check enable, SCTLR_ELx.A
-    DP_TBFLAG_ANY(env->hflags, ALIGN_MEM, env->cp15.sctlr_el[el] & SCTLR_A);
+    DP_TBFLAG_ANY(env->hflags, ALIGN_MEM, (arm_sctlr(env, el) & SCTLR_A) == SCTLR_A);
 
     // PSTATE__IL - Illegal execution state SPSR.IL
-    DP_TBFLAG_ANY(env->hflags, PSTATE__IL, env->pstate & PSTATE_IL);
+    DP_TBFLAG_ANY(env->hflags, PSTATE__IL, (env->pstate & PSTATE_IL) == PSTATE_IL);
 
     /* A-Profile flags */
 

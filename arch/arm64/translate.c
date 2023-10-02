@@ -9296,7 +9296,7 @@ void disas_thumb2_insn(DisasContext *s, uint32_t insn)
     if (disas_t32(s, insn) ||
         disas_vfp_uncond(s, insn) ||
         disas_neon_shared(s, insn) ||
-        disas_mve(s, insn) ||
+        (cpu_isar_feature(aa32_mve, cpu->arm_core_config) && disas_mve(s, insn)) ||
         ((insn >> 28) == 0xe && disas_vfp(s, insn))) {
         return;
     }

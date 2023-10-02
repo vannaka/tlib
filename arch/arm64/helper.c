@@ -155,6 +155,9 @@ void cpu_init_a75_a76_a78(CPUState *env, uint32_t id)
     env->arm_core_config->mpidr = (1u << 31) /* RES1 */ | (0u << 30) /* U */ | (1u << 24) /* MT */;
     env->arm_core_config->revidr = 0;
 
+    // From A75's B5.4. It's only accessible from AArch32 EL1-3 which aren't supported in A76/A78.
+    env->arm_core_config->reset_fpsid = id == ARM_CPUID_CORTEXA75 ? 0x410340a3 : 0;
+
     // From B2.23
     env->arm_core_config->ccsidr[0] = 0x701fe01a;
     env->arm_core_config->ccsidr[1] = 0x201fe01a;
@@ -182,7 +185,7 @@ void cpu_init_a75_a76_a78(CPUState *env, uint32_t id)
     // From D5.4
     env->arm_core_config->isar.reset_pmcr_el0 = 0x410b3000;
 
-    // TODO: Add missing ones? reset_fpsid, reset_cbar, reset_auxcr, reset_hivecs
+    // TODO: Add missing ones? reset_cbar, reset_auxcr, reset_hivecs
     // reset_cbar should be based on GIC PERIPHBASE signal.
 }
 
@@ -228,6 +231,8 @@ void cpu_init_a53(CPUState *env, uint32_t id)
     // TODO: MPIDR should depend on CPUID, CLUSTERIDAFF2 and CLUSTERIDAFF3 configuration signals.
     env->arm_core_config->mpidr = (1u << 31) /* RES1 */ | (0u << 30) /* U */ | (0u << 24) /* MT */;
     env->arm_core_config->revidr = 0;
+
+    env->arm_core_config->reset_fpsid = 0x41034034;
 
     env->arm_core_config->ccsidr[0] = 0x700fe01a;
     env->arm_core_config->ccsidr[1] = 0x201fe01a;
@@ -418,7 +423,7 @@ void cpu_init_r52(CPUState *env, uint32_t id)
     env->arm_core_config->hmpuir =
         (16 << 0); // REGION, here 16 EL2-controlled MPU regions
 
-    // TODO: Add missing ones: reset_fpsid, reset_cbar, reset_auxcr, reset_hivecs
+    // TODO: Add missing ones: reset_cbar, reset_auxcr, reset_hivecs
 }
 
 static void cpu_init_core_config(CPUState *env, uint32_t id)
@@ -444,6 +449,8 @@ static void cpu_init_core_config(CPUState *env, uint32_t id)
         cpu_abort(env, "Bad CPU ID: %x\n", id);
         break;
     }
+
+    env->vfp.xregs[ARM_VFP_FPSID] = env->arm_core_config->reset_fpsid;
 
     set_el_features(env, env->arm_core_config->has_el2, env->arm_core_config->has_el3);
 }

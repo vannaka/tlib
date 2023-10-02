@@ -259,6 +259,31 @@ DEF_HELPER_3(sub_saturate, i32, env, i32, i32)
 DEF_HELPER_3(add_usaturate, i32, env, i32, i32)
 DEF_HELPER_3(sub_usaturate, i32, env, i32, i32)
 
+#define PAS_OP(pfx)  \
+    DEF_HELPER_3(pfx ## add8, i32, i32, i32, ptr) \
+    DEF_HELPER_3(pfx ## sub8, i32, i32, i32, ptr) \
+    DEF_HELPER_3(pfx ## sub16, i32, i32, i32, ptr) \
+    DEF_HELPER_3(pfx ## add16, i32, i32, i32, ptr) \
+    DEF_HELPER_3(pfx ## addsubx, i32, i32, i32, ptr) \
+    DEF_HELPER_3(pfx ## subaddx, i32, i32, i32, ptr)
+
+PAS_OP(s)
+PAS_OP(u)
+#undef PAS_OP
+
+#define PAS_OP(pfx)  \
+    DEF_HELPER_2(pfx ## add8, i32, i32, i32) \
+    DEF_HELPER_2(pfx ## sub8, i32, i32, i32) \
+    DEF_HELPER_2(pfx ## sub16, i32, i32, i32) \
+    DEF_HELPER_2(pfx ## add16, i32, i32, i32) \
+    DEF_HELPER_2(pfx ## addsubx, i32, i32, i32) \
+    DEF_HELPER_2(pfx ## subaddx, i32, i32, i32)
+PAS_OP(q)
+PAS_OP(sh)
+PAS_OP(uq)
+PAS_OP(uh)
+#undef PAS_OP
+
 DEF_HELPER_3(ssat, i32, env, i32, i32)
 DEF_HELPER_3(usat, i32, env, i32, i32)
 DEF_HELPER_3(ssat16, i32, env, i32, i32)

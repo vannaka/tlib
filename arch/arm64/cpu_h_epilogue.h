@@ -174,6 +174,7 @@ uint64_t mte_check(CPUARMState *env, uint32_t desc, uint64_t ptr, uintptr_t ra);
 bool mte_probe(CPUARMState *env, uint32_t desc, uint64_t ptr);
 void raise_exception(CPUARMState *env, uint32_t excp, uint32_t syndrome, uint32_t target_el);
 void raise_exception_ra(CPUARMState *env, uint32_t excp, uint32_t syndrome, uint32_t target_el, uintptr_t ra);
+int r14_bank_number(int mode);
 
 void cpu_init_v8(CPUState *env, uint32_t id);
 void cpu_reset_state(CPUState *env);

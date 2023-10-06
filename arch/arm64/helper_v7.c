@@ -27,7 +27,13 @@ int bank_number(int mode)
         return 7;
     }
     cpu_abort(cpu, "Bad mode %x\n", mode);
-    return -1;
+    __builtin_unreachable();
+}
+
+int r14_bank_number(int mode)
+{
+    // Arm A-profile manual: "User mode, System mode, and Hyp mode share the same LR."
+    return mode == ARM_CPU_MODE_HYP ? BANK_USRSYS : bank_number(mode);
 }
 
 void switch_mode(CPUState *env, int mode)
@@ -50,12 +56,12 @@ void switch_mode(CPUState *env, int mode)
 
     i = bank_number(old_mode);
     env->banked_r13[i] = env->regs[13];
-    env->banked_r14[i] = env->regs[14];
+    env->banked_r14[r14_bank_number(old_mode)] = env->regs[14];
     env->banked_spsr[i] = env->spsr;
 
     i = bank_number(mode);
     env->regs[13] = env->banked_r13[i];
-    env->regs[14] = env->banked_r14[i];
+    env->regs[14] = env->banked_r14[r14_bank_number(mode)];
     env->spsr = env->banked_spsr[i];
 }
 

@@ -172,7 +172,6 @@ FUNC_STUB(arm_cpreg_in_idspace)
 FUNC_STUB(arm_fi_to_lfsc)
 FUNC_STUB(arm_fi_to_sfsc)
 FUNC_STUB(extended_addresses_enabled)
-FUNC_STUB(r14_bank_number)
 FUNC_STUB(syn_bxjtrap)
 FUNC_STUB(v7m_sp_limit)
 

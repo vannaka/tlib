@@ -6686,9 +6686,12 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
                     TCGv_ptr ptr = tcg_const_ptr((int64_t)ri);
                     gen_helper_get_cp_reg64(tmp64, cpu_env, ptr);
                     tcg_temp_free_ptr(ptr);
-                } else {
+                } else if (ri->fieldoffset != 0) {
                     tmp64 = tcg_temp_new_i64();
                     tcg_gen_ld_i64(tmp64, cpu_env, ri->fieldoffset);
+                } else {
+                    log_unhandled_sysreg_read(ri->name);
+                    return 1;
                 }
                 tmp = tcg_temp_new_i32();
                 tcg_gen_extrl_i64_i32(tmp, tmp64);
@@ -6706,8 +6709,11 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
                     TCGv_ptr ptr = tcg_const_ptr((int64_t)ri);
                     gen_helper_get_cp_reg(tmp, cpu_env, ptr);
                     tcg_temp_free_ptr(ptr);
-                } else {
+                } else if (ri->fieldoffset != 0) {
                     tmp = load_cpu_offset(ri->fieldoffset);
+                } else {
+                    log_unhandled_sysreg_read(ri->name);
+                    return 1;
                 }
                 if (rt == 15) {
                     /* Destination register of r15 for 32 bit loads sets
@@ -6739,8 +6745,12 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
                     TCGv_ptr ptr = tcg_const_ptr((int64_t)ri);
                     gen_helper_set_cp_reg64(cpu_env, ptr, tmp64);
                     tcg_temp_free_ptr(ptr);
-                } else {
+                } else if (ri->fieldoffset != 0) {
                     tcg_gen_st_i64(tmp64, cpu_env, ri->fieldoffset);
+                } else {
+                    log_unhandled_sysreg_write(ri->name);
+                    tcg_temp_free_i64(tmp64);
+                    return 1;
                 }
                 tcg_temp_free_i64(tmp64);
             } else {
@@ -6750,8 +6760,12 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
                     gen_helper_set_cp_reg(cpu_env, ptr, tmp);
                     tcg_temp_free_ptr(ptr);
                     tcg_temp_free_i32(tmp);
-                } else {
+                } else if (ri->fieldoffset != 0) {
                     store_cpu_offset(tmp, ri->fieldoffset);
+                } else {
+                    log_unhandled_sysreg_write(ri->name);
+                    tcg_temp_free_i32(tmp);
+                    return 1;
                 }
             }
         }

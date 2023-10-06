@@ -4802,9 +4802,12 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
                     tmp64 = tcg_temp_new_i64();
                     gen_helper_get_cp_reg64(tmp64, cpu_env,
                                             tcg_constant_ptr(ri));
-                } else {
+                } else if (ri->fieldoffset != 0) {
                     tmp64 = tcg_temp_new_i64();
                     tcg_gen_ld_i64(tmp64, cpu_env, ri->fieldoffset);
+                } else {
+                    log_unhandled_sysreg_read(ri->name);
+                    return;
                 }
                 tmp = tcg_temp_new_i32();
                 tcg_gen_extrl_i64_i32(tmp, tmp64);
@@ -4820,8 +4823,11 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
                 } else if (ri->readfn) {
                     tmp = tcg_temp_new_i32();
                     gen_helper_get_cp_reg(tmp, cpu_env, tcg_constant_ptr((int64_t)ri));
-                } else {
+                } else if (ri->fieldoffset != 0) {
                     tmp = load_cpu_offset(ri->fieldoffset);
+                } else {
+                    log_unhandled_sysreg_read(ri->name);
+                    return;
                 }
                 if (rt == 15) {
                     /* Destination register of r15 for 32 bit loads sets
@@ -4851,8 +4857,11 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
                 if (ri->writefn) {
                     gen_helper_set_cp_reg64(cpu_env, tcg_constant_ptr((int64_t)ri),
                                             tmp64);
-                } else {
+                } else if (ri->fieldoffset != 0) {
                     tcg_gen_st_i64(tmp64, cpu_env, ri->fieldoffset);
+                } else {
+                    log_unhandled_sysreg_write(ri->name);
+                    return;
                 }
                 tcg_temp_free_i64(tmp64);
             } else {
@@ -4860,8 +4869,11 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
                 if (ri->writefn) {
                     gen_helper_set_cp_reg(cpu_env, tcg_constant_ptr((int64_t)ri), tmp);
                     tcg_temp_free_i32(tmp);
-                } else {
+                } else if (ri->fieldoffset != 0) {
                     store_cpu_offset(tmp, ri->fieldoffset, 4);
+                } else {
+                    log_unhandled_sysreg_write(ri->name);
+                    return;
                 }
             }
         }

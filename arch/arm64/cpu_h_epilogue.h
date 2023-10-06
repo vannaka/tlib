@@ -403,22 +403,6 @@ static inline bool are_hcr_e2h_and_tge_set(uint64_t hcr_el2)
     return (hcr_el2 & hcr_e2h_tge) == hcr_e2h_tge;
 }
 
-static inline void log_unhandled_sysreg_access(const char *sysreg_name, bool is_write)
-{
-    // The function is used for system instructions too.
-    tlib_printf(LOG_LEVEL_WARNING, "Unhandled system instruction or register %s %s", is_write ? "write:" : "read: ", sysreg_name);
-}
-
-static inline void log_unhandled_sysreg_read(const char *sysreg_name)
-{
-    log_unhandled_sysreg_access(sysreg_name, false);
-}
-
-static inline void log_unhandled_sysreg_write(const char *sysreg_name)
-{
-    log_unhandled_sysreg_access(sysreg_name, true);
-}
-
 static inline void pstate_set_el(CPUARMState *env, uint32_t el)
 {
     // The function is only valid for AArch64.

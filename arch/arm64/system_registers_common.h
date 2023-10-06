@@ -217,4 +217,20 @@ static void cp_reg_add_with_key(CPUState *env, TTable *cp_regs, uint32_t *key, A
     }
 }
 
+static inline void log_unhandled_sysreg_access(const char *sysreg_name, bool is_write)
+{
+    // %-6s is required to format the printf nicely
+    tlib_printf(LOG_LEVEL_WARNING, "Unhandled system instruction or register %-6s %s", is_write ? "write:" : "read:", sysreg_name);
+}
+
+static inline void log_unhandled_sysreg_read(const char *sysreg_name)
+{
+    log_unhandled_sysreg_access(sysreg_name, false);
+}
+
+static inline void log_unhandled_sysreg_write(const char *sysreg_name)
+{
+    log_unhandled_sysreg_access(sysreg_name, true);
+}
+
 #endif

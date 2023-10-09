@@ -6576,6 +6576,23 @@ static int disas_cp14_write(CPUState *env, DisasContext *s, uint32_t insn)
     return 1;
 }
 
+// Quirks in CP15 implementation ported from old code, that would be difficult to implement in ttable
+static inline void do_coproc_insn_quirks(CPUState *env, DisasContext *s, uint32_t insn, int cpnum, int is64, int *opc1, int *crn,
+                                         int *crm, int *opc2, bool isread, int *rt, int *rt2)
+{
+    if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
+        if (*crn == 0 && isread == false) {
+            *opc2 = 0;
+            *opc1 = 0;
+            *crm = 0;
+        } else if (*crn == 5 || *crn == 1) {
+            *opc2 = 0;
+        } else if (*crn == 6 && !arm_feature(env, ARM_FEATURE_MPU) && !arm_feature(env, ARM_FEATURE_PMSA)) {
+            *opc2 = 0;
+        }
+    }
+}
+
 // This code has been taken from a fuction of the same name in `arm64` and modified to suit this library
 static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpnum, int is64, int opc1, int crn, int crm,
                           int opc2, bool isread, int rt, int rt2)
@@ -6586,11 +6603,26 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
         return 1;
     }
 #endif
-    const ARMCPRegInfo *ri;
+
+    if (cpnum == 15) {
+        if ((insn & (COPROCESSOR_INSTR_OP1_PARTIAL_MASK(0x30) | COPROCESSOR_INSTR_OP_MASK)) ==
+            (0x20 << COPROCESSOR_INSTR_OP1_OFFSET)) {
+            /* cdp */
+            return 1;
+        }
+    }
+
+    // TODO: these cases should be probably reimplemented with accessfns
+    if (s->user && !cp15_user_ok(env, insn)) {
+        return 1;
+    }
+
+    do_coproc_insn_quirks(env, s, insn, cpnum, is64, &opc1, &crn, &crm, &opc2, isread, &rt, &rt2);
 
     // XXX: We don't support banked cp15 registers with Security Extension, so set `ns` to true
     uint32_t key = ENCODE_CP_REG(cpnum, is64, true, crn, crm, opc1, opc2);
-    ri = ttable_lookup_value_eq(s->cp_regs, &key);
+    const ARMCPRegInfo *ri = ttable_lookup_value_eq(s->cp_regs, &key);
+
     if (ri) {
         bool need_exit_tb = false;
 

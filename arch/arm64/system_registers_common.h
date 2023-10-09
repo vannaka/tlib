@@ -237,4 +237,26 @@ static inline void log_unhandled_sysreg_write(const char *sysreg_name)
     log_unhandled_sysreg_access(sysreg_name, true);
 }
 
+// ARM Architecture Reference Manual ARMv7A and ARMv7-R (A8.6.92)
+#define CP_REG_ARM32_32BIT_SYSREG_CRM_SHIFT 0
+#define CP_REG_ARM32_32BIT_SYSREG_OP2_SHIFT (CP_REG_ARM32_32BIT_SYSREG_CRM_SHIFT + 5)
+#define CP_REG_ARM32_32BIT_SYSREG_CRN_SHIFT (CP_REG_ARM32_32BIT_SYSREG_OP2_SHIFT + 11)
+#define CP_REG_ARM32_32BIT_SYSREG_OP1_SHIFT (CP_REG_ARM32_32BIT_SYSREG_CRN_SHIFT + 5)
+
+// ARM Architecture Reference Manual ARMv7A and ARMv7-R (A8.6.93)
+#define CP_REG_ARM32_64BIT_SYSREG_CRM_SHIFT 0
+#define CP_REG_ARM32_64BIT_SYSREG_OP1_SHIFT (CP_REG_ARM32_64BIT_SYSREG_CRM_SHIFT + 4)
+
+static inline uint32_t encode_as_aarch32_64bit_register(const ARMCPRegInfo *info) {
+    return (info->op1 << CP_REG_ARM32_64BIT_SYSREG_OP1_SHIFT) |
+           (info->crm << CP_REG_ARM32_64BIT_SYSREG_CRM_SHIFT);
+}
+
+static inline uint32_t encode_as_aarch32_32bit_register(const ARMCPRegInfo *info) {
+    return (info->op1 << CP_REG_ARM32_32BIT_SYSREG_OP1_SHIFT) |
+        (info->crn << CP_REG_ARM32_32BIT_SYSREG_CRN_SHIFT) |
+        (info->op2 << CP_REG_ARM32_32BIT_SYSREG_OP2_SHIFT) |
+        (info->crm << CP_REG_ARM32_32BIT_SYSREG_CRM_SHIFT);
+}
+
 #endif

@@ -66,7 +66,7 @@ static uint32_t arm1176_cp15_c0_c2[8] =
 { 0x0140011, 0x12002111, 0x11231121, 0x01102131, 0x01141, 0, 0, 0 };
 
 static uint32_t cpu_arm_find_by_name(const char *name);
-static int get_phys_addr(CPUState *env, uint32_t address,
+int get_phys_addr(CPUState *env, uint32_t address,
                                 int access_type, int is_user,
                                 uint32_t *phys_ptr, int *prot,
                                 target_ulong *page_size, int no_page_fault);
@@ -1621,7 +1621,7 @@ do_fault:
 }
 #endif
 
-static inline int get_phys_addr(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
+inline int get_phys_addr(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
                                 target_ulong *page_size, int no_page_fault)
 {
     if(unlikely(cpu->external_mmu_enabled))
@@ -1726,7 +1726,7 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
 }
 
 /* Return basic MPU access permission bits.  */
-static uint32_t simple_mpu_ap_bits(uint32_t val)
+uint32_t simple_mpu_ap_bits(uint32_t val)
 {
     uint32_t ret;
     uint32_t mask;
@@ -1741,7 +1741,7 @@ static uint32_t simple_mpu_ap_bits(uint32_t val)
 }
 
 /* Pad basic MPU access permission bits to extended format.  */
-static uint32_t extended_mpu_ap_bits(uint32_t val)
+uint32_t extended_mpu_ap_bits(uint32_t val)
 {
     uint32_t ret;
     uint32_t mask;

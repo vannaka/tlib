@@ -216,18 +216,6 @@ static inline uint32_t encode_as_aarch64_register(CPUState *env, const ARMCPRegI
         (op2 << CP_REG_ARM64_SYSREG_OP2_SHIFT);
 }
 
-uint32_t encode_as_aarch32_64bit_register(const ARMCPRegInfo *info) {
-    return (info->op1 << CP_REG_ARM32_64BIT_SYSREG_OP1_SHIFT) |
-           (info->crm << CP_REG_ARM32_64BIT_SYSREG_CRM_SHIFT);
-}
-
-uint32_t encode_as_aarch32_32bit_register(const ARMCPRegInfo *info) {
-    return (info->op1 << CP_REG_ARM32_32BIT_SYSREG_OP1_SHIFT) |
-        (info->crn << CP_REG_ARM32_32BIT_SYSREG_CRN_SHIFT) |
-        (info->op2 << CP_REG_ARM32_32BIT_SYSREG_OP2_SHIFT) |
-        (info->crm << CP_REG_ARM32_32BIT_SYSREG_CRM_SHIFT);
-}
-
 READ_FUNCTION(64, mpidr_el1, *mpidr_el1_register_pointer(env))
 
 RW_FUNCTIONS(64, fpcr,  vfp_get_fpcr(env), vfp_set_fpcr(env, value))

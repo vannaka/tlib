@@ -489,7 +489,7 @@ enum arm_features {
     ARM_FEATURE_PMSA,
 };
 
-static inline int arm_feature(CPUState *env, int feature)
+static inline int arm_feature(const CPUState *env, int feature)
 {
     return (env->features & (1u << feature)) != 0;
 }

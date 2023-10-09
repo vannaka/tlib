@@ -6464,10 +6464,10 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
             g_assert_not_reached();
         }
 
-        if (ri->type & ARM_CP_IO) {
-            tlib_abortf("gen_io_start not implemented");
-            // gen_io_start();
-        }
+        /* Right now we don't need to make any preparations for ARM_CP_IO,
+         * except possibly TODO: taking an exclusive lock in system_registers:set/get_cp_reg
+         * But we will end the TB later in the code
+         */
 
         if (isread) {
             /* Read */
@@ -6626,10 +6626,16 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
             }
 
             tcg_temp_free_i32(insn_tcg);
+
+            /* We always end the TB here, on read or write
+             * as access to the external emulation layer
+             * can result in unexpected state changes
+             */
+            gen_lookup_tb(s);
             return 0;
         } else {
             tlib_printf(LOG_LEVEL_ERROR, "%s access to unsupported AArch32 "
-                        "64 bit system register cp:%d opc1: %d crm:%d "
+                        "64 bit system register cp:%d opc1:%d crm:%d "
                         "(%s)", isread ? "read" : "write", cpnum, opc1, crm, s->user ? "user" : "privilege");
         }
     } else {
@@ -6655,6 +6661,9 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
             }
 
             tcg_temp_free_i32(insn_tcg);
+
+            // Same as in is64 case
+            gen_lookup_tb(s);
             return 0;
         } else {
             tlib_printf(LOG_LEVEL_ERROR, "%s access to unsupported AArch32 "

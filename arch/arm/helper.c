@@ -1725,31 +1725,6 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
     return phys_addr;
 }
 
-void HELPER(set_cp)(CPUState * env, uint32_t insn, uint32_t val)
-{
-    int cp_num = (insn >> 8) & 0xf;
-    int cp_info = (insn >> 5) & 7;
-    int src = (insn >> 16) & 0xf;
-    int operand = insn & 0xf;
-
-    if (env->cp[cp_num].cp_write) {
-        env->cp[cp_num].cp_write(env->cp[cp_num].opaque, cp_info, src, operand, val);
-    }
-}
-
-uint32_t HELPER(get_cp)(CPUState * env, uint32_t insn)
-{
-    int cp_num = (insn >> 8) & 0xf;
-    int cp_info = (insn >> 5) & 7;
-    int dest = (insn >> 16) & 0xf;
-    int operand = insn & 0xf;
-
-    if (env->cp[cp_num].cp_read) {
-        return env->cp[cp_num].cp_read(env->cp[cp_num].opaque, cp_info, dest, operand);
-    }
-    return 0;
-}
-
 /* Return basic MPU access permission bits.  */
 static uint32_t simple_mpu_ap_bits(uint32_t val)
 {
@@ -2870,18 +2845,6 @@ void HELPER(v7m_msr)(CPUState * env, uint32_t reg, uint32_t val)
     }
 }
 #endif
-
-void cpu_arm_set_cp_io(CPUState *env, int cpnum, ARMReadCPFunc *cp_read, ARMWriteCPFunc *cp_write, void *opaque)
-{
-    if (cpnum < 0 || cpnum > 14) {
-        cpu_abort(env, "Bad coprocessor number: %i\n", cpnum);
-        return;
-    }
-
-    env->cp[cpnum].cp_read = cp_read;
-    env->cp[cpnum].cp_write = cp_write;
-    env->cp[cpnum].opaque = opaque;
-}
 
 /* Note that signed overflow is undefined in C.  The following routines are
    careful to use unsigned types where modulo arithmetic is required.

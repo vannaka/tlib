@@ -2508,41 +2508,6 @@ static int disas_dsp_insn(CPUState *env, DisasContext *s, uint32_t insn)
     return 1;
 }
 
-/* Disassemble system coprocessor instruction.  Return nonzero if
-   instruction is not defined.  */
-static int disas_cp_insn(CPUState *env, DisasContext *s, uint32_t insn)
-{
-    TCGv tmp, tmp2;
-    uint32_t rd = (insn >> 12) & 0xf;
-    uint32_t cp = (insn >> 8) & 0xf;
-    if (s->user) {
-        return 1;
-    }
-
-    if (insn & ARM_CP_RW_BIT) {
-        if (!env->cp[cp].cp_read) {
-            return 1;
-        }
-        gen_set_pc_im(s->base.pc);
-        tmp = tcg_temp_new_i32();
-        tmp2 = tcg_const_i32(insn);
-        gen_helper_get_cp(tmp, cpu_env, tmp2);
-        tcg_temp_free(tmp2);
-        store_reg(s, rd, tmp);
-    } else {
-        if (!env->cp[cp].cp_write) {
-            return 1;
-        }
-        gen_set_pc_im(s->base.pc);
-        tmp = load_reg(s, rd);
-        tmp2 = tcg_const_i32(insn);
-        gen_helper_set_cp(cpu_env, tmp2, tmp);
-        tcg_temp_free(tmp2);
-        tcg_temp_free_i32(tmp);
-    }
-    return 0;
-}
-
 static int cp15_user_ok(CPUState *env, uint32_t insn)
 {
     int cpn = (insn >> 16) & 0xf;
@@ -6819,7 +6784,7 @@ static int disas_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn)
         } else if (arm_feature(env, ARM_FEATURE_XSCALE)) {
             return disas_dsp_insn(env, s, insn);
         }
-        return 1;
+        goto board;
     case 10:
     case 11:
         return disas_vfp_insn(env, s, insn);
@@ -6836,14 +6801,18 @@ static int disas_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn)
             return disas_cp14_write(env, s, insn);
         }
     case 15:
+    /* fallthrough */
+    default:
+        /* Unknown coprocessor.  See if the board has hooked it.  */
+board:
         crn = extract32(insn, 16, 4);
         int crm = extract32(insn, 0, 4);
-        int direction = extract32(insn, 20, 1);
+        bool isread = extract32(insn, 20, 1) == 1;
         int rt = extract32(insn, 12, 4);
 
         int opc1, opc2;
         /* Whether we transfer one register (MCR/MRC)
-           or two (MRRC/MCRR)  */
+            or two (MRRC/MCRR)  */
         int is64 = ((insn & (1 << 25)) == 0);
         if (is64) {
             opc1 = extract32(insn, 4, 4);
@@ -6852,17 +6821,11 @@ static int disas_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn)
             opc1 = extract32(insn, 21, 3);
             opc2 = extract32(insn, 5, 3);
         }
-
         /*
          * For 64 bit access crn is the same as rt2 (same place in insn), so we just pass it to do_coproc_insn
          * It only makes sense for double R instructions
          */
-        return do_coproc_insn(env, s, insn, cpnum, is64, opc1, crn, crm, opc2, direction == 1, rt, crn);
-
-    default:
-board:
-        /* Unknown coprocessor.  See if the board has hooked it.  */
-        return disas_cp_insn(env, s, insn);
+        return do_coproc_insn(env, s, insn, cpnum, is64, opc1, crn, crm, opc2, isread, rt, crn);
     }
 }
 

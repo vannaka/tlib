@@ -121,9 +121,6 @@ typedef struct DisasContext {
 /* ARM-specific interrupt pending bits.  */
 #define CPU_INTERRUPT_FIQ CPU_INTERRUPT_TGT_EXT_1
 
-typedef void ARMWriteCPFunc(void *opaque, int cp_info, int srcreg, int operand, uint32_t value);
-typedef uint32_t ARMReadCPFunc(void *opaque, int cp_info, int dstreg, int operand);
-
 #define NB_MMU_MODES 2
 
 /* We currently assume float and double are IEEE single and double
@@ -329,13 +326,6 @@ typedef struct CPUState {
     /* These fields after the common ones so they are preserved on reset.  */
 
     TTable *cp_regs;
-
-    /* Coprocessor IO used by peripherals */
-    struct {
-        ARMReadCPFunc *cp_read;
-        ARMWriteCPFunc *cp_write;
-        void *opaque;
-    } cp[15];
 } CPUState;
 
 void switch_mode(CPUState *, int);
@@ -503,10 +493,6 @@ static inline int arm_feature(CPUState *env, int feature)
 {
     return (env->features & (1u << feature)) != 0;
 }
-
-/* Interface between CPU and Interrupt controller.  */
-
-void cpu_arm_set_cp_io(CPUState *env, int cpnum, ARMReadCPFunc *cp_read, ARMWriteCPFunc *cp_write, void *opaque);
 
 /* Does the core conform to the the "MicroController" profile. e.g. Cortex-M3.
    Note the M in older cores (eg. ARM7TDMI) stands for Multiply. These are

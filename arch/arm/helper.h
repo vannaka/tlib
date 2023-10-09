@@ -75,9 +75,6 @@ DEF_HELPER_2(get_cp15_64bit, i64, env, i32)
 DEF_HELPER_3(set_cp15_32bit, void, env, i32, i32)
 DEF_HELPER_2(get_cp15_32bit, i32, env, i32)
 
-DEF_HELPER_3(set_cp, void, env, i32, i32)
-DEF_HELPER_2(get_cp, i32, env, i32)
-
 DEF_HELPER_2(get_r13_banked, i32, env, i32)
 DEF_HELPER_3(set_r13_banked, void, env, i32, i32)
 

@@ -68,6 +68,9 @@ ARMCPRegInfo general_coprocessor_registers[] = {
 static void entry_remove_callback(TTable_entry *entry)
 {
     tlib_free(entry->key);
+    if (((ARMCPRegInfo *)entry->value)->dynamic) {
+        tlib_free(entry->value);
+    }
 }
 
 void cp_reg_add(CPUState *env, ARMCPRegInfo *reg_info)
@@ -75,10 +78,42 @@ void cp_reg_add(CPUState *env, ARMCPRegInfo *reg_info)
     const bool ns = true; // TODO: Handle secure state banking in a correct way, when we add Secure Mode to this lib
     const bool is64 = reg_info->type & ARM_CP_64BIT;
 
-    uint32_t *key = tlib_malloc(sizeof(uint32_t));
-    *key = ENCODE_CP_REG(reg_info->cp, is64, ns, reg_info->crn, reg_info->crm, reg_info->op1, reg_info->op2);
+    assert(reg_info->crn != ANY);
 
-    cp_reg_add_with_key(env, env->cp_regs, key, reg_info);
+    // Replicate the same register across many coproc addresses
+    const int op1_start = reg_info->op1 < ANY ? reg_info->op1 : 0;
+    const int op1_end = reg_info->op1 < ANY ? reg_info->op1 : 0x7;
+
+    const int op2_start = reg_info->op2 < ANY ? reg_info->op2 : 0;
+    const int op2_end = reg_info->op2 < ANY ? reg_info->op2 : 0x7;
+
+    const int crm_start = reg_info->crm < ANY ? reg_info->crm : 0;
+    const int crm_end = reg_info->crm < ANY ? reg_info->crm : 0xF;
+
+    for (int op1 = op1_start; op1 <= op1_end; ++op1) {
+        for (int op2 = op2_start; op2 <= op2_end; ++op2) {
+            for (int crm = crm_start; crm <= crm_end; ++crm) {
+
+                uint32_t *key = tlib_malloc(sizeof(uint32_t));
+                *key = ENCODE_CP_REG(reg_info->cp, is64, ns, reg_info->crn, crm, op1, op2);
+
+                if (reg_info->op1 == ANY || reg_info->op2 == ANY || reg_info->crm == ANY) {
+                    ARMCPRegInfo *val = tlib_malloc(sizeof(*reg_info));
+                    memcpy(val, reg_info, sizeof(*reg_info));
+
+                    val->op1 = op1;
+                    val->op2 = op2;
+                    val->crm = crm;
+
+                    val->dynamic = true;
+
+                    cp_reg_add_with_key(env, env->cp_regs, key, val);
+                } else {
+                    cp_reg_add_with_key(env, env->cp_regs, key, reg_info);
+                }
+            }
+        }
+    }
 }
 
 void system_instructions_and_registers_reset(CPUState *env)
@@ -111,9 +146,27 @@ void system_instructions_and_registers_reset(CPUState *env)
     }
 }
 
+static int count_cp_array(const ARMCPRegInfo *array, const int items)
+{
+    int i = items, num = 0;
+    while (i--) {
+        int many = 1;
+        many *= array[i].crm == ANY ? 16 : 1;
+        many *= array[i].op1 == ANY ? 8 : 1;
+        many *= array[i].op2 == ANY ? 8 : 1;
+
+        num += many;
+    }
+
+    return num;
+}
+
+#define ARM_CP_ARRAY_COUNT_ANY(array) \
+    count_cp_array(array, ARM_CP_ARRAY_COUNT(array))
+
 void system_instructions_and_registers_init(CPUState *env)
 {
-    uint32_t ttable_size = ARM_CP_ARRAY_COUNT(general_coprocessor_registers);
+    uint32_t ttable_size = ARM_CP_ARRAY_COUNT_ANY(general_coprocessor_registers);
     env->cp_regs = ttable_create(ttable_size, entry_remove_callback, ttable_compare_key_uint32);
 
     cp_regs_add(env, general_coprocessor_registers, ARM_CP_ARRAY_COUNT(general_coprocessor_registers));

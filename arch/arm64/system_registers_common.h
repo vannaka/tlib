@@ -91,6 +91,9 @@ struct ARMCPRegInfo
     ReadFn *readfn;
     // write function (required when fieldoffset and type is missing)
     WriteFn *writefn;
+
+    // Is the entry dynamically allocated
+    bool dynamic;
 };
 
 // Only EL and RO/WO are checked here. Traps etc. are checked in the 'access_check_cp_reg' helper.

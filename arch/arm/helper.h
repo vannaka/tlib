@@ -66,9 +66,6 @@ DEF_HELPER_2(v7m_mrs, i32, env, i32)
 DEF_HELPER_1(fp_lsp, void, env)
 #endif
 
-DEF_HELPER_3(set_cp15, void, env, i32, i32)
-DEF_HELPER_2(get_cp15, i32, env, i32)
-
 DEF_HELPER_4(set_cp15_64bit, void, env, i32, i32, i32)
 DEF_HELPER_2(get_cp15_64bit, i64, env, i32)
 

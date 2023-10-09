@@ -2538,211 +2538,6 @@ static int cp15_user_ok(CPUState *env, uint32_t insn)
     return 0;
 }
 
-static int cp15_tls_load_store(CPUState *env, DisasContext *s, uint32_t insn, uint32_t rd)
-{
-    TCGv tmp;
-    int cpn = (insn >> 16) & 0xf;
-    int cpm = insn & 0xf;
-    int op = ((insn >> 5) & 7) | ((insn >> 18) & 0x38);
-
-    if (!arm_feature(env, ARM_FEATURE_V6K)) {
-        return 0;
-    }
-
-    if (!(cpn == 13 && cpm == 0)) {
-        return 0;
-    }
-
-    if (insn & ARM_CP_RW_BIT) {
-        switch (op) {
-        case 2:
-            tmp = load_cpu_field(cp15.c13_tls1);
-            break;
-        case 3:
-            tmp = load_cpu_field(cp15.c13_tls2);
-            break;
-        case 4:
-            tmp = load_cpu_field(cp15.c13_tls3);
-            break;
-        default:
-            return 0;
-        }
-        store_reg(s, rd, tmp);
-
-    } else {
-        tmp = load_reg(s, rd);
-        switch (op) {
-        case 2:
-            store_cpu_field(tmp, cp15.c13_tls1);
-            break;
-        case 3:
-            store_cpu_field(tmp, cp15.c13_tls2);
-            break;
-        case 4:
-            store_cpu_field(tmp, cp15.c13_tls3);
-            break;
-        default:
-            tcg_temp_free_i32(tmp);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-/* Disassemble system coprocessor (cp15) instruction.  Return nonzero if
-   instruction is not defined.  */
-static int disas_cp15_insn(CPUState *env, DisasContext *s, uint32_t insn)
-{
-    uint32_t rd;
-    TCGv tmp, tmp2;
-
-    /* M profile cores use memory mapped registers instead of cp15.  */
-#ifdef TARGET_PROTO_ARM_M
-    return 1;
-#endif
-    if ((insn & (COPROCESSOR_INSTR_OP1_PARTIAL_MASK(0x30) | COPROCESSOR_INSTR_OP_MASK)) == (0x20 << COPROCESSOR_INSTR_OP1_OFFSET)) {
-        /* cdp */
-        return 1;
-    }
-    /* We special case a number of cp15 instructions which were used
-     * for things which are real instructions in ARMv7. This allows
-     * them to work in linux-user mode which doesn't provide functional
-     * get_cp15/set_cp15 helpers, and is more efficient anyway.
-     */
-    switch ((insn & 0x0fff0fff)) {
-    case 0x0e070f90:
-        /* 0,c7,c0,4: Standard v6 WFI (also used in some pre-v6 cores).
-         * In v7, this must NOP.
-         */
-        if (s->user) {
-            return 1;
-        }
-        if (!arm_feature(env, ARM_FEATURE_V7) && !tlib_is_wfi_as_nop()) {
-            /* Wait for interrupt.  */
-            gen_set_pc_im(s->base.pc);
-            s->base.is_jmp = DISAS_WFI;
-        }
-        return 0;
-    case 0x0e070f58:
-        /* 0,c7,c8,2: Not all pre-v6 cores implemented this WFI,
-         * so this is slightly over-broad.
-         */
-        if (!s->user && !arm_feature(env, ARM_FEATURE_V6) && !tlib_is_wfi_as_nop()) {
-            /* Wait for interrupt.  */
-            gen_set_pc_im(s->base.pc);
-            s->base.is_jmp = DISAS_WFI;
-            return 0;
-        }
-        /* Otherwise continue to handle via helper function.
-         * In particular, on v7 and some v6 cores this is one of
-         * the VA-PA registers.
-         */
-        break;
-    case 0x0e070f3d:
-        /* 0,c7,c13,1: prefetch-by-MVA in v6, NOP in v7 */
-        if (arm_feature(env, ARM_FEATURE_V6)) {
-            return s->user ? 1 : 0;
-        }
-        break;
-    case 0x0e070f95: /* 0,c7,c5,4 : ISB */
-    case 0x0e070f9a: /* 0,c7,c10,4: DSB */
-    case 0x0e070fba: /* 0,c7,c10,5: DMB */
-        /* Barriers in both v6 and v7 */
-        if (arm_feature(env, ARM_FEATURE_V6)) {
-            gen_barrier(s);
-            return 0;
-        }
-        break;
-    default:
-        break;
-    }
-
-    if (s->user && !cp15_user_ok(env, insn)) {
-        return 1;
-    }
-
-    rd = (insn >> 12) & 0xf;
-
-    if (cp15_tls_load_store(env, s, insn, rd)) {
-        return 0;
-    }
-
-    tmp2 = tcg_const_i32(insn);
-    if (((insn & (1 << 25)) == 0)) {
-        uint32_t rd2;
-        rd = (insn >> 12) & 0xf;
-        rd2 = (insn >> 16) & 0xf;
-
-        if (insn & (1 << 20)) {
-            /* mrrc */
-            TCGv val, rd_val, rd2_val;
-            val = tcg_temp_new_i64();
-
-            rd_val = tcg_temp_new_i32();
-            rd2_val = tcg_temp_new_i32();
-
-            gen_helper_get_cp15_64bit(val, cpu_env, tmp2);
-
-            tcg_gen_trunc_i64_i32(rd_val, val);
-            tcg_gen_shri_i64(val, val, 32);
-            tcg_gen_trunc_i64_i32(rd2_val, val);
-
-            /* If the destination register is r15 then sets condition codes.  */
-            if (rd != 15) {
-                store_reg(s, rd, rd_val);
-                store_reg(s, rd2, rd2_val);
-            } else {
-                tcg_temp_free_i32(rd_val);
-                tcg_temp_free_i32(rd2_val);
-            }
-            tcg_temp_free_i64(val);
-            return 0;
-        } else {
-            /* mcrr */
-            TCGv tmp_rd, tmp_rd2;
-            tmp_rd = load_reg(s, rd);
-            tmp_rd2 = load_reg(s, rd2);
-
-            gen_helper_set_cp15_64bit(cpu_env, tmp2, tmp_rd, tmp_rd2);
-
-            tcg_temp_free_i32(tmp_rd);
-            tcg_temp_free_i32(tmp_rd2);
-
-            /* Normally we would always end the TB here, but Linux
-             * arch/arm/mach-pxa/sleep.S expects two instructions following
-             * an MMU enable to execute from cache.  Imitate this behaviour.  */
-            if (!arm_feature(env, ARM_FEATURE_XSCALE) || (insn & 0x0fff0fff) != 0x0e010f10) {
-                gen_lookup_tb(s);
-            }
-        }
-        tcg_temp_free_i32(tmp2);
-        return 0;
-    }
-
-    if (insn & ARM_CP_RW_BIT) {
-        tmp = tcg_temp_new_i32();
-        gen_helper_get_cp15(tmp, cpu_env, tmp2);
-        /* If the destination register is r15 then sets condition codes.  */
-        if (rd != 15) {
-            store_reg(s, rd, tmp);
-        } else {
-            tcg_temp_free_i32(tmp);
-        }
-    } else {
-        tmp = load_reg(s, rd);
-        gen_helper_set_cp15(cpu_env, tmp2, tmp);
-        tcg_temp_free_i32(tmp);
-        /* Normally we would always end the TB here, but Linux
-         * arch/arm/mach-pxa/sleep.S expects two instructions following
-         * an MMU enable to execute from cache.  Imitate this behaviour.  */
-        if (!arm_feature(env, ARM_FEATURE_XSCALE) || (insn & 0x0fff0fff) != 0x0e010f10) {
-            gen_lookup_tb(s);
-        }
-    }
-    tcg_temp_free_i32(tmp2);
-    return 0;
-}
-
 #define VFP_REG_SHR(x, n)                     (((n) > 0) ? (x) >> (n) : (x) << -(n))
 #define VFP_SREG(insn, bigbit, smallbit) \
   ((VFP_REG_SHR(insn, bigbit - 1) & 0x1e) | (((insn) >> (smallbit)) & 1))
@@ -6796,7 +6591,79 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
         return 0;
     }
 
-    return disas_cp15_insn(env, s, insn);
+    /* Unknown register; this might be a guest error or a QEMU
+     * unimplemented feature.
+     * We can route the request to C# layer (tlib_read/write_cp15_*) but only for CP15
+     * otherwise warn the user.
+     */
+    if (is64) {
+        if (cpnum == 15) {
+            TCGv_i32 insn_tcg = tcg_const_i32(insn);
+            if (isread) {
+                TCGv_i64 tmp64 = tcg_temp_new_i64();
+                gen_helper_get_cp15_64bit(tmp64, cpu_env, insn_tcg);
+
+                TCGv_i32 mover = tcg_temp_new_i32();
+                tcg_gen_extrl_i64_i32(mover, tmp64);
+                store_reg(s, rt, mover);
+
+                mover = tcg_temp_new_i32();
+                tcg_gen_extrh_i64_i32(mover, tmp64);
+                store_reg(s, rt2, mover);
+
+                tcg_temp_free_i64(tmp64);
+            } else {
+                TCGv_i32 tmplo, tmphi;
+                TCGv_i64 tmp64 = tcg_temp_new_i64();
+                tmplo = load_reg(s, rt);
+                tmphi = load_reg(s, rt2);
+
+                gen_helper_set_cp15_64bit(cpu_env, insn_tcg, tmplo, tmphi);
+
+                tcg_temp_free_i32(tmplo);
+                tcg_temp_free_i32(tmphi);
+                tcg_temp_free_i64(tmp64);
+            }
+
+            tcg_temp_free_i32(insn_tcg);
+            return 0;
+        } else {
+            tlib_printf(LOG_LEVEL_ERROR, "%s access to unsupported AArch32 "
+                        "64 bit system register cp:%d opc1: %d crm:%d "
+                        "(%s)", isread ? "read" : "write", cpnum, opc1, crm, s->user ? "user" : "privilege");
+        }
+    } else {
+        if (cpnum == 15) {
+            TCGv_i32 insn_tcg = tcg_const_i32(insn);
+            if (isread) {
+                TCGv_i32 tmp = tcg_temp_new_i32();
+                gen_helper_get_cp15_32bit(tmp, cpu_env, insn_tcg);
+
+                if (rt == 15) {
+                    /* Destination register of r15 for 32 bit loads sets
+                     * the condition codes from the high 4 bits of the value
+                     */
+                    gen_set_nzcv(tmp);
+                    tcg_temp_free_i32(tmp);
+                } else {
+                    store_reg(s, rt, tmp);
+                }
+            } else {
+                TCGv_i32 val = load_reg(s, rt);
+                gen_helper_set_cp15_32bit(cpu_env, insn_tcg, val);
+                tcg_temp_free_i32(val);
+            }
+
+            tcg_temp_free_i32(insn_tcg);
+            return 0;
+        } else {
+            tlib_printf(LOG_LEVEL_ERROR, "%s access to unsupported AArch32 "
+                        "32 bit system register cp:%d opc1:%d crn:%d crm:%d opc2:%d "
+                        "(%s)", isread ? "read" : "write", cpnum, opc1, crn, crm, opc2, s->user ? "user" : "privilege");
+        }
+    }
+
+    return 1;
 }
 
 static int disas_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn)

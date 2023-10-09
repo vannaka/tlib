@@ -6665,6 +6665,9 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
                 s->base.is_jmp = DISAS_WFI;
             }
             return 0;
+        case ARM_CP_BARRIER:
+            gen_barrier(s);
+            return 0;
         default:
             g_assert_not_reached();
         }

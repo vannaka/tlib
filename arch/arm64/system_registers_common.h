@@ -17,8 +17,9 @@
 #define ARM_CP_DC_GVA          (1 << 4)
 #define ARM_CP_DC_GZVA         (1 << 5)
 #define ARM_CP_WFI             (1 << 6)
+#define ARM_CP_BARRIER         (1 << 7)
 // Mask used on above type - remember to update it when adding more special types!
-#define ARM_CP_SPECIAL_MASK    0x007F
+#define ARM_CP_SPECIAL_MASK    0x00FF
 
 #define ARM_CP_64BIT           (1 << 8)
 #define ARM_CP_CONST           (1 << 9)

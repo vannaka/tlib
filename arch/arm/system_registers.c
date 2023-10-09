@@ -521,6 +521,31 @@ static inline void set_c15_ticonfig(CPUState *env, uint64_t val)
 }
 RW_FUNCTIONS(64, c15_ticonfig, env->cp15.c15_ticonfig, set_c15_ticonfig(env, value))
 
+static inline uint64_t get_c9_tcmregion(CPUState *env, int op2)
+{
+    return env->cp15.c9_tcmregion[op2][env->cp15.c9_tcmsel];
+}
+static inline void set_c9_tcmregion(CPUState *env, int op2, uint64_t val)
+{
+    uint32_t tcm_region_index = env->cp15.c9_tcmsel;
+    uint32_t tcm_region_value = env->cp15.c9_tcmregion[op2][tcm_region_index];
+    if (val != tcm_region_value) {
+        tlib_abortf(
+            "Attempted to change TCM region #%u for interface #%u from 0x%08x to 0x%08x, reconfiguration at runtime is currently not supported", tcm_region_index, op2, tcm_region_value,
+            val);
+    }
+}
+RW_FUNCTIONS(64, c9_tcmregion_0, get_c9_tcmregion(env, 0), set_c9_tcmregion(env, 0, value))
+RW_FUNCTIONS(64, c9_tcmregion_1, get_c9_tcmregion(env, 1), set_c9_tcmregion(env, 1, value))
+
+static inline void set_c9_tcmsel(CPUState *env, uint64_t val)
+{
+    if (val >= MAX_TCM_REGIONS) {
+        tlib_abortf("Attempted access to TCM region #%u, maximal supported value is %u", val, MAX_TCM_REGIONS);
+    }
+    env->cp15.c9_tcmsel = val;
+}
+RW_FUNCTIONS(64, c9_tcmsel, env->cp15.c9_tcmsel, set_c9_tcmsel(env, value))
 
 #define CREATE_FEATURE_REG(name, op2) \
     ARM32_CP_REG_DEFINE(name,          15,   0,   0,   1,   op2,   1,  RW, FIELD(cp15.c0_c1[op2])) // Processor Feature Register [op2]
@@ -537,7 +562,7 @@ static ARMCPRegInfo general_coprocessor_registers[] = {
     ARM32_CP_REG_DEFINE(MIDR,             15,   0,   0,   0,   0,   1,  RO, FIELD(cp15.c0_cpuid))                      // Main ID Register
     ARM32_CP_REG_DEFINE(CTR,              15,   0,   0,   0,   1,   1,  RO, FIELD(cp15.c0_cachetype))                  // Cache Type Register
 
-    ARM32_CP_REG_DEFINE(TCMCR,            15,   0,   0,   0,   2,   1,  RO | CONST(0))                                 // TCMTR, TCM Type Register, TCM status
+    ARM32_CP_REG_DEFINE(TCMCR,            15,   0,   0,   0,   2,   1,  RO, FIELD(cp15.c0_tcmtype))                    // TCMTR, TCM Type Register, TCM status
     ARM32_CP_REG_DEFINE(TLBTR,            15,   0,   0,   0,   3,   1,  RO | CONST(0)) /* No lockable TLB entries.  */ // TLBTR, TLB Type Register
 
     // crm == 3..7, opc2 == 0..7
@@ -651,7 +676,11 @@ static ARMCPRegInfo general_coprocessor_registers[] = {
     ARM32_CP_REG_DEFINE(L2AUXCCTRL,    15,   1,   9,   0,   2,   1,  RW, RW_FNS(c9_l2auxcctrl))    // L2 Cache auxiliary control (A8) or control (A15)
     ARM32_CP_REG_DEFINE(L2EXCTRL,      15,   1,   9,   0,   3,   1,  RW | CONST(0))                // L2 Cache extended control (A15)
 
-    ARM32_CP_REG_DEFINE(TCM_MEM_REG,   15, ANY,   9,   1, ANY,   1,  WO | ARM_CP_IO, WRITEFN(write_cp15))      // TCM memory region registers
+    /*  branch predictor, cache, and TCM operations */
+    ARM32_CP_REG_DEFINE(TCMREGION0,    15, ANY,   9,   1,   0,   1,  RW, RW_FNS(c9_tcmregion_0))   // TCM memory region registers
+    ARM32_CP_REG_DEFINE(TCMREGION1,    15, ANY,   9,   1,   1,   1,  RW, RW_FNS(c9_tcmregion_1))
+
+    ARM32_CP_REG_DEFINE(TCMSEL,        15, ANY,   9,   2,   0,   1,  RW, RW_FNS(c9_tcmsel))
 
     // crn == 10
     ARM32_CP_REG_DEFINE(TLB_LOCKDOWN,  15, ANY,  10, ANY, ANY,   1,  RW, RW_FNS(c10_tlb_lockdown)) // MMU TLB lockdown

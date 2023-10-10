@@ -610,9 +610,6 @@ static ARMCPRegInfo general_coprocessor_registers[] = {
     READ_AS_ZERO(15, 0, 0, 7, 6, 1)
     READ_AS_ZERO(15, 0, 0, 7, 7, 1)
 
-    // crn == 1
-    ARM32_CP_REG_DEFINE(SCTLR,            15,   0,   1,   0,   0,   1,  RW | ARM_CP_SUPPRESS_TB_END, RW_FNS(c1_sctlr)) // System Control Register
-
     // crn == 3
     // The params are:  name              cp, op1, crn, crm, op2,  el,  extra_type, ...
     ARM32_CP_REG_DEFINE(C3,               15, ANY,   3, ANY, ANY,   1,  RW, RW_FNS(c3))                 // MMU Domain access control (DACR) / MPU write buffer control
@@ -688,6 +685,14 @@ static ARMCPRegInfo general_coprocessor_registers[] = {
     ARM32_CP_REG_DEFINE(FCSEIDR,       15,   0,  13,   0,   0,   1,  RW, RW_FNS(c13_fcse))         // FCSE PID Register
     ARM32_CP_REG_DEFINE(CONTEXTIDR,    15,   0,  13,   0,   1,   1,  RW, RW_FNS(c13_context))      // Context ID Register
     // ... TODO
+};
+
+static ARMCPRegInfo sctlr_register[] = {
+    // crn == 1
+    /* Normally we would always end the TB after register write, but Linux
+     * arch/arm/mach-pxa/sleep.S expects two instructions following
+     * an MMU enable to execute from cache. Imitate this behaviour.  */
+    ARM32_CP_REG_DEFINE(SCTLR,            15,   0,   1,   0,   0,   1,  RW | ARM_CP_SUPPRESS_TB_END, RW_FNS(c1_sctlr)) // System Control Register
 };
 
 static ARMCPRegInfo feature_v7_registers[] = {
@@ -831,19 +836,23 @@ static ARMCPRegInfo has_cp15_c13_dummy_registers[] = {
     ARM32_CP_REG_DEFINE(TPIDRURW,         15,   0,  13,   0,   2,   0, RO | CONST(0))  // PL0 Read/Write Software Thread ID Register
 };
 
+// Some implementation details are handled by `do_coproc_insn_quirks`
 static ARMCPRegInfo omap_registers[] = {
-    // these registers will be cloned through all the crn=0 space, EXCEPT c0_cssel, if it is present
-    // this will be handled in `coproc_quirks`
-    ARM32_CP_REG_DEFINE(OMAP_C0_DUMMY,    15,   0,   0,   0,   0,   1, WO | ARM_CP_NOP)  // In OMAP or XSCALE writes to crn0 have no effect, but don't raise exception either
+    // These registers will be cloned through all the crn=0 space but we can't do that as we would override exising r/w regs
+    // This will be handled in `coproc_quirks` - we hack a little and put the register at unused encoding, where we will redirect all writes
+    // It should be fine, as long as we don't jump out of this translation library via tlib_read/write_cp15
+    // The params are:  name              cp, op1, crn, crm, op2,  el, extra_type, ...
+    ARM32_CP_REG_DEFINE(OMAP_C0_DUMMY,    15,  10,   0,  10,  10,   1, WO | ARM_CP_NOP)  // In OMAP or XSCALE writes to crn0 have no effect, but don't raise exception either
+    ARM32_CP_REG_DEFINE(OMAP_C9_DUMMY,    15,  10,   9,  10,  10,   1, RW | CONST(0))    // a similar hack to the one above
     ARM32_CP_REG_DEFINE(OMAP_C12_DUMMY,   15, ANY,  12, ANY, ANY,   1, WO | ARM_CP_NOP)
 
     // crn == 15
     ARM32_CP_REG_DEFINE(ZERO,             15, ANY,  15,   0, ANY,   1, RW | CONST(0))
-    ARM32_CP_REG_DEFINE(TICONFIG,         15, ANY,  15,   1, ANY,   1, RW, RW_FNS(c15_ticonfig))  // Set TI925T configuration
-    ARM32_CP_REG_DEFINE(C15_I_MAX,        15, ANY,  15,   2, ANY,   1, RW, FIELD(cp15.c15_i_max)) // Set I_max
-    ARM32_CP_REG_DEFINE(C15_I_MIN,        15, ANY,  15,   3, ANY,   1, RW, FIELD(cp15.c15_i_min)) // Set I_min
-    ARM32_CP_REG_DEFINE(THREADID,         15, ANY,  15,   4, ANY,   1, RW, RW_FNS(c15_threadid))  // Set thread-ID
-    ARM32_CP_REG_DEFINE(OMAP_WFI,         15, ANY,  15,   8, ANY,   1, WO | ARM_CP_WFI)           // Wait-for-interrupt (deprecated)
+    ARM32_CP_REG_DEFINE(TICONFIG,         15, ANY,  15,   1, ANY,   1, RW, RW_FNS(c15_ticonfig))   // Set TI925T configuration
+    ARM32_CP_REG_DEFINE(C15_I_MAX,        15, ANY,  15,   2, ANY,   1, RW, FIELD(cp15.c15_i_max))  // Set I_max
+    ARM32_CP_REG_DEFINE(C15_I_MIN,        15, ANY,  15,   3, ANY,   1, RW, FIELD(cp15.c15_i_min))  // Set I_min
+    ARM32_CP_REG_DEFINE(THREADID,         15, ANY,  15,   4, ANY,   1, RW, RW_FNS(c15_threadid))   // Set thread-ID
+    ARM32_CP_REG_DEFINE(TI925T_status,    15, ANY,  15,   8, ANY,   1, RW | ARM_CP_WFI | CONST(0)) // TI925T_status on Read or Wait-for-interrupt (deprecated) on Write
 
     /* TODO: Peripheral port remap register:
      * On OMAP2 mcr p15, 0, rn, c15, c2, 4 sets up the interrupt
@@ -851,8 +860,12 @@ static ARMCPRegInfo omap_registers[] = {
      * 0x200 << ($rn & 0xfff), when MMU is off.  */
 };
 
+static ARMCPRegInfo strongarm_registers[] = {
+    ARM32_CP_REG_DEFINE(STRONGARM_C9_DUMMY,    15,  10,   9,  10,  10,   1, RW | CONST(0))
+};
+
 static ARMCPRegInfo xscale_registers[] = {
-    ARM32_CP_REG_DEFINE(OMAP_C0_DUMMY,    15,   0,   0,   0,   0,   1, WO | ARM_CP_NOP)                // In OMAP or XSCALE writes to crn0 have no effect, but don't raise exception either
+    ARM32_CP_REG_DEFINE(XSCALE_C0_DUMMY,  15,  10,   0,  10,  10,   1, WO | ARM_CP_NOP)                // In OMAP or XSCALE writes to crn0 have no effect, but don't raise exception either
     ARM32_CP_REG_DEFINE(ACTLR,            15,   0,   1,   0,   1,   1, RW, FIELD(cp15.c1_xscaleauxcr)) // Auxiliary Control Register (Impl. defined)
 
     ARM32_CP_REG_DEFINE(CPAR,             15, ANY,  15,   1,   0,   1, RW, RW_FNS(c15_cpar))
@@ -996,6 +1009,14 @@ inline static int count_extra_registers(const CPUState *env)
     }
     if (arm_feature(env, ARM_FEATURE_XSCALE)) {
         extra_regs += ARM_CP_ARRAY_COUNT_ANY(xscale_registers);
+
+        // XSCALE-specific handling of sctlr
+        sctlr_register[0].type &= ~ARM_CP_SUPPRESS_TB_END;
+        sctlr_register[0].crm = ANY;
+    }
+    if (arm_feature(env, ARM_FEATURE_STRONGARM)) {
+        // Seed dummy r/w NOP register on c0
+        extra_regs += ARM_CP_ARRAY_COUNT_ANY(strongarm_registers);
     }
 
     if (arm_feature(env, ARM_FEATURE_V7) || ARM_CPUID(env) == ARM_CPUID_ARM11MPCORE) {
@@ -1029,10 +1050,6 @@ inline static int count_extra_registers(const CPUState *env)
         extra_regs += ARM_CP_ARRAY_COUNT_ANY(feature_pmsa_registers);
     }
 
-    if (arm_feature(env, ARM_FEATURE_XSCALE)) {
-        extra_regs += ARM_CP_ARRAY_COUNT_ANY(xscale_registers);
-    }
-
     if (!arm_feature(env, ARM_FEATURE_XSCALE)) {
         extra_regs += ARM_CP_ARRAY_COUNT_ANY(cpacr_register);
     }
@@ -1050,6 +1067,7 @@ inline static int count_extra_registers(const CPUState *env)
     }
 
     extra_regs += ARM_CP_ARRAY_COUNT_ANY(has_cp15_c13_registers);
+    extra_regs += ARM_CP_ARRAY_COUNT_ANY(sctlr_register);
 
     return extra_regs;
 }
@@ -1067,6 +1085,9 @@ inline static void populate_ttable(CPUState *env)
     }
     if (arm_feature(env, ARM_FEATURE_XSCALE)) {
         regs_array_add(env, xscale_registers);
+    }
+    if (arm_feature(env, ARM_FEATURE_STRONGARM)) {
+        regs_array_add(env, strongarm_registers);
     }
 
     regs_array_add(env, general_coprocessor_registers);
@@ -1098,10 +1119,6 @@ inline static void populate_ttable(CPUState *env)
         regs_array_add(env, feature_pmsa_registers);
     }
 
-    if (arm_feature(env, ARM_FEATURE_XSCALE)) {
-        regs_array_add(env, xscale_registers);
-    }
-
     if (!arm_feature(env, ARM_FEATURE_XSCALE)) {
         regs_array_add(env, cpacr_register);
     }
@@ -1124,6 +1141,7 @@ inline static void populate_ttable(CPUState *env)
     } else {
         regs_array_add(env, has_cp15_c13_dummy_registers);
     }
+    regs_array_add(env, sctlr_register);
 }
 
 void system_instructions_and_registers_init(CPUState *env)

@@ -6375,16 +6375,27 @@ static int disas_cp14_write(CPUState *env, DisasContext *s, uint32_t insn)
 static inline void do_coproc_insn_quirks(CPUState *env, DisasContext *s, uint32_t insn, int cpnum, int is64, int *opc1, int *crn,
                                          int *crm, int *opc2, bool isread, int *rt, int *rt2)
 {
+    /*
+     * Ideally, we would handle these cases with ANY
+     * We would need a way to override previously defined registers for this to work
+     * This might be TODO
+     */
     if (arm_feature(env, ARM_FEATURE_OMAPCP)) {
         if (*crn == 0 && isread == false) {
-            *opc2 = 0;
-            *opc1 = 0;
-            *crm = 0;
+            // This is a hack to route all writes to artificial NOP register
+            *opc2 = 10;
+            *opc1 = 10;
+            *crm = 10;
         } else if (*crn == 5 || *crn == 1) {
             *opc2 = 0;
         } else if (*crn == 6 && !arm_feature(env, ARM_FEATURE_MPU) && !arm_feature(env, ARM_FEATURE_PMSA)) {
             *opc2 = 0;
         }
+    }
+    if (*crn == 9 && (arm_feature(env, ARM_FEATURE_OMAPCP) || arm_feature(env, ARM_FEATURE_STRONGARM))) {
+        *opc2 = 10;
+        *opc1 = 10;
+        *crm = 10;
     }
 }
 
@@ -6449,7 +6460,7 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
             return 0;
         case ARM_CP_WFI:
             if (isread) {
-                return 1;
+                break;
             }
             if (!tlib_is_wfi_as_nop()) {
                 /* Wait for interrupt */

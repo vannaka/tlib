@@ -455,7 +455,7 @@ static inline void set_c6_dracr(CPUState *env, uint64_t val)
 }
 RW_FUNCTIONS(64, c6_dracr, get_c6_dracr(env), set_c6_dracr(env, value))
 
-static inline uint64_t get_c1_actlr(CPUState *env)
+static inline uint64_t get_c1_actlr(CPUState *env, const ARMCPRegInfo *info)
 {
     switch (ARM_CPUID(env) & ARM_ARCHITECTURE_MASK) {
     case ARM_CPUID_ARM1026 & ARM_ARCHITECTURE_MASK:
@@ -472,11 +472,10 @@ static inline uint64_t get_c1_actlr(CPUState *env)
     case ARM_CPUID_CORTEXA15 & ARM_ARCHITECTURE_MASK:
         return 0;
     default:
-        tlib_abort("ACTLR is not implemented properly for this architecture");
-        g_assert_not_reached();
+        return tlib_read_cp15_32(encode_as_aarch32_32bit_register(info));
     }
 }
-RW_FUNCTIONS(64, c1_actlr, get_c1_actlr(env), tlib_write_cp15_32(encode_as_aarch32_32bit_register(info), value))
+RW_FUNCTIONS(64, c1_actlr, get_c1_actlr(env, info), tlib_write_cp15_32(encode_as_aarch32_32bit_register(info), value))
 
 RW_FUNCTIONS(64, c10_tlb_lockdown, 0, tlib_write_cp15_32(encode_as_aarch32_32bit_register(info), value))
 

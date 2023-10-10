@@ -7,6 +7,7 @@
 #include "bit_helper.h"
 #include "cpu.h"
 #include "cpu_names.h"
+#include "global_helper.h"
 #include "system_registers.h"
 #include "ttable.h"
 
@@ -1538,6 +1539,8 @@ void tlbi_print_stub_logs(CPUState *env, const ARMCPRegInfo *ri)
     }
 }
 
+WRITE_FUNCTION(64, ic_ialluis, helper_invalidate_dirty_addresses_shared(env))
+
 // TODO: Implement remaining TLBI instructions.
 WRITE_FUNCTION(64, tlbi_flush_all,
 {
@@ -1612,7 +1615,7 @@ ARMCPRegInfo aarch64_instructions[] = {
     ARM64_CP_REG_DEFINE(DC ZVA,                  1,   3,   7,   4,   1,  0, WO | ARM_CP_DC_ZVA)
     ARM64_CP_REG_DEFINE(DVP RCTX,                1,   3,   7,   3,   5,  0, WO)
     ARM64_CP_REG_DEFINE(IC IALLU,                1,   0,   7,   5,   0,  1, WO | IGNORED)
-    ARM64_CP_REG_DEFINE(IC IALLUIS,              1,   0,   7,   1,   0,  0, WO | IGNORED)
+    ARM64_CP_REG_DEFINE(IC IALLUIS,              1,   0,   7,   1,   0,  0, WO, WRITEFN(ic_ialluis))
     ARM64_CP_REG_DEFINE(IC IVAU,                 1,   3,   7,   5,   1,  0, WO | IGNORED)
     ARM64_CP_REG_DEFINE(TLBI ALLE1,              1,   4,   8,   7,   4,  1, WO, WRITEFN(tlbi_flush_all))
     ARM64_CP_REG_DEFINE(TLBI ALLE1IS,            1,   4,   8,   3,   4,  1, WO, WRITEFN(tlbi_flush_all))

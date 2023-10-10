@@ -8966,6 +8966,7 @@ static bool trans_ISB(DisasContext *s, arg_ISB *a)
      * self-modifying code correctly and also to take
      * any pending interrupts immediately.
      */
+    gen_helper_invalidate_dirty_addresses_shared(cpu_env);
     s->base.is_jmp = DISAS_TOO_MANY;
     return true;
 }

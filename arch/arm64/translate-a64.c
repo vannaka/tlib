@@ -1649,6 +1649,7 @@ static void handle_sync(DisasContext *s, uint32_t insn,
          * a self-modified code correctly and also to take
          * any pending interrupts immediately.
          */
+        gen_helper_invalidate_dirty_addresses_shared(cpu_env);
         reset_btype(s);
         gen_goto_tb(s, 0, s->base.pc_next);
         return;

@@ -9,6 +9,7 @@ DEF_HELPER_0(abort, void)
 DEF_HELPER_2(announce_stack_change, void, tl, i32)
 DEF_HELPER_1(on_interrupt_end_event, void, i64)
 
+DEF_HELPER_1(invalidate_dirty_addresses_shared, void, env)
 DEF_HELPER_4(mark_tbs_as_dirty, void, env, tl, i32, i32)
 
 DEF_HELPER_1(count_opcode_inner, void, i32)

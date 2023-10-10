@@ -37,6 +37,20 @@ void mark_tbs_containing_pc_as_dirty(target_ulong addr, int access_width, int br
     helper_mark_tbs_as_dirty(cpu, addr, access_width, broadcast);
 }
 
+void HELPER(invalidate_dirty_addresses_shared)(CPUState *env)
+{
+    if (unlikely(env->tb_broadcast_dirty)) {
+        uint64_t size = 0;
+        uint64_t *addresses = tlib_get_dirty_addresses_list(&size);
+
+        for (uint64_t i = 0; i < size; ++i) {
+            uint64_t start = addresses[i] & TARGET_PAGE_MASK;
+            uint64_t end = start | ~TARGET_PAGE_MASK;
+            tb_invalidate_phys_page_range_inner(start, end, false, false);
+        }
+    }
+}
+
 // verify if there are instructions left to execute, update instructions count
 // and trim the block and exit to the main loop if necessary
 uint32_t HELPER(prepare_block_for_execution)(void *tb)

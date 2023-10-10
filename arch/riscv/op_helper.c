@@ -51,6 +51,7 @@
 #endif  // HOST_LONG_BITS != 32
 
 #include "arch_callbacks.h"
+#include "global_helper.h"
 
 #if defined(TARGET_RISCV32)
 static const char valid_vm_1_09[16] = {
@@ -897,16 +898,7 @@ void helper_wfi(CPUState *env)
 
 void helper_fence_i(CPUState *env)
 {
-    if (unlikely(env->tb_broadcast_dirty)) {
-        uint64_t size = 0;
-        uint64_t *addresses = tlib_get_dirty_addresses_list(&size);
-
-        for (uint64_t i = 0; i < size; ++i) {
-            uint64_t start = addresses[i] & TARGET_PAGE_MASK;
-            uint64_t end = start | ~TARGET_PAGE_MASK;
-            tb_invalidate_phys_page_range_inner(start, end, false, false);
-        }
-    }
+    helper_invalidate_dirty_addresses_shared(env);
 }
 
 void do_unaligned_access(target_ulong addr, int access_type, int mmu_idx, void *retaddr)

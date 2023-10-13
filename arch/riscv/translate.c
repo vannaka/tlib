@@ -144,6 +144,9 @@ static int ensure_additional_extension(DisasContext *dc, target_ulong ext)
     case RISCV_FEATURE_ZICSR:
         encoding = "icsr";
         break;
+    case RISCV_FEATURE_ZIFENCEI:
+        encoding = "ifencei";
+        break;
     default:
         tlib_printf(LOG_LEVEL_ERROR, "Unexpected additional extension encoding: %d", ext);
         break;
@@ -854,6 +857,11 @@ static void gen_synch(DisasContext *dc, uint32_t opc)
         /* standard fence = NOP */
         break;
     case OPC_RISC_FENCE_I:
+        if (!riscv_has_additional_ext(cpu, RISCV_FEATURE_ZIFENCEI)) {
+            int instruction_length = decode_instruction_length(dc->opcode);
+            tlib_printf(LOG_LEVEL_ERROR, "RISC-V Zifencei instruction set is not enabled for this CPU! In future release this configuration will lead to an illegal instruction exception. PC: 0x%llx, opcode: 0x%0*llx",
+                dc->base.pc, /* padding */ 2 * instruction_length, format_opcode(dc->opcode, instruction_length));
+        }
         gen_helper_fence_i(cpu_env);
         tcg_gen_movi_tl(cpu_pc, dc->npc);
         gen_exit_tb_no_chaining(dc->base.tb);

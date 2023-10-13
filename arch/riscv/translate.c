@@ -141,6 +141,9 @@ static int ensure_additional_extension(DisasContext *dc, target_ulong ext)
     case RISCV_FEATURE_ZBS:
         encoding = "bs";
         break;
+    case RISCV_FEATURE_ZICSR:
+        encoding = "icsr";
+        break;
     default:
         tlib_printf(LOG_LEVEL_ERROR, "Unexpected additional extension encoding: %d", ext);
         break;
@@ -2437,6 +2440,11 @@ static void gen_system(DisasContext *dc, uint32_t opc, int rd, int rs1, int rs2,
     }
     else
     {
+        if (!riscv_has_additional_ext(cpu, RISCV_FEATURE_ZICSR)) {
+            int instruction_length = decode_instruction_length(dc->opcode);
+            tlib_printf(LOG_LEVEL_ERROR, "RISC-V Zicsr instruction set is not enabled for this CPU! In future release this configuration will lead to an illegal instruction exception. PC: 0x%llx, opcode: 0x%0*llx",
+                dc->base.pc, /* padding */ 2 * instruction_length, format_opcode(dc->opcode, instruction_length));
+        }
         TCGv source1, csr_store, dest, rs1_pass, imm_rs1;
         source1 = tcg_temp_new();
         csr_store = tcg_temp_new();

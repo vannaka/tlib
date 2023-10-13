@@ -72,6 +72,7 @@ typedef struct instruction_extensions_t {
     uint8_t enable_Zbb;
     uint8_t enable_Zbc;
     uint8_t enable_Zbs;
+    uint8_t enable_Zicsr;
 } instruction_extensions_t;
 
 typedef struct CPUState CPUState;
@@ -298,6 +299,7 @@ enum riscv_additional_features {
     RISCV_FEATURE_ZBB = ((target_ulong)2 << RISCV_ADDITIONAL_FEATURE_OFFSET),
     RISCV_FEATURE_ZBC = ((target_ulong)3 << RISCV_ADDITIONAL_FEATURE_OFFSET),
     RISCV_FEATURE_ZBS = ((target_ulong)4 << RISCV_ADDITIONAL_FEATURE_OFFSET),
+    RISCV_FEATURE_ZICSR = ((target_ulong)5 << RISCV_ADDITIONAL_FEATURE_OFFSET),
 };
 
 enum privilege_architecture {
@@ -322,6 +324,8 @@ static inline int riscv_has_additional_ext(CPUState *env, target_ulong ext)
         return env->instruction_extensions.enable_Zbc;
     case RISCV_FEATURE_ZBS:
         return env->instruction_extensions.enable_Zbs;
+    case RISCV_FEATURE_ZICSR:
+        return env->instruction_extensions.enable_Zicsr;
     default:
         return 0;
     }

@@ -313,14 +313,14 @@ static inline int riscv_has_ext(CPUState *env, target_ulong ext)
 
 static inline int riscv_has_additional_ext(CPUState *env, target_ulong ext)
 {
-    switch (ext >> RISCV_ADDITIONAL_FEATURE_OFFSET) {
-    case 0x1:
+    switch (ext) {
+    case RISCV_FEATURE_ZBA:
         return env->instruction_extensions.enable_Zba;
-    case 0x2:
+    case RISCV_FEATURE_ZBB:
         return env->instruction_extensions.enable_Zbb;
-    case 0x3:
+    case RISCV_FEATURE_ZBC:
         return env->instruction_extensions.enable_Zbc;
-    case 0x4:
+    case RISCV_FEATURE_ZBS:
         return env->instruction_extensions.enable_Zbs;
     default:
         return 0;

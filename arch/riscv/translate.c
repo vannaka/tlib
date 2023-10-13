@@ -127,28 +127,28 @@ static int ensure_additional_extension(DisasContext *dc, target_ulong ext)
         return 1;
     }
 
-    char letter = 0;
-    switch(ext >> 26) {
-    case 0x1:
-        letter = 'a';
+    char *encoding = NULL;
+    switch(ext) {
+    case RISCV_FEATURE_ZBA:
+        encoding = "ba";
         break;
-    case 0x2:
-        letter = 'b';
+    case RISCV_FEATURE_ZBB:
+        encoding = "bb";
         break;
-    case 0x3:
-        letter = 'c';
+    case RISCV_FEATURE_ZBC:
+        encoding = "bc";
         break;
-    case 0x4:
-        letter = 's';
+    case RISCV_FEATURE_ZBS:
+        encoding = "bs";
         break;
     default:
-        tlib_printf(LOG_LEVEL_ERROR, "Unexpected additional extension encoding: %d", ext >> 26);
+        tlib_printf(LOG_LEVEL_ERROR, "Unexpected additional extension encoding: %d", ext);
         break;
     }
 
     int instruction_length = decode_instruction_length(dc->opcode);
-    tlib_printf(LOG_LEVEL_ERROR, "RISC-V Zb%c instruction set is not enabled for this CPU! PC: 0x%llx, opcode: 0x%0*llx",
-            letter, dc->base.pc, /* padding */ 2 * instruction_length, format_opcode(dc->opcode, instruction_length));
+    tlib_printf(LOG_LEVEL_ERROR, "RISC-V Z%s instruction set is not enabled for this CPU! PC: 0x%llx, opcode: 0x%0*llx",
+            encoding, dc->base.pc, /* padding */ 2 * instruction_length, format_opcode(dc->opcode, instruction_length));
     
     kill_unknown(dc, RISCV_EXCP_ILLEGAL_INST);
     return 0;

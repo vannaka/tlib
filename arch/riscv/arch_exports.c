@@ -72,18 +72,18 @@ EXC_VOID_1(tlib_allow_feature, uint32_t, feature_bit)
 
 void tlib_allow_additional_feature(uint32_t feature_encoding)
 {
-    switch(feature_encoding >> RISCV_ADDITIONAL_FEATURE_OFFSET)
+    switch(feature_encoding)
     {
-    case 0x1:
+    case RISCV_FEATURE_ZBA:
         cpu->instruction_extensions.enable_Zba = 1;
         break;
-    case 0x2:
+    case RISCV_FEATURE_ZBB:
         cpu->instruction_extensions.enable_Zbb = 1;
         break;
-    case 0x3:
+    case RISCV_FEATURE_ZBC:
         cpu->instruction_extensions.enable_Zbc = 1;
         break;
-    case 0x4:
+    case RISCV_FEATURE_ZBS:
         cpu->instruction_extensions.enable_Zbs = 1;
         break;
     default:

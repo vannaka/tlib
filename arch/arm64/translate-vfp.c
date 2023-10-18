@@ -611,6 +611,10 @@ static bool trans_VCVT(DisasContext *s, arg_VCVT *a)
 
 bool mve_skip_vmov(DisasContext *s, int vn, int index, int size)
 {
+    if (!dc_isar_feature(aa32_mve, s)) {
+        return false;
+    }
+
     unimplemented();
 
     // TODO: Restore after defining ECI_*
@@ -634,10 +638,6 @@ bool mve_skip_vmov(DisasContext *s, int vn, int index, int size)
 //
 //    /* Calculate the byte offset into Qn which we're going to access */
 //    int ofs = (index << size) + ((vn & 1) * 8);
-//
-//    if (!dc_isar_feature(aa32_mve, s)) {
-//        return false;
-//    }
 //
 //    switch (s->eci) {
 //    case ECI_NONE:
@@ -906,6 +906,7 @@ static bool trans_VMSR_VMRS(DisasContext *s, arg_VMSR_VMRS *a)
             tmp = load_reg(s, a->rt);
             gen_helper_vfp_set_fpscr(cpu_env, tmp);
             tcg_temp_free_i32(tmp);
+            gen_rebuild_hflags_am32(s, false);
             gen_lookup_tb(s);
             break;
         case ARM_VFP_FPEXC:
@@ -916,6 +917,7 @@ static bool trans_VMSR_VMRS(DisasContext *s, arg_VMSR_VMRS *a)
             tmp = load_reg(s, a->rt);
             tcg_gen_andi_i32(tmp, tmp, 1 << 30);
             store_cpu_field(tmp, vfp.xregs[a->reg]);
+            gen_rebuild_hflags_am32(s, false);
             gen_lookup_tb(s);
             break;
         case ARM_VFP_FPINST:

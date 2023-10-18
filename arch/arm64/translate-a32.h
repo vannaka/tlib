@@ -99,6 +99,8 @@ void gen_aa32_ld_i64(DisasContext *s, TCGv_i64 val, TCGv_i32 a32,
 void gen_aa32_st_i64(DisasContext *s, TCGv_i64 val, TCGv_i32 a32,
                      int index, MemOp opc);
 
+void gen_rebuild_hflags_am32(DisasContext *s, bool new_el);
+
 #define DO_GEN_LD(SUFF, OPC)                                            \
     static inline void gen_aa32_ld##SUFF(DisasContext *s, TCGv_i32 val, \
                                          TCGv_i32 a32, int index)       \

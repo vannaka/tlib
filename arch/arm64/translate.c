@@ -362,7 +362,7 @@ int gen_breakpoint(DisasContextBase *base, CPUBreakpoint *bp)
     return 1;
 }
 
-static void gen_rebuild_hflags(DisasContext *s, bool new_el)
+void gen_rebuild_hflags_am32(DisasContext *s, bool new_el)
 {
     bool m_profile = arm_dc_feature(s, ARM_FEATURE_M);
 
@@ -4887,7 +4887,7 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
              * A write to any coprocessor register that ends a TB
              * must rebuild the hflags for the next TB.
              */
-            gen_rebuild_hflags(s, ri->type & ARM_CP_NEWEL);
+            gen_rebuild_hflags_am32(s, ri->type & ARM_CP_NEWEL);
             /*
              * We default to ending the TB on a coprocessor register write,
              * but allow this to be suppressed by the register definition
@@ -6450,7 +6450,7 @@ static bool trans_MSR_v7m(DisasContext *s, arg_MSR_v7m *a)
     gen_helper_v7m_msr(cpu_env, addr, reg);
     tcg_temp_free_i32(reg);
     /* If we wrote to CONTROL, the EL might have changed */
-    gen_rebuild_hflags(s, true);
+    gen_rebuild_hflags_am32(s, true);
     gen_lookup_tb(s);
     return true;
 }
@@ -8922,7 +8922,7 @@ static bool trans_CPS_v7m(DisasContext *s, arg_CPS_v7m *a)
         addr = tcg_constant_i32(16);
         gen_helper_v7m_msr(cpu_env, addr, tmp);
     }
-    gen_rebuild_hflags(s, false);
+    gen_rebuild_hflags_am32(s, false);
     gen_lookup_tb(s);
     return true;
 }

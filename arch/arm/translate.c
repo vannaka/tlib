@@ -6429,34 +6429,6 @@ static int disas_cp14_read(CPUState *env, DisasContext *s, uint32_t insn)
     int rt = (insn >> 12) & 0xf;
     TCGv tmp;
 
-    /* Minimal set of debug registers, since we don't support debug */
-    if (op1 == 0 && crn == 0 && op2 == 0) {
-        switch (crm) {
-        case 0:
-            /* DBGDIDR: just RAZ. In particular this means the
-             * "debug architecture version" bits will read as
-             * a reserved value, which should cause Linux to
-             * not try to use the debug hardware.
-             */
-            tmp = tcg_const_i32(0);
-            store_reg(s, rt, tmp);
-            return 0;
-        case 1:
-        case 2:
-            /* DBGDRAR and DBGDSAR: v7 only. Always RAZ since we
-             * don't implement memory mapped debug components
-             */
-            if (ENABLE_ARCH_7) {
-                tmp = tcg_const_i32(0);
-                store_reg(s, rt, tmp);
-                return 0;
-            }
-            break;
-        default:
-            break;
-        }
-    }
-
     if (arm_feature(env, ARM_FEATURE_THUMB2EE)) {
         if (op1 == 6 && crn == 0 && crm == 0 && op2 == 0) {
             /* TEECR */
@@ -6856,10 +6828,16 @@ static int disas_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn)
         }
 
         if (insn & (1 << 20)) {
-            return disas_cp14_read(env, s, insn);
+            if (disas_cp14_read(env, s, insn)) {
+                // Fallback to TTable handler
+                goto board;
+            }
         } else {
-            return disas_cp14_write(env, s, insn);
+            if (disas_cp14_write(env, s, insn)) {
+                goto board;
+            }
         }
+        return 0;
     case 15:
     /* fallthrough */
     default:

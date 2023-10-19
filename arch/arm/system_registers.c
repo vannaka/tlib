@@ -504,6 +504,18 @@ RW_FUNCTIONS(64, c9_tcmsel, env->cp15.c9_tcmsel, set_c9_tcmsel(env, value))
     ARM32_CP_REG_DEFINE(ZERO,          cp, op1, crn, crm,   op2,  el,  RO | CONST(0))              // Marked as Read-As-Zero in docs
 
 static ARMCPRegInfo general_coprocessor_registers[] = {
+    // ================== Coprocessor 14 ==================
+    // The params are:  name              cp, op1, crn, crm, op2,  el,  extra_type, ...
+
+    /* Minimal set of debug CP14 registers is implemented, since we don't support debug */
+    /* DBGDIDR: just RAZ. In particular this means the
+     * "debug architecture version" bits will read as
+     * a reserved value, which should cause Linux to
+     * not try to use the debug hardware.
+     */
+    ARM32_CP_REG_DEFINE(DBGDIDR,          14,   0,   0,   0,   0,   0,  RO | CONST(0)) // Debug ID Register
+
+    // ================== Coprocessor 15 ==================
     // crn == 0
     // The params are:  name              cp, op1, crn, crm, op2,  el,  extra_type, ...
     ARM32_CP_REG_DEFINE(MIDR,             15,   0,   0,   0,   0,   1,  RO, FIELD(cp15.c0_cpuid))                      // Main ID Register
@@ -605,6 +617,16 @@ static ARMCPRegInfo sctlr_register[] = {
 };
 
 static ARMCPRegInfo feature_v7_registers[] = {
+    // ================== Coprocessor 14 ==================
+    // The params are:  name              cp, op1, crn, crm, op2,  el,  extra_type, ...
+    /* DBGDRAR and DBGDSAR: v7 only. Always RAZ since we
+     * don't implement memory mapped debug components
+     */
+    ARM32_CP_REG_DEFINE(DBGDSCRext,       14,   0,   0,   2,   2,   0,  RO | CONST(0)) // Debug Status and Control external
+    ARM32_CP_REG_DEFINE(DBGDRAR,          14,   0,   1,   0,   0,   0,  RO | CONST(0)) // Debug ROM Address Register
+    ARM32_CP_REG_DEFINE(DBGDSAR,          14,   0,   2,   0,   0,   0,  RO | CONST(0)) // Debug Self Address Offset Register
+
+    // ================== Coprocessor 15 ==================
     // The params are:  name              cp, op1, crn, crm, op2,  el, extra_type, ...
     ARM32_CP_REG_DEFINE(CSSELR,           15,   2,   0,   0,   0,   1, RW, RW_FNS(c0_csselr))              // Cache Size Selection Register
 

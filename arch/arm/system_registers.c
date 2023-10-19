@@ -622,8 +622,8 @@ static ARMCPRegInfo general_coprocessor_registers[] = {
  */
 
     // crn == 5
-    ARM32_CP_REG_DEFINE(DFSR,             15,   0,   5,   0,   0,   0,  RW, RW_FNS(c5_data))        // Data Fault Status Register
-    ARM32_CP_REG_DEFINE(IFSR,             15,   0,   5,   0,   1,   0,  RW, RW_FNS(c5_insn))        // Instruction Fault Status Register
+    ARM32_CP_REG_DEFINE(DFSR,             15,   0,   5,   0,   0,   1,  RW, RW_FNS(c5_data))        // Data Fault Status Register
+    ARM32_CP_REG_DEFINE(IFSR,             15,   0,   5,   0,   1,   1,  RW, RW_FNS(c5_insn))        // Instruction Fault Status Register
 
     // crn == 7
     // The params are:  name           cp, op1, crn, crm, op2,  el,  extra_type, ...
@@ -823,7 +823,7 @@ static ARMCPRegInfo has_mmu_registers[] = {
 static ARMCPRegInfo has_cp15_c13_registers[] = {
     // The params are:  name              cp, op1, crn, crm, op2,  el, extra_type, ...
     ARM32_CP_REG_DEFINE(TPIDRPRW,         15,   0,  13,   0,   4,   1, RW, FIELD(cp15.c13_tls3))  // PL1 Software Thread ID Register
-    // This should be read-only on PL0 and RW on PL1 - we currently cannot do that
+    // This should be read-only on PL0 and RW on PL1 - we do this in `cp15_special_user_ok`
     ARM32_CP_REG_DEFINE(TPIDRURO,         15,   0,  13,   0,   3,   0, RW, FIELD(cp15.c13_tls2))  // PL0 Read-Only Software Thread ID Register
     ARM32_CP_REG_DEFINE(TPIDRURW,         15,   0,  13,   0,   2,   0, RW, FIELD(cp15.c13_tls1))  // PL0 Read/Write Software Thread ID Register
     // if any other registers are needed, there should probably implemented as NOPs

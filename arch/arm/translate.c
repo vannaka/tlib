@@ -2508,34 +2508,35 @@ static int disas_dsp_insn(CPUState *env, DisasContext *s, uint32_t insn)
     return 1;
 }
 
-static int cp15_user_ok(CPUState *env, uint32_t insn)
+// Registers that need special handling in userspace
+// Their EL in ttable is 0, but that is not always a case
+static bool cp15_special_user_ok(CPUState *env, int is64, int opc1, int crn, int crm, int opc2, bool isread)
 {
-    int cpn = (insn >> 16) & 0xf;
-    int cpm = insn & 0xf;
-    int op = ((insn >> 5) & 7) | ((insn >> 18) & 0x38);
-
-    if (arm_feature(env, ARM_FEATURE_V7) && cpn == 9) {
+    if (arm_feature(env, ARM_FEATURE_V7) && crn == 9) {
         /* Performance monitor registers fall into three categories:
          *  (a) always UNDEF in usermode
          *  (b) UNDEF only if PMUSERENR.EN is 0
          *  (c) always read OK and UNDEF on write (PMUSERENR only)
          */
-        if ((cpm == 12 && (op < 6)) || (cpm == 13 && (op < 3))) {
-            return env->cp15.c9_pmuserenr;
-        } else if (cpm == 14 && op == 0 && (insn & ARM_CP_RW_BIT)) {
+        if ((crm == 12 && opc2 < 7 && opc1 == 0) || (crm == 13 && opc2 < 3 && opc1 == 0)) {
+            return !((env->cp15.c9_pmuserenr & 1) == 0);
+        } else if (crm == 14 && opc2 == 0 && opc1 == 0 && !isread) {
             /* PMUSERENR, read only */
-            return 1;
+            return false;
         }
-        return 0;
     }
 
-    if (cpn == 13 && cpm == 0) {
-        /* TLS register.  */
-        if (op == 2 || (op == 3 && (insn & ARM_CP_RW_BIT))) {
-            return 1;
+    if (crn == 13 && crm == 0) {
+        /* TLS register.
+         * When TPIDRURO is written to at EL0 - deny access
+         */
+        if (opc2 == 3 && opc1 == 0 && !isread) {
+            return false;
         }
     }
-    return 0;
+
+    // For other normally-handled registers, use EL as defined in TTable
+    return true;
 }
 
 #define VFP_REG_SHR(x, n)                     (((n) > 0) ? (x) >> (n) : (x) << -(n))
@@ -6416,14 +6417,13 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
             /* cdp */
             return 1;
         }
-    }
 
-    // TODO: these cases should be probably reimplemented with accessfns
-    if (s->user && !cp15_user_ok(env, insn)) {
-        return 1;
+        // TODO: these cases should be probably reimplemented with accessfns
+        if (s->user && !cp15_special_user_ok(env, is64, opc1, crn, crm, opc2, isread)) {
+            return 1;
+        }
+        do_coproc_insn_quirks(env, s, insn, cpnum, is64, &opc1, &crn, &crm, &opc2, isread, &rt, &rt2);
     }
-
-    do_coproc_insn_quirks(env, s, insn, cpnum, is64, &opc1, &crn, &crm, &opc2, isread, &rt, &rt2);
 
     // XXX: We don't support banked cp15 registers with Security Extension, so set `ns` to true
     uint32_t key = ENCODE_CP_REG(cpnum, is64, true, crn, crm, opc1, opc2);

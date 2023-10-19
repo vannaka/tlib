@@ -2511,7 +2511,7 @@ static int disas_dsp_insn(CPUState *env, DisasContext *s, uint32_t insn)
 
 // Registers that need special handling in userspace
 // Their EL in ttable is 0, but that is not always a case
-static bool cp15_special_user_ok(CPUState *env, int is64, int opc1, int crn, int crm, int opc2, bool isread)
+static bool cp15_special_user_ok(CPUState *env, int user, int is64, int opc1, int crn, int crm, int opc2, bool isread)
 {
     if (arm_feature(env, ARM_FEATURE_V7) && crn == 9) {
         /* Performance monitor registers fall into three categories:
@@ -2532,6 +2532,13 @@ static bool cp15_special_user_ok(CPUState *env, int is64, int opc1, int crn, int
          * When TPIDRURO is written to at EL0 - deny access
          */
         if (opc2 == 3 && opc1 == 0 && !isread) {
+            return false;
+        }
+    }
+
+    if (opc1 == 6 && opc2 == 0 && crn == 1 && crm == 0) {
+        /* TEEHBR */
+        if (!(user && (env->teecr & 1))) {
             return false;
         }
     }
@@ -6420,71 +6427,6 @@ elementwise:
     return 0;
 }
 
-static int disas_cp14_read(CPUState *env, DisasContext *s, uint32_t insn)
-{
-    int crn = (insn >> 16) & 0xf;
-    int crm = insn & 0xf;
-    int op1 = (insn >> 21) & 7;
-    int op2 = (insn >> 5) & 7;
-    int rt = (insn >> 12) & 0xf;
-    TCGv tmp;
-
-    if (arm_feature(env, ARM_FEATURE_THUMB2EE)) {
-        if (op1 == 6 && crn == 0 && crm == 0 && op2 == 0) {
-            /* TEECR */
-            if (s->user) {
-                return 1;
-            }
-            tmp = load_cpu_field(teecr);
-            store_reg(s, rt, tmp);
-            return 0;
-        }
-        if (op1 == 6 && crn == 1 && crm == 0 && op2 == 0) {
-            /* TEEHBR */
-            if (s->user && (env->teecr & 1)) {
-                return 1;
-            }
-            tmp = load_cpu_field(teehbr);
-            store_reg(s, rt, tmp);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-static int disas_cp14_write(CPUState *env, DisasContext *s, uint32_t insn)
-{
-    int crn = (insn >> 16) & 0xf;
-    int crm = insn & 0xf;
-    int op1 = (insn >> 21) & 7;
-    int op2 = (insn >> 5) & 7;
-    int rt = (insn >> 12) & 0xf;
-    TCGv tmp;
-
-    if (arm_feature(env, ARM_FEATURE_THUMB2EE)) {
-        if (op1 == 6 && crn == 0 && crm == 0 && op2 == 0) {
-            /* TEECR */
-            if (s->user) {
-                return 1;
-            }
-            tmp = load_reg(s, rt);
-            gen_helper_set_teecr(cpu_env, tmp);
-            tcg_temp_free_i32(tmp);
-            return 0;
-        }
-        if (op1 == 6 && crn == 1 && crm == 0 && op2 == 0) {
-            /* TEEHBR */
-            if (s->user && (env->teecr & 1)) {
-                return 1;
-            }
-            tmp = load_reg(s, rt);
-            store_cpu_field(tmp, teehbr);
-            return 0;
-        }
-    }
-    return 1;
-}
-
 // Quirks in CP15 implementation ported from old code, that would be difficult to implement in ttable
 static inline void do_coproc_insn_quirks(CPUState *env, DisasContext *s, uint32_t insn, int cpnum, int is64, int *opc1, int *crn,
                                          int *crm, int *opc2, bool isread, int *rt, int *rt2)
@@ -6532,7 +6474,7 @@ static int do_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn, int cpn
         }
 
         // TODO: these cases should be probably reimplemented with accessfns
-        if (s->user && !cp15_special_user_ok(env, is64, opc1, crn, crm, opc2, isread)) {
+        if (s->user && !cp15_special_user_ok(env, s->user, is64, opc1, crn, crm, opc2, isread)) {
             return 1;
         }
         do_coproc_insn_quirks(env, s, insn, cpnum, is64, &opc1, &crn, &crm, &opc2, isread, &rt, &rt2);
@@ -6821,23 +6763,11 @@ static int disas_coproc_insn(CPUState *env, DisasContext *s, uint32_t insn)
     case 11:
         return disas_vfp_insn(env, s, insn);
     case 14:
-        /* Coprocessors 7-15 are architecturally reserved by ARM.
-           Unfortunately Intel decided to ignore this.  */
-        if (arm_feature(env, ARM_FEATURE_XSCALE)) {
-            goto board;
-        }
-
-        if (insn & (1 << 20)) {
-            if (disas_cp14_read(env, s, insn)) {
-                // Fallback to TTable handler
-                goto board;
-            }
-        } else {
-            if (disas_cp14_write(env, s, insn)) {
-                goto board;
-            }
-        }
-        return 0;
+    /* This coprocessor should be reserved by ARM and normally it contains debug registers
+     * we don't support debug, so we implement only the minimal set.
+     * Intel's XSCALE platform might ignore that it's reserved.
+     */
+    /* fallthrough */
     case 15:
     /* fallthrough */
     default:

@@ -494,6 +494,12 @@ static inline void set_c9_tcmsel(CPUState *env, uint64_t val)
 }
 RW_FUNCTIONS(64, c9_tcmsel, env->cp15.c9_tcmsel, set_c9_tcmsel(env, value))
 
+static inline void set_cp14_c6_teecr(CPUState *env, uint64_t val)
+{
+    helper_set_teecr(env, val);
+}
+RW_FUNCTIONS(64, cp14_c6_teecr, env->teecr, set_cp14_c6_teecr(env, value))
+
 #define CREATE_FEATURE_REG(name, op2) \
     ARM32_CP_REG_DEFINE(name,          15,   0,   0,   1,   op2,   1,  RW, FIELD(cp15.c0_c1[op2])) // Processor Feature Register [op2]
 
@@ -605,7 +611,6 @@ static ARMCPRegInfo general_coprocessor_registers[] = {
     // crn == 13
     ARM32_CP_REG_DEFINE(FCSEIDR,       15,   0,  13,   0,   0,   1,  RW, RW_FNS(c13_fcse))         // FCSE PID Register
     ARM32_CP_REG_DEFINE(CONTEXTIDR,    15,   0,  13,   0,   1,   1,  RW, RW_FNS(c13_context))      // Context ID Register
-    // ... TODO
 };
 
 static ARMCPRegInfo sctlr_register[] = {
@@ -827,6 +832,13 @@ static ARMCPRegInfo feature_generic_timer_registers[] = {
     ARM32_CP_REG_DEFINE(GENERIC_TIMER,    15, ANY,  14, ANY, ANY,   1, RW | ARM_CP_IO, RW_FNS(read_cp15_write_ignore))     // Generic Timer
 };
 
+static ARMCPRegInfo feature_thumb2ee_registers[] = {
+    // ================== Coprocessor 14 ==================
+    // The params are:  name              cp, op1, crn, crm, op2,  el,  extra_type, ...
+    ARM32_CP_REG_DEFINE(TEECR,            14,   6,   0,   0,   0,   1,  RW, RW_FNS(cp14_c6_teecr)) // Thumb EE Configuration Register
+    ARM32_CP_REG_DEFINE(TEEHBR,           14,   6,   1,   0,   0,   1,  RW, FIELD(teehbr))         // Thumb EE Handler Base Register
+};
+
 // The keys are dynamically allocated so let's make TTable free them when removing the entry.
 static void entry_remove_callback(TTable_entry *entry)
 {
@@ -997,6 +1009,10 @@ inline static int count_extra_registers(const CPUState *env)
         extra_regs += ARM_CP_ARRAY_COUNT_ANY(feature_generic_timer_registers);
     }
 
+    if (arm_feature(env, ARM_FEATURE_THUMB2EE)) {
+        extra_regs += ARM_CP_ARRAY_COUNT_ANY(feature_thumb2ee_registers);
+    }
+
     extra_regs += ARM_CP_ARRAY_COUNT_ANY(has_cp15_c13_registers);
     extra_regs += ARM_CP_ARRAY_COUNT_ANY(sctlr_register);
 
@@ -1064,6 +1080,10 @@ inline static void populate_ttable(CPUState *env)
 
     if (arm_feature(env, ARM_FEATURE_GENERIC_TIMER)) {
         regs_array_add(env, feature_generic_timer_registers);
+    }
+
+    if (arm_feature(env, ARM_FEATURE_THUMB2EE)) {
+        regs_array_add(env, feature_thumb2ee_registers);
     }
 
     // c13 are always present, but without ARM_FEATURE_V6K should be read as 0

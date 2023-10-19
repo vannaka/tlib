@@ -2118,6 +2118,8 @@ void system_instructions_and_registers_init(CPUState *env, uint32_t cpu_model_id
     if (arm_feature(env, ARM_FEATURE_PMSA)) {
         cp_regs_add(env, mpu_registers, ARM_CP_ARRAY_COUNT(mpu_registers));
     }
+
+    ttable_sort_by_keys(env->arm_core_config->cp_regs);
 }
 
 void system_instructions_and_registers_reset(CPUState *env)

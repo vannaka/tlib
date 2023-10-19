@@ -21,12 +21,19 @@ typedef struct
     void *value;
 } TTable_entry;
 
-typedef bool TTableEntryCompareFn(TTable_entry entry, const void *value);
+/*
+ * This should behave like standard library comparison functions:
+ *  * If `entry` is greater than `value` return 1
+ *  * Else If `entry` is less than `value` return -1
+ *  * Else return 0
+ */
+typedef int TTableEntryCompareFn(TTable_entry entry, const void *value);
 typedef void TTableEntryRemoveCallback(TTable_entry *entry);
 
 typedef struct
 {
     uint32_t count;
+    uint32_t sorted_count;
     TTable_entry *entries;
     TTableEntryRemoveCallback *entry_remove_callback;
     TTableEntryCompareFn *key_compare_function;
@@ -36,21 +43,41 @@ typedef struct
 // Only one of these functions will be used for the given TTable depending on what TTable_entry's key is.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
-static bool ttable_compare_key_pointer(TTable_entry entry, const void *value)
+static int ttable_compare_key_pointer(TTable_entry entry, const void *value)
 {
-    return entry.key == value;
+    const void *val1 = entry.key;
+    const void *val2 = value;
+    return val1 > val2 ? 1 : (val1 < val2 ? -1 : 0);
 }
 
-static bool ttable_compare_key_string(TTable_entry entry, const void *value)
+static int ttable_compare_key_string(TTable_entry entry, const void *value)
 {
-    return strcmp(entry.key, value) == 0;
+    return strcmp(entry.key, value);
 }
 
-static bool ttable_compare_key_uint32(TTable_entry entry, const void *value)
+static int ttable_compare_key_uint32(TTable_entry entry, const void *value)
 {
-    return *(uint32_t *)entry.key == *(uint32_t *)value;
+    uint32_t val1 = *(uint32_t *)entry.key;
+    uint32_t val2 = *(uint32_t *)value;
+    return val1 > val2 ? 1 : (val1 < val2 ? -1 : 0);
 }
 #pragma GCC diagnostic pop
+
+static inline void ttable_sort_by_keys(TTable *ttable)
+{
+    // O(n^2) sort
+    for (int i = 0; i < ttable->count - 1; ++i) {
+        for (int j = i + 1; j < ttable->count; ++j) {
+            if (ttable->key_compare_function(ttable->entries[i], ttable->entries[j].key) > 0) {
+                TTable_entry tmp = ttable->entries[i];
+                ttable->entries[i] = ttable->entries[j];
+                ttable->entries[j] = tmp;
+            }
+        }
+    }
+
+    ttable->sorted_count = ttable->count;
+}
 
 static inline TTable *ttable_create(uint32_t entries_max, TTableEntryRemoveCallback *entry_remove_callback,
                                     TTableEntryCompareFn *key_compare_function)
@@ -60,6 +87,7 @@ static inline TTable *ttable_create(uint32_t entries_max, TTableEntryRemoveCallb
 
     TTable *ttable = tlib_mallocz(sizeof(TTable));
     ttable->count = 0;
+    ttable->sorted_count = 0;
     ttable->entries = ttable_entries;
     ttable->entry_remove_callback = entry_remove_callback;
     ttable->key_compare_function = key_compare_function;
@@ -81,10 +109,35 @@ static inline void ttable_insert(TTable *ttable, void *key, void *value)
 static inline TTable_entry *ttable_lookup_custom(TTable *ttable, TTableEntryCompareFn *entry_compare_function,
                                                  const void *compare_value)
 {
-    int i;
-    for (i = 0; i < ttable->count; i++) {
+    uint32_t linear_search_start = ttable->sorted_count;
+    if (unlikely(entry_compare_function != ttable->key_compare_function)) {
+        // We can't binary-search if we use a different compare function
+        linear_search_start = 0;
+        goto linear_search;
+    }
+
+    // Binary search for sorted part
+    if (likely(ttable->sorted_count > 0)) {
+        uint32_t left = 0, right = ttable->sorted_count - 1;
+        while (left <= right) {
+            uint32_t pivot = (left + right) / 2;
+            TTable_entry *entry = &ttable->entries[pivot];
+            if (entry_compare_function(*entry, compare_value) < 0) {
+                left = pivot + 1;
+            } else if (entry_compare_function(*entry, compare_value) > 0) {
+                right = pivot - 1;
+            } else {
+                return entry;
+            }
+            // if unsuccessful, break out of the loop
+        }
+    }
+
+linear_search:
+    // Linear search for unsorted part
+    for (uint32_t i = linear_search_start; i < ttable->count; i++) {
         TTable_entry *entry = &ttable->entries[i];
-        if (entry_compare_function(*entry, compare_value)) {
+        if (entry_compare_function(*entry, compare_value) == 0) {
             return entry;
         }
     }

@@ -1107,4 +1107,5 @@ void system_instructions_and_registers_init(CPUState *env)
     env->cp_regs = ttable_create(ttable_size, entry_remove_callback, ttable_compare_key_uint32);
 
     populate_ttable(env);
+    ttable_sort_by_keys(env->cp_regs);
 }

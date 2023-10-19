@@ -2341,8 +2341,8 @@ uint64_t HELPER(neon_widen_u16)(uint32_t a)
 
 uint64_t HELPER(neon_widen_s16)(uint32_t a)
 {
-    const int32_t out1 = S16_0(a);
-    const int32_t out0 = S16_1(a);
+    const uint32_t out1 = S16_0(a);
+    const uint32_t out0 = S16_1(a);
 
     return (uint64_t)out0 << 32 | (uint64_t)out1;
 }

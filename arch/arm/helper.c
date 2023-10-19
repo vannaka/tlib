@@ -1043,6 +1043,15 @@ case_EXCP_PREFETCH_ABORT:
     if (env->cp15.c1_sys & (1 << 13)) {
         addr += 0xffff0000;
     }
+    else {
+        /* CPUs w/ Security Extensions allow for relocation of the
+        * vector table. c12_vbar is initialized to zero so the
+        * the following maintains compat w/ targets that don't have
+        * Security Extensions.
+        */
+        addr += env->cp15.c12_vbar;
+    }
+    
     switch_mode(env, new_mode);
     env->spsr = cpsr_read(env);
     /* Clear IT bits.  */
@@ -2175,8 +2184,25 @@ void HELPER(set_cp15)(CPUState * env, uint32_t insn, uint32_t val)
     case 10: /* MMU TLB lockdown.  */
         tlib_write_cp15_32(insn, val);
         break;
-    case 12: /* TODO: Used by OMAP, we should implement that */
-        tlib_write_cp15_32(insn, val);
+    case 12: /* Security Extensions Register */
+        switch (crm) {
+        case 0: /* VBAR, MVBAR, HVBAR. [Monitor, Hypervisor] Vecotor Base Address Register */
+
+            /* VBAR */
+            if( op1 == 0 && op2 == 0 ) {
+                env->cp15.c12_vbar = val & 0xFFFFFFF0;
+            }
+            else {
+                goto bad_reg;
+            }
+
+            break;
+        
+        case 1: /* ISR - Interrupt Status Register */
+            /* Intentional fallthroug */
+        default:
+            goto bad_reg;
+        }
         break;
     case 13: /* Process ID.  */
         switch (op2) {
@@ -2651,8 +2677,25 @@ case_6:
         /* ??? TLB lockdown not implemented.  */
         return 0;
     case 11: /* TCM DMA control.  */
-    case 12: /* Reserved.  */
-        goto bad_reg;
+    case 12: /* Security Extensions Register */
+        switch (crm) {
+        case 0: /* VBAR, MVBAR, HVBAR. [Monitor, Hypervisor] Vecotor Base Address Register */
+
+            /* VBAR */
+            if( op1 == 0 && op2 == 0 ) {
+                return env->cp15.c12_vbar;
+            }
+            else {
+                goto bad_reg;
+            }
+
+            break;
+        
+        case 1: /* ISR - Interrupt Status Register */
+            /* Intentional fallthroug */
+        default:
+            goto bad_reg;
+        }
     case 13: /* Process ID.  */
         switch (op2) {
         case 0:

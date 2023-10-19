@@ -237,6 +237,7 @@ typedef struct CPUState {
         uint32_t c9_pmxevtyper;  /* perf monitor event type */
         uint32_t c9_pmuserenr;   /* perf monitor user enable */
         uint32_t c9_pminten;     /* perf monitor interrupt enables */
+        uint32_t c12_vbar;       /* vector base address register, security extensions*/
         uint32_t c13_fcse;       /* FCSE PID.  */
         uint32_t c13_context;    /* Context ID.  */
         uint32_t c13_tls1;       /* User RW Thread register.  */
@@ -497,6 +498,7 @@ enum arm_features {
     ARM_FEATURE_OMAPCP,    /* OMAP specific CP15 ops handling.  */
     ARM_FEATURE_THUMB2EE,
     ARM_FEATURE_V7MP,      /* v7 Multiprocessing Extensions */
+    ARM_FEATURE_V7_SEC,    /* v7 Security Extensions */
     ARM_FEATURE_V4T,
     ARM_FEATURE_V5,
     ARM_FEATURE_STRONGARM,

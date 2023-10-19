@@ -584,14 +584,13 @@ int get_phys_addr_pmsav8(CPUState *env, target_ulong address, int access_type, u
         }
     }
 
-    
     return TRANSLATE_SUCCESS;
- do_fault:
-     set_mmu_fault_registers(access_type, address, fault_type);
-     if (return_address) {
-         cpu_restore_state_and_restore_instructions_count(env,env->current_tb, return_address);
-     }
-     return TRANSLATE_FAIL;
+do_fault:
+    if (!suppress_faults) {
+        set_mmu_fault_registers(access_type, address, fault_type);
+        env->exception.target_el = current_el == 2 ? 2 : 1;
+    }
+    return TRANSLATE_FAIL;
 }
 
 inline int get_phys_addr(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,

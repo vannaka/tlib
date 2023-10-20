@@ -22,6 +22,7 @@ void tlib_reset_executed_instrucions(uint64_t val);
 void tlib_reset(void);
 int32_t tlib_execute(uint32_t max_insns);
 void tlib_restart_translation_block(void);
+void tlib_try_interrupt_translation_block(void);
 void  tlib_set_return_request(void);
 void tlib_set_paused(void);
 void tlib_clear_paused(void);

@@ -64,6 +64,15 @@ static void init_tcg()
     attach_free(tlib_free);
 }
 
+// This function is unsafe if called with a C# frame above tlib_execute on the stack.
+void tlib_try_interrupt_translation_block(void)
+{
+    if (likely(cpu) && unlikely(cpu->tb_interrupt_request_from_callback)) {
+        cpu->tb_interrupt_request_from_callback = 0;
+        interrupt_current_translation_block(cpu, EXCP_WATCHPOINT);
+    }
+}
+
 // tlib_get_arch_string return an arch string that is
 // *on purpose* generated compile time so that e.g.
 // strings libtlib.so | grep tlib\,arch=[a-z0-9-]*\,host=[a-z0-9-]*
@@ -222,7 +231,11 @@ void tlib_dispose()
     tlib_arch_dispose();
     code_gen_free();
     free_all_page_descriptors();
-    tlib_free(cpu);
+    // `tlib_free` is an EXTERNAL_AS, as such we need to clear `cpu` before calling it
+    // to avoid a use-after-free in its wrapper
+    CPUState *cpu_copy = cpu;
+    cpu = NULL;
+    tlib_free(cpu_copy);
     tcg_dispose();
 }
 
@@ -324,9 +337,11 @@ extern void *global_retaddr;
 // increased env_idx from 1 to 2, and the next wrapper return will be the one from
 // tlib_execute_ex at the very beginning (no more wrappers on the way) - then we will
 // decrease env_idx from 2 to 1 at the final C -> C# exit, losing one slot.
+// This function should only be called from at most one level of C -> C# calls, otherwise
+// when the outermost C# method returns the frames of the inner ones will be longjmped over.
 void tlib_restart_translation_block()
 {
-    interrupt_current_translation_block(cpu, EXCP_WATCHPOINT);
+    env->tb_interrupt_request_from_callback = 1;
 }
 
 void tlib_set_return_request()

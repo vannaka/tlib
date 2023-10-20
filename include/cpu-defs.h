@@ -187,6 +187,7 @@ typedef struct ExtMmuRange
     uint32_t interrupt_request;                                               \
     volatile sig_atomic_t exit_request;                                       \
     int tb_restart_request;                                                   \
+    int tb_interrupt_request_from_callback;                                   \
                                                                               \
     uint32_t io_access_regions_count;                                         \
     uint32_t io_access_regions[MAX_IO_ACCESS_REGIONS_COUNT];                  \

@@ -80,10 +80,6 @@ static inline uint32_t get_mpidr(CPUState *env)
 }
 READ_FUNCTION(64, c0_mpidr, get_mpidr(env))
 
-static inline uint32_t get_ttbcr(CPUState *env)
-{
-    return env->cp15.c2_control;
-}
 static inline void set_ttbcr(CPUState *env, uint64_t val)
 {
     val &= 7;
@@ -91,7 +87,7 @@ static inline void set_ttbcr(CPUState *env, uint64_t val)
     env->cp15.c2_mask = ~(((uint32_t)0xffffffffu) >> val);
     env->cp15.c2_base_mask = ~((uint32_t)0x3fffu >> val);
 }
-RW_FUNCTIONS(64, c2_ttbcr, get_ttbcr(env), set_ttbcr(env, value))
+RW_FUNCTIONS(64, c2_ttbcr, env->cp15.c2_control, set_ttbcr(env, value))
 
 static inline uint32_t get_ccsidr(CPUState *env)
 {
@@ -124,16 +120,12 @@ WRITE_FUNCTION(64, invalidate_on_asid, tlb_flush(env, value == 0, true));
 /* ??? This is like case 1, but ignores ASID.  */
 WRITE_FUNCTION(64, invalidate_single_on_mva, tlb_flush(env, 1, true));
 
-static inline uint32_t get_c3(CPUState *env)
-{
-    return env->cp15.c3;
-}
 static inline void set_c3(CPUState *env, uint64_t val)
 {
     env->cp15.c3 = val;
     tlb_flush(env, 1, true); /* Flush TLB as domain not tracked in TLB */
 }
-RW_FUNCTIONS(64, c3, get_c3(env), set_c3(env, value))
+RW_FUNCTIONS(64, c3, env->cp15.c3, set_c3(env, value))
 
 // From helper.c
 uint32_t simple_mpu_ap_bits(uint32_t val);
@@ -177,10 +169,6 @@ static inline void set_c5_insn(CPUState *env, uint64_t val)
 }
 RW_FUNCTIONS(64, c5_insn, get_c5_insn(env), set_c5_insn(env, value))
 
-static inline uint64_t get_c13_context(CPUState *env)
-{
-    return env->cp15.c13_context;
-}
 static inline void set_c13_context(CPUState *env, uint64_t val)
 {
     /* This changes the ASID, so do a TLB flush.  */
@@ -189,7 +177,7 @@ static inline void set_c13_context(CPUState *env, uint64_t val)
     }
     env->cp15.c13_context = (uint32_t)val;
 }
-RW_FUNCTIONS(64, c13_context, get_c13_context(env), set_c13_context(env, value))
+RW_FUNCTIONS(64, c13_context, env->cp15.c13_context, set_c13_context(env, value))
 
 static inline void set_c15_i_max_min(CPUState *env)
 {
@@ -204,15 +192,11 @@ static inline uint64_t get_c0_mpuir(CPUState *env)
 }
 READ_FUNCTION(64, c0_mpuir, get_c0_mpuir(env))
 
-static inline uint64_t get_c0_csselr(CPUState *env)
-{
-    return env->cp15.c0_cssel;
-}
 static inline void set_c5_csselr(CPUState *env, uint64_t val)
 {
     env->cp15.c0_cssel = val & 0xf;
 }
-RW_FUNCTIONS(64, c0_csselr, get_c0_csselr(env), set_c5_csselr(env, value))
+RW_FUNCTIONS(64, c0_csselr, env->cp15.c0_cssel, set_c5_csselr(env, value))
 
 static inline uint64_t get_c13_fcse(CPUState *env)
 {
@@ -230,10 +214,6 @@ static inline void set_c13_fcse(CPUState *env, uint64_t val)
 }
 RW_FUNCTIONS(64, c13_fcse, get_c13_fcse(env), set_c13_fcse(env, value))
 
-static inline uint64_t get_c7_par(CPUState *env)
-{
-    return env->cp15.c7_par;
-}
 static inline void set_c7_par(CPUState *env, uint64_t val)
 {
     if (arm_feature(env, ARM_FEATURE_VAPA)) {
@@ -244,7 +224,7 @@ static inline void set_c7_par(CPUState *env, uint64_t val)
         }
     }
 }
-RW_FUNCTIONS(64, c7_par, get_c7_par(env), set_c7_par(env, value))
+RW_FUNCTIONS(64, c7_par, env->cp15.c7_par, set_c7_par(env, value))
 
 int get_phys_addr(CPUState *env, uint32_t address, int access_type, int is_user, uint32_t *phys_ptr, int *prot,
                   target_ulong *page_size, int no_page_fault);
@@ -302,81 +282,57 @@ static inline void set_c7_ats1cuw(CPUState *env, uint64_t val)
 }
 WRITE_FUNCTION(64, c7_ats1cuw, set_c7_ats1cuw(env, value))
 
-static inline uint64_t get_c9_pmcr(CPUState *env)
-{
-    return env->cp15.c9_pmcr;
-}
 static inline void set_c9_pmcr(CPUState *env, uint64_t val)
 {
     /* only the DP, X, D and E bits are writable */
     env->cp15.c9_pmcr &= ~0x39;
     env->cp15.c9_pmcr |= (val & 0x39);
 }
-RW_FUNCTIONS(64, c9_pmcr, get_c9_pmcr(env), set_c9_pmcr(env, value))
+RW_FUNCTIONS(64, c9_pmcr, env->cp15.c9_pmcr, set_c9_pmcr(env, value))
 
-static inline uint64_t get_c9_pmcnten(CPUState *env)
-{
-    return env->cp15.c9_pmcnten;
-}
 static inline void set_c9_pmcnten(CPUState *env, uint64_t val)
 {
     val &= (1 << 31);
     env->cp15.c9_pmcnten |= val;
 }
-RW_FUNCTIONS(64, c9_pmcnten, get_c9_pmcnten(env), set_c9_pmcnten(env, value))
+RW_FUNCTIONS(64, c9_pmcnten, env->cp15.c9_pmcnten, set_c9_pmcnten(env, value))
 
 static inline void set_c9_pmcntclr(CPUState *env, uint64_t val)
 {
     val &= (1 << 31);
     env->cp15.c9_pmcnten &= ~val;
 }
-RW_FUNCTIONS(64, c9_pmcntclr, get_c9_pmcnten(env), set_c9_pmcntclr(env, value))
+RW_FUNCTIONS(64, c9_pmcntclr, env->cp15.c9_pmcnten, set_c9_pmcntclr(env, value))
 
-static inline uint64_t get_c9_pmovsr(CPUState *env)
-{
-    return env->cp15.c9_pmovsr;
-}
 static inline void set_c9_pmovsr(CPUState *env, uint64_t val)
 {
     env->cp15.c9_pmovsr &= ~val;
 }
-RW_FUNCTIONS(64, c9_pmovsr, get_c9_pmovsr(env), set_c9_pmovsr(env, value))
+RW_FUNCTIONS(64, c9_pmovsr, env->cp15.c9_pmovsr, set_c9_pmovsr(env, value))
 
-static inline uint64_t get_c9_pmuserenr(CPUState *env)
-{
-    return env->cp15.c9_pmuserenr;
-}
 static inline void set_c9_pmuserenr(CPUState *env, uint64_t val)
 {
     env->cp15.c9_pmuserenr = val & 1;
     /* changes access rights for cp registers, so flush tbs */
     tb_flush(env);
 }
-RW_FUNCTIONS(64, c9_pmuserenr, get_c9_pmuserenr(env), set_c9_pmuserenr(env, value))
+RW_FUNCTIONS(64, c9_pmuserenr, env->cp15.c9_pmuserenr, set_c9_pmuserenr(env, value))
 
-static inline uint64_t get_c9_pminten(CPUState *env)
-{
-    return env->cp15.c9_pminten;
-}
 static inline void set_c9_pminten(CPUState *env, uint64_t val)
 {
     /* We have no event counters so only the C bit can be changed */
     val &= (1 << 31);
     env->cp15.c9_pminten |= val;
 }
-RW_FUNCTIONS(64, c9_pminten, get_c9_pminten(env), set_c9_pminten(env, value))
+RW_FUNCTIONS(64, c9_pminten, env->cp15.c9_pminten, set_c9_pminten(env, value))
 
 static inline void set_c9_pmintclr(CPUState *env, uint64_t val)
 {
     val &= (1 << 31);
     env->cp15.c9_pminten &= ~val;
 }
-RW_FUNCTIONS(64, c9_pmintclr, get_c9_pminten(env), set_c9_pmintclr(env, value))
+RW_FUNCTIONS(64, c9_pmintclr, env->cp15.c9_pminten, set_c9_pmintclr(env, value))
 
-static inline uint64_t get_c1_sctlr(CPUState *env)
-{
-    return env->cp15.c1_sys;
-}
 static inline void set_c1_sctlr(CPUState *env, uint64_t val)
 {
     env->cp15.c1_sys = val;
@@ -384,12 +340,8 @@ static inline void set_c1_sctlr(CPUState *env, uint64_t val)
     /* This may enable/disable the MMU, so do a TLB flush.  */
     tlb_flush(env, 1, true);
 }
-RW_FUNCTIONS(64, c1_sctlr, get_c1_sctlr(env), set_c1_sctlr(env, value))
+RW_FUNCTIONS(64, c1_sctlr, env->cp15.c1_sys, set_c1_sctlr(env, value))
 
-static inline uint64_t get_c1_cpacr(CPUState *env)
-{
-    return env->cp15.c1_coproc;
-}
 static inline void set_c1_cpacr(CPUState *env, uint64_t val)
 {
     if (env->cp15.c1_coproc != val) {
@@ -398,12 +350,8 @@ static inline void set_c1_cpacr(CPUState *env, uint64_t val)
         tb_flush(env);
     }
 }
-RW_FUNCTIONS(64, c1_cpacr, get_c1_cpacr(env), set_c1_cpacr(env, value))
+RW_FUNCTIONS(64, c1_cpacr, env->cp15.c1_coproc, set_c1_cpacr(env, value))
 
-static inline uint64_t get_c6_rgnr(CPUState *env)
-{
-    return env->cp15.c6_region_number;
-}
 static inline void set_c6_rgnr(CPUState *env, uint64_t val)
 {
     if (val >= env->number_of_mpu_regions) {
@@ -411,7 +359,7 @@ static inline void set_c6_rgnr(CPUState *env, uint64_t val)
     }
     env->cp15.c6_region_number = val;
 }
-RW_FUNCTIONS(64, c6_rgnr, get_c6_rgnr(env), set_c6_rgnr(env, value))
+RW_FUNCTIONS(64, c6_rgnr, env->cp15.c6_region_number, set_c6_rgnr(env, value))
 
 static inline uint64_t get_c6_drbar(CPUState *env)
 {
@@ -565,50 +513,11 @@ static ARMCPRegInfo general_coprocessor_registers[] = {
     ARM32_CP_REG_DEFINE(TLBTR,            15,   0,   0,   0,   3,   1,  RO | CONST(0)) /* No lockable TLB entries.  */ // TLBTR, TLB Type Register
 
     // crm == 3..7, opc2 == 0..7
-    READ_AS_ZERO(15, 0, 0, 3, 0, 1)
-    READ_AS_ZERO(15, 0, 0, 3, 1, 1)
-    READ_AS_ZERO(15, 0, 0, 3, 2, 1)
-    READ_AS_ZERO(15, 0, 0, 3, 3, 1)
-    READ_AS_ZERO(15, 0, 0, 3, 4, 1)
-    READ_AS_ZERO(15, 0, 0, 3, 5, 1)
-    READ_AS_ZERO(15, 0, 0, 3, 6, 1)
-    READ_AS_ZERO(15, 0, 0, 3, 7, 1)
-
-    READ_AS_ZERO(15, 0, 0, 4, 0, 1)
-    READ_AS_ZERO(15, 0, 0, 4, 1, 1)
-    READ_AS_ZERO(15, 0, 0, 4, 2, 1)
-    READ_AS_ZERO(15, 0, 0, 4, 3, 1)
-    READ_AS_ZERO(15, 0, 0, 4, 4, 1)
-    READ_AS_ZERO(15, 0, 0, 4, 5, 1)
-    READ_AS_ZERO(15, 0, 0, 4, 6, 1)
-    READ_AS_ZERO(15, 0, 0, 4, 7, 1)
-
-    READ_AS_ZERO(15, 0, 0, 5, 0, 1)
-    READ_AS_ZERO(15, 0, 0, 5, 1, 1)
-    READ_AS_ZERO(15, 0, 0, 5, 2, 1)
-    READ_AS_ZERO(15, 0, 0, 5, 3, 1)
-    READ_AS_ZERO(15, 0, 0, 5, 4, 1)
-    READ_AS_ZERO(15, 0, 0, 5, 5, 1)
-    READ_AS_ZERO(15, 0, 0, 5, 6, 1)
-    READ_AS_ZERO(15, 0, 0, 5, 7, 1)
-
-    READ_AS_ZERO(15, 0, 0, 6, 0, 1)
-    READ_AS_ZERO(15, 0, 0, 6, 1, 1)
-    READ_AS_ZERO(15, 0, 0, 6, 2, 1)
-    READ_AS_ZERO(15, 0, 0, 6, 3, 1)
-    READ_AS_ZERO(15, 0, 0, 6, 4, 1)
-    READ_AS_ZERO(15, 0, 0, 6, 5, 1)
-    READ_AS_ZERO(15, 0, 0, 6, 6, 1)
-    READ_AS_ZERO(15, 0, 0, 6, 7, 1)
-
-    READ_AS_ZERO(15, 0, 0, 7, 0, 1)
-    READ_AS_ZERO(15, 0, 0, 7, 1, 1)
-    READ_AS_ZERO(15, 0, 0, 7, 2, 1)
-    READ_AS_ZERO(15, 0, 0, 7, 3, 1)
-    READ_AS_ZERO(15, 0, 0, 7, 4, 1)
-    READ_AS_ZERO(15, 0, 0, 7, 5, 1)
-    READ_AS_ZERO(15, 0, 0, 7, 6, 1)
-    READ_AS_ZERO(15, 0, 0, 7, 7, 1)
+    READ_AS_ZERO(15, 0, 0, 3, ANY, 1)
+    READ_AS_ZERO(15, 0, 0, 4, ANY, 1)
+    READ_AS_ZERO(15, 0, 0, 5, ANY, 1)
+    READ_AS_ZERO(15, 0, 0, 6, ANY, 1)
+    READ_AS_ZERO(15, 0, 0, 7, ANY, 1)
 
     // crn == 3
     // The params are:  name              cp, op1, crn, crm, op2,  el,  extra_type, ...

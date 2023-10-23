@@ -118,6 +118,11 @@ target_ulong HELPER(check_address_reservation)(CPUState * env, ram_addr_t addres
     return check_address_reservation(env, address);
 }
 
+void HELPER(cancel_reservation)(CPUState * env)
+{
+    cancel_reservation(env);
+}
+
 void HELPER(var_log)(target_ulong v)
 {
     tlib_printf(LOG_LEVEL_INFO, "Var Log: 0x" TARGET_FMT_lx, v);

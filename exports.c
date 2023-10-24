@@ -323,26 +323,14 @@ int tlib_restore_context(void);
 
 extern void *global_retaddr;
 
-// This function needs to *not* be wrapped by the unwind.h macros to avoid leaking
-// slots on the unwind stack. As an example: We enter tlib_execute_ex and do a
-// PUSH_ENV, which takes env_idx from 0 to 1 (tlib_execute_ex is never executed from
-// a C -> C# -> C callback, only from the CPU loop, so it will always be 0 to 1).
-// Then, if tlib_execute runs to the end normally, the _ex wrapper will also run to
-// its end and do a POP_ENV, but when handling a watchpoint, we won't get to the end
-// of the wrapper because first we will run TlibRestartTranslationBlock on the C# side
-// (in CpuThreadPauseGuard.Initialize) which is also a C import, so then env_idx goes
-// from 1 to 2, and then tlib_restart_... calls interrupt_current_translation_block
-// which does a longjmp() to a jmp_env defined by the CPU to go back to the CPU loop
-// on the C side, so we never get to the end of tlib_restart_... . This means we've
-// increased env_idx from 1 to 2, and the next wrapper return will be the one from
-// tlib_execute_ex at the very beginning (no more wrappers on the way) - then we will
-// decrease env_idx from 2 to 1 at the final C -> C# exit, losing one slot.
 // This function should only be called from at most one level of C -> C# calls, otherwise
 // when the outermost C# method returns the frames of the inner ones will be longjmped over.
 void tlib_restart_translation_block()
 {
     env->tb_interrupt_request_from_callback = 1;
 }
+
+EXC_VOID_0(tlib_restart_translation_block)
 
 void tlib_set_return_request()
 {

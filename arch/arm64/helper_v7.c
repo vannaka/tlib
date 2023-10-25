@@ -614,8 +614,12 @@ inline int get_phys_addr(CPUState *env, target_ulong address, int access_type, i
     if (arm_feature(env, ARM_FEATURE_PMSA)) {
         return get_phys_addr_pmsav8(env, address, access_type, el, return_address, suppress_faults, phys_ptr, prot, page_size, false);
     }
-    return get_phys_addr_v8(env, address, access_type, mmu_idx, return_address, suppress_faults, phys_ptr, prot, page_size,
-                                false);
+
+    int result = get_phys_addr_v8(env, address, access_type, mmu_idx, return_address, suppress_faults, phys_ptr, prot, page_size,
+                                  false);
+    // 'get_phys_addr_v8' shouldn't return in case of a fault unless fault handling is suppressed.
+    tlib_assert(result == TRANSLATE_SUCCESS || suppress_faults);
+    return result;
 }
 
 target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
@@ -668,6 +672,10 @@ int tlb_fill(CPUState *env1, target_ulong addr, int access_type, int mmu_idx, vo
     saved_env = env;
     env = env1;
     ret = cpu_handle_mmu_fault(env, addr, access_type, mmu_idx, (uintptr_t)retaddr, no_page_fault);
+
+    // Unless fault handling is suppressed with 'no_page_fault', we will never get back here
+    // in case of a fault with MMU (only). Faults are handled directly in that function.
+    // The code below handles MPU faults.
     if (unlikely(ret == TRANSLATE_FAIL && !no_page_fault)) {
         // access_type == CODE ACCESS - do not fire block_end hooks!
         cpu_loop_exit_restore(env, (uintptr_t)retaddr, access_type != ACCESS_INST_FETCH);

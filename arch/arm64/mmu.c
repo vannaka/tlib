@@ -99,8 +99,13 @@ void handle_mmu_fault_v8(CPUState *env, target_ulong address, int access_type, u
     }
 
     env->exception.vaddress = address;
+
+    // 'return_address' is a host address for the generated code that triggered TLB miss.
     if (return_address) {
         tlib_assert(env->current_tb);
+
+        // The state has to be restored before calling 'raise_exception'. Otherwise, 'env->exception.syndrome'
+        // set in 'raise_exception' gets overwritten in 'restore_state_to_opc'.
         cpu_restore_state_and_restore_instructions_count(env, env->current_tb, return_address);
     }
 

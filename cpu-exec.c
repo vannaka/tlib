@@ -114,7 +114,7 @@ target_ulong virt_to_phys(target_ulong virtual, uint32_t access_type, uint32_t n
 
 int tb_invalidated_flag;
 
-static void TLIB_NORETURN cpu_loop_exit_without_hook(CPUState *env)
+void TLIB_NORETURN cpu_loop_exit_without_hook(CPUState *env)
 {
     env->current_tb = NULL;
     longjmp(env->jmp_env, 1);

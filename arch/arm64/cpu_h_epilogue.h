@@ -172,6 +172,7 @@ int bank_number(int mode);
 int exception_target_el(CPUARMState *env);
 uint64_t mte_check(CPUARMState *env, uint32_t desc, uint64_t ptr, uintptr_t ra);
 bool mte_probe(CPUARMState *env, uint32_t desc, uint64_t ptr);
+void raise_exception_without_block_end_hooks(CPUARMState *env, uint32_t excp, uint32_t syndrome, uint32_t target_el);
 void raise_exception(CPUARMState *env, uint32_t excp, uint32_t syndrome, uint32_t target_el);
 void raise_exception_ra(CPUARMState *env, uint32_t excp, uint32_t syndrome, uint32_t target_el, uintptr_t ra);
 int r14_bank_number(int mode);

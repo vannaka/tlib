@@ -69,6 +69,7 @@ int cpu_restore_state_and_restore_instructions_count(CPUState *env, struct Trans
 TranslationBlock *tb_gen_code(CPUState *env, target_ulong pc, target_ulong cs_base, int flags, uint16_t cflags);
 void cpu_exec_init(CPUState *env);
 void cpu_exec_init_all();
+void TLIB_NORETURN cpu_loop_exit_without_hook(CPUState *env1);
 void TLIB_NORETURN cpu_loop_exit(CPUState *env1);
 void TLIB_NORETURN cpu_loop_exit_restore(CPUState *env1, uintptr_t pc, uint32_t call_hook);
 void tb_invalidate_phys_page_range(tb_page_addr_t start, tb_page_addr_t end, int is_cpu_write_access);

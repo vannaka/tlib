@@ -104,7 +104,13 @@ void handle_mmu_fault_v8(CPUState *env, target_ulong address, int access_type, u
         cpu_restore_state_and_restore_instructions_count(env, env->current_tb, return_address);
     }
 
-    raise_exception(env, exception_type, syndrome, target_el);
+    // Both always end with longjmp to the main cpu loop so they never return.
+    if (access_type == ACCESS_INST_FETCH) {
+        raise_exception_without_block_end_hooks(env, exception_type, syndrome, target_el);
+    } else {
+        raise_exception(env, exception_type, syndrome, target_el);
+    }
+    tlib_assert_not_reached();
 }
 
 int get_phys_addr_v8(CPUState *env, target_ulong address, int access_type, int mmu_idx, uintptr_t return_address,

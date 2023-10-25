@@ -44,8 +44,7 @@ int exception_target_el(CPUARMState *env)
     return target_el;
 }
 
-void raise_exception(CPUARMState *env, uint32_t excp,
-                     uint32_t syndrome, uint32_t target_el)
+void raise_exception_internal(CPUARMState *env, uint32_t excp, uint32_t syndrome, uint32_t target_el, bool suppress_block_end_hooks)
 {
     tlib_assert(syndrome);
     CPUState *cs = env_cpu(env);
@@ -82,7 +81,21 @@ void raise_exception(CPUARMState *env, uint32_t excp,
 
     env->exception.syndrome = syndrome;
     env->exception.target_el = target_el;
-    cpu_loop_exit(cs);
+    if (suppress_block_end_hooks) {
+        cpu_loop_exit_without_hook(cs);
+    } else {
+        cpu_loop_exit(cs);
+    }
+}
+
+void raise_exception_without_block_end_hooks(CPUARMState *env, uint32_t excp, uint32_t syndrome, uint32_t target_el)
+{
+    raise_exception_internal(env, excp, syndrome, target_el, true);
+}
+
+void raise_exception(CPUARMState *env, uint32_t excp, uint32_t syndrome, uint32_t target_el)
+{
+    raise_exception_internal(env, excp, syndrome, target_el, false);
 }
 
 void raise_exception_ra(CPUARMState *env, uint32_t excp, uint32_t syndrome,

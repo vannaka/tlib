@@ -325,12 +325,12 @@ extern void *global_retaddr;
 
 // This function should only be called from at most one level of C -> C# calls, otherwise
 // when the outermost C# method returns the frames of the inner ones will be longjmped over.
-void tlib_restart_translation_block()
+void tlib_request_translation_block_interrupt()
 {
     env->tb_interrupt_request_from_callback = 1;
 }
 
-EXC_VOID_0(tlib_restart_translation_block)
+EXC_VOID_0(tlib_request_translation_block_interrupt)
 
 void tlib_set_return_request()
 {

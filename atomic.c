@@ -50,6 +50,7 @@ static void initialize_atomic_memory_state(atomic_memory_state_t *sm)
             sm->reservations[i].active_flag = 0;
             sm->reservations[i].address = 0;
             sm->reservations[i].locking_cpu_id = NO_CPU_ID;
+            sm->reservations[i].manual_free = 0;
             sm->reservations_by_cpu[i] = NO_RESERVATION;
         }
 
@@ -81,7 +82,7 @@ static inline address_reservation_t *find_reservation_by_cpu(struct CPUState *en
     return (reservation_id == NO_RESERVATION) ? NULL : &env->atomic_memory_state->reservations[reservation_id];
 }
 
-static inline address_reservation_t *make_reservation(struct CPUState *env, target_phys_addr_t address)
+static inline address_reservation_t *make_reservation(struct CPUState *env, target_phys_addr_t address, uint8_t manual_free)
 {
     if (unlikely(env->atomic_memory_state->reservations_count == MAX_NUMBER_OF_CPUS)) {
         tlib_abort("No more address reservation slots");
@@ -91,6 +92,7 @@ static inline address_reservation_t *make_reservation(struct CPUState *env, targ
     reservation->active_flag = 1;
     reservation->address = address;
     reservation->locking_cpu_id = env->id;
+    reservation->manual_free = manual_free;
 
     env->atomic_memory_state->reservations_by_cpu[env->id] = env->atomic_memory_state->reservations_count;
     env->atomic_memory_state->reservations_count++;
@@ -98,7 +100,7 @@ static inline address_reservation_t *make_reservation(struct CPUState *env, targ
     return reservation;
 }
 
-static inline void free_reservation(struct CPUState *env, address_reservation_t *reservation)
+static inline void free_reservation(struct CPUState *env, address_reservation_t *reservation, uint8_t is_manual)
 {
 #if DEBUG
     if (reservation->active_flag == 0) {
@@ -108,6 +110,10 @@ static inline void free_reservation(struct CPUState *env, address_reservation_t 
         tlib_abort("Reservations count is 0, but trying to free one");
     }
 #endif
+
+    if (reservation->manual_free && !is_manual) {
+        return;
+    }
 
     env->atomic_memory_state->reservations_by_cpu[reservation->locking_cpu_id] = NO_RESERVATION;
     if (reservation->id != env->atomic_memory_state->reservations_count - 1) {
@@ -123,6 +129,26 @@ static inline void free_reservation(struct CPUState *env, address_reservation_t 
 
     env->atomic_memory_state->reservations[env->atomic_memory_state->reservations_count - 1].active_flag = 0;
     env->atomic_memory_state->reservations_count--;
+}
+
+// If manual_free is true then the performed reservation will only be able to be cancelled explicitly,
+// by calling `cancel_reservation` or by perfroming a different reservation on a CPU that already had
+// had a reserved address.
+static void reserve_address_inner(struct CPUState *env, target_phys_addr_t address, uint8_t manual_free)
+{
+    address_reservation_t *reservation;
+
+    ensure_locked_by_me(env);
+
+    reservation = find_reservation_by_cpu(env);
+    if (reservation != NULL) {
+        if (reservation->address == address) {
+            return;
+        }
+        // cancel the previous reservation and set a new one
+        free_reservation(env, reservation, 1);
+    }
+    make_reservation(env, address, manual_free);
 }
 
 void register_in_atomic_memory_state(atomic_memory_state_t *sm, int id)
@@ -201,19 +227,7 @@ void reserve_address(struct CPUState *env, target_phys_addr_t address)
         return;
     }
 
-    address_reservation_t *reservation;
-
-    ensure_locked_by_me(env);
-
-    reservation = find_reservation_by_cpu(env);
-    if (reservation != NULL) {
-        if (reservation->address == address) {
-            return;
-        }
-        // cancel the previous reservation and set a new one
-        free_reservation(env, reservation);
-    }
-    make_reservation(env, address);
+    reserve_address_inner(cpu, address, 0);
 }
 
 uint32_t check_address_reservation(struct CPUState *env, target_phys_addr_t address)
@@ -223,9 +237,7 @@ uint32_t check_address_reservation(struct CPUState *env, target_phys_addr_t addr
         return 0;
     }
 
-    ensure_locked_by_me(env);
-    address_reservation_t *reservation = find_reservation_by_cpu(env);
-    return (reservation == NULL || reservation->address != address);
+    return check_address_reservation_always(cpu, address);
 }
 
 void register_address_access(struct CPUState *env, target_phys_addr_t address)
@@ -244,11 +256,9 @@ void register_address_access(struct CPUState *env, target_phys_addr_t address)
     address_reservation_t *reservation = find_reservation_on_address(env, address, 0);
     while (reservation != NULL) {
         if (reservation->locking_cpu_id != env->id) {
-            free_reservation(env, reservation);
-            reservation = find_reservation_on_address(env, address, 0);
-        } else {
-            reservation = find_reservation_on_address(env, address, reservation->id + 1);
+            free_reservation(env, reservation, 0);
         }
+        reservation = find_reservation_on_address(env, address, reservation->id + 1);
     }
 }
 
@@ -259,10 +269,29 @@ void cancel_reservation(struct CPUState *env)
         return;
     }
 
+    cancel_reservation_always(env);
+}
+
+// Functions with the _always suffix, will run no matter the amount of registered CPU cores
+
+void reserve_address_always(struct CPUState *env, target_phys_addr_t address)
+{
+    reserve_address_inner(env, address, 1);
+}
+
+uint32_t check_address_reservation_always(struct CPUState *env, target_phys_addr_t address)
+{
+    ensure_locked_by_me(env);
+    address_reservation_t *reservation = find_reservation_by_cpu(env);
+    return (reservation == NULL || reservation->address != address);
+}
+
+void cancel_reservation_always(struct CPUState *env)
+{
     ensure_locked_by_me(env);
 
     address_reservation_t *reservation = find_reservation_by_cpu(env);
     if (reservation != NULL) {
-        free_reservation(env, reservation);
+        free_reservation(env, reservation, 1);
     }
 }

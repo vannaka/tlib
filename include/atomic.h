@@ -18,6 +18,7 @@ typedef struct address_reservation_t
     uint64_t address;
     uint8_t active_flag;
     uint8_t id;
+    uint8_t manual_free;
 } address_reservation_t;
 
 typedef struct atomic_memory_state_t
@@ -49,5 +50,10 @@ void reserve_address(struct CPUState *env, target_phys_addr_t address);
 uint32_t check_address_reservation(struct CPUState *env, target_phys_addr_t address);
 void register_address_access(struct CPUState *env, target_phys_addr_t address);
 void cancel_reservation(struct CPUState *env);
+
+// Functions with the _always suffix, will run no matter the amount of registered CPU cores
+void reserve_address_always(struct CPUState *env, target_phys_addr_t address);
+uint32_t check_address_reservation_always(struct CPUState *env, target_phys_addr_t address);
+void cancel_reservation_always(struct CPUState *env);
 
 #endif

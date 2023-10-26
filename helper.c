@@ -123,6 +123,21 @@ void HELPER(cancel_reservation)(CPUState * env)
     cancel_reservation(env);
 }
 
+void HELPER(reserve_address_always)(CPUState * env, ram_addr_t address)
+{
+    reserve_address_always(env, address);
+}
+
+target_ulong HELPER(check_address_reservation_always)(CPUState * env, ram_addr_t address)
+{
+    return check_address_reservation_always(env, address);
+}
+
+void HELPER(cancel_reservation_always)(CPUState * env)
+{
+    cancel_reservation_always(env);
+}
+
 void HELPER(var_log)(target_ulong v)
 {
     tlib_printf(LOG_LEVEL_INFO, "Var Log: 0x" TARGET_FMT_lx, v);

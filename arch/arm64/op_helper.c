@@ -522,10 +522,15 @@ static void msr_mrs_banked_exc_checks(CPUARMState *env, uint32_t tgtmode,
      */
     int curmode = env->uncached_cpsr & CPSR_M;
 
-    /* ELR_Hyp, SPSR_Hyp on some cores: special cases because access from tgtmode is OK */
-    if (regno == 17 || (regno == 16 && env->arm_core_config->spsr_hyp_accessible_from_hyp_mode)) {
+    /* ELR_Hyp, SPSR_Hyp: access from tgtmode is OK. It's CONSTRAINED UNPREDICTABLE for SPSR_Hyp
+     * but it works on hardware, FVP and is used in a common Cortex-R52 initialization procedure.
+     */
+    if (regno == 17 || regno == 16) {
         if (curmode != ARM_CPU_MODE_HYP && curmode != ARM_CPU_MODE_MON) {
             goto undef;
+        }
+        if (regno == 16) {
+            tlib_printf(LOG_LEVEL_ERROR, "Accessing SPSR_Hyp from Hyp mode is unpredictable!");
         }
         return;
     }
@@ -557,7 +562,7 @@ static void msr_mrs_banked_exc_checks(CPUARMState *env, uint32_t tgtmode,
     }
 
     if (tgtmode == ARM_CPU_MODE_HYP) {
-        /* SPSR_Hyp, r13_hyp: accessible from Monitor mode only */
+        /* r13_hyp: accessible from Monitor mode only */
         if (curmode != ARM_CPU_MODE_MON) {
             goto undef;
         }

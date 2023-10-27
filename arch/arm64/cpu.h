@@ -394,10 +394,6 @@ typedef struct ARMCoreConfig {
     /* Generic timer counter frequency, in Hz */
     uint64_t gt_cntfrq_hz;
 
-    // True if, even not guaranteed by the specification, CPU supports accessing SPSR_hyp from HYP mode.
-    // This is true, e.g., for Cortex-R52.
-    bool spsr_hyp_accessible_from_hyp_mode;
-
     TTable *cp_regs;
 } ARMCoreConfig;
 

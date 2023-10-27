@@ -2881,11 +2881,9 @@ static bool msr_banked_access_decode(DisasContext *s, int r, int sysm, int rn,
     case ARM_CPU_MODE_HYP:
         /*
          * r13_hyp can only be accessed from Monitor mode (and so we can
-         * forbid accesses from EL2 or below). elr_hyp can be accessed
-         * also from Hyp mode, so forbid accesses from EL0 or EL1.
-         * The SPSR_hyp may be accessible from Hyp mode on some hardware,
-         * so this special case is checked inside the helper.
-	 */
+         * forbid accesses from EL2 or below). elr_hyp and SPSR_Hyp can be
+         * accessed also from Hyp mode, so forbid accesses from EL0 or EL1.
+         */
         if (!arm_dc_feature(s, ARM_FEATURE_EL2) || s->current_el < 2 ||
             (s->current_el < 3 && *regno != 17 && *regno != 16)) {
             goto undef;

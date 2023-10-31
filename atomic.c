@@ -5,6 +5,10 @@
 static inline void ensure_locked_by_me(struct CPUState *env)
 {
 #if DEBUG
+    if (env->atomic_memory_state->number_of_registered_cpus == 1) {
+        return;
+    }
+
     if (env->atomic_memory_state->locking_cpu_id != env->id) {
         tlib_abort("Tried to release global memory lock by the cpu that does not own it!");
     }

@@ -266,10 +266,6 @@ typedef struct {
 #define ARM_CPUID(env) (env->cp15.c0_cpuid)
 
 typedef struct ARMCoreConfig {
-    /* CPU has virtualization extension */
-    bool has_el2;
-    /* CPU has security extension */
-    bool has_el3;
     /* CPU has PMU (Performance Monitor Unit) */
     bool has_pmu;
     /* CPU has VFP */

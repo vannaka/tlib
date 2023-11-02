@@ -114,8 +114,8 @@ void cpu_init_a75_a76_a78(CPUState *env, uint32_t id)
     set_feature(env, ARM_FEATURE_CBAR_RO);
     set_feature(env, ARM_FEATURE_PMU);
 
-    env->arm_core_config->has_el2 = true;
-    env->arm_core_config->has_el3 = true;
+    set_feature(env, ARM_FEATURE_EL2);
+    set_feature(env, ARM_FEATURE_EL3);
 
     // From B2.4 AArch64 registers
     env->arm_core_config->clidr = 0x82000023;  // No L3 cache version.
@@ -198,8 +198,8 @@ void cpu_init_a53(CPUState *env, uint32_t id)
     set_feature(env, ARM_FEATURE_CBAR_RO);
     set_feature(env, ARM_FEATURE_PMU);
 
-    env->arm_core_config->has_el2 = true;
-    env->arm_core_config->has_el3 = true;
+    set_feature(env, ARM_FEATURE_EL2);
+    set_feature(env, ARM_FEATURE_EL3);
 
     env->arm_core_config->clidr = 0x0A200023;
     env->arm_core_config->ctr = 0x84448004;
@@ -277,7 +277,7 @@ void cpu_init_r52(CPUState *env, uint32_t id)
     set_feature(env, ARM_FEATURE_MVFR); // from 15.5
     set_feature(env, ARM_FEATURE_THUMB_DSP);
 
-    env->arm_core_config->has_el2 = true;        // EL2 virtualization, from 1.2
+    set_feature(env, ARM_FEATURE_EL2); // EL2 virtualization, from 1.2
 
     // SPSR_hyp accesses from Hypervisor mode are UNPREDICTABLE. However, a common Cortex-R52 initialization
     // procedure, that works correctly in hardware and FVP, sets it so let's also allow such accesses.
@@ -454,8 +454,6 @@ static void cpu_init_core_config(CPUState *env, uint32_t id)
 
     env->vfp.xregs[ARM_VFP_FPEXC] = 0x700;  // Bits 8-10 are RES1 for A53, A75 and R52 where it's accessible.
     env->vfp.xregs[ARM_VFP_FPSID] = env->arm_core_config->reset_fpsid;
-
-    set_el_features(env, env->arm_core_config->has_el2, env->arm_core_config->has_el3);
 }
 
 void cpu_init_v8(CPUState *env, uint32_t id)

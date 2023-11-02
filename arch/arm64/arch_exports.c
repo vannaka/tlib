@@ -44,7 +44,7 @@ EXC_INT_1(uint64_t, tlib_get_system_register, const char *, name)
 
 uint32_t tlib_has_el3()
 {
-    return cpu->arm_core_config->has_el3;
+    return arm_feature(cpu, ARM_FEATURE_EL3);
 }
 EXC_INT_0(uint32_t, tlib_has_el3)
 
@@ -52,19 +52,11 @@ uint32_t tlib_set_available_els(bool el2_enabled, bool el3_enabled)
 {
     enum {
         SIMULATION_ALREADY_STARTED = 1,
-        EL2_OR_EL3_ENABLING_FAILED = 2,
         SUCCESS                    = 3,
     };
 
     if (cpu->instructions_count_total_value != 0) {
         return SIMULATION_ALREADY_STARTED;
-    }
-
-    // Only allow enabling ELs for the cores that really support them.
-    bool el2_enable_error = !cpu->arm_core_config->has_el2 && el2_enabled;
-    bool el3_enable_error = !cpu->arm_core_config->has_el3 && el3_enabled;
-    if (el2_enable_error || el3_enable_error) {
-        return EL2_OR_EL3_ENABLING_FAILED;
     }
 
     set_el_features(cpu, el2_enabled, el3_enabled);

@@ -500,6 +500,8 @@ static inline void set_cp14_c6_teecr(CPUState *env, uint64_t val)
 }
 RW_FUNCTIONS(64, cp14_c6_teecr, env->teecr, set_cp14_c6_teecr(env, value))
 
+RW_FUNCTIONS(64, c12_vbar, env->cp15.c12_vbar, env->cp15.c12_vbar = value & ~0xF)
+
 #define CREATE_FEATURE_REG(name, op2) \
     ARM32_CP_REG_DEFINE(name,          15,   0,   0,   1,   op2,   1,  RW, FIELD(cp15.c0_c1[op2])) // Processor Feature Register [op2]
 
@@ -839,6 +841,11 @@ static ARMCPRegInfo feature_thumb2ee_registers[] = {
     ARM32_CP_REG_DEFINE(TEEHBR,           14,   6,   1,   0,   0,   1,  RW, FIELD(teehbr))         // Thumb EE Handler Base Register
 };
 
+static ARMCPRegInfo feature_v7sec_registers[] = {
+    // The params are:  name              cp, op1, crn, crm, op2,  el,  extra_type, ...
+    ARM32_CP_REG_DEFINE(VBAR,             15,   0,   12,   0,   0,  1,  RW, RW_FNS(c12_vbar)) // VBAR, Vector Base Address Register
+};
+
 // The keys are dynamically allocated so let's make TTable free them when removing the entry.
 static void entry_remove_callback(TTable_entry *entry)
 {
@@ -1013,6 +1020,10 @@ inline static int count_extra_registers(const CPUState *env)
         extra_regs += ARM_CP_ARRAY_COUNT_ANY(feature_thumb2ee_registers);
     }
 
+    if (arm_feature(env, ARM_FEATURE_V7SEC)) {
+        extra_regs += ARM_CP_ARRAY_COUNT_ANY(feature_v7sec_registers);
+    }
+
     extra_regs += ARM_CP_ARRAY_COUNT_ANY(has_cp15_c13_registers);
     extra_regs += ARM_CP_ARRAY_COUNT_ANY(sctlr_register);
 
@@ -1086,6 +1097,10 @@ inline static void populate_ttable(CPUState *env)
         regs_array_add(env, feature_thumb2ee_registers);
     }
 
+    if (arm_feature(env, ARM_FEATURE_V7SEC)) {
+        regs_array_add(env, feature_v7sec_registers);
+    }
+
     // c13 are always present, but without ARM_FEATURE_V6K should be read as 0
     if (arm_feature(env, ARM_FEATURE_V6K) || arm_feature(env, ARM_FEATURE_V7)) {
         regs_array_add(env, has_cp15_c13_registers);
@@ -1099,6 +1114,8 @@ void system_instructions_and_registers_init(CPUState *env)
 {
     // This would break logic handling ACTLR (Auxiliary Control Register) - we assume that these are mutually exclusive
     assert(!(arm_feature(env, ARM_FEATURE_XSCALE) && arm_feature(env, ARM_FEATURE_AUXCR)));
+    // In v7, Security Extensions should not be enabled when PMSA is enabled
+    assert(!(arm_feature(env, ARM_FEATURE_V7SEC) && arm_feature(env, ARM_FEATURE_PMSA)));
 
     int extra_regs = count_extra_registers(env);
 

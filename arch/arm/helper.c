@@ -165,6 +165,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_V6);
         set_feature(env, ARM_FEATURE_V6K);
         set_feature(env, ARM_FEATURE_V7);
+        set_feature(env, ARM_FEATURE_V7SEC);
         set_feature(env, ARM_FEATURE_AUXCR);
         set_feature(env, ARM_FEATURE_THUMB2);
         set_feature(env, ARM_FEATURE_VFP);
@@ -189,6 +190,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_V6);
         set_feature(env, ARM_FEATURE_V6K);
         set_feature(env, ARM_FEATURE_V7);
+        set_feature(env, ARM_FEATURE_V7SEC);
         set_feature(env, ARM_FEATURE_AUXCR);
         set_feature(env, ARM_FEATURE_THUMB2);
         set_feature(env, ARM_FEATURE_VFP);
@@ -219,6 +221,7 @@ static void cpu_reset_model_id(CPUState *env, uint32_t id)
         set_feature(env, ARM_FEATURE_V6K);
         set_feature(env, ARM_FEATURE_THUMB2);
         set_feature(env, ARM_FEATURE_V7);
+        set_feature(env, ARM_FEATURE_V7SEC);
         set_feature(env, ARM_FEATURE_VFP4);
         set_feature(env, ARM_FEATURE_VFP_FP16);
         set_feature(env, ARM_FEATURE_NEON);
@@ -1039,7 +1042,15 @@ case_EXCP_PREFETCH_ABORT:
     }
     /* High vectors.  */
     if (env->cp15.c1_sys & (1 << 13)) {
+        /* High vectors are not affected by VBAR */
         addr += 0xffff0000;
+    } else {
+        /* CPUs w/ Security Extensions allow for relocation of the
+        * vector table. c12_vbar is initialized to zero so the
+        * the following maintains compat w/ targets that don't have
+        * Security Extensions.
+        */
+        addr += env->cp15.c12_vbar;
     }
     switch_mode(env, new_mode);
     env->spsr = cpsr_read(env);

@@ -552,8 +552,10 @@ static void msr_mrs_banked_exc_checks(CPUARMState *env, uint32_t tgtmode,
             }
             break;
         case 14:
-            if (curmode == ARM_CPU_MODE_HYP || curmode == ARM_CPU_MODE_SYS) {
+            if (curmode == ARM_CPU_MODE_SYS) {
                 goto undef;
+            } else if (curmode == ARM_CPU_MODE_HYP) {
+                tlib_printf(LOG_LEVEL_ERROR, "Accessing lr_usr from Hyp mode is unpredictable!");
             }
             break;
         default:

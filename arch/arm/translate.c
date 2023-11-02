@@ -36,22 +36,22 @@
 
 #define abort() do { cpu_abort(cpu, "ABORT at %s : %d\n", __FILE__, __LINE__); } while (0)
 
-#define ENABLE_ARCH_4T  arm_feature(env, ARM_FEATURE_V4T)
-#define ENABLE_ARCH_5   arm_feature(env, ARM_FEATURE_V5)
+#define ENABLE_ARCH_4T               arm_feature(env, ARM_FEATURE_V4T)
+#define ENABLE_ARCH_5                arm_feature(env, ARM_FEATURE_V5)
 /* currently all emulated v5 cores are also v5TE, so don't bother */
-#define ENABLE_ARCH_5TE arm_feature(env, ARM_FEATURE_V5)
-#define ENABLE_ARCH_5J  0
-#define ENABLE_ARCH_6   arm_feature(env, ARM_FEATURE_V6)
-#define ENABLE_ARCH_6K  arm_feature(env, ARM_FEATURE_V6K)
-#define ENABLE_ARCH_6T2 arm_feature(env, ARM_FEATURE_THUMB2)
-#define ENABLE_ARCH_7   arm_feature(env, ARM_FEATURE_V7)
-#define ENABLE_ARCH_8   arm_feature(env, ARM_FEATURE_V8)
+#define ENABLE_ARCH_5TE              arm_feature(env, ARM_FEATURE_V5)
+#define ENABLE_ARCH_5J               0
+#define ENABLE_ARCH_6                arm_feature(env, ARM_FEATURE_V6)
+#define ENABLE_ARCH_6K               arm_feature(env, ARM_FEATURE_V6K)
+#define ENABLE_ARCH_6T2              arm_feature(env, ARM_FEATURE_THUMB2)
+#define ENABLE_ARCH_7                arm_feature(env, ARM_FEATURE_V7)
+#define ENABLE_ARCH_8                arm_feature(env, ARM_FEATURE_V8)
 
 // Masks for coprocessor instruction
-#define COPROCESSOR_INSTR_OP_OFFSET (4)
-#define COPROCESSOR_INSTR_OP_MASK (1 << COPROCESSOR_INSTR_OP_OFFSET)
+#define COPROCESSOR_INSTR_OP_OFFSET  (4)
+#define COPROCESSOR_INSTR_OP_MASK    (1 << COPROCESSOR_INSTR_OP_OFFSET)
 #define COPROCESSOR_INSTR_OP1_OFFSET (20)
-#define COPROCESSOR_INSTR_OP1_MASK (0x3f << COPROCESSOR_INSTR_OP1_OFFSET)
+#define COPROCESSOR_INSTR_OP1_MASK   (0x3f << COPROCESSOR_INSTR_OP1_OFFSET)
 #define COPROCESSOR_INSTR_OP1_PARTIAL_MASK(mask) \
     (COPROCESSOR_INSTR_OP1_MASK & ((mask) << COPROCESSOR_INSTR_OP1_OFFSET))
 
@@ -2635,7 +2635,7 @@ static TCGv gen_load_and_replicate(DisasContext *s, TCGv addr, int size)
     return tmp;
 }
 
-#define VSEL_INSN_MASK 0xff800c50
+#define VSEL_INSN_MASK  0xff800c50
 #define VSEL_INSN_VALUE 0xfe000800
 
 static int generate_vsel_insn(CPUState *env, DisasContext *s, uint32_t insn)
@@ -2644,8 +2644,7 @@ static int generate_vsel_insn(CPUState *env, DisasContext *s, uint32_t insn)
     uint32_t cc = extract32(insn, 20, 2);
     uint32_t size = extract32(insn, 8, 2);
 
-    switch (size)
-    {
+    switch (size) {
     case 1: /* 16-bit */
     case 2: /* 32-bit */
         rm = deposit32(extract32(insn, 5, 1), 1, 31, extract32(insn, 0, 4));
@@ -3795,7 +3794,7 @@ static void gen_nop_hint(DisasContext *s, int val)
         s->base.is_jmp = DISAS_WFI;
         break;
     case 2:  /* wfe */
-        if (tlib_is_wfe_and_sev_as_nop()){
+        if (tlib_is_wfe_and_sev_as_nop()) {
             break;
         }
         gen_set_pc_im(s->base.pc);
@@ -3803,7 +3802,7 @@ static void gen_nop_hint(DisasContext *s, int val)
         break;
 
     case 4:  /* sev */
-        if (tlib_is_wfe_and_sev_as_nop()){
+        if (tlib_is_wfe_and_sev_as_nop()) {
             break;
         }
         gen_helper_set_system_event();
@@ -6975,11 +6974,11 @@ static void disas_arm_insn(CPUState *env, DisasContext *s)
     target_ulong current_pc = s->base.pc;
 
     insn = ldl_code(s->base.pc);
-    
+
     if (env->count_opcodes) {
         generate_opcode_count_increment(env, insn);
     }
-    
+
     s->base.pc += 4;
 
     /* M variants do not implement ARM mode.  */
@@ -8552,26 +8551,26 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
 
                 if (rs == 15) {
 #ifdef TARGET_PROTO_ARM_M
-                  if (!(insn & (1 << 20)) && arm_feature(env, ARM_FEATURE_V8)) {
-                      /* TT, TTT, TTA, TTAT */
-                      TCGv_i32 addr, op, ttresp;
+                    if (!(insn & (1 << 20)) && arm_feature(env, ARM_FEATURE_V8)) {
+                        /* TT, TTT, TTA, TTAT */
+                        TCGv_i32 addr, op, ttresp;
 
-                      /* UNPREDICTABLE cases */
-                      if ((insn & 0x3f) || rd == 13 || rd == 15 || rn == 15) {
-                        goto illegal_op;
-                      }
+                        /* UNPREDICTABLE cases */
+                        if ((insn & 0x3f) || rd == 13 || rd == 15 || rn == 15) {
+                            goto illegal_op;
+                        }
 
-                      addr = load_reg(s, rn);
-                      op = tcg_const_i32(extract32(insn, 6, 2));
-                      ttresp = tcg_temp_new_i32();
-                      gen_helper_v8m_tt(ttresp, cpu_env, addr, op);
-                      tcg_temp_free_i32(addr);
-                      tcg_temp_free_i32(op);
-                      store_reg(s, rd, ttresp);
-                      break;
-                  }
+                        addr = load_reg(s, rn);
+                        op = tcg_const_i32(extract32(insn, 6, 2));
+                        ttresp = tcg_temp_new_i32();
+                        gen_helper_v8m_tt(ttresp, cpu_env, addr, op);
+                        tcg_temp_free_i32(addr);
+                        tcg_temp_free_i32(op);
+                        store_reg(s, rd, ttresp);
+                        break;
+                    }
 #endif
-                  goto illegal_op;
+                    goto illegal_op;
                 }
                 /* Load/store exclusive word.  */
                 addr = tcg_temp_local_new();
@@ -8616,13 +8615,12 @@ static int disas_thumb2_insn(CPUState *env, DisasContext *s, uint16_t insn_hw1)
                        LDAEX is LDREX + sync memory barrier, so might require a translation block to be finished
                        For LDA (and EX) we don't implement the memory barrier. This is fine in simple single-CPU
                        scenarios but might cause problems if used with multiple CPUs.
-                    */
-                   if(((insn >> 6) & 1) == 0)
-                   {
-                       /* LDA/STL (and variants -B,-H) stub 
-                          They are likely just Load/Store + memory barrier
-                       */
-                   }
+                     */
+                    if (((insn >> 6) & 1) == 0) {
+                        /* LDA/STL (and variants -B,-H) stub
+                           They are likely just Load/Store + memory barrier
+                         */
+                    }
                 }
                 addr = tcg_temp_local_new();
                 load_reg_var(s, addr, rn);
@@ -9608,11 +9606,11 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
     }
 
     insn = lduw_code(s->base.pc);
-    
-    if(env->count_opcodes) {
+
+    if (env->count_opcodes) {
         generate_opcode_count_increment(env, insn);
     }
-    
+
     s->base.pc += 2;
     switch (insn >> 12) {
     case 0: case 1:
@@ -9738,7 +9736,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
                 tmp = load_reg(s, rm);
                 store_reg(s, rd, tmp);
                 break;
-            case 3:/* branch [and link] exchange thumb register */
+            case 3:                    /* branch [and link] exchange thumb register */
                 tmp = load_reg(s, rm);
                 if (insn & (1 << 7)) { /* Link bit set */
                     ARCH(5);
@@ -9748,7 +9746,7 @@ static void disas_thumb_insn(CPUState *env, DisasContext *s)
                     store_reg(s, 14, tmp2);
                 }
                 /* already thumb, no need to check */
-                /* Check the link bit if set then add frame (blx), 
+                /* Check the link bit if set then add frame (blx),
                    else check if the target register is link then remove frame (bx)
                    else there was no stack change (custom jump) */
                 gen_bx(s, tmp, insn & (1 << 7) ? STACK_FRAME_ADD : (rm == 14 ? STACK_FRAME_POP : STACK_FRAME_NO_CHANGE));

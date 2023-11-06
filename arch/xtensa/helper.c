@@ -28,6 +28,7 @@
 #include "cpu.h"
 #include "osdep.h"
 #include "tb-helper.h"
+#include "ttable.h"
 
 extern CPUState *env;
 
@@ -35,99 +36,24 @@ typedef int MMUAccessType;
 typedef uint64_t vaddr;
 #define VADDR_PRIx PRIx64
 
-typedef struct
-{
-    void* key;
-    void* value;
-} TTable;
-
-bool ttable_insert(TTable *table, void *key, void *value)
-{
-    TTable *current = table;
-
-    // TODO: this can overflow!
-    while(current->key)
-    {
-        current++;
-    }
-
-    current->key = key;
-    current->value = value;
-    return true;
-}
-
-bool ttable_insert_check_strcmp(TTable *table, void *key, void *value)
-{
-    TTable *current = table;
-
-    while(current->key)
-    {
-        if(strcmp(current->key, key) == 0)
-        {
-            return false;
-        }
-        current++;
-    }
-
-    current->key = key;
-    current->value = value;
-    return true;
-}
-
-void* ttable_lookup_value_eq(TTable* table, void* key)
-{
-    TTable *current = table;
-
-    while(current->key)
-    {
-        if(current->key == key)
-        {
-            return current->value;
-        }
-
-        current++;
-    }
-    return NULL;
-}
-
-void* ttable_lookup_value_strcmp(TTable* table, void* key)
-{
-    TTable *current = table;
-
-    while(current->key)
-    {
-        if(strcmp(current->key, key) == 0)
-        {
-            return current->value;
-        }
-
-        current++;
-    }
-    return NULL;
-}
-
 #define MAX_TTABLE_SIZE 4096
 
 static TTable *hash_opcode_translators(const XtensaOpcodeTranslators *t)
 {
     unsigned i, j;
-    TTable *translator = calloc(MAX_TTABLE_SIZE, sizeof(TTable));
+    TTable *translator = ttable_create(MAX_TTABLE_SIZE, NULL, ttable_compare_key_string);
 
     for (i = 0; i < t->num_opcodes; ++i) {
         if (t->opcode[i].op_flags & XTENSA_OP_NAME_ARRAY) {
             const char * const *name = t->opcode[i].name;
 
             for (j = 0; name[j]; ++j) {
-                if(!ttable_insert_check_strcmp(translator,
-                                       (void *)name[j],
-                                       (void *)(t->opcode + i))) {
+                if (!ttable_insert_check(translator, (void *)name[j], (void *)(t->opcode + i))) {
                     tlib_abortf("Translators: Multiple definitions of '%s' opcode in a single table", name[j]);
                 }
             }
         } else {
-            if(!ttable_insert_check_strcmp(translator,
-                                   (void *)t->opcode[i].name,
-                                   (void *)(t->opcode + i))) {
+            if (!ttable_insert_check(translator, (void *)t->opcode[i].name, (void *)(t->opcode + i))) {
                 tlib_abortf("Translators: Multiple definitions of '%s' opcode in a single table", t->opcode[i].name);
             }
         }
@@ -144,15 +70,15 @@ xtensa_find_opcode_ops(const XtensaOpcodeTranslators *t,
 
 
     if (translators == NULL) {
-        translators = calloc(MAX_TTABLE_SIZE, sizeof(TTable));
+        translators = ttable_create(MAX_TTABLE_SIZE, NULL, ttable_compare_key_pointer);
     }
-    translator = ttable_lookup_value_eq(translators, (void*)t);
+    translator = ttable_lookup_value_eq(translators, (void *)t);
     if (translator == NULL) {
         translator = hash_opcode_translators(t);
 
         ttable_insert(translators, (void *)t, translator);
     }
-    return (XtensaOpcodeOps*) ttable_lookup_value_strcmp(translator, (void*) name);
+    return (XtensaOpcodeOps*)ttable_lookup_value_eq(translator, (void *)name);
 }
 
 static void init_libisa(XtensaConfig *config)

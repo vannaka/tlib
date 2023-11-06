@@ -39,6 +39,7 @@
 #include "ttable.h"
 
 #define CPU_PC(env) (is_a64(env) ? env->pc : env->regs[15])
+#define MAX_TCM_REGIONS 3
 
 // Copied from our 'arm/helper.c'.
 struct arm_cpu_t {
@@ -708,6 +709,9 @@ typedef struct CPUState {
         uint64_t disr_el1;
         uint64_t vdisr_el2;
         uint64_t vsesr_el2;
+        /* Tightly coupled memory */
+        uint64_t tcm_type;
+        uint64_t tcm_region[MAX_TCM_REGIONS];
     } cp15;
 
     struct {

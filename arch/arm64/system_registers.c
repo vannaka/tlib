@@ -760,7 +760,7 @@ ARMCPRegInfo aarch32_registers[] = {
     ARM32_CP_REG_DEFINE(SCTLR,            15,   0,   1,   0,   0,   1, RW, FIELD(cp15.sctlr_ns))  // System Control Register
     ARM32_CP_REG_DEFINE(SDCR,             15,   0,   1,   3,   1,   3, RW)  // Secure Debug Control Register
     ARM32_CP_REG_DEFINE(SDER,             15,   0,   1,   1,   1,   3, RW, FIELD(cp15.sder))  // Secure Debug Enable RegisterAArch32 System Registers
-    ARM32_CP_REG_DEFINE(TCMTR,            15,   0,   0,   0,   2,   1, RW)  // TCM Type Register
+    ARM32_CP_REG_DEFINE(TCMTR,            15,   0,   0,   0,   2,   1, RW, FIELD(cp15.tcm_type))  // TCM Type Register
     ARM32_CP_REG_DEFINE(TLBTR,            15,   0,   0,   0,   3,   1, RW)  // TLB Type Register
     ARM32_CP_REG_DEFINE(TPIDRPRW,         15,   0,  13,   0,   4,   1, RW, FIELD(cp15.tpidrprw_ns))  // PL1 Software Thread ID Register
     ARM32_CP_REG_DEFINE(TPIDRURO,         15,   0,  13,   0,   3,   0, RW, FIELD(cp15.tpidruro_ns))  // PL0 Read-Only Software Thread ID Register
@@ -1890,9 +1890,10 @@ ARMCPRegInfo cortex_r52_regs[] =
     // The params are:  name                 cp, op1, crn, crm, op2, el, extra_type, ...
     ARM32_CP_REG_DEFINE(CPUACTLR,            15,   0,   0,  15,   0,  1, RW) // CPU Auxiliary Control Register
 
-    ARM32_CP_REG_DEFINE(IMP_ATCMREGIONR,     15,   0,   9,   1,   0,  1, RW) // TCM Region Registers A, B, and C
-    ARM32_CP_REG_DEFINE(IMP_BTCMREGIONR,     15,   0,   9,   1,   1,  1, RW) // TCM Region Registers A, B, and C
-    ARM32_CP_REG_DEFINE(IMP_CTCMREGIONR,     15,   0,   9,   1,   2,  1, RW) // TCM Region Registers A, B, and C
+    // Below 3 fields should be RW, they are RO only because our implementation is incomplete
+    ARM32_CP_REG_DEFINE(IMP_ATCMREGIONR,     15,   0,   9,   1,   0,  1, RO, FIELD(cp15.tcm_region[0])) // TCM Region Register A
+    ARM32_CP_REG_DEFINE(IMP_BTCMREGIONR,     15,   0,   9,   1,   1,  1, RO, FIELD(cp15.tcm_region[1])) // TCM Region Register B
+    ARM32_CP_REG_DEFINE(IMP_CTCMREGIONR,     15,   0,   9,   1,   2,  1, RO, FIELD(cp15.tcm_region[2])) // TCM Region Register C
     ARM32_CP_REG_DEFINE(IMP_CSCTLR,          15,   1,   9,   1,   0,  1, RW) // Cache Segregation Control Register
     ARM32_CP_REG_DEFINE(IMP_BPCTLR,          15,   1,   9,   1,   1,  1, RW) // Branch Predictor Control Register
     ARM32_CP_REG_DEFINE(IMP_MEMPROTCLR,      15,   1,   9,   1,   2,  1, RW) // Memory Protection Control Register

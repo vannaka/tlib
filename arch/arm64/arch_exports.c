@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "cpu.h"
 #include "system_registers.h"
+#include "../arm_common/tightly_coupled_memory.h"
 #include "../../unwind.h"
 
 uint32_t tlib_check_system_register_access(const char *name, bool is_write)
@@ -100,3 +101,29 @@ void tlib_set_mpu_regions_count(uint32_t el1_regions_count, uint32_t el2_regions
     set_pmsav8_regions_count(cpu, el1_regions_count, el2_regions_count);
 }
 EXC_VOID_2(tlib_set_mpu_regions_count, uint32_t, count, uint32_t, hyp_count)
+
+/* Based on the documentation for Cortex-R52 */
+void tlib_register_tcm_region(uint32_t address, uint64_t size, uint64_t region_index)
+{
+    if (size == 0) {
+        // Disable this region in the TCMTR
+        cpu->cp15.tcm_type &= ~(1 << region_index);
+        cpu->cp15.tcm_region[region_index] = 0;
+    } else {
+        validate_tcm_region(address, size ,region_index, TARGET_PAGE_SIZE);
+
+        //Set this region as enabled
+        cpu->cp15.tcm_type |= 1 << region_index;
+        cpu->cp15.tcm_region[region_index] = address | (ctz64(size / TCM_UNIT_SIZE) << 2) | 3; // enable in all modes
+    }
+
+    // Set TCMS bit - one or more TCMS implemented
+    if (cpu->cp15.tcm_type & 0x7) {
+        cpu->cp15.tcm_type |= 1u << 31;
+    } else {
+        cpu->cp15.tcm_type &= ~(1u << 31);
+    }
+}
+
+EXC_VOID_3(tlib_register_tcm_region, uint32_t, address, uint64_t, size, uint64_t, index)
+

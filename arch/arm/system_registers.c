@@ -4,7 +4,7 @@
 
 #include "cpu.h"
 #include "helper.h"
-#include "../arm64/system_registers_common.h"
+#include "../arm_common/system_registers_common.h"
 
 #define ARM_ARCHITECTURE_MASK (0xFF00FFF0)
 

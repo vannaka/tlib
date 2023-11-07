@@ -33,11 +33,11 @@ typedef void TTableEntryRemoveCallback(TTable_entry *entry);
 typedef struct
 {
     uint32_t count;
-    uint32_t sorted_count;
     TTable_entry *entries;
     TTableEntryRemoveCallback *entry_remove_callback;
     TTableEntryCompareFn *key_compare_function;
     uint32_t size;
+    bool sorted;
 } TTable;
 
 // Only one of these functions will be used for the given TTable depending on what TTable_entry's key is.
@@ -65,6 +65,8 @@ static int ttable_compare_key_uint32(TTable_entry entry, const void *value)
 
 static inline void ttable_sort_by_keys(TTable *ttable)
 {
+    tlib_assert(ttable != NULL);
+
     // O(n^2) sort
     for (int i = 0; i < ttable->count - 1; ++i) {
         for (int j = i + 1; j < ttable->count; ++j) {
@@ -76,7 +78,7 @@ static inline void ttable_sort_by_keys(TTable *ttable)
         }
     }
 
-    ttable->sorted_count = ttable->count;
+    ttable->sorted = true;
 }
 
 static inline TTable *ttable_create(uint32_t entries_max, TTableEntryRemoveCallback *entry_remove_callback,
@@ -87,14 +89,18 @@ static inline TTable *ttable_create(uint32_t entries_max, TTableEntryRemoveCallb
 
     TTable *ttable = tlib_mallocz(sizeof(TTable));
     ttable->count = 0;
-    ttable->sorted_count = 0;
     ttable->entries = ttable_entries;
     ttable->entry_remove_callback = entry_remove_callback;
     ttable->key_compare_function = key_compare_function;
     ttable->size = entries_max;
+    ttable->sorted = false;
     return ttable;
 }
 
+/* Inserting many entries to the sorted TTable will be painfully slow, as it will sort automatically after each insert.
+ * It might be a better idea, to change `ttable->sorted` to `false`, insert a batch of new entries
+ * and then sort the whole TTable again
+ */
 static inline void ttable_insert(TTable *ttable, void *key, void *value)
 {
     tlib_assert(ttable->count < ttable->size);
@@ -104,21 +110,23 @@ static inline void ttable_insert(TTable *ttable, void *key, void *value)
     ttable->entries[first_free_entry_id].value = value;
 
     ttable->count++;
+
+    if (ttable->sorted) {
+        // This can be optimized if needed
+        // The current assumption is that there will be not so many insertions after first sort
+        ttable_sort_by_keys(ttable);
+    }
 }
 
 static inline TTable_entry *ttable_lookup_custom(TTable *ttable, TTableEntryCompareFn *entry_compare_function,
                                                  const void *compare_value)
 {
-    uint32_t linear_search_start = ttable->sorted_count;
-    if (unlikely(entry_compare_function != ttable->key_compare_function)) {
-        // We can't binary-search if we use a different compare function
-        linear_search_start = 0;
-        goto linear_search;
-    }
-
-    // Binary search for sorted part
-    if (likely(ttable->sorted_count > 0)) {
-        uint32_t left = 0, right = ttable->sorted_count - 1;
+    /* The TTable, if sorted, is sorted using the default compare function so the binary
+     * search won't work properly if a different compare function is used.
+     */
+    if (ttable->sorted && entry_compare_function == ttable->key_compare_function) {
+        // Binary search
+        uint32_t left = 0, right = ttable->count - 1;
         while (left <= right) {
             uint32_t pivot = (left + right) / 2;
             TTable_entry *entry = &ttable->entries[pivot];
@@ -129,18 +137,18 @@ static inline TTable_entry *ttable_lookup_custom(TTable *ttable, TTableEntryComp
             } else {
                 return entry;
             }
-            // if unsuccessful, break out of the loop
+        }
+    } else {
+        // Linear search
+        for (uint32_t i = 0; i < ttable->count; i++) {
+            TTable_entry *entry = &ttable->entries[i];
+            if (entry_compare_function(*entry, compare_value) == 0) {
+                return entry;
+            }
         }
     }
 
-linear_search:
-    // Linear search for unsorted part
-    for (uint32_t i = linear_search_start; i < ttable->count; i++) {
-        TTable_entry *entry = &ttable->entries[i];
-        if (entry_compare_function(*entry, compare_value) == 0) {
-            return entry;
-        }
-    }
+    // The search was unsuccesful.
     return NULL;
 }
 

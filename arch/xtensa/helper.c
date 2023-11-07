@@ -58,16 +58,18 @@ static TTable *hash_opcode_translators(const XtensaOpcodeTranslators *t)
             }
         }
     }
+
+    ttable_sort_by_keys(translator);
     return translator;
 }
+
+static TTable *translators = NULL;
 
 static XtensaOpcodeOps *
 xtensa_find_opcode_ops(const XtensaOpcodeTranslators *t,
                        const char *name)
 {
-    static TTable *translators;
     TTable *translator;
-
 
     if (translators == NULL) {
         translators = ttable_create(MAX_TTABLE_SIZE, NULL, ttable_compare_key_pointer);
@@ -122,6 +124,8 @@ static void init_libisa(XtensaConfig *config)
 #endif
         config->opcode_ops[i] = ops;
     }
+    ttable_sort_by_keys(translators);
+
     config->a_regfile = xtensa_regfile_lookup(config->isa, "AR");
 
     config->regfile = malloc(sizeof(int *) * regfiles);

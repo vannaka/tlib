@@ -552,8 +552,8 @@ ARMCPRegInfo aarch32_registers[] = {
     ARM32_CP_REG_DEFINE(HDCR,             15,   4,   1,   1,   1,   2, RW, FIELD(cp15.mdcr_el2), RESETVALUE(0x4))  // Hyp Debug Control Register
     ARM32_CP_REG_DEFINE(HDFAR,            15,   4,   6,   0,   0,   2, RW)  // Hyp Data Fault Address Register
     ARM32_CP_REG_DEFINE(HIFAR,            15,   4,   6,   0,   2,   2, RW)  // Hyp Instruction F ault Address Register
-    ARM32_CP_REG_DEFINE(HMAIR0,           15,   4,  10,   2,   0,   2, RW)  // Hyp Memory Attribute Indirection Register 0
-    ARM32_CP_REG_DEFINE(HMAIR1,           15,   4,  10,   2,   1,   2, RW)  // Hyp Memory Attribute Indirection Register 1
+    ARM32_CP_REG_DEFINE(HMAIR0,           15,   4,  10,   2,   0,   2, RW, FIELD(cp15.hmair0))  // Hyp Memory Attribute Indirection Register 0
+    ARM32_CP_REG_DEFINE(HMAIR1,           15,   4,  10,   2,   1,   2, RW, FIELD(cp15.hmair1))  // Hyp Memory Attribute Indirection Register 1
     // The params are:  name              cp, op1, crn, crm, op2, el, extra_type, ...
     ARM32_CP_REG_DEFINE(HPFAR,            15,   4,   6,   0,   4,   2, RW, FIELD(cp15.hpfar_el2))  // Hyp IP A Fault Address Register
     ARM32_CP_REG_DEFINE(HRMR,             15,   4,  12,   0,   2,   0, RW)  // Hyp Reset Management Register

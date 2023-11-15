@@ -605,14 +605,16 @@ typedef struct CPUState {
                 uint64_t _unused_mair_0;
                 uint32_t mair1_ns;
                 uint32_t mair0_ns;
-                uint64_t _unused_mair_1;
+                uint32_t hmair1;
+                uint32_t hmair0;
                 uint32_t mair1_s;
                 uint32_t mair0_s;
 #else
                 uint64_t _unused_mair_0;
                 uint32_t mair0_ns;
                 uint32_t mair1_ns;
-                uint64_t _unused_mair_1;
+                uint32_t hmair0;
+                uint32_t hmair1;
                 uint32_t mair0_s;
                 uint32_t mair1_s;
 #endif

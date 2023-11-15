@@ -126,9 +126,18 @@ static inline TTable_entry *ttable_lookup_custom(TTable *ttable, TTableEntryComp
      */
     if (ttable->sorted && entry_compare_function == ttable->key_compare_function) {
         // Binary search
-        uint32_t left = 0, right = ttable->count - 1;
+        /*
+         * Even though all valid indices would fit in uint32_t, int64_t is used.
+         * Using uint32_t could cause the value to be wrapped around to the maximum
+         * (if `right` is 0 and `entry_compare_function` returns a positive value)
+         * causing an out of bounds access to `ttable->entries` on the next loop iteration.
+         * With a signed integer that operation will result in `right` having a value of -1
+         * and the termination of the loop. int64_t was selected, because it can represent
+         * all possible values of uint32_t
+         */
+        int64_t left = 0, right = ttable->count - 1;
         while (left <= right) {
-            uint32_t pivot = (left + right) / 2;
+            int64_t pivot = (left + right) / 2;
             TTable_entry *entry = &ttable->entries[pivot];
             if (entry_compare_function(*entry, compare_value) < 0) {
                 left = pivot + 1;

@@ -664,8 +664,8 @@ ARMCPRegInfo aarch32_registers[] = {
     ARM32_CP_REG_DEFINE(JIDR,             14,   7,   0,   0,   0,   0, RW)  // Jazelle ID Register
     ARM32_CP_REG_DEFINE(JMCR,             14,   7,   2,   0,   0,   0, RW)  // Jazelle Main Configuration Register
     ARM32_CP_REG_DEFINE(JOSCR,            14,   7,   1,   0,   0,   0, RW)  // Jazelle OS Control Register
-    ARM32_CP_REG_DEFINE(MAIR0,            15,   0,  10,   2,   0,   1, RW, FIELD(cp15.mair0_ns), RESETVALUE(0x00098AA4))  // Memory Attribute Indirection Register 0
-    ARM32_CP_REG_DEFINE(MAIR1,            15,   0,  10,   2,   1,   1, RW, FIELD(cp15.mair1_ns), RESETVALUE(0x44E048E0))  // Memory Attribute Indirection Register 1
+    ARM32_CP_REG_DEFINE(MAIR0,            15,   0,  10,   2,   0,   1, RW, FIELD(cp15.mair0_ns))  // Memory Attribute Indirection Register 0
+    ARM32_CP_REG_DEFINE(MAIR1,            15,   0,  10,   2,   1,   1, RW, FIELD(cp15.mair1_ns))  // Memory Attribute Indirection Register 1
     ARM32_CP_REG_DEFINE(MIDR,             15,   0,   0,   0,   0,   1, RO, READFN(midr))  // Main ID Register
     ARM32_CP_REG_DEFINE(MPIDR,            15,   0,   0,   0,   5,   1, RO, READFN(mpidr_el1))  // Multiprocessor Affinity RegisterAArch32 System Registers
     ARM32_CP_REG_DEFINE(NSACR,            15,   0,   1,   1,   2,   1, RW, FIELD(cp15.nsacr), RESETVALUE(0xC00))  // Non-Secure Access Control Register

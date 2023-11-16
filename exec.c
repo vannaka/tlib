@@ -778,6 +778,10 @@ void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t en
     int current_flags = 0;
 #endif /* TARGET_HAS_PRECISE_SMC */
 
+    if (start / TARGET_PAGE_SIZE != (end - 1) / TARGET_PAGE_SIZE) {
+        tlib_abortf("Attempted to invalidate more than 1 physical page. Addresses: 0x"TARGET_FMT_lx" and 0x"TARGET_FMT_lx" are not on the same page", start, end);
+    }
+
     p = page_find(start >> TARGET_PAGE_BITS);
     if (!p) {
         return;

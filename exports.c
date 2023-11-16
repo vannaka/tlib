@@ -396,7 +396,7 @@ EXC_INT_2(uint32_t, tlib_is_range_mapped, uint64_t, start, uint64_t, end)
 
 void tlib_invalidate_translation_blocks(uintptr_t start, uintptr_t end)
 {
-    tb_invalidate_phys_page_range_inner(start, end, 0, 0);
+    tb_invalidate_phys_page_range_checked(start, end, 0, 0);
 }
 
 EXC_VOID_2(tlib_invalidate_translation_blocks, uintptr_t, start, uintptr_t, end)

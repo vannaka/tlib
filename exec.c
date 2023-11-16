@@ -866,9 +866,32 @@ void tb_invalidate_phys_page_range_inner(tb_page_addr_t start, tb_page_addr_t en
 #endif
 }
 
+/* Same as `tb_invalidate_phys_page_range_inner`, but start and end addresses don't have to be on the same physical page. */
+void tb_invalidate_phys_page_range_checked(tb_page_addr_t start, tb_page_addr_t end, int is_cpu_write_access, int broadcast)
+{
+    tb_page_addr_t length = end - start;
+    tb_page_addr_t first_length = TARGET_PAGE_SIZE - start % TARGET_PAGE_SIZE;
+    if (length < first_length) {
+        first_length = length;
+    }
+
+    tb_invalidate_phys_page_range_inner(start, start + first_length, is_cpu_write_access, broadcast);
+
+    start += first_length;
+    length -= first_length;
+
+    while (length > 0) {
+        tb_page_addr_t invalidate_length = length > TARGET_PAGE_SIZE ? TARGET_PAGE_SIZE : length;
+        tb_invalidate_phys_page_range_inner(start, start + invalidate_length, is_cpu_write_access, broadcast);
+
+        start += invalidate_length;
+        length -= invalidate_length;
+    }
+}
+
 void tb_invalidate_phys_page_range(tb_page_addr_t start, tb_page_addr_t end, int is_cpu_write_access)
 {
-    tb_invalidate_phys_page_range_inner(start, end, is_cpu_write_access, 1);
+    tb_invalidate_phys_page_range_checked(start, end, is_cpu_write_access, 1);
 }
 
 /* len must be <= 8 and start must be a multiple of len */

@@ -521,7 +521,7 @@ int get_phys_addr_pmsav8(CPUState *env, target_ulong address, int access_type, u
     pmsav8_region *found_region = &region;
 
     bool first_stage_as_el2 = (current_el == 2) || (env->cp15.hcr_el2 & HCR_TGE);
-    bool has_second_stage = (current_el < 2) && (env->cp15.hcr_el2 & HCR_TGE) && (env->cp15.hcr_el2 & HCR_VM);
+    bool has_second_stage = (current_el < 2) && !(env->cp15.hcr_el2 & HCR_TGE) && (env->cp15.hcr_el2 & HCR_VM);
     bool is_second_stage = false;
 
     // Stage one 

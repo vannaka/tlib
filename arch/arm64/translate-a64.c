@@ -2086,6 +2086,7 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
         } else if (ri->fieldoffset != 0) {
             tcg_gen_ld_i64(tcg_rt, cpu_env, ri->fieldoffset);
         } else {
+            tcg_gen_movi_i64(tcg_rt, 0);
             log_unhandled_sysreg_read(ri->name);
             return;
         }

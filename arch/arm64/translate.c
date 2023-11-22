@@ -4804,8 +4804,8 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
                     tmp64 = tcg_temp_new_i64();
                     tcg_gen_ld_i64(tmp64, cpu_env, ri->fieldoffset);
                 } else {
+                    tmp64 = tcg_constant_i64(0);
                     log_unhandled_sysreg_read(ri->name);
-                    return;
                 }
                 tmp = tcg_temp_new_i32();
                 tcg_gen_extrl_i64_i32(tmp, tmp64);
@@ -4824,9 +4824,10 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
                 } else if (ri->fieldoffset != 0) {
                     tmp = load_cpu_offset(ri->fieldoffset);
                 } else {
+                    tmp = tcg_constant_i32(0);
                     log_unhandled_sysreg_read(ri->name);
-                    return;
                 }
+
                 if (rt == 15) {
                     /* Destination register of r15 for 32 bit loads sets
                      * the condition codes from the high 4 bits of the value
